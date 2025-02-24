@@ -15,6 +15,6 @@ int main(int argc, char* argv[])
 	MOON::Editor editor;
 	editor.setWindowTitle("Editor");
 	editor.resize(1440, 768);
-	editor.showMaximized();
+	editor.show();
 	return QApplication::exec();
 }

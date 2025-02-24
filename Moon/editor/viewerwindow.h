@@ -1,6 +1,5 @@
 #pragma once
 #include "viewer/Viewer.h"
-
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_5_Core>
 #include <QtNodes/NodeData>
@@ -18,7 +17,6 @@ namespace MOON {
 
 		virtual void initializeGL() override;
 		virtual void timerEvent(QTimerEvent* e) override;
-
 		virtual void paintGL() override;
 
 		virtual void leaveEvent(QEvent* event) override;

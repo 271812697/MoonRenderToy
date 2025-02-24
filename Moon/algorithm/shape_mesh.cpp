@@ -4,7 +4,6 @@ namespace MOON {
 
 	void dual(SurfaceMesh& mesh)
 	{
-
 		SurfaceMesh tmp;
 		auto fvertex = mesh.add_face_property<Vertex>("f:vertex");
 		for (auto f : mesh.faces())

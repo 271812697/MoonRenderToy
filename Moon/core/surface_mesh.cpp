@@ -42,10 +42,8 @@ namespace MOON {
 			deleted_vertices_ = rhs.deleted_vertices_;
 			deleted_edges_ = rhs.deleted_edges_;
 			deleted_faces_ = rhs.deleted_faces_;
-
 			has_garbage_ = rhs.has_garbage_;
 		}
-
 		return *this;
 	}
 
