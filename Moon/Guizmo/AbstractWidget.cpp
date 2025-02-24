@@ -1,56 +1,35 @@
 #include "AbstractWidget.h"
 #include "CallbackCommand.h"
-//#include "ExecuteCommand.h"
 #include "Event.h"
 #include "RenderWindowInteractor.h"
-//#include "vtkRenderer.h"
 #include "WidgetCallbackMapper.h"
 #include "WidgetEvent.h"
 #include "WidgetEventTranslator.h"
-//#include "WidgetRepresentation.h"
-
 //------------------------------------------------------------------------------
 namespace MOON {
 	vtkAbstractWidget::vtkAbstractWidget()
 	{
 		// Setup event processing
 		this->EventCallbackCommand->SetCallback(vtkAbstractWidget::ProcessEventsHandler);
-
 		// There is no parent to this widget currently
 		this->Parent = nullptr;
-
-		// Set up the geometry
-		//this->WidgetRep = nullptr;
-
 		// Set priority higher than interactor styles
 		this->Priority = 0.5;
 
 
-
 		// Does this widget respond to interaction?
 		this->ProcessEvents = 1;
-
 		// Okay, set up the event translations for the subclasses.
 		this->EventTranslator = vtkWidgetEventTranslator::New();
 		this->CallbackMapper = vtkWidgetCallbackMapper::New();
 		this->CallbackMapper->SetEventTranslator(this->EventTranslator);
 	}
 
-	//------------------------------------------------------------------------------
 	vtkAbstractWidget::~vtkAbstractWidget()
 	{
-		//if (this->WidgetRep)
-		//{
-
-			//this->WidgetRep = nullptr;
-		//}
-
 		this->SetEnabled(0);
 	}
 
-
-
-	//------------------------------------------------------------------------------
 	void vtkAbstractWidget::SetEnabled(int enabling)
 	{
 		if (enabling) //----------------
@@ -69,11 +48,6 @@ namespace MOON {
 
 			// We're ready to enable
 			this->Enabled = 1;
-			//if (!this->WidgetRep)
-			//{
-			//	this->CreateDefaultRepresentation();
-			//}
-
 
 			// listen for the events found in the EventTranslator
 			if (!this->Parent)
@@ -96,8 +70,6 @@ namespace MOON {
 
 		else // disabling------------------
 		{
-
-
 			if (!this->Enabled) // already disabled, just return
 			{
 				return;
@@ -114,24 +86,8 @@ namespace MOON {
 			{
 				this->Parent->RemoveObserver(this->EventCallbackCommand);
 			}
-
-
-
 			this->InvokeEvent(ExecuteCommand::DisableEvent, nullptr);
-
-			//if (this->WidgetRep)
-			//{
-				// this->WidgetRep->UnRegisterPickers();
-			//}
 		}
-
-		// We no longer call render when enabled state changes. It's the applications
-		// responsibility to explicitly call render after changing enable state.
-		//// Should only render if there is no parent
-		// if ( this->Interactor && !this->Parent )
-		//  {
-		//  this->Interactor->Render();
-		//  }
 	}
 
 	//------------------------------------------------------------------------------
@@ -190,7 +146,7 @@ namespace MOON {
 	{
 		if (!this->Parent && this->Interactor)
 		{
-			//this->Interactor->Render();
+
 		}
 	}
 
