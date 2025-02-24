@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(UseQt LANGUAGES C CXX)
 
-option(USE_QT6 "Build with Qt6 (Enabled by default)" ON)
+option(USE_QT6 "Build with Qt6 (Enabled by default)" OFF)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 

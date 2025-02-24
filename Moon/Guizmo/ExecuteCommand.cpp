@@ -2,61 +2,61 @@
 #include "ExecuteCommand.h"
 
 namespace MOON {
-    ExecuteCommand::ExecuteCommand()
-        : AbortFlag(0)
-        , PassiveObserver(0)
-    {
+	ExecuteCommand::ExecuteCommand()
+		: AbortFlag(0)
+		, PassiveObserver(0)
+	{
 
-    }
+	}
 
 	//----------------------------------------------------------------
 	const char* ExecuteCommand::GetStringFromEventId(unsigned long event)
 	{
 		switch (event)
 		{
-		case AnyEvent: return "AnyEvent"; 
-        case DeleteEvent: return "DeleteEvent"; 
-        case StartEvent: return "StartEvent"; 
-        case EndEvent: return "EndEvent"; 
-        case RenderEvent: return "RenderEvent";
-        case PickEvent: return "PickEvent"; 
-        case StartPickEvent: return "StartPickEvent"; 
-        case EndPickEvent: return "EndPickEvent"; 
-        case LeftButtonPressEvent: return "LeftButtonPressEvent";
-        case LeftButtonReleaseEvent: return "LeftButtonReleaseEvent"; 
-        case MiddleButtonPressEvent: return "MiddleButtonPressEvent"; 
-        case MiddleButtonReleaseEvent: return "MiddleButtonReleaseEvent";
-        case RightButtonPressEvent: return "RightButtonPressEvent"; 
-        case RightButtonReleaseEvent: return "RightButtonReleaseEvent";
-        case EnterEvent: return "EnterEvent"; 
-        case LeaveEvent: return "LeaveEvent"; 
-        case KeyPressEvent: return "KeyPressEvent"; 
-        case KeyReleaseEvent: return "KeyReleaseEvent";
-        case CharEvent: return "CharEvent"; 
-        case MouseMoveEvent: return "MouseMoveEvent"; 
-        case MouseWheelForwardEvent: return "MouseWheelForwardEvent"; 
-        case MouseWheelBackwardEvent: return "MouseWheelBackwardEvent";
+		case AnyEvent: return "AnyEvent";
+		case DeleteEvent: return "DeleteEvent";
+		case StartEvent: return "StartEvent";
+		case EndEvent: return "EndEvent";
+		case RenderEvent: return "RenderEvent";
+		case PickEvent: return "PickEvent";
+		case StartPickEvent: return "StartPickEvent";
+		case EndPickEvent: return "EndPickEvent";
+		case LeftButtonPressEvent: return "LeftButtonPressEvent";
+		case LeftButtonReleaseEvent: return "LeftButtonReleaseEvent";
+		case MiddleButtonPressEvent: return "MiddleButtonPressEvent";
+		case MiddleButtonReleaseEvent: return "MiddleButtonReleaseEvent";
+		case RightButtonPressEvent: return "RightButtonPressEvent";
+		case RightButtonReleaseEvent: return "RightButtonReleaseEvent";
+		case EnterEvent: return "EnterEvent";
+		case LeaveEvent: return "LeaveEvent";
+		case KeyPressEvent: return "KeyPressEvent";
+		case KeyReleaseEvent: return "KeyReleaseEvent";
+		case CharEvent: return "CharEvent";
+		case MouseMoveEvent: return "MouseMoveEvent";
+		case MouseWheelForwardEvent: return "MouseWheelForwardEvent";
+		case MouseWheelBackwardEvent: return "MouseWheelBackwardEvent";
 		case MouseWheelLeftEvent: return "MouseWheelLeftEvent";
 		case MouseWheelRightEvent:return "MouseWheelRightEvent";
-        case StartInteractionEvent: return "StartInteractionEvent";
-        case InteractionEvent: return "InteractionEvent"; 
-        case EndInteractionEvent: return "EndInteractionEvent";
-        case EnableEvent: return "EnableEvent"; 
-        case DisableEvent: return "DisableEvent";
+		case StartInteractionEvent: return "StartInteractionEvent";
+		case InteractionEvent: return "InteractionEvent";
+		case EndInteractionEvent: return "EndInteractionEvent";
+		case EnableEvent: return "EnableEvent";
+		case DisableEvent: return "DisableEvent";
 		case UserEvent:return "UserEvent";
 		case NoEvent: return "NoEvent";
-		
+
 		case ExitEvent:return "ExitEvent";
-		
+
 		}
 		return "NoEvent";
 	}
 
-    //----------------------------------------------------------------
-    unsigned long ExecuteCommand::GetEventIdFromString(const char* event)
-    {
-        if (event)
-        {
+	//----------------------------------------------------------------
+	unsigned long ExecuteCommand::GetEventIdFromString(const char* event)
+	{
+		if (event)
+		{
 
 			if (strcmp(event, "AnyEvent") == 0) {
 				return AnyEvent;
@@ -102,9 +102,9 @@ namespace MOON {
 				return MouseWheelForwardEvent;
 			} if (strcmp(event, "MouseWheelBackwardEvent") == 0) {
 				return MouseWheelBackwardEvent;
-			} if (strcmp(event,"MouseWheelRightEvent")==0) {
+			} if (strcmp(event, "MouseWheelRightEvent") == 0) {
 				return ExecuteCommand::MouseWheelRightEvent;
-			}if (strcmp(event, "MouseWheelLeftEvent")==0) {
+			}if (strcmp(event, "MouseWheelLeftEvent") == 0) {
 				return ExecuteCommand::MouseWheelLeftEvent;
 			}
 			if (strcmp(event, "StartInteractionEvent") == 0) {
@@ -118,24 +118,21 @@ namespace MOON {
 			} if (strcmp(event, "DisableEvent") == 0) {
 				return DisableEvent;
 			}
-                if (strcmp("UserEvent", event) == 0)
-                {
-                    return ExecuteCommand::UserEvent;
-                }
-				if (strcmp("ExitEvent", event) == 0) {
-					return ExecuteCommand::ExitEvent;
-				}
+			if (strcmp("UserEvent", event) == 0)
+			{
+				return ExecuteCommand::UserEvent;
+			}
+			if (strcmp("ExitEvent", event) == 0) {
+				return ExecuteCommand::ExitEvent;
+			}
+		}
+		return ExecuteCommand::NoEvent;
+	}
 
-
-        }
-
-        return ExecuteCommand::NoEvent;
-    }
-
-    bool ExecuteCommand::EventHasData(unsigned long event)
-    {
+	bool ExecuteCommand::EventHasData(unsigned long event)
+	{
 		return false;
-    }
+	}
 
 
 }
