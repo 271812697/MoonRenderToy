@@ -16,5 +16,6 @@ int main(int argc, char* argv[])
 	editor.setWindowTitle("Editor");
 	editor.resize(1440, 768);
 	editor.show();
+	
 	return QApplication::exec();
 }

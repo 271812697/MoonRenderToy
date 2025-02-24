@@ -5,7 +5,7 @@
 #include <QtNodes/NodeData>
 using QtNodes::NodeData;
 namespace MOON {
-
+	class vtkRenderWindowInteractor;
 	class Editor;
 	class ViewerWindow : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
@@ -13,29 +13,29 @@ namespace MOON {
 	public:
 		explicit ViewerWindow(QWidget* parent);
 		~ViewerWindow();
+		void initializeGL() override;
+		void timerEvent(QTimerEvent* e) override;
+		void paintGL() override;
+		bool event(QEvent* evt) override;
+		void leaveEvent(QEvent* event) override;
 
+		void resizeEvent(QResizeEvent* event) override;
 
-		virtual void initializeGL() override;
-		virtual void timerEvent(QTimerEvent* e) override;
-		virtual void paintGL() override;
+		void mousePressEvent(QMouseEvent* event) override;
 
-		virtual void leaveEvent(QEvent* event) override;
+		void mouseMoveEvent(QMouseEvent* event) override;
 
-		virtual void resizeEvent(QResizeEvent* event) override;
+		void mouseReleaseEvent(QMouseEvent* event) override;
 
-		virtual void mousePressEvent(QMouseEvent* event) override;
-
-		virtual void mouseMoveEvent(QMouseEvent* event) override;
-
-		virtual void mouseReleaseEvent(QMouseEvent* event) override;
-
-		virtual void wheelEvent(QWheelEvent* event) override;
-		virtual void keyPressEvent(QKeyEvent* event) override;
-		virtual void keyReleaseEvent(QKeyEvent* event) override;
+		void wheelEvent(QWheelEvent* event) override;
+		void keyPressEvent(QKeyEvent* event) override;
+		void keyReleaseEvent(QKeyEvent* event) override;
 	public:
 		Viewer viewer;
 	private:
+		bool processEventByWindowInteractor(QEvent* event);
 		bool blockMouseMessage = false;
+		vtkRenderWindowInteractor* windowInteractor=nullptr;
 
 	public Q_SLOTS:
 		void viewnode(const std::shared_ptr<NodeData>& node);
