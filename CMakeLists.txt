@@ -6,6 +6,7 @@ option(USE_QT6 "Build with Qt6 (Enabled by default)" OFF)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(NOT DEFINED EIGEN3_INCLUDE_DIR)
   set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/Extern/eigen-3.4.0")
@@ -41,3 +42,4 @@ add_subdirectory(ScreenWidget)
 add_subdirectory(opengl)
 add_subdirectory(QtNode)
 add_subdirectory(Moon)
+add_subdirectory(LLGL)
