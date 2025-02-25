@@ -53,7 +53,7 @@ namespace MOON {
 
 	vtkWidgetCallbackMapper* MOON::vtkWidgetCallbackMapper::New()
 	{
-		return nullptr;
+		return new vtkWidgetCallbackMapper();
 	}
 
 	//------------------------------------------------------------------------------

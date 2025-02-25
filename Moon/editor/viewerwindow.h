@@ -6,6 +6,7 @@
 using QtNodes::NodeData;
 namespace MOON {
 	class vtkRenderWindowInteractor;
+	class vtkBoxWidget2;
 	class Editor;
 	class ViewerWindow : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
@@ -36,6 +37,7 @@ namespace MOON {
 		bool processEventByWindowInteractor(QEvent* event);
 		bool blockMouseMessage = false;
 		vtkRenderWindowInteractor* windowInteractor=nullptr;
+		vtkBoxWidget2* boxWidget = nullptr;
 
 	public Q_SLOTS:
 		void viewnode(const std::shared_ptr<NodeData>& node);

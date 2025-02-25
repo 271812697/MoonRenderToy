@@ -4,13 +4,11 @@
 #include "ExecuteCommand.h"
 #include "Event.h"
 #include "EventData.h"
-
 #include "RenderWindowInteractor.h"
-
 #include "WidgetEvent.h"
 #include <list>
 #include <map>
-#include<memory>
+#include <memory>
 
 
 namespace MOON {
@@ -23,9 +21,9 @@ namespace MOON {
 		vtkEventData* EventData = nullptr;
 		bool HasData = false;
 
-		EventItem(vtkEvent* e, unsigned long we)
+		EventItem(const std::shared_ptr<vtkEvent>& e, unsigned long we)
 		{
-			this->VTKEvent = std::shared_ptr<vtkEvent>(e);
+			this->VTKEvent = e;
 			this->WidgetEvent = we;
 			this->HasData = false;
 		}
@@ -139,7 +137,7 @@ namespace MOON {
 	class vtkEventMap : public std::map<unsigned long, EventList>
 	{
 	};
-	typedef std::map<unsigned long, EventList>::iterator EventMapIterator;
+	using EventMapIterator = std::map<unsigned long, EventList>::iterator;
 
 	//------------------------------------------------------------------------------
 	vtkWidgetEventTranslator* vtkWidgetEventTranslator::New() {
@@ -161,11 +159,11 @@ namespace MOON {
 	//------------------------------------------------------------------------------
 	void vtkWidgetEventTranslator::SetTranslation(unsigned long VTKEvent, unsigned long widgetEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::shared_ptr<vtkEvent>(new vtkEvent());
+		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
 		e->SetEventId(VTKEvent); // default modifiers
 		if (widgetEvent != vtkWidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent].push_back(EventItem(e.get(), widgetEvent));
+			(*this->EventMap)[VTKEvent].push_back(EventItem(e, widgetEvent));
 		}
 		else
 		{
@@ -184,7 +182,7 @@ namespace MOON {
 	void vtkWidgetEventTranslator::SetTranslation(unsigned long VTKEvent, int modifier, char keyCode,
 		int repeatCount, const char* keySym, unsigned long widgetEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::shared_ptr<vtkEvent>(new vtkEvent());
+		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
 		e->SetEventId(VTKEvent);
 		e->SetModifier(modifier);
 		e->SetKeyCode(keyCode);
@@ -192,7 +190,7 @@ namespace MOON {
 		e->SetKeySym(keySym);
 		if (widgetEvent != vtkWidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent].push_back(EventItem(e.get(), widgetEvent));
+			(*this->EventMap)[VTKEvent].push_back(EventItem(e, widgetEvent));
 		}
 		else
 		{
@@ -218,7 +216,7 @@ namespace MOON {
 	{
 		if (widgetEvent != vtkWidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent->GetEventId()].push_back(EventItem(VTKEvent, widgetEvent));
+			(*this->EventMap)[VTKEvent->GetEventId()].push_back(EventItem(std::shared_ptr<vtkEvent>(VTKEvent), widgetEvent));
 		}
 		else
 		{
@@ -297,7 +295,7 @@ namespace MOON {
 	int vtkWidgetEventTranslator::RemoveTranslation(
 		unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym)
 	{
-		std::shared_ptr<vtkEvent> e = std::shared_ptr<vtkEvent>(new vtkEvent());
+		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
 		e->SetEventId(VTKEvent);
 		e->SetModifier(modifier);
 		e->SetKeyCode(keyCode);
@@ -351,7 +349,7 @@ namespace MOON {
 	//------------------------------------------------------------------------------
 	int vtkWidgetEventTranslator::RemoveTranslation(unsigned long VTKEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::shared_ptr<vtkEvent>(new vtkEvent());
+		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
 		e->SetEventId(VTKEvent);
 		return this->RemoveTranslation(e.get());
 	}
@@ -359,7 +357,7 @@ namespace MOON {
 	//------------------------------------------------------------------------------
 	int vtkWidgetEventTranslator::RemoveTranslation(const char* VTKEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::shared_ptr<vtkEvent>(new vtkEvent());
+		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
 		e->SetEventId(ExecuteCommand::GetEventIdFromString(VTKEvent));
 		return this->RemoveTranslation(e.get());
 	}

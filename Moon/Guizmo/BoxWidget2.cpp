@@ -1,18 +1,13 @@
-
 #include "BoxWidget2.h"
-
 #include "CallbackCommand.h"
 #include "ExecuteCommand.h"
 #include "Event.h"
 #include "EventData.h"
 
-
 #include "RenderWindowInteractor.h"
-
 #include "WidgetCallbackMapper.h"
 #include "WidgetEvent.h"
 #include "WidgetEventTranslator.h"
-
 #include <algorithm>
 
 namespace MOON {
@@ -109,8 +104,6 @@ namespace MOON {
 	{
 		// We are in a static method, cast to ourself
 		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
-
-
 	}
 
 	//------------------------------------------------------------------------------

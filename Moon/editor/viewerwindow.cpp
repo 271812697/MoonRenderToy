@@ -8,6 +8,7 @@
 #include "algorithm/mesh_triangulate.h"
 #include "Guizmo/RenderWindowInteractor.h"
 #include "Guizmo/ExecuteCommand.h"
+#include "Guizmo/BoxWidget2.h"
 
 static const char* AsciiToKeySymTable[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   nullptr, nullptr, nullptr, "Tab", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -180,6 +181,10 @@ namespace MOON {
 			if (windowInteractor == nullptr) {
                  windowInteractor=vtkRenderWindowInteractor::New();
 				 windowInteractor->Enable();
+				 boxWidget = vtkBoxWidget2::New();
+				 boxWidget->SetInteractor(windowInteractor);
+				 boxWidget->SetEnabled(1);
+
 			}
 			
 		}
@@ -386,6 +391,9 @@ namespace MOON {
 		if (windowInteractor == nullptr) {
 			windowInteractor = vtkRenderWindowInteractor::New();
 			windowInteractor->Enable();
+			boxWidget = vtkBoxWidget2::New();
+			boxWidget->SetInteractor(windowInteractor);
+			boxWidget->SetEnabled(1);
 		}
 		vtkRenderWindowInteractor* iren = windowInteractor;
 		if (iren == nullptr || e == nullptr)
