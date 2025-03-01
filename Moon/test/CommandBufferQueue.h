@@ -5,7 +5,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-namespace MOON {
+namespace TEST {
 
 	/*
 	 * A producer-consumer command queue that uses a CircularBuffer as main storage

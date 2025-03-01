@@ -12,7 +12,7 @@
 #include <stdint.h>
 
 #define UTILS_HAS_THREADING 0
-namespace MOON {
+namespace TEST {
 
 	CommandBufferQueue::CommandBufferQueue(size_t requiredSize, size_t bufferSize, bool paused)
 		: mRequiredSize((requiredSize + (CircularBuffer::getBlockSize() - 1u)) & ~(CircularBuffer::getBlockSize() - 1u)),

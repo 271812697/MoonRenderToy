@@ -7,7 +7,7 @@
 #include<assert.h>
 
 
-namespace MOON {
+namespace TEST {
 
 	size_t CircularBuffer::sPageSize = 4096;
 

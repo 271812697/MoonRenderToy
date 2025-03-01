@@ -1,8 +1,9 @@
 #pragma once
+#include "Driver.h"
 #include "Dispatcher.h"
 #include "CommandStream.h"
 
-namespace MOON {
+namespace TEST {
 	void Dispatcher::test(Driver& driver, CommandBase* base, intptr_t* next)
 	{
 		using Cmd = CommandType<decltype(&Driver::test)>::Command<&Driver::test>;

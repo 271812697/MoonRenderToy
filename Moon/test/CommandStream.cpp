@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 
-namespace MOON {
+namespace TEST {
 
 	CommandStream::CommandStream(Driver& driver, CircularBuffer& buffer) noexcept
 		: mDriver(driver),

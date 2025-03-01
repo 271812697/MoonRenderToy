@@ -1,9 +1,6 @@
 #include "DriverBase.h"
-
 #include "Driver.h"
 #include "CommandStream.h"
-
-
 
 #include <functional>
 #include <mutex>
@@ -14,26 +11,17 @@
 #include <iostream>
 
 #define UTILS_HAS_THREADING 0
-namespace MOON {
-
-	DriverBase::DriverBase() noexcept {
-
-	}
-
-	DriverBase::~DriverBase() noexcept {
-
-	}
+namespace TEST {
 
 
 
 
-	Driver::Driver()
+
+	Driver::Driver() :mHandleAllocator("handles", 4194304, false)
 	{
 	}
 
-	Driver::Driver(const Driver&&)
-	{
-	}
+
 
 	Driver::~Driver()
 	{
@@ -47,5 +35,17 @@ namespace MOON {
 	{
 		std::cout << val << std::endl;
 	}
+
+	Handle<HwVertexBuffer> Driver::createVertexBufferS()
+	{
+		return initHandle<GLVertexBuffer>();
+	}
+
+	void Driver::createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih)
+	{
+		construct<GLVertexBuffer>(vbh, vertexCount, vbih);
+	}
+
+
 
 } // namespace filament::backend

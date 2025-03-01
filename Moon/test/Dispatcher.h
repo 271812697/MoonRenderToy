@@ -1,8 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "Driver.h"
 
-namespace MOON {
+namespace TEST {
 
 	class Driver;
 	class CommandBase;

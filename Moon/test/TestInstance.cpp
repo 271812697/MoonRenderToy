@@ -3,7 +3,7 @@
 #include "CircularBuffer.h"
 #include "CommandBufferQueue.h"
 #include "CommandStream.h"
-namespace MOON {
+namespace TEST {
 
 	static constexpr const size_t MiB = 1024u * 1024u;
 	struct TestInstanceData {

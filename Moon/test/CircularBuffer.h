@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace MOON {
+namespace TEST {
 
 	class CircularBuffer {
 	public:

@@ -188,7 +188,11 @@ namespace MOON {
 				boxWidget->SetEnabled(1);
 
 			}
-			TestInstance::Instance().getCommandStream()->test(8);
+			TEST::TestInstance::Instance().getCommandStream()->test(8);
+			TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
+
+				std::cout << "say hello" << std::endl;
+				});
 
 		}
 	}
@@ -232,8 +236,8 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
-		TestInstance::Instance().flush();
-		TestInstance::Instance().execute();
+		TEST::TestInstance::Instance().flush();
+		TEST::TestInstance::Instance().execute();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		guizmoRender->Clear();
 		viewer.draw();

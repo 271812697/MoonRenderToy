@@ -1,7 +1,7 @@
 #pragma once
-#include "CommandStream.h"
+
 #include <memory>
-namespace MOON {
+namespace TEST {
 	class CommandStream;
 	struct TestInstanceData;
 	class TestInstance {

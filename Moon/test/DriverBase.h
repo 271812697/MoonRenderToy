@@ -1,11 +1,5 @@
 #pragma once
-
-
-
-
-//#include "private/backend/Dispatcher.h"
-#include "Driver.h"
-
+#include"DriverEnums.h"
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -16,9 +10,9 @@
 #include <stdint.h>
 #include <assert.h>
 
-namespace MOON {
+namespace TEST {
 
-	struct AcquiredImage;
+
 
 	/*
 	 * Hardware handles
@@ -100,27 +94,6 @@ namespace MOON {
 
 
 	struct HwTimerQuery : public HwBase {
-	};
-
-	/*
-	 * Base class of all Driver implementations
-	 */
-
-	class DriverBase : public Driver {
-	public:
-		DriverBase() noexcept;
-		~DriverBase() noexcept override;
-
-	protected:
-		class CallbackDataDetails;
-
-	private:
-		std::mutex mPurgeLock;
-		std::thread mServiceThread;
-		std::mutex mServiceThreadLock;
-		std::condition_variable mServiceThreadCondition;
-
-		bool mExitRequested = false;
 	};
 
 }
