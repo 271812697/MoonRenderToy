@@ -1,5 +1,3 @@
-
-
 #include "DriverBase.h"
 
 #include "Driver.h"
@@ -13,7 +11,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
+#include <iostream>
 
 #define UTILS_HAS_THREADING 0
 namespace MOON {
@@ -26,10 +24,28 @@ namespace MOON {
 
 	}
 
-	Driver::~Driver() noexcept = default;
+
+
+
+	Driver::Driver()
+	{
+	}
+
+	Driver::Driver(const Driver&&)
+	{
+	}
+
+	Driver::~Driver()
+	{
+	}
 
 	void Driver::execute(std::function<void(void)> const& fn) {
 		fn();
+	}
+
+	void Driver::test(int val)
+	{
+		std::cout << val << std::endl;
 	}
 
 } // namespace filament::backend

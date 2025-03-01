@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "Driver.h"
 
 namespace MOON {
 
@@ -9,6 +10,7 @@ namespace MOON {
 	class Dispatcher {
 	public:
 		using Execute = void (*)(Driver& driver, CommandBase* self, intptr_t* next);
+		static void test(Driver& driver, CommandBase* base, intptr_t* next);
 
 	};
 

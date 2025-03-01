@@ -14,13 +14,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Set to true to print every command out on log.d. This requires RTTI and DEBUG
-#define DEBUG_COMMAND_STREAM false
+
 namespace MOON {
 
 	class CommandBase {
 		static constexpr size_t FILAMENT_OBJECT_ALIGNMENT = alignof(std::max_align_t);
-
 	protected:
 		using Execute = Dispatcher::Execute;
 
@@ -115,7 +113,7 @@ namespace MOON {
 
 			// placement new declared as "throw" to avoid the compiler's null-check
 			inline void* operator new(std::size_t, void* ptr) {
-				assert_invariant(ptr);
+				assert(ptr != nullptr);
 				return ptr;
 			}
 		};
@@ -164,8 +162,7 @@ namespace MOON {
 		CircularBuffer const& getCircularBuffer() const noexcept { return mCurrentBuffer; }
 
 	public:
-
-
+		void test(int val);
 
 	public:
 		// This is for debugging only. Currently, CircularBuffer can only be written from a

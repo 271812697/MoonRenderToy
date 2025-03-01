@@ -1,7 +1,4 @@
 #pragma once
-
-
-
 #include <functional>
 
 #include <stddef.h>
@@ -33,16 +30,13 @@ namespace MOON {
 
 	class Driver {
 	public:
-		virtual ~Driver() noexcept;
 
-		static size_t getElementTypeSize(ElementType type) noexcept;
+		Driver();
+		Driver(const Driver&&);
+		virtual ~Driver();
 
 
-		virtual ShaderModel getShaderModel() const noexcept = 0;
 
-		// Returns the dispatcher. This is only called once during initialization of the CommandStream,
-		// so it doesn't matter that it's virtual.
-		virtual Dispatcher getDispatcher() const noexcept = 0;
 
 		// called from CommandStream::execute on the render-thread
 		// the fn function will execute a batch of driver commands
@@ -50,7 +44,7 @@ namespace MOON {
 		// the default implementation simply calls fn
 		virtual void execute(std::function<void(void)> const& fn);
 
-
+		void test(int val);
 
 
 	};

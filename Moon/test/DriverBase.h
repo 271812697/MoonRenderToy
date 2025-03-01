@@ -69,9 +69,6 @@ namespace MOON {
 		}
 	};
 
-	struct HwRenderPrimitive : public HwBase {
-		PrimitiveType type = PrimitiveType::TRIANGLES;
-	};
 
 	struct HwProgram : public HwBase {
 		std::string name;

@@ -8,11 +8,17 @@ namespace MOON {
 
 	CommandStream::CommandStream(Driver& driver, CircularBuffer& buffer) noexcept
 		: mDriver(driver),
-		mCurrentBuffer(buffer),
-		mDispatcher(driver.getDispatcher())
+		mCurrentBuffer(buffer)
 		, mThreadId(std::this_thread::get_id())
 	{
 
+	}
+
+	void CommandStream::test(int val)
+	{
+		using Cmd = CommandType<decltype(&Driver::test)>::Command<&Driver::test>;
+		void* const p = allocateCommand(CommandBase::align(sizeof(Cmd)));
+		new(p) Cmd(&Dispatcher::test, std::move(val));
 	}
 
 	void CommandStream::execute(void* buffer) {
