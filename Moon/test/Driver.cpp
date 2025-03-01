@@ -1,7 +1,6 @@
 #include "DriverBase.h"
 #include "Driver.h"
 #include "CommandStream.h"
-
 #include <functional>
 #include <mutex>
 #include <utility>
@@ -13,15 +12,9 @@
 #define UTILS_HAS_THREADING 0
 namespace TEST {
 
-
-
-
-
 	Driver::Driver() :mHandleAllocator("handles", 4194304, false)
 	{
 	}
-
-
 
 	Driver::~Driver()
 	{
@@ -46,6 +39,14 @@ namespace TEST {
 		construct<GLVertexBuffer>(vbh, vertexCount, vbih);
 	}
 
+	Handle<HwIndexBuffer> Driver::createIndexBufferS()
+	{
+		return initHandle<GLIndexBuffer>();
+	}
 
+	void Driver::createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage)
+	{
+		//to do
+	}
 
 } // namespace filament::backend

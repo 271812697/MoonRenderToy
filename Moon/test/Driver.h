@@ -59,7 +59,12 @@ namespace TEST {
 			} gl;
 		};
 
-
+		struct GLIndexBuffer : public HwIndexBuffer {
+			using HwIndexBuffer::HwIndexBuffer;
+			struct {
+				unsigned int buffer{};
+			} gl;
+		};
 
 
 		// called from CommandStream::execute on the render-thread
@@ -113,7 +118,8 @@ namespace TEST {
 		Handle<HwVertexBuffer> createVertexBufferS();
 		void createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih);
 
-
+		Handle<HwIndexBuffer> createIndexBufferS();
+		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
 	};
 
 } // namespace filament::backend
