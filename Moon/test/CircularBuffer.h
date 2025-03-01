@@ -1,6 +1,4 @@
 #pragma once 
-
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -56,23 +54,18 @@ namespace MOON {
 	private:
 		void* alloc(size_t size) noexcept;
 		void dealloc() noexcept;
-
 		// pointer to the beginning of the circular buffer (constant)
 		void* mData = nullptr;
 		int mAshmemFd = -1;
 
 		// size of the circular buffer (constant)
 		size_t const mSize;
-
 		// pointer to the beginning of recorded data
 		void* mTail = nullptr;
-
 		// pointer to the next available command
 		void* mHead = nullptr;
-
 		// system page size
 		static size_t sPageSize;
 	};
-
-} // namespace filament::backend
+}
 

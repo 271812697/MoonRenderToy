@@ -1,10 +1,6 @@
-
-
 #include "CommandBufferQueue.h"
 #include "CircularBuffer.h"
 #include "CommandStream.h"
-
-
 #include <algorithm>
 #include <mutex>
 #include <iterator>

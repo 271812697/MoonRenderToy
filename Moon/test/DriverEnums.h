@@ -1030,8 +1030,6 @@ namespace MOON {
 		TargetBufferFlags discardEnd;
 	};
 
-
-
 	struct PolygonOffset {
 		float slope = 0;        // factor in GL-speak
 		float constant = 0;     // units in GL-speak

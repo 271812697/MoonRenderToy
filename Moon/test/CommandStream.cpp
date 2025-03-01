@@ -1,16 +1,10 @@
 #include "CommandStream.h"
-
 #include <cstddef>
 #include <functional>
 #include <string>
 #include <utility>
 
-
 namespace MOON {
-
-
-
-	// ------------------------------------------------------------------------------------------------
 
 	CommandStream::CommandStream(Driver& driver, CircularBuffer& buffer) noexcept
 		: mDriver(driver),
@@ -22,7 +16,6 @@ namespace MOON {
 	}
 
 	void CommandStream::execute(void* buffer) {
-
 		mDriver.execute([this, buffer]() {
 			Driver& __restrict driver = mDriver;
 			CommandBase* __restrict base = static_cast<CommandBase*>(buffer);

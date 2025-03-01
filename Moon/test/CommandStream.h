@@ -2,17 +2,12 @@
 #include "CircularBuffer.h"
 #include "Dispatcher.h"
 #include "Driver.h"
-
 #include "DriverEnums.h"
-
-
 #include <cstddef>
 #include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
-
-
 #include <thread>
 
 #include <assert.h>
@@ -21,7 +16,6 @@
 
 // Set to true to print every command out on log.d. This requires RTTI and DEBUG
 #define DEBUG_COMMAND_STREAM false
-
 namespace MOON {
 
 	class CommandBase {
@@ -48,7 +42,6 @@ namespace MOON {
 			mExecute(driver, this, &next);
 			return reinterpret_cast<CommandBase*>(reinterpret_cast<intptr_t>(this) + next);
 		}
-
 		inline ~CommandBase() noexcept = default;
 
 	private:
@@ -143,7 +136,6 @@ namespace MOON {
 	};
 
 	// ------------------------------------------------------------------------------------------------
-
 	class NoopCommand : public CommandBase {
 		intptr_t mNext;
 		static void execute(Driver&, CommandBase* self, intptr_t* next) noexcept {
@@ -155,9 +147,6 @@ namespace MOON {
 	};
 
 	// ------------------------------------------------------------------------------------------------
-
-
-
 	class CommandStream {
 		template<typename T>
 		struct AutoExecute {
@@ -252,5 +241,4 @@ namespace MOON {
 	PodType* CommandStream::allocatePod(size_t count, size_t alignment) noexcept {
 		return static_cast<PodType*>(allocate(count * sizeof(PodType), alignment));
 	}
-
-} // namespace filament::backend
+}

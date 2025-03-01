@@ -114,30 +114,16 @@ namespace MOON {
 		DriverBase() noexcept;
 		~DriverBase() noexcept override;
 
-
-
-
-
-		// --------------------------------------------------------------------------------------------
-		// Privates
-		// --------------------------------------------------------------------------------------------
-
 	protected:
 		class CallbackDataDetails;
 
-
-
-
 	private:
 		std::mutex mPurgeLock;
-
-
 		std::thread mServiceThread;
 		std::mutex mServiceThreadLock;
 		std::condition_variable mServiceThreadCondition;
 
 		bool mExitRequested = false;
 	};
-
 
 }
