@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
 		LLGL::SwapChainDescriptor swapChainDesc;
 		{
-			swapChainDesc.resolution = { 800 * resScale, 600 * resScale };
+			swapChainDesc.resolution = { 1600 * resScale, 1000 * resScale };
 			swapChainDesc.depthBits = 0; // We don't need a depth buffer for this example
 			swapChainDesc.stencilBits = 0; // We don't need a stencil buffer for this example
 #if ENABLE_MULTISAMPLING
@@ -97,9 +97,9 @@ int main(int argc, char* argv[])
 
 		Vertex vertices[] =
 		{
-			{ {  0,  s }, { 255, 0, 0, 255 } }, // 1st vertex: center-top, red
-			{ {  s, -s }, { 0, 255, 0, 255 } }, // 2nd vertex: right-bottom, green
-			{ { -s, -s }, { 0, 0, 255, 255 } }, // 3rd vertex: left-bottom, blue
+			{ {  0,  2 * s }, { 255, 0, 0, 255 } }, // 1st vertex: center-top, red
+			{ {  2 * s, -2 * s }, { 0, 255, 0, 255 } }, // 2nd vertex: right-bottom, green
+			{ { -2 * s, -2 * s }, { 0, 0, 255, 255 } }, // 3rd vertex: left-bottom, blue
 		};
 
 		// Vertex format
@@ -135,13 +135,9 @@ int main(int argc, char* argv[])
 		{
 			if (std::find(languages.begin(), languages.end(), LLGL::ShadingLanguage::GLSL_140) != languages.end())
 			{
-#ifdef __APPLE__
-				vertShaderDesc = { LLGL::ShaderType::Vertex,   "Example.140core.vert" };
-				fragShaderDesc = { LLGL::ShaderType::Fragment, "Example.140core.frag" };
-#else
+
 				vertShaderDesc = { LLGL::ShaderType::Vertex,   "Example.vert" };
 				fragShaderDesc = { LLGL::ShaderType::Fragment, "Example.frag" };
-#endif
 			}
 			else
 			{
