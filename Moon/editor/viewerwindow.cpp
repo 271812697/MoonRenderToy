@@ -6,6 +6,8 @@
 #include "renderer/Guizmo.h"
 #include "core/read_mesh.h"
 #include "algorithm/mesh_triangulate.h"
+#include "test/TestInstance.h"
+#include "test/CommandStream.h"
 #include "Guizmo/RenderWindowInteractor.h"
 #include "Guizmo/ExecuteCommand.h"
 #include "Guizmo/BoxWidget2.h"
@@ -168,7 +170,7 @@ namespace MOON {
 	ViewerWindow::ViewerWindow(QWidget* parent) :
 		QOpenGLWidget(parent)
 	{
-		
+
 		if (viewer_instance == nullptr) {
 			viewer_instance = this;
 			//设置可以捕获鼠标移动消息
@@ -179,20 +181,21 @@ namespace MOON {
 			format.setSamples(4);
 			this->setFormat(format);
 			if (windowInteractor == nullptr) {
-                 windowInteractor=vtkRenderWindowInteractor::New();
-				 windowInteractor->Enable();
-				 boxWidget = vtkBoxWidget2::New();
-				 boxWidget->SetInteractor(windowInteractor);
-				 boxWidget->SetEnabled(1);
+				windowInteractor = vtkRenderWindowInteractor::New();
+				windowInteractor->Enable();
+				boxWidget = vtkBoxWidget2::New();
+				boxWidget->SetInteractor(windowInteractor);
+				boxWidget->SetEnabled(1);
 
 			}
-			
+
+
 		}
 	}
 
 	ViewerWindow::~ViewerWindow()
 	{
-		 windowInteractor->Terminate();
+		windowInteractor->Terminate();
 	}
 
 	void ViewerWindow::initializeGL()
@@ -202,7 +205,11 @@ namespace MOON {
 		OpenGLProcAddressHelper::ctx = context();
 		//CUSTOM_GL_API::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
+		TEST::TestInstance::Instance().getCommandStream()->test(8);
+		TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
 
+			std::cout << "say hello" << std::endl;
+			});
 		viewer.append_mesh();
 		viewer.append_mesh();
 		viewer.append_mesh();
@@ -229,6 +236,8 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
+		TEST::TestInstance::Instance().flush();
+		TEST::TestInstance::Instance().execute();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		guizmoRender->Clear();
 		viewer.draw();

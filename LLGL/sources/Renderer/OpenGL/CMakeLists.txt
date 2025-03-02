@@ -92,29 +92,9 @@ list(
     "${PROJECT_SOURCE_DIR}/Shader/GLProgramPipeline.h"
 )
 
-if(WIN32)
-    find_source_files(FilesRendererGLPlatform       CXX ${PROJECT_SOURCE_DIR}/Platform/Win32)
-    find_source_files(FilesIncludeGLPlatform        INC ${BACKEND_INCLUDE_DIR}/OpenGL/Win32)
-elseif(APPLE)
-    if(LLGL_MOBILE_PLATFORM)
-        find_source_files(FilesRendererGLPlatform   OBJC ${PROJECT_SOURCE_DIR}/Platform/IOS)
-        find_source_files(FilesIncludeGLPlatform    INC ${BACKEND_INCLUDE_DIR}/OpenGL/IOS)
-    else()
-        find_source_files(FilesRendererGLPlatform   OBJC ${PROJECT_SOURCE_DIR}/Platform/MacOS)
-        find_source_files(FilesIncludeGLPlatform    INC ${BACKEND_INCLUDE_DIR}/OpenGL/MacOS)
-    endif()
-elseif(UNIX)
-    if(LLGL_ANDROID_PLATFORM)
-        find_source_files(FilesRendererGLPlatform   CXX ${PROJECT_SOURCE_DIR}/Platform/Android)
-        find_source_files(FilesIncludeGLPlatform    INC ${BACKEND_INCLUDE_DIR}/OpenGL/Android)
-    elseif(EMSCRIPTEN)
-        find_source_files(FilesRendererGLPlatform   CXX ${PROJECT_SOURCE_DIR}/Platform/Wasm)
-        find_source_files(FilesIncludeGLPlatform    INC ${BACKEND_INCLUDE_DIR}/OpenGL/Wasm)        
-    else()
-        find_source_files(FilesRendererGLPlatform   CXX ${PROJECT_SOURCE_DIR}/Platform/Linux)
-        find_source_files(FilesIncludeGLPlatform    INC ${BACKEND_INCLUDE_DIR}/OpenGL/Linux)
-    endif()
-endif()
+
+find_source_files(FilesRendererGLPlatform       CXX ${PROJECT_SOURCE_DIR}/Platform/Win32)
+find_source_files(FilesIncludeGLPlatform        INC ${BACKEND_INCLUDE_DIR}/OpenGL/Win32)
 
 
 # === Source group folders ===
@@ -150,35 +130,7 @@ endif()
 
 # === Projects ===
 
-if(LLGL_BUILD_RENDERER_WEBGL)
-    # WebGL Renderer
-    set(
-        FilesWebGL
-        ${FilesRendererGL}
-        ${FilesRendererGLBuffer}
-        ${FilesRendererGLCommand}
-        ${FilesRendererGLExt}
-        ${FilesRendererGLPlatform}
-        ${FilesRendererGLPlatformBase}
-        ${FilesRendererGLRenderState}
-        ${FilesRendererGLES3Shader}
-        ${FilesRendererGLTexture}
-        ${FilesRendererGLProfile}
-        ${FilesRendererGLProfileWebGL}
-        ${FilesIncludeGL}
-        ${FilesIncludeGLPlatform}
-    )
-    
-    include("${EXTERNAL_MODULE_DIR}/FindOpenGLES3.cmake")
-    if(OPENGLES_FOUND)
-        include_directories(${OPENGLES_INCLUDE_DIR})
-        add_llgl_module(LLGL_WebGL LLGL_BUILD_RENDERER_WEBGL "${FilesWebGL}")
-        target_link_libraries(LLGL_WebGL LLGL ${OPENGLES_LIBRARIES})
-        ADD_PROJECT_DEFINE(LLGL_WebGL LLGL_WEBGL)
-    else()
-        message(FATAL_ERROR "LLGL_BUILD_RENDERER_WEBGL failed: missing OpenGLES libraries")
-    endif()
-endif()
+
 
 if(LLGL_BUILD_RENDERER_OPENGLES3)
     # OpenGLES Renderer
