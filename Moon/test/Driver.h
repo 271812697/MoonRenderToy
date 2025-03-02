@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "DriverBase.h"
+#include "OpenGLContext.h"
 #include "DriverEnums.h"
 #include "HandleAllocator.h"
 // Command debugging off. debugging virtuals are not called.
@@ -20,10 +21,7 @@
 
 namespace TEST {
 
-	class BufferDescriptor;
-	class CallbackHandler;
-	class PixelBufferDescriptor;
-	class Program;
+
 
 
 	class Dispatcher;
@@ -75,6 +73,7 @@ namespace TEST {
 
 		void test(int val);
 	private:
+		std::shared_ptr<OpenGLContext> mContext;
 
 		HandleAllocator<32, 96, 136> mHandleAllocator;
 		template<typename D, typename ... ARGS>

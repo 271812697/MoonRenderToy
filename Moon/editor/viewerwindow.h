@@ -36,7 +36,7 @@ namespace MOON {
 	private:
 		bool processEventByWindowInteractor(QEvent* event);
 		bool blockMouseMessage = false;
-		vtkRenderWindowInteractor* windowInteractor=nullptr;
+		vtkRenderWindowInteractor* windowInteractor = nullptr;
 		vtkBoxWidget2* boxWidget = nullptr;
 
 	public Q_SLOTS:

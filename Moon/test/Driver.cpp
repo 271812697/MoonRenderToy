@@ -5,7 +5,7 @@
 #include <functional>
 #include <mutex>
 #include <utility>
-#include<glad/glad.h>
+#include <glad/glad.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <iostream>
@@ -23,6 +23,7 @@ namespace TEST {
 
 
 		}
+		mContext = std::make_shared<OpenGLContext>();
 	}
 
 	Driver::~Driver()
