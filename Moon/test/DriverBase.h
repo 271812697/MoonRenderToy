@@ -1,11 +1,12 @@
 #pragma once
-#include"DriverEnums.h"
+#include "DriverEnums.h"
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <utility>
 #include <vector>
+#include "utils/CString.h"
 
 #include <stdint.h>
 #include <assert.h>
@@ -65,8 +66,8 @@ namespace TEST {
 
 
 	struct HwProgram : public HwBase {
-		std::string name;
-		explicit HwProgram(std::string name) noexcept : name(std::move(name)) { }
+		utils::CString name;
+		explicit HwProgram(utils::CString name) noexcept : name(std::move(name)) { }
 		HwProgram() noexcept = default;
 	};
 

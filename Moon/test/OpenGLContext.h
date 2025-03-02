@@ -73,7 +73,7 @@ namespace TEST {
 
 		void resetState() noexcept;
 
-		inline void useProgram(unsigned int program) noexcept;
+		void useProgram(unsigned int program) noexcept;
 
 		void pixelStore(unsigned int, int) noexcept;
 		inline void activeTexture(unsigned int unit) noexcept;

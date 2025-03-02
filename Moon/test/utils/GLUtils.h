@@ -16,15 +16,11 @@ namespace TEST {
 		GLenum checkFramebufferStatus(GLenum target, const char* function, size_t line) noexcept;
 		void assertFramebufferStatus(GLenum target, const char* function, size_t line) noexcept;
 
-#ifdef NDEBUG
-#   define CHECK_GL_ERROR(out)
-#   define CHECK_GL_ERROR_NON_FATAL(out)
-#   define CHECK_GL_FRAMEBUFFER_STATUS(out, target)
-#else
-#   define CHECK_GL_ERROR { GLUtils::assertGLError( __func__, __LINE__); }
-#   define CHECK_GL_ERROR_NON_FATAL { GLUtils::checkGLError(__func__, __LINE__); }
-#   define CHECK_GL_FRAMEBUFFER_STATUS( target) { GLUtils::checkFramebufferStatus(target, __func__, __LINE__); }
-#endif
+
+#define CHECK_GL_ERROR { GLUtils::assertGLError( __func__, __LINE__); }
+#define CHECK_GL_ERROR_NON_FATAL { GLUtils::checkGLError(__func__, __LINE__); }
+#define CHECK_GL_FRAMEBUFFER_STATUS( target) { GLUtils::checkFramebufferStatus(target, __func__, __LINE__); }
+
 
 		constexpr inline GLuint getComponentCount(ElementType type) noexcept {
 			using ElementType = ElementType;
