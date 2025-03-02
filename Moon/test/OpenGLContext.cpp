@@ -1,15 +1,9 @@
-
-
 #include "OpenGLContext.h"
-
-
 #include "DriverEnums.h"
-
-
+#include "utils/GLUtils.h"
 #include <functional>
 #include <string_view>
 #include <utility>
-
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +33,7 @@ namespace TEST {
 
 
 
-		OpenGLContext::initExtensions(&ext, state.major, state.minor);
+		//OpenGLContext::initExtensions(&ext, state.major, state.minor);
 
 		OpenGLContext::initProcs(&procs, ext, state.major, state.minor);
 
@@ -451,75 +445,7 @@ namespace TEST {
 #endif
 	}
 
-	FeatureLevel OpenGLContext::resolveFeatureLevel(GLint major, GLint minor,
-		Extensions const& exts,
-		Gets const& gets,
-		Bugs const& bugs) noexcept {
 
-		constexpr auto const caps3 = FEATURE_LEVEL_CAPS[+FeatureLevel::FEATURE_LEVEL_3];
-		constexpr GLint MAX_VERTEX_SAMPLER_COUNT = caps3.MAX_VERTEX_SAMPLER_COUNT;
-		constexpr GLint MAX_FRAGMENT_SAMPLER_COUNT = caps3.MAX_FRAGMENT_SAMPLER_COUNT;
-
-		(void)exts;
-		(void)gets;
-		(void)bugs;
-
-		FeatureLevel featureLevel = FeatureLevel::FEATURE_LEVEL_1;
-
-#ifdef BACKEND_OPENGL_VERSION_GLES
-		if (major == 3) {
-			// Runtime OpenGL version is ES 3.x
-			assert_invariant(gets.max_texture_image_units >= 16);
-			assert_invariant(gets.max_combined_texture_image_units >= 32);
-			if (minor >= 1) {
-				// figure out our feature level
-				if (exts.EXT_texture_cube_map_array) {
-					featureLevel = FeatureLevel::FEATURE_LEVEL_2;
-					if (gets.max_texture_image_units >= MAX_FRAGMENT_SAMPLER_COUNT &&
-						gets.max_combined_texture_image_units >=
-						(MAX_FRAGMENT_SAMPLER_COUNT + MAX_VERTEX_SAMPLER_COUNT)) {
-						featureLevel = FeatureLevel::FEATURE_LEVEL_3;
-					}
-				}
-			}
-		}
-#   ifndef IOS // IOS is guaranteed to have ES3.x
-		else if (UTILS_UNLIKELY(major == 2)) {
-			// Runtime OpenGL version is ES 2.x
-			// note: mandatory extensions (all supported by Mali-400 and Adreno 304)
-			//      OES_depth_texture
-			//      OES_depth24
-			//      OES_packed_depth_stencil
-			//      OES_rgb8_rgba8
-			//      OES_standard_derivatives
-			//      OES_texture_npot
-			featureLevel = FeatureLevel::FEATURE_LEVEL_0;
-		}
-#   endif // IOS
-#else
-		assert_invariant(gets.max_texture_image_units >= 16);
-		assert_invariant(gets.max_combined_texture_image_units >= 32);
-		if (major == 4) {
-			assert_invariant(minor >= 1);
-			if (minor >= 3) {
-				// cubemap arrays are available as of OpenGL 4.0
-				featureLevel = FeatureLevel::FEATURE_LEVEL_2;
-				// figure out our feature level
-				if (gets.max_texture_image_units >= MAX_FRAGMENT_SAMPLER_COUNT &&
-					gets.max_combined_texture_image_units >=
-					(MAX_FRAGMENT_SAMPLER_COUNT + MAX_VERTEX_SAMPLER_COUNT)) {
-					featureLevel = FeatureLevel::FEATURE_LEVEL_3;
-				}
-			}
-		}
-#endif
-
-		if (bugs.force_feature_level0) {
-			featureLevel = FeatureLevel::FEATURE_LEVEL_0;
-		}
-
-		return featureLevel;
-	}
 
 #ifdef BACKEND_OPENGL_VERSION_GLES
 
@@ -711,7 +637,7 @@ namespace TEST {
 
 	void OpenGLContext::bindBuffer(GLenum target, GLuint buffer) noexcept {
 		if (target == GL_ELEMENT_ARRAY_BUFFER) {
-			constexpr size_t targetIndex = getIndexForBufferTarget(GL_ELEMENT_ARRAY_BUFFER);
+			size_t targetIndex = getIndexForBufferTarget(GL_ELEMENT_ARRAY_BUFFER);
 			// GL_ELEMENT_ARRAY_BUFFER is a special case, where the currently bound VAO remembers
 			// the index buffer, unless there are no VAO bound (see: bindVertexArray)
 			assert(state.vao.p);
@@ -765,21 +691,21 @@ namespace TEST {
 	}
 
 	void OpenGLContext::unbindTexture(
-		UTILS_UNUSED_IN_RELEASE GLenum target, GLuint texture_id) noexcept {
+		[[maybe_unused]] GLenum target, GLuint texture_id) noexcept {
 		// unbind this texture from all the units it might be bound to
 		// no need unbind the texture from FBOs because we're not tracking that state (and there is
 		// no need to).
 		// Never attempt to unbind texture 0. This could happen with external textures w/ streaming if
 		// never populated.
 		if (texture_id) {
-			UTILS_NOUNROLL
-				for (GLuint unit = 0; unit < MAX_TEXTURE_UNIT_COUNT; unit++) {
-					if (state.textures.units[unit].id == texture_id) {
-						// if this texture is bound, it should be at the same target
-						assert_invariant(state.textures.units[unit].target == target);
-						unbindTextureUnit(unit);
-					}
+
+			for (GLuint unit = 0; unit < MAX_TEXTURE_UNIT_COUNT; unit++) {
+				if (state.textures.units[unit].id == texture_id) {
+					// if this texture is bound, it should be at the same target
+					assert(state.textures.units[unit].target == target);
+					unbindTextureUnit(unit);
 				}
+			}
 		}
 	}
 
@@ -817,8 +743,7 @@ namespace TEST {
 		}
 
 #ifndef FILAMENT_SILENCE_NOT_SUPPORTED_BY_ES2
-		assert(mFeatureLevel >= FeatureLevel::FEATURE_LEVEL_1 ||
-			(target != GL_UNIFORM_BUFFER && target != GL_TRANSFORM_FEEDBACK_BUFFER));
+		assert((target != GL_UNIFORM_BUFFER && target != GL_TRANSFORM_FEEDBACK_BUFFER));
 
 		if (target == GL_UNIFORM_BUFFER || target == GL_TRANSFORM_FEEDBACK_BUFFER) {
 			auto& indexedBinding = state.buffers.targets[targetIndex];
@@ -868,7 +793,7 @@ namespace TEST {
 				std::min(gets.max_anisotropy, anisotropy));
 		}
 #endif
-		CHECK_GL_ERROR(utils::slog.e)
+		CHECK_GL_ERROR
 			mSamplerMap[params] = s;
 		return s;
 	}
@@ -997,16 +922,16 @@ namespace TEST {
 				{ GL_TEXTURE_2D_ARRAY,          true },
 				{ GL_TEXTURE_CUBE_MAP,          true },
 				{ GL_TEXTURE_3D,                true },
-	#if defined(BACKEND_OPENGL_LEVEL_GLES31)
+
 				{ GL_TEXTURE_2D_MULTISAMPLE,    true },
-	#endif
+
 	#if !defined(__EMSCRIPTEN__)
 	#if defined(GL_OES_EGL_image_external)
 				{ GL_TEXTURE_EXTERNAL_OES,      ext.OES_EGL_image_external_essl3 },
 	#endif
-	#if defined(BACKEND_OPENGL_VERSION_GL) || defined(GL_EXT_texture_cube_map_array)
+
 				{ GL_TEXTURE_CUBE_MAP_ARRAY,    ext.EXT_texture_cube_map_array },
-	#endif
+
 	#endif
 		};
 		for (GLint unit = 0; unit < gets.max_combined_texture_image_units; ++unit) {
@@ -1042,19 +967,19 @@ namespace TEST {
 		}
 
 		// state.window
-		glScissor(
-			state.window.scissor.x,
-			state.window.scissor.y,
-			state.window.scissor.z,
-			state.window.scissor.w
-		);
-		glViewport(
-			state.window.viewport.x,
-			state.window.viewport.y,
-			state.window.viewport.z,
-			state.window.viewport.w
-		);
-		glDepthRangef(state.window.depthRange.x, state.window.depthRange.y);
+		//glScissor(
+		//	state.window.scissor.x,
+		//	state.window.scissor.y,
+		//	state.window.scissor.z,
+		//	state.window.scissor.w
+		//);
+		//glViewport(
+		//	state.window.viewport.x,
+		//	state.window.viewport.y,
+		//	state.window.viewport.z,
+		//	state.window.viewport.w
+		//);
+		//glDepthRangef(state.window.depthRange.x, state.window.depthRange.y);
 	}
 
 

@@ -69,8 +69,8 @@ namespace TEST {
 
 
 
-		constexpr        inline size_t getIndexForCap(unsigned int cap) noexcept;
-		constexpr static inline size_t getIndexForBufferTarget(unsigned int target) noexcept;
+		size_t getIndexForCap(unsigned int cap) noexcept;
+		static  size_t getIndexForBufferTarget(unsigned int target) noexcept;
 
 
 
@@ -515,7 +515,7 @@ namespace TEST {
 
 	// ------------------------------------------------------------------------------------------------
 
-	constexpr size_t OpenGLContext::getIndexForCap(unsigned int cap) noexcept { //NOLINT
+	size_t OpenGLContext::getIndexForCap(unsigned int cap) noexcept { //NOLINT
 		size_t index = 0;
 		switch (cap) {
 		case GL_BLEND:                          index = 0; break;
@@ -540,7 +540,7 @@ namespace TEST {
 		return index;
 	}
 
-	constexpr size_t OpenGLContext::getIndexForBufferTarget(unsigned int target) noexcept {
+	size_t OpenGLContext::getIndexForBufferTarget(unsigned int target) noexcept {
 		size_t index = 0;
 		switch (target) {
 
