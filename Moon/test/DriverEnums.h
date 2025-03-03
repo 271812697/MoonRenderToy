@@ -34,6 +34,10 @@ namespace TEST {
 
 	static constexpr size_t MAX_VERTEX_ATTRIBUTE_COUNT = 16;   // This is guaranteed by OpenGL ES.
 	static constexpr size_t MAX_SAMPLER_COUNT = 62;   // Maximum needed at feature level 3.
+	static constexpr size_t MAX_DESCRIPTOR_COUNT = 64;   // per set
+	static constexpr size_t MAX_DESCRIPTOR_SET_COUNT = 4;    // This is guaranteed by Vulkan.
+	static constexpr size_t CONFIG_UNIFORM_BINDING_COUNT = 9;   // This is guaranteed by OpenGL ES.
+	static constexpr size_t CONFIG_SAMPLER_BINDING_COUNT = 4;   // This is guaranteed by OpenGL ES.
 	enum class ElementType : uint8_t {
 		BYTE,
 		BYTE2,
@@ -74,6 +78,16 @@ namespace TEST {
 		SHADER_STORAGE
 	};
 
+	enum class DescriptorType : uint8_t {
+		UNIFORM_BUFFER,
+		SHADER_STORAGE_BUFFER,
+		SAMPLER,
+		INPUT_ATTACHMENT,
+		SAMPLER_EXTERNAL
+	};
+	using descriptor_set_t = uint8_t;
+
+	using descriptor_binding_t = uint8_t;
 	//! Vertex attribute descriptor
 	struct Attribute {
 		//! attribute is normalized (remapped between 0 and 1)
@@ -379,4 +393,79 @@ namespace TEST {
 		BACK,               //!< Back face culling, only front faces are visible
 		FRONT_AND_BACK      //!< Front and Back, geometry is not visible
 	};
-} // namespace filament::backend
+	/**
+ * Supported uniform types
+ */
+	enum class UniformType : uint8_t {
+		BOOL,
+		BOOL2,
+		BOOL3,
+		BOOL4,
+		FLOAT,
+		FLOAT2,
+		FLOAT3,
+		FLOAT4,
+		INT,
+		INT2,
+		INT3,
+		INT4,
+		UINT,
+		UINT2,
+		UINT3,
+		UINT4,
+		MAT3,   //!< a 3x3 float matrix
+		MAT4,   //!< a 4x4 float matrix
+		STRUCT
+	};
+	/**
+ * Shader compiler priority queue
+ */
+	enum class CompilerPriorityQueue : uint8_t {
+		HIGH,
+		LOW
+	};
+	enum class ShaderStage : uint8_t {
+		VERTEX = 0,
+		FRAGMENT = 1,
+		COMPUTE = 2
+	};
+
+	static constexpr size_t PIPELINE_STAGE_COUNT = 2;
+	enum class ShaderStageFlags : uint8_t {
+		NONE = 0,
+		VERTEX = 0x1,
+		FRAGMENT = 0x2,
+		COMPUTE = 0x4,
+		ALL_SHADER_STAGE_FLAGS = VERTEX | FRAGMENT | COMPUTE
+	};
+	enum class ShaderLanguage {
+		ESSL1 = 0,
+		ESSL3 = 1,
+		SPIRV = 2,
+		MSL = 3,
+		METAL_LIBRARY = 4,
+	};
+
+	static constexpr const char* shaderLanguageToString(ShaderLanguage shaderLanguage) {
+		switch (shaderLanguage) {
+		case ShaderLanguage::ESSL1:
+			return "ESSL 1.0";
+		case ShaderLanguage::ESSL3:
+			return "ESSL 3.0";
+		case ShaderLanguage::SPIRV:
+			return "SPIR-V";
+		case ShaderLanguage::MSL:
+			return "MSL";
+		case ShaderLanguage::METAL_LIBRARY:
+			return "Metal precompiled library";
+		}
+	}
+	/**
+	 * Supported constant parameter types
+	 */
+	enum class ConstantType : uint8_t {
+		INT,
+		FLOAT,
+		BOOL
+	};
+}

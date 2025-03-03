@@ -2,9 +2,6 @@
 
 #include "DriverBase.h"
 #include "DriverEnums.h"
-
-
-
 #include <stdint.h>
 
 namespace TEST {

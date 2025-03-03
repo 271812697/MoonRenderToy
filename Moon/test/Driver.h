@@ -4,8 +4,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "DriverBase.h"
+#include "GLBufferObject.h"
+#include "OpenGLContext.h"
 #include "DriverEnums.h"
 #include "HandleAllocator.h"
+#include "ShaderCompilerService.h"
 // Command debugging off. debugging virtuals are not called.
 // This is automatically enabled in DEBUG builds.
 #define FILAMENT_DEBUG_COMMANDS_NONE         0x0
@@ -20,10 +23,7 @@
 
 namespace TEST {
 
-	class BufferDescriptor;
-	class CallbackHandler;
-	class PixelBufferDescriptor;
-	class Program;
+
 
 
 	class Dispatcher;
@@ -31,12 +31,12 @@ namespace TEST {
 
 	class Driver {
 	public:
-
+		static size_t getElementTypeSize(ElementType type) noexcept;
 		Driver();
 
 		virtual ~Driver();
 
-
+		OpenGLContext& getContext() noexcept { return *mContext; }
 		struct GLVertexBufferInfo : public HwVertexBufferInfo {
 			GLVertexBufferInfo() noexcept = default;
 			GLVertexBufferInfo(uint8_t bufferCount, uint8_t attributeCount,
@@ -76,7 +76,16 @@ namespace TEST {
 		void test(int val);
 	private:
 
+		friend class OpenGLProgram;
+		friend class ShaderCompilerService;
+
+		std::shared_ptr<OpenGLContext> mContext;
+
 		HandleAllocator<32, 96, 136> mHandleAllocator;
+		ShaderCompilerService mShaderCompilerService;
+		ShaderCompilerService& getShaderCompilerService() noexcept {
+			return mShaderCompilerService;
+		}
 		template<typename D, typename ... ARGS>
 		Handle<D> initHandle(ARGS&& ... args) {
 			return mHandleAllocator.allocateAndConstruct<D>(std::forward<ARGS>(args) ...);
@@ -120,6 +129,7 @@ namespace TEST {
 
 		Handle<HwIndexBuffer> createIndexBufferS();
 		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
+		void createBufferObjectR(Handle<HwBufferObject> boh, uint32_t byteCount, BufferObjectBinding bindingType, BufferUsage usage);
 	};
 
 } // namespace filament::backend

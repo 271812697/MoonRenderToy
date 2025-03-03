@@ -5,8 +5,8 @@
 #include <string_view>
 #include <utility>
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
+#include <iostream>
 
 // change to true to display all GL extensions in the console on start-up
 #define DEBUG_PRINT_EXTENSIONS false
@@ -14,7 +14,122 @@
 using namespace utils;
 
 namespace TEST {
+	static constexpr const size_t MAX_TEXTURE_UNIT_COUNT = MAX_SAMPLER_COUNT;
+	static constexpr const size_t DUMMY_TEXTURE_BINDING = 7; // highest binding guaranteed to work with ES2
+	static constexpr const size_t MAX_BUFFER_BINDINGS = 32;
+	struct State {
+		State() noexcept = default;
+		// make sure we don't copy this state by accident
+		State(State const& rhs) = delete;
+		State(State&& rhs) noexcept = delete;
+		State& operator=(State const& rhs) = delete;
+		State& operator=(State&& rhs) noexcept = delete;
 
+		int major = 0;
+		int minor = 0;
+
+		char const* vendor = nullptr;
+		char const* renderer = nullptr;
+		char const* version = nullptr;
+		char const* shader = nullptr;
+
+		unsigned int draw_fbo = 0;
+		unsigned int read_fbo = 0;
+
+		struct {
+			unsigned int use = 0;
+		} program;
+
+		struct {
+			OpenGLContext::RenderPrimitive* p = nullptr;
+		} vao;
+
+		struct {
+			unsigned int frontFace = GL_CCW;
+			unsigned int cullFace = GL_BACK;
+			unsigned int blendEquationRGB = GL_FUNC_ADD;
+			unsigned int blendEquationA = GL_FUNC_ADD;
+			unsigned int blendFunctionSrcRGB = GL_ONE;
+			unsigned int blendFunctionSrcA = GL_ONE;
+			unsigned int blendFunctionDstRGB = GL_ZERO;
+			unsigned int blendFunctionDstA = GL_ZERO;
+			unsigned char colorMask = GL_TRUE;
+			unsigned char depthMask = GL_TRUE;
+			unsigned int depthFunc = GL_LESS;
+		} raster;
+
+		struct {
+			struct StencilFunc {
+				unsigned int func = GL_ALWAYS;
+				int ref = 0;
+				unsigned int mask = ~unsigned int(0);
+				bool operator != (StencilFunc const& rhs) const noexcept {
+					return func != rhs.func || ref != rhs.ref || mask != rhs.mask;
+				}
+			};
+			struct StencilOp {
+				unsigned int sfail = GL_KEEP;
+				unsigned int dpfail = GL_KEEP;
+				unsigned int dppass = GL_KEEP;
+				bool operator != (StencilOp const& rhs) const noexcept {
+					return sfail != rhs.sfail || dpfail != rhs.dpfail || dppass != rhs.dppass;
+				}
+			};
+			struct {
+				StencilFunc func;
+				StencilOp op;
+				unsigned int stencilMask = ~unsigned int(0);
+			} front, back;
+		} stencil;
+
+		struct PolygonOffset {
+			float factor = 0;
+			float units = 0;
+			bool operator != (PolygonOffset const& rhs) const noexcept {
+				return factor != rhs.factor || units != rhs.units;
+			}
+		} polygonOffset;
+
+		struct {
+			utils::bitset32 caps;
+		} enables;
+
+		struct {
+			struct {
+				struct {
+					unsigned int name = 0;
+					__int64 offset = 0;
+					__int64 size = 0;
+				} buffers[MAX_BUFFER_BINDINGS];
+			} targets[3];   // there are only 3 indexed buffer targets
+			unsigned int genericBinding[7] = {};
+		} buffers;
+
+		struct {
+			unsigned int active = 0;      // zero-based
+			struct {
+				unsigned int sampler = 0;
+				unsigned int target = 0;
+				unsigned int id = 0;
+			} units[MAX_TEXTURE_UNIT_COUNT];
+		} textures;
+
+		struct {
+			int row_length = 0;
+			int alignment = 4;
+		} unpack;
+
+		struct {
+			int alignment = 4;
+		} pack;
+
+		// struct {
+		 //    vec4gli scissor { 0 };
+		 //    vec4gli viewport { 0 };
+		 //    vec2glf depthRange { 0.0f, 1.0f };
+		// } window;
+		uint8_t age = 0;
+	} state;
 
 
 	bool OpenGLContext::queryOpenGLVersion(int* major, int* minor) noexcept
@@ -28,41 +143,24 @@ namespace TEST {
 	OpenGLContext::OpenGLContext() noexcept
 		: mSamplerMap(32)
 	{
-
 		state.vao.p = &mDefaultVAO;
-
 		// These queries work with all GL/GLES versions!
 		state.vendor = (char const*)glGetString(GL_VENDOR);
 		state.renderer = (char const*)glGetString(GL_RENDERER);
 		state.version = (char const*)glGetString(GL_VERSION);
 		state.shader = (char const*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-
-
-		state.major = 4;
-		state.minor = 5;
-
-
+		queryOpenGLVersion(&state.major, &state.minor);
 		OpenGLContext::initExtensions(&ext, state.major, state.minor);
-
 		OpenGLContext::initProcs(&procs, ext, state.major, state.minor);
-
-		OpenGLContext::initBugs(&bugs, ext, state.major, state.minor,
-			state.vendor, state.renderer, state.version, state.shader);
-
+		OpenGLContext::initBugs(&bugs, ext, state.major, state.minor, state.vendor, state.renderer, state.version, state.shader);
 		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &gets.max_renderbuffer_size);
 		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &gets.max_texture_image_units);
 		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &gets.max_combined_texture_image_units);
-
-
-
 		features.multisample_texture = true;
-
 		if (true) {
-
 			if (ext.EXT_texture_filter_anisotropic) {
 				glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &gets.max_anisotropy);
 			}
-
 			glGetIntegerv(GL_MAX_DRAW_BUFFERS,
 				&gets.max_draw_buffers);
 			glGetIntegerv(GL_MAX_SAMPLES,
@@ -77,21 +175,13 @@ namespace TEST {
 				&gets.num_program_binary_formats);
 			glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
 				&gets.uniform_buffer_offset_alignment);
-
 		}
-
-
-
 		for (auto [enabled, name, _] : mBugDatabase) {
 			if (enabled) {
 
 			}
 		}
-
-
 		assert(gets.max_draw_buffers >= 4); // minspec
-
-
 		setDefaultState();
 
 #ifdef GL_EXT_texture_filter_anisotropic
@@ -143,6 +233,26 @@ namespace TEST {
 			// TODO: this is only guaranteed for EGLPlatform, but that's the only one we care about.
 			mDestroyWithNormalContext.push_back(closure);
 		}
+	}
+
+	void OpenGLContext::updateTexImage(unsigned int target, unsigned int id) noexcept
+	{
+
+		//GL_TEXTURE_EXTERNAL_OES=36197
+		assert(target == 36197);
+		// if another target is bound to this texture unit, unbind that texture
+		if (state.textures.units[state.textures.active].target != target) {
+			glBindTexture(state.textures.units[state.textures.active].target, 0);
+			state.textures.units[state.textures.active].target = 36197;
+		}
+		// the texture is already bound to `target`, we just update our internal state
+		state.textures.units[state.textures.active].id = id;
+
+	}
+
+	void OpenGLContext::resetProgram() noexcept
+	{
+		state.program.use = 0;
 	}
 
 	void OpenGLContext::unbindEverything() noexcept {
@@ -222,8 +332,8 @@ namespace TEST {
 
 
 		if (ext.EXT_clip_cull_distance) {
-			//glEnable(GL_CLIP_DISTANCE0);
-			//glEnable(GL_CLIP_DISTANCE1);
+			glEnable(GL_CLIP_DISTANCE0);
+			glEnable(GL_CLIP_DISTANCE1);
 		}
 	}
 
@@ -499,9 +609,9 @@ namespace TEST {
 		for (GLint i = 0; i < n; i++) {
 			exts.emplace((const char*)glGetStringi(GL_EXTENSIONS, (GLuint)i));
 		}
-		if constexpr (DEBUG_PRINT_EXTENSIONS) {
+		if (true) {
 			for (auto extension : exts) {
-				//slog.d << "\"" << std::string_view(extension) << "\"\n";
+				std::cout << "\"" << std::string_view(extension) << "\"\n";
 			}
 
 		}

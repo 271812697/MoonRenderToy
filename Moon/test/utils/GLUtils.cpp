@@ -1,5 +1,6 @@
 #include "GLUtils.h"
-#include "../Driver.h"
+#include "test/Driver.h"
+#include <iostream>
 
 namespace TEST {
 
@@ -40,7 +41,7 @@ namespace TEST {
 			GLenum const error = glGetError();
 			if (error != GL_NO_ERROR) {
 				const char* string = getGLError(error);
-
+				std::cout << string << std::endl;
 			}
 			return error;
 		}
@@ -49,7 +50,7 @@ namespace TEST {
 		void assertGLError(const char* function, size_t line) noexcept {
 			GLenum const err = checkGLError(function, line);
 			if (err != GL_NO_ERROR) {
-
+				assert(false);
 			}
 		}
 
