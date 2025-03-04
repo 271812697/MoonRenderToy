@@ -111,7 +111,7 @@ namespace TEST {
 		};
 		using PreprocessorDefineList = std::vector<PreprocessorDefine>;
 
-
+		bool mIncludeEssl1 = true;
 		MaterialBuilder& noSamplerValidation(bool enabled) noexcept;
 
 		//! Enable generation of ESSL 1.0 code in FL0 materials.

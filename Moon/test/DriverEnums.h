@@ -9,6 +9,9 @@
 
 
 namespace TEST {
+
+
+
 	//! Texture sampler type
 	enum class SamplerType : uint8_t {
 		SAMPLER_2D,             //!< 2D texture
