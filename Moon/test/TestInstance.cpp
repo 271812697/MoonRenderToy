@@ -3,6 +3,7 @@
 #include "CircularBuffer.h"
 #include "CommandBufferQueue.h"
 #include "CommandStream.h"
+#include "MaterialCompiler.h"
 namespace TEST {
 
 	static constexpr const size_t MiB = 1024u * 1024u;
@@ -21,6 +22,7 @@ namespace TEST {
 		mData->buffer = std::shared_ptr<CommandBufferQueue>(new CommandBufferQueue(9 * MiB, 27 * MiB, false));
 		mData->api = std::make_shared<CommandStream>(*mData->driver.get(), mData->buffer->getCircularBuffer());
 
+		MaterialCompiler::compile("normalColor.mat");
 	}
 
 	void TestInstance::flush()
