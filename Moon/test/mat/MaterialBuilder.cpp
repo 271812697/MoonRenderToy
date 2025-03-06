@@ -3,6 +3,8 @@
 #include "BufferInterfaceBlock.h"
 #include "PushConstantDefinitions.h"
 #include "Includes.h"
+#include "SamplerInterfaceBlock.h"
+#include "test/mat/MaterialInfo.h"
 #include <algorithm>
 #include <atomic>
 #include <tuple>
@@ -421,6 +423,23 @@ namespace TEST {
 		return *this;
 	}
 
+	void MaterialBuilder::build()
+	{
+		if (mMaterialDomain == MaterialDomain::POST_PROCESS) {
+			mShading = Shading::UNLIT;
+		}
+		// Add a default color output.
+		if (mMaterialDomain == MaterialDomain::POST_PROCESS && mOutputs.empty()) {
+			output(VariableQualifier::OUT, OutputTarget::COLOR, Precision::DEFAULT, OutputType::FLOAT4, "color");
+		}
+		// Resolve all the #include directives within user code.
+		if (!mMaterialFragmentCode.resolveIncludes(mIncludeCallback, mFileName) ||
+			!mMaterialVertexCode.resolveIncludes(mIncludeCallback, mFileName)) {
+			;
+		}
+
+	}
+
 	bool MaterialBuilder::hasSamplerType(SamplerType samplerType) const noexcept {
 		for (size_t i = 0, c = mParameterCount; i < c; i++) {
 			auto const& param = mParameters[i];
@@ -435,6 +454,94 @@ namespace TEST {
 
 	void MaterialBuilder::prepareToBuild(MaterialInfo& info) noexcept
 	{
+		// Build the per-material sampler block and uniform block.
+		SamplerInterfaceBlock::Builder sbb;
+		BufferInterfaceBlock::Builder ibb;
+		// sampler bindings start at 1, 0 is the ubo
+		for (size_t i = 0, binding = 1, c = mParameterCount; i < c; i++) {
+			auto const& param = mParameters[i];
+			assert(!param.isSubpass());
+			if (param.isSampler()) {
+				sbb.add({ param.name.data(), param.name.size() },
+					binding++, param.samplerType, param.format, param.precision, param.multisample);
+			}
+			else if (param.isUniform()) {
+				ibb.add({ {{ param.name.data(), param.name.size() },
+						  uint32_t(param.size == 1u ? 0u : param.size), param.uniformType,
+						  param.precision } });
+			}
+		}
+
+		for (size_t i = 0, c = mSubpassCount; i < c; i++) {
+			auto const& param = mSubpasses[i];
+			assert(param.isSubpass());
+			// For now, we only support a single subpass for attachment 0.
+			// Subpasses belong to the "MaterialParams" block.
+			const uint8_t attachmentIndex = 0;
+			const uint8_t binding = 0;
+			//info.subpass = { CString("MaterialParams"), param.name, param.subpassType,
+							 //param.format, param.precision, attachmentIndex, binding };
+		}
+
+		for (auto const& buffer : mBuffers) {
+			info.buffers.emplace_back(buffer.get());
+		}
+
+		if (mSpecularAntiAliasing) {
+			ibb.add({
+					{ "_specularAntiAliasingVariance",  0, UniformType::FLOAT },
+					{ "_specularAntiAliasingThreshold", 0, UniformType::FLOAT },
+				});
+		}
+
+		if (mBlendingMode == BlendingMode::MASKED) {
+			ibb.add({ { "_maskThreshold", 0, UniformType::FLOAT, Precision::DEFAULT} });
+		}
+
+		if (mDoubleSidedCapability) {
+			ibb.add({ { "_doubleSided", 0, UniformType::BOOL, Precision::DEFAULT } });
+		}
+
+		mRequiredAttributes.set(VertexAttribute::POSITION);
+		if (mShading != Shading::UNLIT || mShadowMultiplier) {
+			mRequiredAttributes.set(VertexAttribute::TANGENTS);
+		}
+
+		info.sib = sbb.name("MaterialParams").build();
+		info.uib = ibb.name("MaterialParams").build();
+
+		info.isLit = isLit();
+		info.hasDoubleSidedCapability = mDoubleSidedCapability;
+		info.hasExternalSamplers = hasSamplerType(SamplerType::SAMPLER_EXTERNAL);
+		info.has3dSamplers = hasSamplerType(SamplerType::SAMPLER_3D);
+		info.specularAntiAliasing = mSpecularAntiAliasing;
+		info.clearCoatIorChange = mClearCoatIorChange;
+		info.flipUV = mFlipUV;
+		info.requiredAttributes = mRequiredAttributes;
+		info.blendingMode = mBlendingMode;
+		info.postLightingBlendingMode = mPostLightingBlendingMode;
+		info.shading = mShading;
+		info.hasShadowMultiplier = mShadowMultiplier;
+		info.hasTransparentShadow = mTransparentShadow;
+		info.multiBounceAO = mMultiBounceAO;
+		info.multiBounceAOSet = mMultiBounceAOSet;
+		info.specularAO = mSpecularAO;
+		info.specularAOSet = mSpecularAOSet;
+		info.refractionMode = mRefractionMode;
+		info.refractionType = mRefractionType;
+		info.reflectionMode = mReflectionMode;
+		info.quality = mShaderQuality;
+		info.hasCustomSurfaceShading = mCustomSurfaceShading;
+		info.useLegacyMorphing = mUseLegacyMorphing;
+		info.instanced = mInstanced;
+		info.vertexDomainDeviceJittered = mVertexDomainDeviceJittered;
+		//info.featureLevel = mFeatureLevel;
+		//info.groupSize = mGroupSize;
+		//info.stereoscopicType = mStereoscopicType;
+		info.stereoscopicEyeCount = mStereoscopicEyeCount;
+
+		// This is determined via static analysis of the glsl after prepareToBuild().
+		info.userMaterialHasCustomDepth = false;
 	}
 
 	void MaterialBuilder::initPushConstants() noexcept {

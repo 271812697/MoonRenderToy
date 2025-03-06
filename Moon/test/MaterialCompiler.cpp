@@ -70,6 +70,9 @@ namespace TEST {
 		if (!parsed) {
 			return;
 		}
+		builder.build();
+
+
 
 
 	}

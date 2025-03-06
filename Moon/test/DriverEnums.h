@@ -561,4 +561,29 @@ namespace TEST {
 		FLOAT,
 		BOOL
 	};
+	enum class DescriptorFlags : uint8_t {
+		NONE = 0x00,
+		DYNAMIC_OFFSET = 0x01
+	};
+
+	struct DescriptorSetLayoutBinding {
+		DescriptorType type;
+		ShaderStageFlags stageFlags;
+		descriptor_binding_t binding;
+		DescriptorFlags flags = DescriptorFlags::NONE;
+		uint16_t count = 0;
+
+		friend inline bool operator==(
+			DescriptorSetLayoutBinding const& lhs,
+			DescriptorSetLayoutBinding const& rhs) noexcept {
+			return lhs.type == rhs.type &&
+				lhs.flags == rhs.flags &&
+				lhs.count == rhs.count &&
+				lhs.stageFlags == rhs.stageFlags;
+		}
+	};
+
+	struct DescriptorSetLayout {
+		utils::FixedCapacityVector<DescriptorSetLayoutBinding> bindings;
+	};
 }

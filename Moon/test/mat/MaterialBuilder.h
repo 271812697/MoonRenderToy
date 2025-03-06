@@ -442,7 +442,8 @@ namespace TEST {
 
 		//! specify compute kernel group size
 	   // MaterialBuilder& groupSize(TEST::math::uint3 groupSize) noexcept;
-
+		void prepareToBuild(MaterialInfo& info);
+		void build();
 
 
 	public:
