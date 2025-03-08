@@ -368,7 +368,7 @@ namespace TEST {
 
 		sstream vs;
 
-		const CodeGenerator cg(shaderModel, targetApi, targetLanguage, featureLevel);
+		const CodeGenerator cg;
 
 		cg.generateProlog(vs, ShaderStage::VERTEX, material, variant);
 

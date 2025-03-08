@@ -3,7 +3,7 @@
 #include "test/DriverEnums.h"//<backend/DriverEnums.h>
 
 #include "MaterialEnums.h"//<filament/>
-
+#include <test/math/vec3.h>
 #include "BufferInterfaceBlock.h"//<private/filament/>
 #include "SamplerInterfaceBlock.h"//<private/filament/>
 #include "test/utils/FixedCapacityVector.h"
@@ -44,7 +44,7 @@ namespace TEST {
 
 		ShaderQuality quality;
 
-
+		math::uint3 groupSize;
 		using BufferContainer = utils::FixedCapacityVector<BufferInterfaceBlock const*>;
 		BufferContainer buffers{ BufferContainer::with_capacity(MAX_SSBO_COUNT) };
 	};
