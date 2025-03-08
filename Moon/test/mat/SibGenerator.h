@@ -17,7 +17,7 @@
 #ifndef TNT_FILABRIDGE_SIBGENERATOR_H
 #define TNT_FILABRIDGE_SIBGENERATOR_H
 
- //#include "private/filament/Variant.h"
+#include "Variant.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -29,9 +29,9 @@ namespace TEST {
 
 	class SibGenerator {
 	public:
-		static SamplerInterfaceBlock const& getPerViewSib() noexcept;
-		static SamplerInterfaceBlock const& getPerRenderableSib() noexcept;
-		static SamplerInterfaceBlock const* getSib(TEST::DescriptorSetBindingPoints bindingPoint) noexcept;
+		static SamplerInterfaceBlock const& getPerViewSib(Variant variant) noexcept;
+		static SamplerInterfaceBlock const& getPerRenderableSib(Variant variant) noexcept;
+		static SamplerInterfaceBlock const* getSib(DescriptorSetBindingPoints bindingPoint, Variant variant) noexcept;
 		// When adding a sampler block here, make sure to also update
 		//      FMaterial::getSurfaceProgramSlow and FMaterial::getPostProcessProgramSlow if needed
 	};

@@ -1,22 +1,7 @@
-/*
- * Copyright (C) 2015 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 #include "SibGenerator.h"
 
- //#include "private/filament/Variant.h"
+#include "Variant.h"
 #include "EngineEnums.h"
 #include "SamplerInterfaceBlock.h"
 //#include "private/filament/SibStructs.h"
@@ -27,7 +12,7 @@
 
 namespace TEST {
 
-	SamplerInterfaceBlock const& SibGenerator::getPerViewSib() noexcept {
+	SamplerInterfaceBlock const& SibGenerator::getPerViewSib(Variant variant) noexcept {
 		using Type = SamplerInterfaceBlock::Type;
 		using Format = SamplerInterfaceBlock::Format;
 		using Precision = SamplerInterfaceBlock::Precision;
@@ -77,16 +62,18 @@ namespace TEST {
 				)
 				.build() };
 
-		//if (Variant::isSSRVariant(variant)) {
-		   // return sibSsr;
-		//} else if (Variant::isVSMVariant(variant)) {
-		return sibVsm;
-		// } else {
-			 //return sibPcf;
-		//}
+		if (Variant::isSSRVariant(variant)) {
+			return sibSsr;
+		}
+		else if (Variant::isVSMVariant(variant)) {
+			return sibVsm;
+		}
+		else {
+			return sibPcf;
+		}
 	}
 
-	SamplerInterfaceBlock const& SibGenerator::getPerRenderableSib() noexcept {
+	SamplerInterfaceBlock const& SibGenerator::getPerRenderableSib(Variant) noexcept {
 		using Type = SamplerInterfaceBlock::Type;
 		using Format = SamplerInterfaceBlock::Format;
 		using Precision = SamplerInterfaceBlock::Precision;
@@ -102,15 +89,14 @@ namespace TEST {
 		return sib;
 	}
 
-	SamplerInterfaceBlock const* SibGenerator::getSib(DescriptorSetBindingPoints set) noexcept {
+	SamplerInterfaceBlock const* SibGenerator::getSib(DescriptorSetBindingPoints set, Variant variant) noexcept {
 		switch (set) {
 		case DescriptorSetBindingPoints::PER_VIEW:
-			return &getPerViewSib();
+			return &getPerViewSib(variant);
 		case DescriptorSetBindingPoints::PER_RENDERABLE:
-			return &getPerRenderableSib();
+			return &getPerRenderableSib(variant);
 		default:
 			return nullptr;
 		}
 	}
-
 } // namespace filament

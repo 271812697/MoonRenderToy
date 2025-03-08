@@ -6,17 +6,17 @@
 #include "MaterialBuilder.h"
 
 #include "MaterialEnums.h"
-//#include "EngineEnums.h"
+#include "EngineEnums.h"
 #include "SamplerInterfaceBlock.h"//<private/filament/>
 #include "BufferInterfaceBlock.h"//<private/filament/>
 //#include <private/filament/SubpassInfo.h>
 #include "test/DriverEnums.h"//<private/filament/Variant.h>
-
+#include "Variant.h"
 
 
 
 #include "test/utils/FixedCapacityVector.h"
-#
+#include "test/utils/sstream.h"
 
 #include <exception>
 #include <iosfwd>
@@ -39,114 +39,114 @@ namespace TEST {
 
 
 		// insert a separator (can be a new line)
-		static utils::io::sstream& generateSeparator(utils::io::sstream& out);
+		static sstream& generateSeparator(sstream& out);
 
 		// generate prolog for the given shader
-		utils::io::sstream& generateProlog(utils::io::sstream& out, ShaderStage stage,
-			MaterialInfo const& material, filament::Variant v) const;
+		sstream& generateProlog(sstream& out, ShaderStage stage,
+			MaterialInfo const& material, Variant v) const;
 
-		static utils::io::sstream& generateEpilog(utils::io::sstream& out);
+		static sstream& generateEpilog(sstream& out);
 
-		static utils::io::sstream& generateCommonTypes(utils::io::sstream& out, ShaderStage stage);
+		static sstream& generateCommonTypes(sstream& out, ShaderStage stage);
 
 		// generate common functions for the given shader
-		static utils::io::sstream& generateCommon(utils::io::sstream& out, ShaderStage stage);
-		static utils::io::sstream& generatePostProcessCommon(utils::io::sstream& out, ShaderStage type);
-		static utils::io::sstream& generateCommonMaterial(utils::io::sstream& out, ShaderStage type);
+		static sstream& generateCommon(sstream& out, ShaderStage stage);
+		static sstream& generatePostProcessCommon(sstream& out, ShaderStage type);
+		static sstream& generateCommonMaterial(sstream& out, ShaderStage type);
 
-		static utils::io::sstream& generateFog(utils::io::sstream& out, ShaderStage type);
+		static sstream& generateFog(sstream& out, ShaderStage type);
 
 		// generate the shader's main()
-		static utils::io::sstream& generateShaderMain(utils::io::sstream& out, ShaderStage stage);
-		static utils::io::sstream& generatePostProcessMain(utils::io::sstream& out, ShaderStage type);
+		static sstream& generateShaderMain(sstream& out, ShaderStage stage);
+		static sstream& generatePostProcessMain(sstream& out, ShaderStage type);
 
 		// generate the shader's code for the lit shading model
-		static utils::io::sstream& generateShaderLit(utils::io::sstream& out, ShaderStage type,
-			filament::Variant variant, filament::Shading shading, bool customSurfaceShading);
+		static sstream& generateShaderLit(sstream& out, ShaderStage type,
+			Variant variant, Shading shading, bool customSurfaceShading);
 
 		// generate the shader's code for the unlit shading model
-		static utils::io::sstream& generateShaderUnlit(utils::io::sstream& out, ShaderStage type,
-			filament::Variant variant, bool hasShadowMultiplier);
+		static sstream& generateShaderUnlit(sstream& out, ShaderStage type,
+			Variant variant, bool hasShadowMultiplier);
 
 		// generate the shader's code for the screen-space reflections
-		static utils::io::sstream& generateShaderReflections(utils::io::sstream& out, ShaderStage type);
+		static sstream& generateShaderReflections(sstream& out, ShaderStage type);
 
 		// generate declarations for custom interpolants
-		static utils::io::sstream& generateVariable(utils::io::sstream& out, ShaderStage stage,
+		static sstream& generateVariable(sstream& out, ShaderStage stage,
 			const MaterialBuilder::CustomVariable& variable, size_t index);
 
 		// generate declarations for non-custom "in" variables
-		utils::io::sstream& generateShaderInputs(utils::io::sstream& out, ShaderStage type,
-			const filament::AttributeBitset& attributes, filament::Interpolation interpolation,
+		sstream& generateShaderInputs(sstream& out, ShaderStage type,
+			const AttributeBitset& attributes, Interpolation interpolation,
 			MaterialBuilder::PushConstantList const& pushConstants) const;
-		static utils::io::sstream& generatePostProcessInputs(utils::io::sstream& out, ShaderStage type);
+		static sstream& generatePostProcessInputs(sstream& out, ShaderStage type);
 
 		// generate declarations for custom output variables
-		utils::io::sstream& generateOutput(utils::io::sstream& out, ShaderStage type,
+		sstream& generateOutput(sstream& out, ShaderStage type,
 			const utils::CString& name, size_t index,
 			MaterialBuilder::VariableQualifier qualifier,
 			MaterialBuilder::Precision precision,
 			MaterialBuilder::OutputType outputType) const;
 
 		// generate no-op shader for depth prepass
-		static utils::io::sstream& generateDepthShaderMain(utils::io::sstream& out, ShaderStage type);
+		static sstream& generateDepthShaderMain(sstream& out, ShaderStage type);
 
 		// generate samplers
-		utils::io::sstream& generateSamplers(utils::io::sstream& out,
-			filament::DescriptorSetBindingPoints set,
-			filament::SamplerInterfaceBlock::SamplerInfoList const& list) const;
+		sstream& generateSamplers(sstream& out,
+			DescriptorSetBindingPoints set,
+			SamplerInterfaceBlock::SamplerInfoList const& list) const;
 
-		utils::io::sstream& generateSamplers(utils::io::sstream& out,
-			filament::DescriptorSetBindingPoints set,
-			const filament::SamplerInterfaceBlock& sib) const {
+		sstream& generateSamplers(sstream& out,
+			DescriptorSetBindingPoints set,
+			const SamplerInterfaceBlock& sib) const {
 			return generateSamplers(out, set, sib.getSamplerInfoList());
 		}
 
 		// generate subpass
-		static utils::io::sstream& generateSubpass(utils::io::sstream& out,
-			filament::SubpassInfo subpass);
+		//static sstream& generateSubpass(sstream& out,
+			//SubpassInfo subpass);
 
 		// generate uniforms
-		utils::io::sstream& generateUniforms(utils::io::sstream& out, ShaderStage stage,
-			filament::DescriptorSetBindingPoints set,
-			filament::backend::descriptor_binding_t binding,
-			const filament::BufferInterfaceBlock& uib) const;
+		sstream& generateUniforms(sstream& out, ShaderStage stage,
+			DescriptorSetBindingPoints set,
+			descriptor_binding_t binding,
+			const BufferInterfaceBlock& uib) const;
 
 		// generate buffers
-		utils::io::sstream& generateBuffers(utils::io::sstream& out,
+		sstream& generateBuffers(sstream& out,
 			MaterialInfo::BufferContainer const& buffers) const;
 
 		// generate an interface block
-		utils::io::sstream& generateBufferInterfaceBlock(utils::io::sstream& out, ShaderStage stage,
-			filament::DescriptorSetBindingPoints set,
-			filament::backend::descriptor_binding_t binding,
-			const filament::BufferInterfaceBlock& uib) const;
+		sstream& generateBufferInterfaceBlock(sstream& out, ShaderStage stage,
+			DescriptorSetBindingPoints set,
+			descriptor_binding_t binding,
+			const BufferInterfaceBlock& uib) const;
 
 		// generate material properties getters
-		static utils::io::sstream& generateMaterialProperty(utils::io::sstream& out,
+		static sstream& generateMaterialProperty(sstream& out,
 			MaterialBuilder::Property property, bool isSet);
 
-		utils::io::sstream& generateQualityDefine(utils::io::sstream& out, ShaderQuality quality) const;
+		sstream& generateQualityDefine(sstream& out, ShaderQuality quality) const;
 
-		static utils::io::sstream& generateDefine(utils::io::sstream& out, const char* name, bool value);
-		static utils::io::sstream& generateDefine(utils::io::sstream& out, const char* name, uint32_t value);
-		static utils::io::sstream& generateDefine(utils::io::sstream& out, const char* name, const char* string);
-		static utils::io::sstream& generateIndexedDefine(utils::io::sstream& out, const char* name,
+		static sstream& generateDefine(sstream& out, const char* name, bool value);
+		static sstream& generateDefine(sstream& out, const char* name, uint32_t value);
+		static sstream& generateDefine(sstream& out, const char* name, const char* string);
+		static sstream& generateIndexedDefine(sstream& out, const char* name,
 			uint32_t index, uint32_t value);
 
-		utils::io::sstream& generateSpecializationConstant(utils::io::sstream& out,
+		sstream& generateSpecializationConstant(sstream& out,
 			const char* name, uint32_t id, std::variant<int, float, bool> value) const;
 
-		utils::io::sstream& generatePushConstants(utils::io::sstream& out,
+		sstream& generatePushConstants(sstream& out,
 			MaterialBuilder::PushConstantList const& pushConstants,
 			size_t const layoutLocation) const;
 
-		static utils::io::sstream& generatePostProcessGetters(utils::io::sstream& out, ShaderStage type);
-		static utils::io::sstream& generateGetters(utils::io::sstream& out, ShaderStage stage);
-		static utils::io::sstream& generateParameters(utils::io::sstream& out, ShaderStage type);
+		static sstream& generatePostProcessGetters(sstream& out, ShaderStage type);
+		static sstream& generateGetters(sstream& out, ShaderStage stage);
+		static sstream& generateParameters(sstream& out, ShaderStage type);
 
 		static void fixupExternalSamplers(
-			std::string& shader, filament::SamplerInterfaceBlock const& sib,
+			std::string& shader, SamplerInterfaceBlock const& sib,
 			FeatureLevel featureLevel) noexcept;
 
 		// These constants must match the equivalent in MetalState.h.
@@ -169,53 +169,47 @@ namespace TEST {
 		}
 
 	private:
-		filament::backend::Precision getDefaultPrecision(ShaderStage stage) const;
-		filament::backend::Precision getDefaultUniformPrecision() const;
+		Precision getDefaultPrecision(ShaderStage stage) const;
+		Precision getDefaultUniformPrecision() const;
 
-		utils::io::sstream& generateInterfaceFields(utils::io::sstream& out,
-			utils::FixedCapacityVector<filament::BufferInterfaceBlock::FieldInfo> const& infos,
-			filament::backend::Precision defaultPrecision) const;
+		sstream& generateInterfaceFields(sstream& out,
+			utils::FixedCapacityVector<BufferInterfaceBlock::FieldInfo> const& infos,
+			Precision defaultPrecision) const;
 
-		utils::io::sstream& generateUboAsPlainUniforms(utils::io::sstream& out, ShaderStage stage,
-			const filament::BufferInterfaceBlock& uib) const;
+		sstream& generateUboAsPlainUniforms(sstream& out, ShaderStage stage,
+			const BufferInterfaceBlock& uib) const;
 
-		static const char* getUniformPrecisionQualifier(filament::backend::UniformType type,
-			filament::backend::Precision precision,
-			filament::backend::Precision uniformPrecision,
-			filament::backend::Precision defaultPrecision) noexcept;
+		static const char* getUniformPrecisionQualifier(UniformType type,
+			Precision precision,
+			Precision uniformPrecision,
+			Precision defaultPrecision) noexcept;
 
 		// return type name of sampler  (e.g.: "sampler2D")
-		char const* getSamplerTypeName(filament::backend::SamplerType type,
-			filament::backend::SamplerFormat format, bool multisample) const noexcept;
+		char const* getSamplerTypeName(SamplerType type,
+			SamplerFormat format, bool multisample) const noexcept;
 
 		// return name of the material property (e.g.: "ROUGHNESS")
 		static char const* getConstantName(MaterialBuilder::Property property) noexcept;
 
-		static char const* getPrecisionQualifier(filament::backend::Precision precision) noexcept;
+		static char const* getPrecisionQualifier(Precision precision) noexcept;
 
 		// return type (e.g.: "vec3", "vec4", "float")
 		static char const* getTypeName(UniformType type) noexcept;
 
 		// return type name of uniform Field (e.g.: "vec3", "vec4", "float")
-		static char const* getUniformTypeName(filament::BufferInterfaceBlock::FieldInfo const& info) noexcept;
+		static char const* getUniformTypeName(BufferInterfaceBlock::FieldInfo const& info) noexcept;
 
 		// return type name of output  (e.g.: "vec3", "vec4", "float")
 		static char const* getOutputTypeName(MaterialBuilder::OutputType type) noexcept;
 
 		// return qualifier for the specified interpolation mode
-		static char const* getInterpolationQualifier(filament::Interpolation interpolation) noexcept;
+		static char const* getInterpolationQualifier(Interpolation interpolation) noexcept;
 
-		static bool hasPrecision(filament::BufferInterfaceBlock::Type type) noexcept;
+		static bool hasPrecision(BufferInterfaceBlock::Type type) noexcept;
 
-		ShaderModel mShaderModel;
-		TargetApi mTargetApi;
-		TargetLanguage mTargetLanguage;
-		FeatureLevel mFeatureLevel;
 		mutable uint32_t mUniqueSamplerBindingPoint = 0;
 		mutable uint32_t mUniqueUboBindingPoint = 0;
 		mutable uint32_t mUniqueSsboBindingPoint = 0;
 	};
 
-} // namespace filamat
-
-#endif // TNT_FILAMENT_CODEGENERATOR_H
+}

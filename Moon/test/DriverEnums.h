@@ -1,4 +1,6 @@
 #pragma once
+
+#include "test/utils/BitmaskEnum.h"
 #include <array>        // FIXME: STL headers are not allowed in public headers
 #include <type_traits>  // FIXME: STL headers are not allowed in public headers
 #include <variant>      // FIXME: STL headers are not allowed in public headers
@@ -531,6 +533,17 @@ namespace TEST {
 		COMPUTE = 0x4,
 		ALL_SHADER_STAGE_FLAGS = VERTEX | FRAGMENT | COMPUTE
 	};
+	static inline constexpr bool hasShaderType(ShaderStageFlags flags, ShaderStage type) noexcept {
+		switch (type) {
+		case ShaderStage::VERTEX:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::VERTEX));
+		case ShaderStage::FRAGMENT:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::FRAGMENT));
+		case ShaderStage::COMPUTE:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::COMPUTE));
+		}
+	}
+
 	enum class ShaderLanguage {
 		ESSL1 = 0,
 		ESSL3 = 1,
@@ -587,3 +600,4 @@ namespace TEST {
 		utils::FixedCapacityVector<DescriptorSetLayoutBinding> bindings;
 	};
 }
+template<> struct utils::EnableBitMaskOperators<TEST::ShaderStageFlags> : public std::true_type {};
