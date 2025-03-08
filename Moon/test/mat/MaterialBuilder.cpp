@@ -4,6 +4,8 @@
 #include "Includes.h"
 #include "SamplerInterfaceBlock.h"
 #include "test/mat/MaterialInfo.h"
+#include "ShaderGenerator.h"
+#include "MaterialVariants.h"
 #include <algorithm>
 #include <atomic>
 #include <tuple>
@@ -456,6 +458,37 @@ namespace TEST {
 			!mMaterialVertexCode.resolveIncludes(mIncludeCallback, mFileName)) {
 			;
 		}
+		MaterialInfo info{};
+		prepareToBuild(info);
+		std::vector<MaterialVariant> variants;
+		switch (mMaterialDomain) {
+		case MaterialDomain::SURFACE:
+			variants = determineSurfaceVariants(mVariantFilter, isLit(), mShadowMultiplier);
+			break;
+		case MaterialDomain::POST_PROCESS:
+			variants = determinePostProcessVariants();
+			break;
+		case MaterialDomain::COMPUTE:
+			variants = determineComputeVariants();
+			break;
+		}
+
+		ShaderGenerator sg(mProperties, mVariables, mOutputs, mDefines, mConstants, mPushConstants,
+			mMaterialFragmentCode.getResolved(), mMaterialFragmentCode.getLineOffset(),
+			mMaterialVertexCode.getResolved(), mMaterialVertexCode.getLineOffset(),
+			mMaterialDomain);
+		for (const auto& v : variants) {
+			std::string shader;
+			if (v.stage == ShaderStage::VERTEX) {
+				shader = sg.createVertexProgram(info, v.variant, mInterpolation, mVertexDomain);
+			}
+			else if (v.stage == ShaderStage::FRAGMENT) {
+				shader = sg.createFragmentProgram(info, v.variant, mInterpolation, mVariantFilter);
+			}
+			else if (v.stage == ShaderStage::COMPUTE) {
+				shader = sg.createComputeProgram(info);
+			}
+		}
 
 	}
 
@@ -468,9 +501,6 @@ namespace TEST {
 		}
 		return false;
 	}
-
-
-
 	void MaterialBuilder::prepareToBuild(MaterialInfo& info)
 	{
 		// Build the per-material sampler block and uniform block.
@@ -639,8 +669,4 @@ namespace TEST {
 		mIncludesResolved = true;
 		return true;
 	}
-
-
-
-
 } // namespace filamat

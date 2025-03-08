@@ -733,7 +733,7 @@ namespace TEST {
 
 		PreprocessorDefineList mDefines;
 
-		//TEST::UserVariantFilterMask mVariantFilter = {};
+		TEST::UserVariantFilterMask mVariantFilter = {};
 
 		bool mNoSamplerValidation = false;
 	};
