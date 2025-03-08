@@ -1,4 +1,6 @@
 #pragma once
+#include "test/utils/FixedCapacityVector.h"
+#include "test/utils/BitmaskEnum.h"
 #include <array>        // FIXME: STL headers are not allowed in public headers
 #include <type_traits>  // FIXME: STL headers are not allowed in public headers
 #include <variant>      // FIXME: STL headers are not allowed in public headers
@@ -10,6 +12,99 @@
 
 namespace TEST {
 
+
+
+	//! Texture sampler type
+	enum class SamplerType : uint8_t {
+		SAMPLER_2D,             //!< 2D texture
+		SAMPLER_2D_ARRAY,       //!< 2D array texture
+		SAMPLER_CUBEMAP,        //!< Cube map texture
+		SAMPLER_EXTERNAL,       //!< External texture
+		SAMPLER_3D,             //!< 3D texture
+		SAMPLER_CUBEMAP_ARRAY,  //!< Cube map array texture (feature level 2)
+	};
+	//! Subpass type
+	enum class SubpassType : uint8_t {
+		SUBPASS_INPUT
+	};
+
+	//! Texture sampler format
+	enum class SamplerFormat : uint8_t {
+		INT = 0,        //!< signed integer sampler
+		UINT = 1,       //!< unsigned integer sampler
+		FLOAT = 2,      //!< float sampler
+		SHADOW = 3      //!< shadow sampler (PCF)
+	};
+
+	enum class Precision : uint8_t {
+		LOW,
+		MEDIUM,
+		HIGH,
+		DEFAULT
+	};
+	/**
+ * Defines the backend's feature levels.
+ */
+	enum class FeatureLevel : uint8_t {
+		FEATURE_LEVEL_0 = 0,  //!< OpenGL ES 2.0 features
+		FEATURE_LEVEL_1,      //!< OpenGL ES 3.0 features (default)
+		FEATURE_LEVEL_2,      //!< OpenGL ES 3.1 features + 16 textures units + cubemap arrays
+		FEATURE_LEVEL_3       //!< OpenGL ES 3.1 features + 31 textures units + cubemap arrays
+	};
+	inline const char* stringify(SamplerType samplerType) {
+		switch (samplerType) {
+		case SamplerType::SAMPLER_2D: return "SAMPLER_2D";
+		case SamplerType::SAMPLER_2D_ARRAY: return "SAMPLER_2D_ARRAY";
+		case SamplerType::SAMPLER_CUBEMAP: return "SAMPLER_CUBEMAP";
+		case SamplerType::SAMPLER_EXTERNAL: return "SAMPLER_EXTERNAL";
+		case SamplerType::SAMPLER_3D: return "SAMPLER_3D";
+		case SamplerType::SAMPLER_CUBEMAP_ARRAY: return "SAMPLER_CUBEMAP_ARRAY";
+		}
+		return "UNKNOWN";
+	}
+	//! Bitmask describing the intended Texture Usage
+	enum class TextureUsage : uint16_t {
+		NONE = 0x0000,
+		COLOR_ATTACHMENT = 0x0001,            //!< Texture can be used as a color attachment
+		DEPTH_ATTACHMENT = 0x0002,            //!< Texture can be used as a depth attachment
+		STENCIL_ATTACHMENT = 0x0004,            //!< Texture can be used as a stencil attachment
+		UPLOADABLE = 0x0008,            //!< Data can be uploaded into this texture (default)
+		SAMPLEABLE = 0x0010,            //!< Texture can be sampled (default)
+		SUBPASS_INPUT = 0x0020,            //!< Texture can be used as a subpass input
+		BLIT_SRC = 0x0040,            //!< Texture can be used the source of a blit()
+		BLIT_DST = 0x0080,            //!< Texture can be used the destination of a blit()
+		PROTECTED = 0x0100,            //!< Texture can be used for protected content
+		DEFAULT = UPLOADABLE | SAMPLEABLE,   //!< Default texture usage
+		ALL_ATTACHMENTS = COLOR_ATTACHMENT | DEPTH_ATTACHMENT | STENCIL_ATTACHMENT | SUBPASS_INPUT,   //!< Mask of all attachments
+	};
+
+	inline const char* stringify(TextureUsage usage) {
+		switch (usage) {
+		case TextureUsage::NONE: return "NONE";
+		case TextureUsage::COLOR_ATTACHMENT: return "COLOR_ATTACHMENT";
+		case TextureUsage::DEPTH_ATTACHMENT: return "DEPTH_ATTACHMENT";
+		case TextureUsage::STENCIL_ATTACHMENT: return "STENCIL_ATTACHMENT";
+		case TextureUsage::UPLOADABLE: return "UPLOADABLE";
+		case TextureUsage::SAMPLEABLE: return "SAMPLEABLE";
+		case TextureUsage::SUBPASS_INPUT: return "SUBPASS_INPUT";
+		case TextureUsage::BLIT_SRC: return "BLIT_SRC";
+		case TextureUsage::BLIT_DST: return "BLIT_DST";
+		case TextureUsage::PROTECTED: return "PROTECTED";
+		case TextureUsage::DEFAULT: return "DEFAULT";
+		default: return "UNKNOWN";
+		}
+	}
+
+
+
+	//! Stream for external textures
+	enum class StreamType {
+		NATIVE,     //!< Not synchronized but copy-free. Good for video.
+		ACQUIRED,   //!< Synchronized, copy-free, and take a release callback. Good for AR but requires API 26+.
+	};
+
+	//! Releases an ACQUIRED external texture, guaranteed to be called on the application thread.
+	using StreamCallback = void(*)(void* image, void* user);
 	/**
  * Bitmask for selecting render buffers
  */
@@ -35,6 +130,7 @@ namespace TEST {
 	static constexpr size_t MAX_VERTEX_ATTRIBUTE_COUNT = 16;   // This is guaranteed by OpenGL ES.
 	static constexpr size_t MAX_SAMPLER_COUNT = 62;   // Maximum needed at feature level 3.
 	static constexpr size_t MAX_DESCRIPTOR_COUNT = 64;   // per set
+	static constexpr size_t MAX_SSBO_COUNT = 4;    // This is guaranteed by OpenGL ES.
 	static constexpr size_t MAX_DESCRIPTOR_SET_COUNT = 4;    // This is guaranteed by Vulkan.
 	static constexpr size_t CONFIG_UNIFORM_BINDING_COUNT = 9;   // This is guaranteed by OpenGL ES.
 	static constexpr size_t CONFIG_SAMPLER_BINDING_COUNT = 4;   // This is guaranteed by OpenGL ES.
@@ -438,6 +534,17 @@ namespace TEST {
 		COMPUTE = 0x4,
 		ALL_SHADER_STAGE_FLAGS = VERTEX | FRAGMENT | COMPUTE
 	};
+	static inline constexpr bool hasShaderType(ShaderStageFlags flags, ShaderStage type) noexcept {
+		switch (type) {
+		case ShaderStage::VERTEX:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::VERTEX));
+		case ShaderStage::FRAGMENT:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::FRAGMENT));
+		case ShaderStage::COMPUTE:
+			return bool(uint8_t(flags) & uint8_t(ShaderStageFlags::COMPUTE));
+		}
+	}
+
 	enum class ShaderLanguage {
 		ESSL1 = 0,
 		ESSL3 = 1,
@@ -468,4 +575,31 @@ namespace TEST {
 		FLOAT,
 		BOOL
 	};
+	enum class DescriptorFlags : uint8_t {
+		NONE = 0x00,
+		DYNAMIC_OFFSET = 0x01
+	};
+
+	struct DescriptorSetLayoutBinding {
+		DescriptorType type;
+		ShaderStageFlags stageFlags;
+		uint8_t binding;
+		DescriptorFlags flags = DescriptorFlags::NONE;
+		uint16_t count = 0;
+
+		friend inline bool operator==(
+			DescriptorSetLayoutBinding const& lhs,
+			DescriptorSetLayoutBinding const& rhs) noexcept {
+			return lhs.type == rhs.type &&
+				lhs.flags == rhs.flags &&
+				lhs.count == rhs.count &&
+				lhs.stageFlags == rhs.stageFlags;
+		}
+	};
+
+	struct DescriptorSetLayout {
+		utils::FixedCapacityVector<DescriptorSetLayoutBinding> bindings;
+	};
+
 }
+template<> struct utils::EnableBitMaskOperators<TEST::ShaderStageFlags> : public std::true_type {};

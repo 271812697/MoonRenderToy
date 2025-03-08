@@ -91,8 +91,36 @@ namespace TEST {
 		HwRenderTarget() noexcept = default;
 		HwRenderTarget(uint32_t w, uint32_t h) : width(w), height(h) { }
 	};
+	struct HwStream : public HwBase {
+
+		StreamType streamType = StreamType::ACQUIRED;
+		uint32_t width{};
+		uint32_t height{};
 
 
+		explicit HwStream() noexcept
+			: streamType(StreamType::NATIVE) {
+		}
+	};
+	struct HwTexture : public HwBase {
+		uint32_t width{};
+		uint32_t height{};
+		uint32_t depth{};
+		SamplerType target{};
+		uint8_t levels : 4;  // This allows up to 15 levels (max texture size of 32768 x 32768)
+		uint8_t samples : 4; // Sample count per pixel (should always be a power of 2)
+		TextureFormat format{};
+		uint8_t reserved0 = 0;
+		TextureUsage usage{};
+		uint16_t reserved1 = 0;
+		HwStream* hwStream = nullptr;
+
+		HwTexture() noexcept : levels{}, samples{} {}
+		HwTexture(SamplerType target, uint8_t levels, uint8_t samples,
+			uint32_t width, uint32_t height, uint32_t depth, TextureFormat fmt, TextureUsage usage) noexcept
+			: width(width), height(height), depth(depth),
+			target(target), levels(levels), samples(samples), format(fmt), usage(usage) { }
+	};
 
 	struct HwTimerQuery : public HwBase {
 	};

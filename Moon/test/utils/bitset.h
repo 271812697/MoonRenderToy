@@ -1,8 +1,9 @@
 #pragma once
-
+#include "algorithm.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+
 
 #include <algorithm> // for std::fill
 #include <iterator>
