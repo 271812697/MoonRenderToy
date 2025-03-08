@@ -1,48 +1,20 @@
 #include <string>
 std::string SHADERS_LIGHT_INDIRECT_FS_DATA = R"(
-
-//------------------------------------------------------------------------------
-// Image based lighting configuration
-//------------------------------------------------------------------------------
-
-// IBL integration algorithm
 #define IBL_INTEGRATION_PREFILTERED_CUBEMAP         0
 #define IBL_INTEGRATION_IMPORTANCE_SAMPLING         1
-
 #define IBL_INTEGRATION                             IBL_INTEGRATION_PREFILTERED_CUBEMAP
-
 #define IBL_INTEGRATION_IMPORTANCE_SAMPLING_COUNT   64
-
-//------------------------------------------------------------------------------
-// IBL utilities
-//------------------------------------------------------------------------------
-
 vec3 decodeDataForIBL(const vec4 data) {
 	return data.rgb;
 }
-
-//------------------------------------------------------------------------------
-// IBL prefiltered DFG term implementations
-//------------------------------------------------------------------------------
-
 vec3 PrefilteredDFG_LUT(float lod, float NoV) {
 	// coord = sqrt(linear_roughness), which is the mapping used by cmgen.
 	return textureLod(sampler0_iblDFG, vec2(NoV, lod), 0.0).rgb;
 }
-
-//------------------------------------------------------------------------------
-// IBL environment BRDF dispatch
-//------------------------------------------------------------------------------
-
 vec3 prefilteredDFG(float perceptualRoughness, float NoV) {
 	// PrefilteredDFG_LUT() takes a LOD, which is sqrt(roughness) = perceptualRoughness
 	return PrefilteredDFG_LUT(perceptualRoughness, NoV);
 }
-
-//------------------------------------------------------------------------------
-// IBL irradiance implementations
-//------------------------------------------------------------------------------
-
 vec3 Irradiance_SphericalHarmonics(const vec3 n) {
 	vec3 sphericalHarmonics = frameUniforms.iblSH[0];
 
@@ -69,11 +41,6 @@ vec3 Irradiance_RoughnessOne(const vec3 n) {
 	// note: lod used is always integer, hopefully the hardware skips tri-linear filtering
 	return decodeDataForIBL(textureLod(sampler0_iblSpecular, n, frameUniforms.iblRoughnessOneLevel));
 }
-
-//------------------------------------------------------------------------------
-// IBL irradiance dispatch
-//------------------------------------------------------------------------------
-
 vec3 diffuseIrradiance(const vec3 n) {
 	// On Metal devices with certain chipsets, this light_iblSpecular texture sample must be pulled
 	// outside the frameUniforms.iblSH check. This is to avoid a Metal pipeline compilation error
@@ -112,11 +79,6 @@ vec3 diffuseIrradiance(const vec3 n) {
 		return Irradiance_SphericalHarmonics(n);
 	}
 }
-
-//------------------------------------------------------------------------------
-// IBL specular
-//------------------------------------------------------------------------------
-
 float perceptualRoughnessToLod(float perceptualRoughness) {
 	// The mapping below is a quadratic fit for log2(perceptualRoughness)+iblRoughnessOneLevel when
 	// iblRoughnessOneLevel is 4. We found empirically that this mapping works very well for
@@ -158,11 +120,6 @@ vec3 getReflectedVector(const PixelParams pixel, const vec3 n) {
 #endif
 	return getSpecularDominantDirection(n, r, pixel.roughness);
 }
-
-//------------------------------------------------------------------------------
-// Prefiltered importance sampling
-//------------------------------------------------------------------------------
-
 #if IBL_INTEGRATION == IBL_INTEGRATION_IMPORTANCE_SAMPLING
 vec2 hammersley(uint index) {
 	const uint numSamples = uint(IBL_INTEGRATION_IMPORTANCE_SAMPLING_COUNT);
@@ -371,11 +328,6 @@ void isEvaluateClearCoatIBL(const PixelParams pixel, float specularAO, inout vec
 #endif
 }
 #endif
-
-//------------------------------------------------------------------------------
-// IBL evaluation
-//------------------------------------------------------------------------------
-
 void evaluateClothIndirectDiffuseBRDF(const PixelParams pixel, inout float diffuse) {
 #if defined(SHADING_MODEL_CLOTH)
 #if defined(MATERIAL_HAS_SUBSURFACE_COLOR)
@@ -508,7 +460,7 @@ vec3 evaluateRefraction(
 #else
 #error invalid REFRACTION_TYPE
 #endif
-
+)" + std::string(R"(
 	// compute transmission T
 #if defined(MATERIAL_HAS_ABSORPTION)
 #if defined(MATERIAL_HAS_THICKNESS) || defined(MATERIAL_HAS_MICRO_THICKNESS)
@@ -677,5 +629,6 @@ void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout v
 	color.rgb += Ft;
 #endif
 }
-)";
+)");
+
 

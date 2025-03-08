@@ -34,7 +34,7 @@ inline constexpr int operator+(Enum value) noexcept {
 
 template<typename Enum, typename std::enable_if_t<
 	std::is_enum<Enum>::value&& utils::EnableIntegerOperators<Enum>::value, int> = 0>
-inline constexpr bool operator==(Enum lhs, size_t rhs) noexcept {
+bool operator==(Enum lhs, size_t rhs) noexcept {
 	using underlying_t = std::underlying_type_t<Enum>;
 	return underlying_t(lhs) == rhs;
 }

@@ -83,7 +83,6 @@ namespace TEST {
 
 		static void generateSurfaceMaterialVariantDefines(TEST::sstream& out,
 			ShaderStage stage,
-			MaterialBuilder::FeatureLevel featureLevel,
 			MaterialInfo const& material, Variant variant) noexcept;
 
 		static void generatePostProcessMaterialVariantDefines(TEST::sstream& out,
@@ -103,12 +102,10 @@ namespace TEST {
 			const utils::CString& shader, size_t lineOffset) noexcept;
 
 		static bool hasSkinningOrMorphing(
-			Variant variant,
-			MaterialBuilder::FeatureLevel featureLevel) noexcept;
+			Variant variant) noexcept;
 
 		static bool hasStereo(
-			Variant variant,
-			MaterialBuilder::FeatureLevel featureLevel) noexcept;
+			Variant variant) noexcept;
 
 		MaterialBuilder::PropertyList mProperties;
 		MaterialBuilder::VariableList mVariables;

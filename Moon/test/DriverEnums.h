@@ -1,5 +1,5 @@
 #pragma once
-
+#include "test/utils/FixedCapacityVector.h"
 #include "test/utils/BitmaskEnum.h"
 #include <array>        // FIXME: STL headers are not allowed in public headers
 #include <type_traits>  // FIXME: STL headers are not allowed in public headers
@@ -130,6 +130,7 @@ namespace TEST {
 	static constexpr size_t MAX_VERTEX_ATTRIBUTE_COUNT = 16;   // This is guaranteed by OpenGL ES.
 	static constexpr size_t MAX_SAMPLER_COUNT = 62;   // Maximum needed at feature level 3.
 	static constexpr size_t MAX_DESCRIPTOR_COUNT = 64;   // per set
+	static constexpr size_t MAX_SSBO_COUNT = 4;    // This is guaranteed by OpenGL ES.
 	static constexpr size_t MAX_DESCRIPTOR_SET_COUNT = 4;    // This is guaranteed by Vulkan.
 	static constexpr size_t CONFIG_UNIFORM_BINDING_COUNT = 9;   // This is guaranteed by OpenGL ES.
 	static constexpr size_t CONFIG_SAMPLER_BINDING_COUNT = 4;   // This is guaranteed by OpenGL ES.
@@ -582,7 +583,7 @@ namespace TEST {
 	struct DescriptorSetLayoutBinding {
 		DescriptorType type;
 		ShaderStageFlags stageFlags;
-		descriptor_binding_t binding;
+		uint8_t binding;
 		DescriptorFlags flags = DescriptorFlags::NONE;
 		uint16_t count = 0;
 
@@ -599,5 +600,6 @@ namespace TEST {
 	struct DescriptorSetLayout {
 		utils::FixedCapacityVector<DescriptorSetLayoutBinding> bindings;
 	};
+
 }
 template<> struct utils::EnableBitMaskOperators<TEST::ShaderStageFlags> : public std::true_type {};

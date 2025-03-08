@@ -1,6 +1,6 @@
 #pragma once
 #include "test/DriverEnums.h"//<backend/DriverEnums.h>
-#include "BitmaskEnum.h"
+#include "test/utils/BitmaskEnum.h"
 #include <type_traits>
 #include <stddef.h>
 #include <stdint.h>

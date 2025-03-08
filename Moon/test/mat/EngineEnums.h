@@ -1,8 +1,6 @@
 #pragma once
-
 #include "test/DriverEnums.h"//<backend/DriverEnums.h>
-
-#include "BitmaskEnum.h"//<utils/>
+#include "test/utils/BitmaskEnum.h"//<utils/>
 #include "test/utils/FixedCapacityVector.h"
 
 #include <stddef.h>
@@ -132,6 +130,10 @@ namespace TEST {
 	constexpr uint8_t CONFIG_MAX_STEREOSCOPIC_EYES = 4;
 
 } // namespace filament
+
+
+
+
 
 template<>
 struct utils::EnableIntegerOperators<TEST::DescriptorSetBindingPoints> : public std::true_type {};

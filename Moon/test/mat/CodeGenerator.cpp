@@ -450,6 +450,22 @@ namespace TEST {
 
 		if (uib.getTarget() == BufferInterfaceBlock::Target::SSBO) {
 			uint8_t qualifiers = uib.getQualifier();
+			if (qualifiers & 1) {
+				out << "coherent ";
+			}
+			if (qualifiers & 0x02) {
+				out << "writeonly ";
+			}
+			if (qualifiers & 0x04) {
+				out << "readonly ";
+			}
+			if (qualifiers & 0x08) {
+				out << "volatile ";
+			}
+			if (qualifiers & 0x10) {
+				out << "restrict ";
+			}
+			/*
 			while (qualifiers) {
 				uint8_t const mask = 1u << __builtin_ctz(unsigned(qualifiers));
 				switch (BufferInterfaceBlock::Qualifier(qualifiers & mask)) {
@@ -461,6 +477,8 @@ namespace TEST {
 				}
 				qualifiers &= ~mask;
 			}
+			*/
+
 		}
 
 		out << "{\n";

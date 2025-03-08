@@ -594,7 +594,6 @@ namespace TEST {
 	private:
 		static const AttributeDatabase sAttributeDatabase;
 
-		void prepareToBuild(MaterialInfo& info) noexcept;
 
 		// Initialize internal push constants that will both be written to the shaders and material
 		// chunks (like user-defined spec constants).

@@ -1,4 +1,6 @@
+/*
 #include "shaders.h"
+
 //------------------------------------------------------------------------------
 // Dithering configuration
 //------------------------------------------------------------------------------
@@ -92,12 +94,7 @@ vec4 Dither_TriangleNoiseRGB(vec4 rgba, const highp float temporalNoise01) {
 // Dithering dispatch
 //------------------------------------------------------------------------------
 
-/**
- * Dithers the specified RGBA color based on the current time and fragment
- * coordinates the input must be in the final color space (including OETF).
- * This dithering function assumes we are dithering to an 8-bit target.
- * This function dithers the alpha channel assuming premultiplied output
- */
+
 vec4 dither(vec4 rgba, const highp float temporalNoise01) {
 #if DITHERING_OPERATOR == DITHERING_NONE
 	return rgba;
@@ -111,3 +108,5 @@ vec4 dither(vec4 rgba, const highp float temporalNoise01) {
 	return Dither_TriangleNoiseRGB(rgba, temporalNoise01);
 #endif
 }
+
+*/

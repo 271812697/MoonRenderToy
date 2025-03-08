@@ -375,7 +375,7 @@ void initScreenSpaceRay(out ScreenSpaceRay ray, highp vec3 wsRayStart, vec3 wsRa
 	ray.uvRayStart = vec3(ray.ssRayStart.xy * 0.5 + 0.5, ray.ssRayStart.z);
 	ray.uvRay = uvRayEnd - ray.uvRayStart;
 }
-
+)" + std::string(R"(
 float screenSpaceContactShadow(vec3 lightDirection) {
 	// cast a ray in the direction of the light
 	float occlusion = 0.0;
@@ -567,7 +567,6 @@ float shadow(const bool DIRECTIONAL,
 
 	// should not happen
 	return 0.0;
-}
+};
 
-
-)";
+)");

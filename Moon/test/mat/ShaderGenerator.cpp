@@ -30,7 +30,7 @@ namespace TEST {
 	using namespace utils;
 
 	void ShaderGenerator::generateSurfaceMaterialVariantDefines(TEST::sstream& out,
-		ShaderStage stage, MaterialBuilder::FeatureLevel featureLevel,
+		ShaderStage stage,
 		MaterialInfo const& material, Variant variant) noexcept {
 
 		bool const litVariants = material.isLit || material.hasShadowMultiplier;
@@ -44,12 +44,12 @@ namespace TEST {
 		CodeGenerator::generateDefine(out, "VARIANT_HAS_VSM",
 			Variant::isVSMVariant(variant));
 		CodeGenerator::generateDefine(out, "VARIANT_HAS_STEREO",
-			hasStereo(variant, featureLevel));
+			hasStereo(variant));
 
 		switch (stage) {
 		case ShaderStage::VERTEX:
 			CodeGenerator::generateDefine(out, "VARIANT_HAS_SKINNING_OR_MORPHING",
-				hasSkinningOrMorphing(variant, featureLevel));
+				hasSkinningOrMorphing(variant));
 			break;
 		case ShaderStage::FRAGMENT:
 			CodeGenerator::generateDefine(out, "VARIANT_HAS_FOG",
@@ -64,7 +64,7 @@ namespace TEST {
 		}
 
 		out << '\n';
-		CodeGenerator::generateDefine(out, "MATERIAL_FEATURE_LEVEL", uint32_t(featureLevel));
+		//CodeGenerator::generateDefine(out, "MATERIAL_FEATURE_LEVEL", uint32_t(featureLevel));
 
 		CodeGenerator::generateDefine(out, "MATERIAL_HAS_SHADOW_MULTIPLIER",
 			material.hasShadowMultiplier);
@@ -391,12 +391,12 @@ namespace TEST {
 		CodeGenerator::generateDefine(vs, "USE_OPTIMIZED_DEPTH_VERTEX_SHADER",
 			useOptimizedDepthVertexShader);
 
-		generateSurfaceMaterialVariantDefines(vs, ShaderStage::VERTEX, featureLevel, material, variant);
+		generateSurfaceMaterialVariantDefines(vs, ShaderStage::VERTEX, material, variant);
 
 		generateSurfaceMaterialVariantProperties(vs, mProperties, mDefines);
 
 		AttributeBitset attributes = material.requiredAttributes;
-		if (hasSkinningOrMorphing(variant, featureLevel)) {
+		if (hasSkinningOrMorphing(variant)) {
 			attributes.set(VertexAttribute::BONE_INDICES);
 			attributes.set(VertexAttribute::BONE_WEIGHTS);
 			if (material.useLegacyMorphing) {
@@ -450,7 +450,7 @@ namespace TEST {
 				UibGenerator::getShadowUib());
 		}
 
-		if (hasSkinningOrMorphing(variant, featureLevel)) {
+		if (hasSkinningOrMorphing(variant)) {
 			cg.generateUniforms(vs, ShaderStage::VERTEX,
 				DescriptorSetBindingPoints::PER_RENDERABLE,
 				+PerRenderableBindingPoints::BONES_UNIFORMS,
@@ -498,7 +498,7 @@ namespace TEST {
 			return createPostProcessFragmentProgram(material, variant.key);
 		}
 
-		const CodeGenerator cg(shaderModel, targetApi, targetLanguage, featureLevel);
+		const CodeGenerator cg;
 
 		sstream fs;
 		cg.generateProlog(fs, ShaderStage::FRAGMENT, material, variant);
@@ -506,7 +506,7 @@ namespace TEST {
 		generateUserSpecConstants(cg, fs, mConstants);
 
 		generateSurfaceMaterialVariantDefines(
-			fs, ShaderStage::FRAGMENT, featureLevel, material, variant);
+			fs, ShaderStage::FRAGMENT, material, variant);
 
 		auto defaultSpecularAO = SpecularAmbientOcclusion::SIMPLE;
 		auto specularAO = material.specularAOSet ? material.specularAO : defaultSpecularAO;
@@ -580,7 +580,7 @@ namespace TEST {
 
 		CodeGenerator::generateSeparator(fs);
 
-		if (featureLevel >= FeatureLevel::FEATURE_LEVEL_1) {
+		if (true) {
 			assert(mMaterialDomain == MaterialDomain::SURFACE);
 
 			auto const perViewDescriptorSetLayout = getPerViewDescriptorSetLayoutWithVariant(
@@ -664,7 +664,7 @@ namespace TEST {
 		MaterialInfo const& material) const noexcept {
 		assert(mMaterialDomain == MaterialBuilder::MaterialDomain::COMPUTE);
 		//assert(featureLevel >= FeatureLevel::FEATURE_LEVEL_2);
-		const CodeGenerator cg(shaderModel, targetApi, targetLanguage, featureLevel);
+		const CodeGenerator cg;
 		sstream s;
 
 		cg.generateProlog(s, ShaderStage::COMPUTE, material, {});
@@ -704,7 +704,7 @@ namespace TEST {
 
 	std::string ShaderGenerator::createPostProcessVertexProgram(
 		MaterialInfo const& material, const Variant::type_t variantKey) const noexcept {
-		const CodeGenerator cg(sm, targetApi, targetLanguage, featureLevel);
+		const CodeGenerator cg;
 		sstream vs;
 		cg.generateProlog(vs, ShaderStage::VERTEX, material, {});
 
@@ -746,7 +746,7 @@ namespace TEST {
 
 	std::string ShaderGenerator::createPostProcessFragmentProgram(
 		MaterialInfo const& material, uint8_t variant) const noexcept {
-		const CodeGenerator cg(sm, targetApi, targetLanguage, featureLevel);
+		const CodeGenerator cg;
 		sstream fs;
 		cg.generateProlog(fs, ShaderStage::FRAGMENT, material, {});
 
@@ -799,20 +799,13 @@ namespace TEST {
 	}
 
 	bool ShaderGenerator::hasSkinningOrMorphing(
-		Variant variant, MaterialBuilder::FeatureLevel featureLevel) noexcept {
-		return variant.hasSkinningOrMorphing()
-			// HACK(exv): Ignore skinning/morphing variant when targeting ESSL 1.0. We should
-			// either properly support skinning on FL0 or build a system in matc which allows
-			// the set of included variants to differ per-feature level.
-			&& featureLevel > MaterialBuilder::FeatureLevel::FEATURE_LEVEL_0;
+		Variant variant) noexcept {
+		return variant.hasSkinningOrMorphing();
 	}
 
 	bool ShaderGenerator::hasStereo(
-		Variant variant, MaterialBuilder::FeatureLevel featureLevel) noexcept {
-		return variant.hasStereo()
-			// HACK(exv): Ignore stereo variant when targeting ESSL 1.0. We should properly build a
-			// system in matc which allows the set of included variants to differ per-feature level.
-			&& featureLevel > MaterialBuilder::FeatureLevel::FEATURE_LEVEL_0;
+		Variant variant) noexcept {
+		return variant.hasStereo();
 	}
 
 	DescriptorSetLayout ShaderGenerator::getPerViewDescriptorSetLayoutWithVariant(
@@ -822,13 +815,13 @@ namespace TEST {
 		ReflectionMode reflectionMode,
 		RefractionMode refractionMode) {
 		if (Variant::isValidDepthVariant(variant)) {
-			return descriptor_sets::getDepthVariantLayout();
+			return TEST::getDepthVariantLayout();
 		}
 		if (Variant::isSSRVariant(variant)) {
-			return descriptor_sets::getSsrVariantLayout();
+			return TEST::getSsrVariantLayout();
 		}
 		// We need to filter out all the descriptors not included in the "resolved" layout below
-		return descriptor_sets::getPerViewDescriptorSetLayout(
+		return TEST::getPerViewDescriptorSetLayout(
 			MaterialDomain::SURFACE, variantFilter,
 			isLit, reflectionMode, refractionMode);
 	}

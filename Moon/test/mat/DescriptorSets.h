@@ -11,7 +11,7 @@
 
 #include <test/utils/CString.h>
 
-namespace TEST::descriptor_sets {
+namespace TEST {
 
 	DescriptorSetLayout const& getPostProcessLayout() noexcept;
 	DescriptorSetLayout const& getDepthVariantLayout() noexcept;
