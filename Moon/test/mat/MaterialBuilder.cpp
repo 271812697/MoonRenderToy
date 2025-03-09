@@ -456,39 +456,29 @@ namespace TEST {
 		// Resolve all the #include directives within user code.
 		if (!mMaterialFragmentCode.resolveIncludes(mIncludeCallback, mFileName) ||
 			!mMaterialVertexCode.resolveIncludes(mIncludeCallback, mFileName)) {
-			;
-		}
-		MaterialInfo info{};
-		prepareToBuild(info);
-		std::vector<MaterialVariant> variants;
-		switch (mMaterialDomain) {
-		case MaterialDomain::SURFACE:
-			variants = determineSurfaceVariants(mVariantFilter, isLit(), mShadowMultiplier);
-			break;
-		case MaterialDomain::POST_PROCESS:
-			variants = determinePostProcessVariants();
-			break;
-		case MaterialDomain::COMPUTE:
-			variants = determineComputeVariants();
-			break;
-		}
 
+		}
 		ShaderGenerator sg(mProperties, mVariables, mOutputs, mDefines, mConstants, mPushConstants,
 			mMaterialFragmentCode.getResolved(), mMaterialFragmentCode.getLineOffset(),
 			mMaterialVertexCode.getResolved(), mMaterialVertexCode.getLineOffset(),
 			mMaterialDomain);
-		for (const auto& v : variants) {
+		MaterialInfo info{};
+		prepareToBuild(info);
+		for (const auto& stage : { ShaderStage::VERTEX ,ShaderStage::FRAGMENT }) {
 			std::string shader;
-			if (v.stage == ShaderStage::VERTEX) {
-				shader = sg.createVertexProgram(info, v.variant, mInterpolation, mVertexDomain);
+			if (stage == ShaderStage::VERTEX) {
+				shader = sg.createVertexProgram(info, Variant(103), mInterpolation, mVertexDomain);
 			}
-			else if (v.stage == ShaderStage::FRAGMENT) {
-				shader = sg.createFragmentProgram(info, v.variant, mInterpolation, mVariantFilter);
+			else if (stage == ShaderStage::FRAGMENT) {
+				shader = sg.createFragmentProgram(info, Variant(103), mInterpolation, mVariantFilter);
 			}
-			else if (v.stage == ShaderStage::COMPUTE) {
+			else if (stage == ShaderStage::COMPUTE) {
 				shader = sg.createComputeProgram(info);
 			}
+
 		}
+
+
 
 	}
 
@@ -553,7 +543,7 @@ namespace TEST {
 
 		mRequiredAttributes.set(VertexAttribute::POSITION);
 		if (mShading != Shading::UNLIT || mShadowMultiplier) {
-			mRequiredAttributes.set(VertexAttribute::TANGENTS);
+			//mRequiredAttributes.set(VertexAttribute::TANGENTS);
 		}
 
 		info.sib = sbb.name("MaterialParams").build();

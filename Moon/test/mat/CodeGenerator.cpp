@@ -30,34 +30,6 @@ namespace TEST {
 	sstream& CodeGenerator::generateProlog(sstream& out, ShaderStage stage,
 		MaterialInfo const& material, Variant v) const {
 		out << "#version 450 core\n\n";
-		// This allows our includer system to use the #line directive to denote the source file for
-		// #included code. This way, glslang reports errors more accurately.
-		out << "#extension GL_GOOGLE_cpp_style_line_directive : enable\n\n";
-		if (v.hasStereo() && stage == ShaderStage::VERTEX) {
-
-		}
-		if (stage == ShaderStage::COMPUTE) {
-			out << "layout(local_size_x = " << material.groupSize.x
-				<< ", local_size_y = " << material.groupSize.y
-				<< ", local_size_z = " << material.groupSize.z
-				<< ") in;\n\n";
-		}
-		out << "#define TARGET_GL_ENVIRONMENT\n";
-		out << "#define FILAMENT_OPENGL_SEMANTICS\n";
-		out << "#define FILAMENT_HAS_FEATURE_TEXTURE_GATHER\n";
-		out << "#define FILAMENT_HAS_FEATURE_INSTANCING\n";
-
-
-
-		// During compilation and optimization, __VERSION__ reflects the shader language version of the
-		// intermediate code, not the version of the final code. spirv-cross automatically adapts
-		// certain language features (e.g. fragment output) but leaves others untouched (e.g. sampler
-		// functions, bit shift operations). Client code may have to make decisions based on this
-		// information, so define a FILAMENT_EFFECTIVE_VERSION constant.
-		const char* effective_version = "__VERSION__";;
-
-		generateDefine(out, "FILAMENT_EFFECTIVE_VERSION", effective_version);
-
 
 
 		if (stage == ShaderStage::VERTEX) {
@@ -70,19 +42,6 @@ namespace TEST {
 		}
 		generateDefine(out, "VARYING", "varying");
 		generateDefine(out, "ATTRIBUTE", "attribute");
-		auto getShadingDefine = [](Shading shading) -> const char* {
-			switch (shading) {
-			case Shading::LIT:                 return "SHADING_MODEL_LIT";
-			case Shading::UNLIT:               return "SHADING_MODEL_UNLIT";
-			case Shading::SUBSURFACE:          return "SHADING_MODEL_SUBSURFACE";
-			case Shading::CLOTH:               return "SHADING_MODEL_CLOTH";
-			case Shading::SPECULAR_GLOSSINESS: return "SHADING_MODEL_SPECULAR_GLOSSINESS";
-			}
-			};
-
-		CodeGenerator::generateDefine(out, getShadingDefine(material.shading), true);
-
-		generateQualityDefine(out, material.quality);
 
 		// precision qualifiers
 		out << '\n';
@@ -90,52 +49,8 @@ namespace TEST {
 		const char* precision = getPrecisionQualifier(defaultPrecision);
 		out << "precision " << precision << " float;\n";
 		out << "precision " << precision << " int;\n";
-
-		// Filament-reserved specification constants (limited by CONFIG_MAX_RESERVED_SPEC_CONSTANTS)
 		out << '\n';
-		generateSpecializationConstant(out, "BACKEND_FEATURE_LEVEL",
-			+ReservedSpecializationConstants::BACKEND_FEATURE_LEVEL, 1);
-		generateSpecializationConstant(out, "CONFIG_MAX_INSTANCES",
-			+ReservedSpecializationConstants::CONFIG_MAX_INSTANCES, (int)CONFIG_MAX_INSTANCES);
-
-		// the default of 1024 (16KiB) is needed for 32% of Android devices
-		generateSpecializationConstant(out, "CONFIG_FROXEL_BUFFER_HEIGHT",
-			+ReservedSpecializationConstants::CONFIG_FROXEL_BUFFER_HEIGHT, 1024);
-
-		// directional shadowmap visualization
-		generateSpecializationConstant(out, "CONFIG_DEBUG_DIRECTIONAL_SHADOWMAP",
-			+ReservedSpecializationConstants::CONFIG_DEBUG_DIRECTIONAL_SHADOWMAP, false);
-
-		// froxel visualization
-		generateSpecializationConstant(out, "CONFIG_DEBUG_FROXEL_VISUALIZATION",
-			+ReservedSpecializationConstants::CONFIG_DEBUG_FROXEL_VISUALIZATION, false);
-
-		// Workaround a Metal pipeline compilation error with the message:
-		// "Could not statically determine the target of a texture". See light_indirect.fs
-		generateSpecializationConstant(out, "CONFIG_STATIC_TEXTURE_TARGET_WORKAROUND",
-			+ReservedSpecializationConstants::CONFIG_STATIC_TEXTURE_TARGET_WORKAROUND, false);
-
-		generateSpecializationConstant(out, "CONFIG_POWER_VR_SHADER_WORKAROUNDS",
-			+ReservedSpecializationConstants::CONFIG_POWER_VR_SHADER_WORKAROUNDS, false);
-
-		generateSpecializationConstant(out, "CONFIG_STEREO_EYE_COUNT",
-			+ReservedSpecializationConstants::CONFIG_STEREO_EYE_COUNT, material.stereoscopicEyeCount);
-
-		generateSpecializationConstant(out, "CONFIG_SH_BANDS_COUNT",
-			+ReservedSpecializationConstants::CONFIG_SH_BANDS_COUNT, 3);
-
-		generateSpecializationConstant(out, "CONFIG_SHADOW_SAMPLING_METHOD",
-			+ReservedSpecializationConstants::CONFIG_SHADOW_SAMPLING_METHOD, 1);
-
-		// CONFIG_MAX_STEREOSCOPIC_EYES is used to size arrays and on Adreno GPUs + vulkan, this has to
-		// be explicitly, statically defined (as in #define). Otherwise (using const int for
-		// example), we'd run into a GPU crash.
-		out << "#define CONFIG_MAX_STEREOSCOPIC_EYES " << (int)CONFIG_MAX_STEREOSCOPIC_EYES << "\n";
-
-
-		out << '\n';
-		std::string a = "aa";
-		out << SHADERS_COMMON_DEFINES_GLSL_DATA;
+		//out << SHADERS_COMMON_DEFINES_GLSL_DATA;
 		out << "\n";
 		return out;
 	}
@@ -450,24 +365,9 @@ namespace TEST {
 
 		if (uib.getTarget() == BufferInterfaceBlock::Target::SSBO) {
 			uint8_t qualifiers = uib.getQualifier();
-			if (qualifiers & 1) {
-				out << "coherent ";
-			}
-			if (qualifiers & 0x02) {
-				out << "writeonly ";
-			}
-			if (qualifiers & 0x04) {
-				out << "readonly ";
-			}
-			if (qualifiers & 0x08) {
-				out << "volatile ";
-			}
-			if (qualifiers & 0x10) {
-				out << "restrict ";
-			}
-			/*
+
 			while (qualifiers) {
-				uint8_t const mask = 1u << __builtin_ctz(unsigned(qualifiers));
+				uint8_t const mask = 1u << utils::ctz(unsigned(qualifiers));
 				switch (BufferInterfaceBlock::Qualifier(qualifiers & mask)) {
 				case BufferInterfaceBlock::Qualifier::COHERENT:  out << "coherent "; break;
 				case BufferInterfaceBlock::Qualifier::WRITEONLY: out << "writeonly "; break;
@@ -477,7 +377,7 @@ namespace TEST {
 				}
 				qualifiers &= ~mask;
 			}
-			*/
+
 
 		}
 
