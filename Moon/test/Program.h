@@ -162,11 +162,6 @@ namespace TEST {
 		// For ES2 support only
 		AttributesInfo mAttributes;
 		BindingUniformsInfo mBindingUniformsInfo;
-
-		// Indicates the current engine was initialized with multiview stereo, and the variant for this
-		// program contains STE flag. This will be referred later for the OpenGL shader compiler to
-		// determine whether shader code replacement for the num_views should be performed.
-		// This variable could be promoted as a more generic variable later if other similar needs occur.
 		bool mMultiview = false;
 	};
 

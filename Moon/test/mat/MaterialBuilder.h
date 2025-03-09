@@ -13,6 +13,7 @@
 #include "test/utils/bitset.h"//<utils/bitset.h>
 //#include <utils/compiler.h>
 #include "test/utils/CString.h"//<utils/CString.h>
+#include "test/Program.h"
 
 //#include <math/vec3.h>
 
@@ -443,7 +444,7 @@ namespace TEST {
 		//! specify compute kernel group size
 	   // MaterialBuilder& groupSize(TEST::math::uint3 groupSize) noexcept;
 		void prepareToBuild(MaterialInfo& info);
-		void build();
+		Program build();
 
 
 	public:

@@ -312,7 +312,8 @@ namespace utils {
 
 		iterator assertCapacityForSize(size_type s) {
 			if constexpr (CapacityCheck || FILAMENT_FORCE_CAPACITY_CHECK) {
-				assert(capacity() >= s);
+				int cursize = capacity();
+				assert(cursize >= s);
 				//<< "capacity exceeded: requested size " << (unsigned long)s
 				//<< "u, available capacity " << (unsigned long)capacity() << "u.";
 			}
