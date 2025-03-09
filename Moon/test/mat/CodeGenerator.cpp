@@ -166,7 +166,7 @@ namespace TEST {
 		}
 
 		out << "\n";
-		out << SHADERS_VARYINGS_GLSL_DATA;
+		///out << SHADERS_VARYINGS_GLSL_DATA;
 		return out;
 	}
 
