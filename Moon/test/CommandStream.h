@@ -163,6 +163,8 @@ namespace TEST {
 
 	public:
 		void test(int val);
+		Handle<HwProgram> createProgram(Program&& program);
+
 
 	public:
 		// This is for debugging only. Currently, CircularBuffer can only be written from a

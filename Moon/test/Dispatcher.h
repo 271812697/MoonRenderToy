@@ -10,6 +10,7 @@ namespace TEST {
 	public:
 		using Execute = void (*)(Driver& driver, CommandBase* self, intptr_t* next);
 		static void test(Driver& driver, CommandBase* base, intptr_t* next);
+		static void createProgram(Driver& driver, CommandBase* base, intptr_t* next);
 
 	};
 

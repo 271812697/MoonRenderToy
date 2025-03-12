@@ -23,12 +23,8 @@
 
 namespace TEST {
 
-
-
-
 	class Dispatcher;
 	class CommandStream;
-
 	class Driver {
 	public:
 		static size_t getElementTypeSize(ElementType type) noexcept;
@@ -74,6 +70,14 @@ namespace TEST {
 		virtual void execute(std::function<void(void)> const& fn);
 
 		void test(int val);
+		Handle<HwProgram>createProgramS();
+		void createProgramR(Handle<HwProgram> ph, Program&& program);
+		Handle<HwVertexBuffer> createVertexBufferS();
+		void createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih);
+		Handle<HwIndexBuffer> createIndexBufferS();
+		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
+		void createBufferObjectR(Handle<HwBufferObject> boh, uint32_t byteCount, BufferObjectBinding bindingType, BufferUsage usage);
+
 	private:
 
 		friend class OpenGLProgram;
@@ -124,12 +128,7 @@ namespace TEST {
 			return mHandleAllocator.handle_cast<Dp, B>(handle);
 		}
 
-		Handle<HwVertexBuffer> createVertexBufferS();
-		void createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih);
 
-		Handle<HwIndexBuffer> createIndexBufferS();
-		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
-		void createBufferObjectR(Handle<HwBufferObject> boh, uint32_t byteCount, BufferObjectBinding bindingType, BufferUsage usage);
 	};
 
 } // namespace filament::backend

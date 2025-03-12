@@ -210,6 +210,7 @@ namespace MOON {
 
 			std::cout << "say hello" << std::endl;
 			});
+
 		viewer.append_mesh();
 		viewer.append_mesh();
 		viewer.append_mesh();
