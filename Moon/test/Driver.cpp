@@ -126,6 +126,7 @@ namespace TEST {
 	void Driver::createProgramR(Handle<HwProgram> ph, Program&& program)
 	{
 		std::cout << "Create Program" << std::endl;
+		construct<OpenGLProgram>(ph, *this, std::move(program));
 	}
 
 

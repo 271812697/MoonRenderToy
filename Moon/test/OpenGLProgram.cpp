@@ -1,7 +1,4 @@
-
-
 #include "OpenGLProgram.h"
-
 #include "utils/GLUtils.h"
 //#include "GLTexture.h"
 #include "Driver.h"

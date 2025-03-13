@@ -449,7 +449,7 @@ namespace TEST {
 				auto [version, prolog, body] = splitShaderSource({ shader_src, shader_len });
 
 				// enable ESSL 3.10 if available
-				if (true) {
+				if (false) {
 					version = "#version 310 es\n";
 				}
 
