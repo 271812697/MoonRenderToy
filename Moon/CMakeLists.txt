@@ -25,6 +25,7 @@ if(USE_QT6)
         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
         QtNodes
         glad
+        spdlog
     )
 else()
     target_link_libraries(${TARGET_NAME} PUBLIC
@@ -32,9 +33,9 @@ else()
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::OpenGL
-        
         QtNodes
         glad
+        spdlog
     )
 endif()
 

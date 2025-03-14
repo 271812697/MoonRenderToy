@@ -4,6 +4,8 @@
 #include "OpenGLContext.h"
 #include "OpenGLProgram.h"
 #include "test/utils/GLUtils.h"
+
+#include "core/log.h"
 #include <functional>
 #include <mutex>
 #include <utility>
@@ -114,7 +116,7 @@ namespace TEST {
 		glGenBuffers(1, &bo->gl.id);
 		gl->bindBuffer(bo->gl.binding, bo->gl.id);
 		glBufferData(bo->gl.binding, byteCount, nullptr, GLUtils::getBufferUsage(usage));
-		CHECK_GL_ERROR
+
 	}
 
 	Handle<HwProgram> Driver::createProgramS()
@@ -125,7 +127,8 @@ namespace TEST {
 
 	void Driver::createProgramR(Handle<HwProgram> ph, Program&& program)
 	{
-		std::cout << "Create Program" << std::endl;
+		CORE_INFO("Create Program{}", 1);
+
 		construct<OpenGLProgram>(ph, *this, std::move(program));
 	}
 

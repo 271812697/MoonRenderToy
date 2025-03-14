@@ -12,6 +12,13 @@ if(NOT TARGET glad)
     target_include_directories(glad PUBLIC $<BUILD_INTERFACE:${glad_SOURCE_DIR_}>)
     set_target_properties(glad PROPERTIES FOLDER ${lib_folder}/glad)
 endif()
+if(NOT TARGET spdlog)
+    option(SPDLOG_BUILD_EXAMPLE "" OFF)
+    option(SPDLOG_INSTALL "" OFF)
+    add_subdirectory(spdlog)
+    set_target_properties(spdlog PROPERTIES FOLDER ${lib_folder}/spdlog)
+endif()
+
 
 
 
