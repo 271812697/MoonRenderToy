@@ -100,7 +100,7 @@ namespace TEST {
 		// For ES2 support only...
 		Program& uniforms(uint32_t index, utils::CString name, UniformInfo uniforms) noexcept;
 		Program& attributes(AttributesInfo attributes) noexcept;
-
+		Program& name(utils::CString& name);
 		//
 		// Getters for program construction...
 		//

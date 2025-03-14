@@ -1,21 +1,10 @@
-
 #include<glad/glad.h>
 #include "ShaderCompilerService.h"
-
-//#include "BlobCacheKey.h"
-//#include "OpenGLBlobCache.h"
 #include "Driver.h"
-
-//#include <private/backend/BackendUtils.h>
-
-#include "Program.h"//<backend/>
-
-
-#include "utils/CString.h"//<>
-
-#include "utils/FixedCapacityVector.h"//<>
-
-
+#include "Program.h"
+#include "utils/CString.h"
+#include "utils/FixedCapacityVector.h"
+#include "core/log.h"
 #include <array>
 #include <cctype>
 #include <chrono>
@@ -177,11 +166,7 @@ namespace TEST {
 	ShaderCompilerService::program_token_t ShaderCompilerService::createProgram(
 		utils::CString const& name, Program&& program) {
 		auto& gl = mDriver.getContext();
-
 		auto token = std::make_shared<OpenGLProgramToken>(*this, name);
-
-
-
 		CompilerPriorityQueue const priorityQueue = program.getPriorityQueue();
 		if (mMode == Mode::THREAD_POOL) {
 			//to do:
@@ -228,19 +213,7 @@ namespace TEST {
 						return false;
 					}
 				}
-
 				assert(token->gl.program);
-
-				//mCallbackManager.put(token->handle);
-
-				//if (token->key) {
-					// TODO: technically we don't have to cache right now. Is it advantageous to
-					//       do this later, maybe depending on CPU usage?
-					// attempt to cache if we don't have a thread pool (otherwise it's done
-					// by the pool).
-					//mBlobCache.insert(mDriver.mPlatform, token->key, token->gl.program);
-				//}
-
 				return true;
 				});
 		}
@@ -385,46 +358,24 @@ namespace TEST {
 		bool multiview,
 		std::array<unsigned int, Program::SHADER_TYPE_COUNT>& outShaders,
 		std::array<CString, Program::SHADER_TYPE_COUNT>& outShaderSourceCode) noexcept {
-
-
-
-		auto appendSpecConstantString = +[](std::string& s, Program::SpecializationConstant const& sc) {
-			s += "#define SPIRV_CROSS_CONSTANT_ID_" + std::to_string(sc.id) + ' ';
-			s += std::visit([](auto&& arg) { return to_string(arg); }, sc.value);
-			s += '\n';
-			return s;
-			};
-
 		std::string specializationConstantString;
 		int32_t numViews = 2;
-		for (auto const& sc : specializationConstants) {
-			appendSpecConstantString(specializationConstantString, sc);
-			if (sc.id == 8) {
-				// This constant must match
-				// ReservedSpecializationConstants::CONFIG_STEREO_EYE_COUNT
-				// which we can't use here because it's defined in EngineEnums.h.
-				// (we're breaking layering here, but it's for the good cause).
-				numViews = std::get<int32_t>(sc.value);
-			}
-		}
-		if (!specializationConstantString.empty()) {
-			specializationConstantString += '\n';
-		}
-
 		// build all shaders
-
 		for (size_t i = 0; i < Program::SHADER_TYPE_COUNT; i++) {
 			const ShaderStage stage = static_cast<ShaderStage>(i);
 			GLenum glShaderType{};
 			switch (stage) {
 			case ShaderStage::VERTEX:
 				glShaderType = GL_VERTEX_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::VERTEX");
 				break;
 			case ShaderStage::FRAGMENT:
 				glShaderType = GL_FRAGMENT_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::FRAGMENT");
 				break;
 			case ShaderStage::COMPUTE:
 				glShaderType = GL_COMPUTE_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::COMPUTE");
 				break;
 			}
 
@@ -432,44 +383,20 @@ namespace TEST {
 				Program::ShaderBlob& shader = shadersSource[i];
 				char* shader_src = reinterpret_cast<char*>(shader.data());
 				size_t shader_len = shader.size();
-
-				// remove GOOGLE_cpp_style_line_directive
-				process_GOOGLE_cpp_style_line_directive(context, shader_src, shader_len);
-
-				// replace the value of layout(num_views = X) for multiview extension
-				if (multiview && stage == ShaderStage::VERTEX) {
-					process_OVR_multiview2(context, numViews, shader_src, shader_len);
-				}
-
-				// add support for ARB_shading_language_packing if needed
-				auto const packingFunctions = process_ARB_shading_language_packing(context);
-
-				// split shader source, so we can insert the specialization constants and the packing
-				// functions
 				auto [version, prolog, body] = splitShaderSource({ shader_src, shader_len });
-
-				// enable ESSL 3.10 if available
-				if (false) {
-					version = "#version 310 es\n";
-				}
-
-				std::array<std::string_view, 5> sources = {
+				std::array<std::string_view, 4> sources = {
 					version,
 					prolog,
 					specializationConstantString,
-					packingFunctions,
 					{ body.data(), body.size() - 1 }  // null-terminated
 				};
 
-				// Some of the sources may be zero-length. Remove them as to avoid passing lengths of
-				// zero to glShaderSource(). glShaderSource should work with lengths of zero, but some
-				// drivers instead interpret zero as a sentinel for a null-terminated string.
 				auto partitionPoint = std::stable_partition(
 					sources.begin(), sources.end(), [](std::string_view s) { return !s.empty(); });
 				size_t count = std::distance(sources.begin(), partitionPoint);
 
-				std::array<const char*, 5> shaderStrings;
-				std::array<int, 5> lengths;
+				std::array<const char*, 4> shaderStrings;
+				std::array<int, 4> lengths;
 				for (size_t i = 0; i < count; i++) {
 					shaderStrings[i] = sources[i].data();
 					lengths[i] = sources[i].size();
@@ -477,15 +404,21 @@ namespace TEST {
 
 				unsigned int const shaderId = glCreateShader(glShaderType);
 				glShaderSource(shaderId, count, shaderStrings.data(), lengths.data());
-
 				glCompileShader(shaderId);
+				int status;
+				glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
+				if (status == GL_FALSE) {
+					int info_log_length;
+					glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &info_log_length);
+					GLchar* info_log = new GLchar[info_log_length + 1];
+					glGetShaderInfoLog(shaderId, info_log_length, NULL, info_log);
+					CORE_ERROR("Failed to compile shader: {0}", info_log);
+					CORE_WARN("The source is:\n{0}", shader_src);
+					delete[] info_log;
+					glDeleteShader(shaderId);  // prevent shader leak
+				}
 
-#ifndef NDEBUG
-				// for debugging we return the original shader source (without the modifications we
-				// made here), otherwise the line numbers wouldn't match.
 				outShaderSourceCode[i] = { shader_src, shader_len };
-#endif
-
 				outShaders[i] = shaderId;
 			}
 		}

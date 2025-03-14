@@ -71,6 +71,7 @@ namespace TEST {
 			return {};
 		}
 		return builder.build();
+
 	}
 
 	bool MaterialCompiler::parseMaterial(const char* buffer, size_t size, MaterialBuilder& builder)
