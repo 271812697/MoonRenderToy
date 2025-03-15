@@ -403,7 +403,7 @@ namespace TEST {
 				}
 
 				unsigned int const shaderId = glCreateShader(glShaderType);
-				glShaderSource(shaderId, count, shaderStrings.data(), lengths.data());
+				glShaderSource(shaderId, 1, &shader_src, nullptr);
 				glCompileShader(shaderId);
 				int status;
 				glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
@@ -416,6 +416,9 @@ namespace TEST {
 					CORE_WARN("The source is:\n{0}", shader_src);
 					delete[] info_log;
 					glDeleteShader(shaderId);  // prevent shader leak
+				}
+				else {
+					CORE_INFO("compile shader success\nThe source is:\n{0}", shader_src);
 				}
 
 				outShaderSourceCode[i] = { shader_src, shader_len };

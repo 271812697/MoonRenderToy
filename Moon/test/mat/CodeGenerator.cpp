@@ -126,14 +126,16 @@ namespace TEST {
 			if (stage == ShaderStage::VERTEX) {
 				out << "\n#define VARIABLE_CUSTOM" << index << " " << name.c_str() << "\n";
 				out << "\n#define VARIABLE_CUSTOM_AT" << index << " variable_" << name.c_str() << "\n";
-				out << "LAYOUT_LOCATION(" << index << ") VARYING " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
+				//out << "LAYOUT_LOCATION(" << index << ") VARYING " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
+				out << "\nout " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
 			}
 			else if (stage == ShaderStage::FRAGMENT) {
 				if (!variable.hasPrecision && variable.precision == Precision::DEFAULT) {
 					// for backward compatibility
 					precisionString = "highp";
 				}
-				out << "\nLAYOUT_LOCATION(" << index << ") VARYING " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
+				//out << "\nLAYOUT_LOCATION(" << index << ") VARYING " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
+				out << "\nin " << precisionString << " vec4 variable_" << name.c_str() << ";\n";
 			}
 		}
 		return out;
@@ -162,7 +164,7 @@ namespace TEST {
 				});
 
 			out << "\n";
-			generatePushConstants(out, pushConstants, attributes.size());
+			//generatePushConstants(out, pushConstants, attributes.size());
 		}
 
 		out << "\n";
@@ -333,7 +335,9 @@ namespace TEST {
 
 		auto const& infos = uib.getFieldInfoList();
 
-
+		if (infos.empty()) {
+			return out;
+		}
 		std::string blockName{ uib.getName() };
 		std::string instanceName{ uib.getName() };
 		blockName.front() = char(std::toupper((unsigned char)blockName.front()));
@@ -385,7 +389,7 @@ namespace TEST {
 
 		generateInterfaceFields(out, infos, getDefaultPrecision(stage));
 
-		out << "} " << instanceName << ";\n";
+		out << "}" << instanceName << ";\n";
 
 		return out;
 	}

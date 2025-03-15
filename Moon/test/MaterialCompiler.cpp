@@ -70,8 +70,7 @@ namespace TEST {
 		if (!parsed) {
 			return {};
 		}
-		return builder.build();
-
+		return  builder.build();
 	}
 
 	bool MaterialCompiler::parseMaterial(const char* buffer, size_t size, MaterialBuilder& builder)

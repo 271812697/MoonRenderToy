@@ -472,21 +472,28 @@ namespace TEST {
 			std::string shader;
 			if (stage == ShaderStage::VERTEX) {
 				shader = sg.createVertexProgram(info, Variant(103), mInterpolation, mVertexDomain);
+
+
 				vsBuilder.reserve(shader.size());
 				vsBuilder.resize(shader.size());
-				memcpy(&vsBuilder[0], shader.data(), shader.size());
+				memcpy(&vsBuilder[0], shader.c_str(), shader.size());
+				vsBuilder.back() = 0;
 			}
 			else if (stage == ShaderStage::FRAGMENT) {
 				shader = sg.createFragmentProgram(info, Variant(103), mInterpolation, mVariantFilter);
+
 				fsBuilder.reserve(shader.size());
 				fsBuilder.resize(shader.size());
 				memcpy(&fsBuilder[0], shader.data(), shader.size());
+				fsBuilder.back() = 0;
 			}
 			else if (stage == ShaderStage::COMPUTE) {
 				shader = sg.createComputeProgram(info);
+
 				csBuilder.reserve(shader.size());
 				csBuilder.resize(shader.size());
 				memcpy(&csBuilder[0], shader.data(), shader.size());
+				csBuilder.back() = 0;
 			}
 
 		}
