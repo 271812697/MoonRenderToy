@@ -58,10 +58,30 @@ namespace TEST {
 
 		}
 		mContext = std::make_shared<OpenGLContext>();
+		mShaderCompilerService.init();
 	}
 
 	Driver::~Driver()
 	{
+	}
+
+	bool Driver::useProgram(OpenGLProgram* p)
+	{
+		bool success = true;
+		if (mBoundProgram != p) {
+			// compile/link the program if needed and call glUseProgram
+			success = p->use(this, *mContext.get());
+			assert(success == p->isValid());
+			if (success) {
+
+				decltype(mInvalidDescriptorSetBindings) changed;
+				changed.setValue((1 << MAX_DESCRIPTOR_SET_COUNT) - 1);
+				mInvalidDescriptorSetBindings |= changed;
+
+				mBoundProgram = p;
+			}
+		}
+		return success;
 	}
 
 	void Driver::execute(std::function<void(void)> const& fn) {

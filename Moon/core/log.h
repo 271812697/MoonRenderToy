@@ -9,7 +9,7 @@
 
 
 #if defined(_DEBUG) || defined(DEBUG)
-#define CORE_ASERT(cond, ...) { if (!(cond)) { MOON::Log::GetLogger()->critical(__VA_ARGS__); SP_DBG_BREAK(); } }
+#define CORE_ASERT(cond, ...) { if (!(cond)) { MOON::Log::GetLogger()->critical(__VA_ARGS__); __debugbreak(); } }
 #else
 #define CORE_ASERT(cond, ...)
 #endif

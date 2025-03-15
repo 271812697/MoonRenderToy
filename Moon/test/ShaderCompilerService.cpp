@@ -15,7 +15,6 @@
 #include <thread>
 #include <utility>
 #include <variant>
-
 #include <stddef.h>
 #include <stdint.h>
 #include <iostream>
@@ -23,9 +22,6 @@
 namespace TEST {
 
 	using namespace utils;
-
-	// ------------------------------------------------------------------------------------------------
-
 	static void logCompilationError(
 		ShaderStage shaderType, const char* name,
 		unsigned int shaderId, CString const& sourceCode) noexcept;
@@ -123,9 +119,7 @@ namespace TEST {
 	// ------------------------------------------------------------------------------------------------
 
 	ShaderCompilerService::ShaderCompilerService(Driver& driver)
-		: mDriver(driver)//,
-		//mBlobCache(driver.getContext()),
-		//mCallbackManager(driver) 
+		: mDriver(driver)
 	{
 	}
 
@@ -143,24 +137,13 @@ namespace TEST {
 			return;
 		}
 
-
-
 		if (mMode == Mode::THREAD_POOL) {
 			//to do:
 		}
 	}
 
 	void ShaderCompilerService::terminate() noexcept {
-		// Finally stop the thread pool immediately. Pending jobs will be discarded. We guarantee by
-		// construction that nobody is waiting on a token (because waiting is only done on the main
-		// backend thread, and if we're here, we're on the backend main thread).
-		//mCompilerThreadPool.terminate();
-
 		mRunAtNextTickOps.clear();
-
-		// We could have some pending callbacks here, we need to execute them.
-		// This is equivalent to calling cancelTickOp() on all active tokens.
-		//mCallbackManager.terminate();
 	}
 
 	ShaderCompilerService::program_token_t ShaderCompilerService::createProgram(
@@ -217,16 +200,12 @@ namespace TEST {
 				return true;
 				});
 		}
-
 		return token;
 	}
 
 	unsigned int ShaderCompilerService::getProgram(ShaderCompilerService::program_token_t& token) {
 		unsigned int const program = initialize(token);
 		assert(token == nullptr);
-#if !FILAMENT_ENABLE_MATDBG
-		assert(program);
-#endif
 		return program;
 	}
 
@@ -268,14 +247,6 @@ namespace TEST {
 		}
 	}
 
-	//void ShaderCompilerService::notifyWhenAllProgramsAreReady(
-	//	CallbackHandler* handler, CallbackHandler::Callback callback, void* user) {
-	//	if (callback) {
-	//		mCallbackManager.setCallback(handler, callback, user);
-	//	}
-	//}
-
-	// ------------------------------------------------------------------------------------------------
 
 	void ShaderCompilerService::getProgramFromCompilerPool(program_token_t& token) noexcept {
 		OpenGLProgramToken::ProgramData const& programData{ token->get() };
@@ -286,7 +257,6 @@ namespace TEST {
 	}
 
 	unsigned int ShaderCompilerService::initialize(program_token_t& token) noexcept {
-
 		if (!token->gl.program) {
 			if (mMode == Mode::THREAD_POOL) {
 				//to do:
@@ -295,17 +265,8 @@ namespace TEST {
 				// we force the program link -- which might stall, either here or below in
 				// checkProgramStatus(), but we don't have a choice, we need to use the program now.
 				token->compiler.cancelTickOp(token);
-
-				token->gl.program = linkProgram(mDriver.getContext(),
-					token->gl.shaders, token->attributes);
-
+				token->gl.program = linkProgram(mDriver.getContext(), token->gl.shaders, token->attributes);
 				assert(token->gl.program);
-
-				//mCallbackManager.put(token->handle);
-
-				//if (token->key) {
-					//mBlobCache.insert(mDriver.mPlatform, token->key, token->gl.program);
-				//}
 			}
 			else {
 				// if we don't have a program yet, block until we get it.
@@ -321,11 +282,7 @@ namespace TEST {
 		// check status of program linking and shader compilation, logs error and free all resources
 		// in case of error.
 		bool const success = checkProgramStatus(token);
-
-		// Unless we have matdbg, we panic if a program is invalid. Otherwise, we'd get a UB.
-		// The compilation error has been logged to log.e by this point.
-		//FILAMENT_CHECK_POSTCONDITION(FILAMENT_ENABLE_MATDBG || success)
-		  //      << "OpenGL program " << token->name.c_str_safe() << " failed to link or compile";
+		CORE_ASERT(success, "OpenGL program  failed to link or compile");
 
 		if ((success)) {
 			program = token->gl.program;
@@ -592,22 +549,13 @@ namespace TEST {
 				++it;
 			}
 		}
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", ops.size());
 	}
 
 	// ------------------------------------------------------------------------------------------------
 
-	/*
-	 * Checks a program link status and logs errors and frees resources on failure.
-	 * Returns true on success.
-	 */
+
 	bool ShaderCompilerService::checkProgramStatus(program_token_t const& token) noexcept {
-
-		//SYSTRACE_CALL();
-
 		assert(token->gl.program);
-
 		int status;
 		glGetProgramiv(token->gl.program, GL_LINK_STATUS, &status);
 		if ((status == GL_TRUE)) {
@@ -615,7 +563,6 @@ namespace TEST {
 		}
 
 		// only if the link fails, we check the compilation status
-
 		for (size_t i = 0; i < Program::SHADER_TYPE_COUNT; i++) {
 			const ShaderStage type = static_cast<ShaderStage>(i);
 			const unsigned int shader = token->gl.shaders[i];
@@ -653,13 +600,9 @@ namespace TEST {
 		{ // scope for the temporary string storage
 			int length = 0;
 			glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &length);
-
 			CString infoLog(length);
 			glGetShaderInfoLog(shaderId, length, nullptr, infoLog.data());
-
-			std::cout << "Compilation error in " << to_string(shaderType) << " shader \"" << name << "\":\n"
-				<< "\"" << infoLog.c_str() << "\""
-				<< std::endl;;
+			CORE_ERROR("Compilation error in {0} shader \" {1} \"\n \" {2}\"", to_string(shaderType), name, infoLog.c_str());
 		}
 
 #ifndef NDEBUG

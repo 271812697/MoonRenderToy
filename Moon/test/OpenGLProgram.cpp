@@ -1,26 +1,18 @@
 #include "OpenGLProgram.h"
 #include "utils/GLUtils.h"
 //#include "GLTexture.h"
+#include "core/log.h"
 #include "Driver.h"
-//#include "ShaderCompilerService.h"
-
-#include "DriverEnums.h"//<backend/>
-#include "Program.h"//<backend/>
-#include "Handle.h"//<backend/>
-
-//#include <utils/compiler.h>
-//#include <utils/debug.h>
+#include "DriverEnums.h"
+#include "Program.h"
+#include "Handle.h"
 #include "utils/FixedCapacityVector.h"//<>
-//#include <utils/Log.h>
-//#include <utils/Systrace.h>
-
 #include <algorithm>
 #include <array>
 #include <algorithm>
 #include <new>
 #include <string_view>
 #include <utility>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -52,6 +44,7 @@ namespace TEST {
 		mToken = compiler.createProgram(name, std::move(program));
 
 		ShaderCompilerService::setUserData(mToken, lazyInitializationData);
+		//use(&gld, *gld.mContext.get());
 	}
 
 	OpenGLProgram::~OpenGLProgram() noexcept {
@@ -74,9 +67,24 @@ namespace TEST {
 		}
 	}
 
-	void OpenGLProgram::initialize(Driver& gld) {
+	bool OpenGLProgram::use(Driver* const gld, OpenGLContext& context) {
 
-		//SYSTRACE_CALL();
+		if ((mToken && !gl.program)) {
+			// first time a program is used
+			initialize(*gld);
+		}
+
+		if ((!gl.program)) {
+			CORE_ERROR("The glprogram is invalid");
+			assert(!mToken);
+			return false;
+		}
+
+		context.useProgram(gl.program);
+		return true;
+	}
+
+	void OpenGLProgram::initialize(Driver& gld) {
 
 		assert(gl.program == 0);
 		assert(mToken);
@@ -101,12 +109,8 @@ namespace TEST {
 	 */
 	void OpenGLProgram::initializeProgramState(OpenGLContext& context, GLuint program,
 		LazyInitializationData& lazyInitializationData) noexcept {
-
-
-
 		// from the pipeline layout we compute a mapping from {set, binding} to {binding}
 		// for both buffers and textures
-
 		for (auto&& entry : lazyInitializationData.descriptorBindings) {
 			std::sort(entry.begin(), entry.end(),
 				[](Program::Descriptor const& lhs, Program::Descriptor const& rhs) {
