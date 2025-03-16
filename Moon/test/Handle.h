@@ -11,6 +11,7 @@ namespace TEST {
 
 	struct HwVertexBufferInfo;
 	struct HwVertexBuffer;
+	struct HwDescriptorSetLayout;
 	class HandleBase {
 	public:
 		using HandleId = uint32_t;
@@ -97,5 +98,6 @@ namespace TEST {
 
 	using VertexBufferHandle = Handle<HwVertexBuffer>;
 	using VertexBufferInfoHandle = Handle<HwVertexBufferInfo>;
+	using DescriptorSetLayoutHandle = Handle<HwDescriptorSetLayout>;
 
 }

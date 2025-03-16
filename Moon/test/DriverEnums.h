@@ -600,6 +600,21 @@ namespace TEST {
 	struct DescriptorSetLayout {
 		utils::FixedCapacityVector<DescriptorSetLayoutBinding> bindings;
 	};
+	//! returns whether this format a depth format
+	static constexpr bool isDepthFormat(TextureFormat format) noexcept {
+		switch (format) {
+		case TextureFormat::DEPTH32F:
+		case TextureFormat::DEPTH24:
+		case TextureFormat::DEPTH16:
+		case TextureFormat::DEPTH32F_STENCIL8:
+		case TextureFormat::DEPTH24_STENCIL8:
+			return true;
+		default:
+			return false;
+		}
+	}
 
 }
+template<> struct utils::EnableBitMaskOperators<TEST::DescriptorFlags> : public std::true_type {};
 template<> struct utils::EnableBitMaskOperators<TEST::ShaderStageFlags> : public std::true_type {};
+template<> struct utils::EnableBitMaskOperators<TEST::TargetBufferFlags> : public std::true_type {};

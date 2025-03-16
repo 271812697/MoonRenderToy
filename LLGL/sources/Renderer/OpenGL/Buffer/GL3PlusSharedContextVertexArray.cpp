@@ -21,91 +21,91 @@ namespace LLGL
 {
 
 
-void GL3PlusSharedContextVertexArray::BuildVertexLayout(GLuint bufferID, const ArrayView<VertexAttribute>& attributes)
-{
-    const std::size_t startOffset = attribs_.size();
-    attribs_.resize(startOffset + attributes.size());
+	void GL3PlusSharedContextVertexArray::BuildVertexLayout(GLuint bufferID, const ArrayView<VertexAttribute>& attributes)
+	{
+		const std::size_t startOffset = attribs_.size();
+		attribs_.resize(startOffset + attributes.size());
 
-    for_range(i, attributes.size())
-    {
-        /* Convert to GLVertexAttribute */
-        GLConvertVertexAttrib(attribs_[startOffset + i], attributes[i], bufferID);
-    }
-}
+		for (typename LLGL::Utils::ForRangeTypeTraits<decltype(attributes.size())>::type i_End = (attributes.size()), i = (0); i < (i_End); ++i)
+		{
+			/* Convert to GLVertexAttribute */
+			GLConvertVertexAttrib(attribs_[startOffset + i], attributes[i], bufferID);
+		}
+	}
 
-void GL3PlusSharedContextVertexArray::Finalize()
-{
-    // dummy (only implemented for GL 2.x)
-}
+	void GL3PlusSharedContextVertexArray::Finalize()
+	{
+		// dummy (only implemented for GL 2.x)
+	}
 
-void GL3PlusSharedContextVertexArray::Bind(GLStateManager& stateMngr)
-{
-    stateMngr.BindVertexArray(GetVAOForCurrentContext().GetID());
-}
+	void GL3PlusSharedContextVertexArray::Bind(GLStateManager& stateMngr)
+	{
+		stateMngr.BindVertexArray(GetVAOForCurrentContext().GetID());
+	}
 
-void GL3PlusSharedContextVertexArray::SetDebugName(const char* name)
-{
-    /* Store debug name */
-    debugName_ = (name != nullptr ? name : "");
+	void GL3PlusSharedContextVertexArray::SetDebugName(const char* name)
+	{
+		/* Store debug name */
+		debugName_ = (name != nullptr ? name : "");
 
-    /* Invalidate debug name for all context dependent VAOs */
-    for (GLContextVAO& contextVAO : contextDependentVAOs_)
-        contextVAO.isObjectLabelDirty = true;
+		/* Invalidate debug name for all context dependent VAOs */
+		for (GLContextVAO& contextVAO : contextDependentVAOs_)
+			contextVAO.isObjectLabelDirty = true;
 
-    /* If this vertex array already has its attributes set, get the current VAO to cause invaldiated labels to be updated */
-    if (!attribs_.empty())
-        (void)GetVAOForCurrentContext();
-}
-
-
-/*
- * ======= Private: =======
- */
-
-GLVertexArrayObject& GL3PlusSharedContextVertexArray::GetVAOForCurrentContext()
-{
-    /* Check if there's already an entry for the current context */
-    const unsigned contextIndex = GLContext::GetCurrentGlobalIndex();
-    LLGL_ASSERT(contextIndex > 0);
-
-    const std::size_t vaoIndex = static_cast<std::size_t>(contextIndex) - 1;
-    if (vaoIndex >= contextDependentVAOs_.size())
-    {
-        /* Resize container and fill new entry */
-        contextDependentVAOs_.resize(vaoIndex + 1);
-        contextDependentVAOs_[vaoIndex].vao.BuildVertexLayout(attribs_);
-        if (!debugName_.empty())
-            contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
-    }
-    else if (contextDependentVAOs_[vaoIndex].vao.GetID() == 0)
-    {
-        /* Fill empty entry in container */
-        contextDependentVAOs_[vaoIndex].vao.BuildVertexLayout(attribs_);
-        if (!debugName_.empty())
-            contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
-    }
-    else if (contextDependentVAOs_[vaoIndex].isObjectLabelDirty)
-    {
-        /* Udpate debug label if it has been invalidated */
-        if (!debugName_.empty())
-            contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
-    }
-
-    /* Return VAO for current context */
-    return contextDependentVAOs_[vaoIndex].vao;
-}
+		/* If this vertex array already has its attributes set, get the current VAO to cause invaldiated labels to be updated */
+		if (!attribs_.empty())
+			(void)GetVAOForCurrentContext();
+	}
 
 
-/*
- * GLContextVAO structure
- */
+	/*
+	 * ======= Private: =======
+	 */
 
-void GL3PlusSharedContextVertexArray::GLContextVAO::SetObjectLabel(const char* label)
-{
-    /* Set label for VAO */
-    GLSetObjectLabel(GL_VERTEX_ARRAY, vao.GetID(), label);
-    isObjectLabelDirty = false;
-}
+	GLVertexArrayObject& GL3PlusSharedContextVertexArray::GetVAOForCurrentContext()
+	{
+		/* Check if there's already an entry for the current context */
+		const unsigned contextIndex = GLContext::GetCurrentGlobalIndex();
+		LLGL_ASSERT(contextIndex > 0);
+
+		const std::size_t vaoIndex = static_cast<std::size_t>(contextIndex) - 1;
+		if (vaoIndex >= contextDependentVAOs_.size())
+		{
+			/* Resize container and fill new entry */
+			contextDependentVAOs_.resize(vaoIndex + 1);
+			contextDependentVAOs_[vaoIndex].vao.BuildVertexLayout(attribs_);
+			if (!debugName_.empty())
+				contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
+		}
+		else if (contextDependentVAOs_[vaoIndex].vao.GetID() == 0)
+		{
+			/* Fill empty entry in container */
+			contextDependentVAOs_[vaoIndex].vao.BuildVertexLayout(attribs_);
+			if (!debugName_.empty())
+				contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
+		}
+		else if (contextDependentVAOs_[vaoIndex].isObjectLabelDirty)
+		{
+			/* Udpate debug label if it has been invalidated */
+			if (!debugName_.empty())
+				contextDependentVAOs_[vaoIndex].SetObjectLabel(debugName_.c_str());
+		}
+
+		/* Return VAO for current context */
+		return contextDependentVAOs_[vaoIndex].vao;
+	}
+
+
+	/*
+	 * GLContextVAO structure
+	 */
+
+	void GL3PlusSharedContextVertexArray::GLContextVAO::SetObjectLabel(const char* label)
+	{
+		/* Set label for VAO */
+		GLSetObjectLabel(GL_VERTEX_ARRAY, vao.GetID(), label);
+		isObjectLabelDirty = false;
+	}
 
 
 } // /namespace LLGL
