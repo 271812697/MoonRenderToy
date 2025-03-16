@@ -484,24 +484,13 @@ namespace TEST {
 	unsigned int ShaderCompilerService::linkProgram(OpenGLContext& context,
 		std::array<unsigned int, Program::SHADER_TYPE_COUNT> shaders,
 		utils::FixedCapacityVector<std::pair<utils::CString, uint8_t>> const& attributes) noexcept {
-
-
-
 		unsigned int const program = glCreateProgram();
 		for (auto shader : shaders) {
 			if (shader) {
 				glAttachShader(program, shader);
 			}
 		}
-
-		//if (UTILS_UNLIKELY(context.isES2())) {
-		//	for (auto const& [name, loc] : attributes) {
-		//		glBindAttribLocation(program, loc, name.c_str());
-		//	}
-		//}
-
 		glLinkProgram(program);
-
 		return program;
 	}
 
@@ -516,9 +505,6 @@ namespace TEST {
 				return std::get<0>(lhs) < priorityQueue;
 			});
 		ops.emplace(pos, priority, token, std::move(job));
-
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", mRunAtNextTickOps.size());
 	}
 
 	bool ShaderCompilerService::cancelTickOp(program_token_t token) noexcept {
@@ -531,8 +517,6 @@ namespace TEST {
 			ops.erase(pos);
 			return true;
 		}
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", ops.size());
 		return false;
 	}
 
@@ -550,10 +534,6 @@ namespace TEST {
 			}
 		}
 	}
-
-	// ------------------------------------------------------------------------------------------------
-
-
 	bool ShaderCompilerService::checkProgramStatus(program_token_t const& token) noexcept {
 		assert(token->gl.program);
 		int status;
@@ -634,10 +614,7 @@ namespace TEST {
 
 		CString infoLog(length);
 		glGetProgramInfoLog(program, length, nullptr, infoLog.data());
-
-		std::cout << "Link error in \"" << name << "\":\n"
-			<< "\"" << infoLog.c_str() << "\""
-			<< std::endl;
+		CORE_ERROR("Link error in \"{0}\":\n\"{1}\"",name,infoLog.c_str());
 	}
 
 

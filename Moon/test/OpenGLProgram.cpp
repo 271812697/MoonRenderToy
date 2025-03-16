@@ -44,7 +44,7 @@ namespace TEST {
 		mToken = compiler.createProgram(name, std::move(program));
 
 		ShaderCompilerService::setUserData(mToken, lazyInitializationData);
-		//use(&gld, *gld.mContext.get());
+		use(&gld, *gld.mContext.get());
 	}
 
 	OpenGLProgram::~OpenGLProgram() noexcept {
