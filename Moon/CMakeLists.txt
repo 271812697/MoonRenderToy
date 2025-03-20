@@ -24,8 +24,7 @@ if(USE_QT6)
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
         QtNodes
-        glad
-        spdlog
+
     )
 else()
     target_link_libraries(${TARGET_NAME} PUBLIC
@@ -34,10 +33,13 @@ else()
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::OpenGL
         QtNodes
-        glad
-        spdlog
     )
 endif()
+target_link_libraries(${TARGET_NAME} PUBLIC
+        glad
+        spdlog
+        glm_static
+)
 
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${EIGEN3_INCLUDE_DIR})
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)

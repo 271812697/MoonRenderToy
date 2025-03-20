@@ -19,7 +19,53 @@ if(NOT TARGET spdlog)
     set_target_properties(spdlog PROPERTIES FOLDER ${lib_folder}/spdlog)
 endif()
 
+if(NOT TARGET glm_static)
+    add_subdirectory(glm)
+    set_target_properties(glm_static PROPERTIES FOLDER ${lib_folder}/glm_static)
+endif()
 
 
+if(NOT TARGET std_image)
+    set(std_image_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/stb_Image)
+    file(GLOB_RECURSE std_image_impl CONFIGURE_DEPENDS  
+    "${std_image_SOURCE_DIR_}/*.cpp")
+    file(GLOB_RECURSE std_image_head CONFIGURE_DEPENDS  
+    "${std_image_SOURCE_DIR_}/*.h")
+    source_group(TREE "${std_image_SOURCE_DIR_}" FILES ${std_image_head} ${std_image_impl})
+    add_library(std_image STATIC ${std_image_head} ${std_image_impl})
+    set_target_properties(std_image PROPERTIES LINKER_LANGUAGE CXX)
+    target_include_directories(std_image PUBLIC $<BUILD_INTERFACE:${std_image_SOURCE_DIR_}/include>)
+    set_target_properties(std_image PROPERTIES FOLDER ${lib_folder}/std_image)
+endif()
 
+if(NOT TARGET assimp)
+    set(ASSIMP_BUILD_ZLIB ON)
+    set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+    set(ASSIMP_BUILD_TESTS OFF)
+    set(ASSIMP_INSTALL OFF)
+    set(ASSIMP_INJECT_DEBUG_POSTFIX OFF)
+    add_subdirectory(assimp)
+    set_target_properties(assimp PROPERTIES FOLDER ${lib_folder}/Assimp)
+    set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER ${lib_folder}/Assimp)
+    set_target_properties(zlibstatic PROPERTIES FOLDER ${lib_folder}/Assimp)
+    #set_target_properties(assimp_cmd PROPERTIES FOLDER ${lib_folder}/Assimp)
 
+endif()
+
+if(NOT TARGET opengl)   
+    
+    set(opengl_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Opengl)
+    file(GLOB_RECURSE opengl_impl CONFIGURE_DEPENDS  
+    "${opengl_SOURCE_DIR_}/*.cpp")
+    file(GLOB_RECURSE opengl_head CONFIGURE_DEPENDS  
+    "${opengl_SOURCE_DIR_}/*.h")
+    source_group(TREE "${opengl_SOURCE_DIR_}" FILES ${opengl_impl} ${opengl_head})
+    add_library(opengl STATIC ${opengl_impl} ${opengl_head})
+    target_link_libraries(opengl PUBLIC glad)
+    target_link_libraries(opengl PUBLIC spdlog)
+    target_link_libraries(opengl PUBLIC std_image)
+    target_link_libraries(opengl PUBLIC glm_static)
+    target_link_libraries(opengl PUBLIC assimp)
+    target_include_directories(opengl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+    set_target_properties(opengl PROPERTIES FOLDER ${lib_folder}/opengl)
+endif()

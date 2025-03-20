@@ -40,7 +40,7 @@ namespace TEST {
 			initFlag = true;
 		}
 		std::ifstream file;
-		file.open("D:/Project/UseQt/Build/bin/Debug/normalColor.mat", std::ifstream::binary | std::ios::ate);
+		file.open("C:/Project/UseQt/Build/bin/Debug/normalColor.mat", std::ifstream::binary | std::ios::ate);
 		if (!file) {
 			std::cerr << "Unable to open material source file '" << shaderFilePath << "'" << std::endl;
 			return{};
