@@ -33,6 +33,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
 add_subdirectory(test)
 add_subdirectory(Extern)
 add_subdirectory(Block)

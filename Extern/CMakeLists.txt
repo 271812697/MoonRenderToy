@@ -1,7 +1,6 @@
 set(lib_folder "Extern")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-
 if(NOT TARGET glad)
     set(glad_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/glad)
     file(GLOB_RECURSE glad_impl CONFIGURE_DEPENDS  
@@ -52,20 +51,3 @@ if(NOT TARGET assimp)
 
 endif()
 
-if(NOT TARGET opengl)   
-    
-    set(opengl_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Opengl)
-    file(GLOB_RECURSE opengl_impl CONFIGURE_DEPENDS  
-    "${opengl_SOURCE_DIR_}/*.cpp")
-    file(GLOB_RECURSE opengl_head CONFIGURE_DEPENDS  
-    "${opengl_SOURCE_DIR_}/*.h")
-    source_group(TREE "${opengl_SOURCE_DIR_}" FILES ${opengl_impl} ${opengl_head})
-    add_library(opengl STATIC ${opengl_impl} ${opengl_head})
-    target_link_libraries(opengl PUBLIC glad)
-    target_link_libraries(opengl PUBLIC spdlog)
-    target_link_libraries(opengl PUBLIC std_image)
-    target_link_libraries(opengl PUBLIC glm_static)
-    target_link_libraries(opengl PUBLIC assimp)
-    target_include_directories(opengl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-    set_target_properties(opengl PROPERTIES FOLDER ${lib_folder}/opengl)
-endif()

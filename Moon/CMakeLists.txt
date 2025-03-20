@@ -39,9 +39,14 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         glad
         spdlog
         glm_static
+        std_image
+        assimp
 )
-
-target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${EIGEN3_INCLUDE_DIR})
+target_include_directories(${TARGET_NAME} PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR} 
+    ${EIGEN3_INCLUDE_DIR}
+    ${ThirdPartyDir}
+)
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
 set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 17)
 

@@ -150,9 +150,9 @@ SET( Core_SRCS
   Common/Assimp.cpp
 )
 
-IF(MSVC OR (MINGW AND BUILD_SHARED_LIBS))
-  list(APPEND Core_SRCS "res/assimp.rc")
-ENDIF()
+#IF(MSVC OR (MINGW AND BUILD_SHARED_LIBS))
+  #list(APPEND Core_SRCS "res/assimp.rc")
+#ENDIF()
 
 SET( Logging_SRCS
   ${HEADER_PATH}/DefaultLogger.hpp
