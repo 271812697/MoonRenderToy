@@ -1,6 +1,7 @@
 #include "Guizmo.h"
 #include "glutil/util.h"
 #include <glad/glad.h>
+#include "opengl/asset/shader.h"
 
 namespace MOON {
 	constexpr unsigned int Id_Invalid = 0;
@@ -639,7 +640,7 @@ void main()
 )";
 		teapotShader = create_shader_program(teapotVertexShader, teapotFragmentShader, {});
 
-
+		std::shared_ptr<asset::Shader> s = std::make_shared<asset::Shader>("D:/Project/C++/opengl/res/shaders/pbr02.glsl");;
 
 		glGenBuffers(1, &VertexBuffer);;
 		glGenVertexArrays(1, &VertexArray);

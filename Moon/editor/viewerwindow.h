@@ -38,6 +38,7 @@ namespace MOON {
 		bool blockMouseMessage = false;
 		vtkRenderWindowInteractor* windowInteractor = nullptr;
 		vtkBoxWidget2* boxWidget = nullptr;
+		bool initFlag = false;
 
 	public Q_SLOTS:
 		void viewnode(const std::shared_ptr<NodeData>& node);
