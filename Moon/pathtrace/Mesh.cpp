@@ -5,6 +5,7 @@
 #include "tinyobjloader/tiny_obj_loader.h"
 #include <glad/glad.h>
 #include "Mesh.h"
+#include "RadeonRays/split_bvh.h"
 
 namespace PathTrace
 {
@@ -17,6 +18,9 @@ namespace PathTrace
 	{
 		float p = atan2f(v.z, v.x);
 		return (p < 0.f) ? p + 2.f * PI : p;
+	}
+	Mesh::Mesh() {
+		bvh = new RadeonRays::SplitBvh(2.0f, 64, 0, 0.001f, 0);
 	}
 	Mesh::~Mesh() {
 		delete bvh;

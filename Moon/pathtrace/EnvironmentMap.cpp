@@ -13,8 +13,6 @@ namespace PathTrace
 	{
 		return 0.212671f * r + 0.715160f * g + 0.072169f * b;
 	}
-
-	// https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Light_Sources#InfiniteAreaLights
 	void EnvironmentMap::BuildCDF()
 	{
 		// Gather weights for CDF

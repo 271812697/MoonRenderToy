@@ -1,18 +1,16 @@
 #pragma once
-
+#include "MathUtil.h"
 #include <vector>
-#include "RadeonRays/split_bvh.h"
-
+namespace RadeonRays {
+	class Bvh;
+}
 namespace PathTrace
 {
 	class Mesh
 	{
 	public:
-		Mesh()
-		{
-			bvh = new RadeonRays::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+		Mesh();
 
-		}
 		~Mesh();
 		void GenVAO();
 		void BuildBVH();

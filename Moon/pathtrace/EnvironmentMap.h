@@ -1,8 +1,5 @@
 #pragma once
 #include<string>
-
-
-
 namespace PathTrace
 {
 	class EnvironmentMap

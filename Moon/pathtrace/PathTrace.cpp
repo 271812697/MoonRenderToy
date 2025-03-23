@@ -6,8 +6,6 @@
 #include <filesystem>
 namespace PathTrace {
 
-
-
 	Scene* scene = nullptr;
 	Renderer* renderer = nullptr;
 	std::vector<string> sceneFiles;
