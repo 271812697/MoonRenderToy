@@ -1,6 +1,7 @@
 #include "PathTrace.h"
 #include "LoadScene.h"
 #include "Scene.h"
+#include "RendererOptions.h"
 #include "Renderer.h"
 #include <filesystem>
 namespace PathTrace {

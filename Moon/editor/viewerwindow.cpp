@@ -13,6 +13,7 @@
 #include "Guizmo/BoxWidget2.h"
 #include "pathtrace/PathTrace.h"
 #include "pathtrace/Renderer.h"
+#include "pathtrace/RendererOptions.h"
 
 static const char* AsciiToKeySymTable[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   nullptr, nullptr, nullptr, "Tab", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,

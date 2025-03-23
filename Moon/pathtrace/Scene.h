@@ -4,16 +4,18 @@
 #include <map>
 #include "EnvironmentMap.h"
 #include "RadeonRays/bvh.h"
-#include "Renderer.h"
-
-#include "RadeonRays/bvh_translator.h"
 #include "Material.h"
+#include "RendererOptions.h"
+#include "RadeonRays/bvh_translator.h"
+
 
 namespace PathTrace
 {
 	class Camera;
 	class Mesh;
 	class Texture;
+	class Material;
+
 	enum LightType
 	{
 		RectLight,
