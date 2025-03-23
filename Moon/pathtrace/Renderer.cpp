@@ -1,4 +1,6 @@
 #include "Renderer.h"
+#include "Camera.h"
+#include "Texture.h"
 #include "Quad.h"
 #include "opengl/asset/fbo.h"
 #include "opengl/asset/shader.h"

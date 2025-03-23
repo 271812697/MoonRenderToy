@@ -1,7 +1,11 @@
 
 #include <cstring>
+
+#include "MathUtil.h"
 #include "LoadScene.h"
 #include "Scene.h"
+#include "Camera.h"
+#include "Texture.h"
 #include<tinygltf/include/tiny_gltf.h>
 
 namespace PathTrace

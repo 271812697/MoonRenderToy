@@ -1,9 +1,9 @@
 #pragma once
 
-#include "MathUtil.h"
 #include <string>
 namespace PathTrace
 {
+	struct Mat4;
 	class Scene;
 	class RenderOptions;
 	bool LoadGLTF(const std::string& filename, Scene* scene, RenderOptions& renderOptions, Mat4 xform, bool binary);

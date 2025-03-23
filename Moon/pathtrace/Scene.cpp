@@ -8,7 +8,10 @@
 #include "stb_image/stb_image_resize.h"
 #include "stb_image/stb_image.h"
 #include "Scene.h"
+#include "Mesh.h"
 #include "Camera.h"
+#include "Texture.h"
+
 
 namespace PathTrace
 {

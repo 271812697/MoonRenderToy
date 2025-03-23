@@ -1,17 +1,20 @@
 #pragma once
 
-#include"Opengl/asset/shader.h"
+
+namespace asset {
+	class Shader;
+}
 namespace PathTrace
 {
 
-    class Quad
-    {
-    public:
-        Quad();
-        void Draw(asset::Shader* shader);
+	class Quad
+	{
+	public:
+		Quad();
+		void Draw(asset::Shader* shader);
 
-    private:
-        GLuint vao;
-        GLuint vbo;
-    };
+	private:
+		unsigned vao;
+		unsigned vbo;
+	};
 }
