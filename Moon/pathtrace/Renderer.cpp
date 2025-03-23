@@ -8,8 +8,9 @@
 #include "Scene.h"
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_write.h"
+#include "core/log.h"
 
-//#include "Opengl/core/sync.h"
+
 #include "oidn/include/OpenImageDenoise/oidn.hpp"
 #include <fstream>
 namespace PathTrace {
@@ -30,13 +31,13 @@ namespace PathTrace
 		std::ifstream file(path);
 		if (!file.is_open())
 		{
-			std::cerr << "ERROR: could not open the shader at: " << path << "\n" << std::endl;
+			CORE_ERROR("ERROR: could not open the shader at: {0}\n", path);
+
 			return "";
 		}
 		std::string lineBuffer;
 		while (std::getline(file, lineBuffer))
 		{
-
 			fullSourceCode += lineBuffer + '\n';
 		}
 		fullSourceCode += '\0';

@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Renderer.h"
+#include "core/log.h"
 
 
 namespace PathTrace
@@ -354,10 +355,10 @@ namespace PathTrace
 	void Scene::createBLAS()
 	{
 
-#pragma omp parallel for
+
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			printf("Building BVH for %s\n", meshes[i]->name.c_str());
+			CORE_INFO("Building BVH for {0}\n", meshes[i]->name.c_str());
 			meshes[i]->BuildBVH();
 		}
 	}
@@ -483,7 +484,8 @@ light
 
 		// Copy mesh data
 		int verticesCnt = 0;
-		printf("Copying Mesh Data\n");
+
+		CORE_INFO("Copying Mesh Data\n");
 		for (int i = 0; i < meshes.size(); i++)
 		{
 			// Copy indices from BVH and not from Mesh. 
@@ -508,21 +510,21 @@ light
 		}
 
 		// Copy transforms
-		printf("Copying transforms\n");
+		CORE_INFO("Copying transforms\n");
 		transforms.resize(meshInstances.size());
 		for (int i = 0; i < meshInstances.size(); i++)
 			transforms[i] = meshInstances[i].transform;
 
 		// Copy textures
 		if (!textures.empty())
-			printf("Copying and resizing textures\n");
+			CORE_INFO("Copying and resizing textures\n");
 
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
 		int texBytes = reqWidth * reqHeight * 4;
 		textureMapsArray.resize(texBytes * textures.size());
 
-#pragma omp parallel for
+
 		for (int i = 0; i < textures.size(); i++)
 		{
 			int texWidth = textures[i]->width;

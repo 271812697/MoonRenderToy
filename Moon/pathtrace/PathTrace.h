@@ -27,7 +27,7 @@ namespace PathTrace {
 
 	RenderOptions& GetRenderOptions();
 	void GetEnvMaps();
-
+	void Resize(int width, int height);
 	void LoadScene(std::string sceneName);
 
 	bool InitRenderer();

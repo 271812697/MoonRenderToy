@@ -21,10 +21,10 @@ namespace PathTrace {
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
 
-	std::string shadersDir = "D:/Project/C++/opengl/res/PathTrace/shaders/";
-	std::string assetsDir = "D:/Project/C++/opengl/res/PathTrace/Scenes/ObjNor/";
+	std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	std::string assetsDir = "../../Resource/pathtrace/scenes/";
 
-	std::string envMapDir = "D:/Project/C++/opengl/res/PathTrace/Scenes/HDR/";
+	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
@@ -48,6 +48,14 @@ namespace PathTrace {
 					sceneFiles.push_back(item.path().generic_string());
 				}
 			}
+	}
+	void Resize(int width, int height) {
+		renderOptions.windowResolution.x = width;
+		renderOptions.windowResolution.y = height;
+		if (!renderOptions.independentRenderSize)
+			renderOptions.renderResolution = renderOptions.windowResolution;
+		scene->renderOptions = renderOptions;
+		renderer->ResizeRenderer();
 	}
 	void GetEnvMaps()
 	{
