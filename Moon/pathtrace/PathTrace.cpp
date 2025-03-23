@@ -29,7 +29,6 @@ namespace PathTrace {
 	RenderOptions renderOptions;
 
 	Scene* GetScene() {
-
 		return scene;
 	}
 	Renderer* GetRenderer() {
@@ -57,7 +56,6 @@ namespace PathTrace {
 			if (item.path().extension() == ".hdr")
 			{
 				envMaps.push_back(item.path().generic_string());
-
 			}
 		}
 	}

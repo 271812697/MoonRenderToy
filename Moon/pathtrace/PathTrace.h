@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-//#include"LoadScene.h"
 
 using namespace std;
 namespace PathTrace {
@@ -34,6 +33,4 @@ namespace PathTrace {
 	bool InitRenderer();
 
 	void Ret();
-
-
 }

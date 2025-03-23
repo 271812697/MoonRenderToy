@@ -1,6 +1,5 @@
-
 #include <cstring>
-
+#include "core/log.h"
 #include "MathUtil.h"
 #include "LoadScene.h"
 #include "Scene.h"
@@ -22,25 +21,22 @@ namespace PathTrace
 
 		if (!file)
 		{
-			printf("Couldn't open %s for reading\n", filename.c_str());
+			CORE_ERROR("Couldn't open {0} for reading\n", filename.c_str());
 			return false;
 		}
-
-		printf("Loading Scene..\n");
+		CORE_INFO("Loading Scene..\n");
 
 		struct MaterialData
 		{
 			Material mat;
 			int id;
 		};
-
 		std::map<std::string, MaterialData> materialMap;
 		std::map<std::string, int>InstanceMap;
 		std::vector<std::string> albedoTex;
 		std::vector<std::string> metallicRoughnessTex;
 		std::vector<std::string> normalTex;
 		std::string path = filename.substr(0, filename.find_last_of("/\\")) + "/";
-
 		int materialCount = 0;
 		char line[kMaxLineLength];
 
@@ -881,7 +877,6 @@ namespace PathTrace
 		LoadMaterials(scene, gltfModel);
 		LoadTextures(scene, gltfModel);
 		LoadInstances(scene, gltfModel, xform, meshPrimMap);
-
 		return true;
 	}
 }

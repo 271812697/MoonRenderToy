@@ -189,10 +189,7 @@ namespace MOON {
 				boxWidget = vtkBoxWidget2::New();
 				boxWidget->SetInteractor(windowInteractor);
 				boxWidget->SetEnabled(1);
-
 			}
-
-
 		}
 	}
 
@@ -210,7 +207,6 @@ namespace MOON {
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		TEST::TestInstance::Instance().getCommandStream()->test(8);
 		TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
-
 			std::cout << "say hello" << std::endl;
 			});
 
@@ -238,7 +234,6 @@ namespace MOON {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
-
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)

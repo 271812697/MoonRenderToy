@@ -1,13 +1,10 @@
-
-
-//#define STB_IMAGE_RESIZE_IMPLEMENTATION
-
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include "stb_image/stb_image_resize.h"
 #include "stb_image/stb_image.h"
 #include "Scene.h"
+#include "RadeonRays/bvh_translator.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "Camera.h"
@@ -31,6 +28,9 @@ namespace PathTrace
 		float t0 = std::max(tmin.x, std::max(tmin.y, tmin.z));
 
 		return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
+	}
+	Scene::Scene() : camera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
+		sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
 	}
 	Scene::~Scene()
 	{

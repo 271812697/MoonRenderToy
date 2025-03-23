@@ -3,12 +3,10 @@
 #include <vector>
 #include <map>
 #include "EnvironmentMap.h"
-#include "RadeonRays/bvh.h"
 #include "Material.h"
 #include "RendererOptions.h"
+#include "Mesh.h"
 #include "RadeonRays/bvh_translator.h"
-
-
 namespace PathTrace
 {
 	class Camera;
@@ -42,9 +40,7 @@ namespace PathTrace
 	class Scene
 	{
 	public:
-		Scene() : camera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
-			sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
-		}
+		Scene();
 		~Scene();
 
 		int AddMesh(const std::string& filename);
