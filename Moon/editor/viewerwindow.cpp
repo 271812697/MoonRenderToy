@@ -13,6 +13,8 @@
 #include "Guizmo/BoxWidget2.h"
 #include "pathtrace/PathTrace.h"
 #include "pathtrace/Renderer.h"
+#include "pathtrace/Scene.h"
+#include "pathtrace/Camera.h"
 
 
 static const char* AsciiToKeySymTable[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -284,12 +286,22 @@ namespace MOON {
 			return;
 		}
 		Qt::MouseButton mb = e->button();
-		if (mb == Qt::MouseButton::LeftButton)
+		if (mb == Qt::MouseButton::LeftButton) {
 			viewer.mouse_down(Viewer::MouseButton::Left);
-		else if (mb == Qt::MouseButton::MiddleButton)
+
+		}
+
+		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_down(Viewer::MouseButton::Middle);
+			PathTrace::CameraController::Instance().mouseMiddlePress();
+		}
+
 		else if (mb == Qt::MouseButton::RightButton)
+		{
+			PathTrace::CameraController::Instance().mouseRightPress();
 			viewer.mouse_down(Viewer::MouseButton::Right);
+		}
+
 	}
 
 	void ViewerWindow::mouseMoveEvent(QMouseEvent* event)
@@ -298,6 +310,8 @@ namespace MOON {
 		auto pos = event->localPos();
 		//cursorX = pos.x() * 1.5;
 		//cursorY = pos.y() * 1.5;
+
+		PathTrace::CameraController::Instance().mouseMove(pos.x(), pos.y());
 		viewer.mouse_move(pos.x() * 1.5, pos.y() * 1.5);
 	}
 
@@ -309,15 +323,23 @@ namespace MOON {
 		Qt::MouseButton mb = event->button();
 		if (mb == Qt::MouseButton::LeftButton)
 			viewer.mouse_up(Viewer::MouseButton::Left);
-		else if (mb == Qt::MouseButton::MiddleButton)
+		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_up(Viewer::MouseButton::Middle);
+			PathTrace::CameraController::Instance().mouseMiddleRelease();
+		}
+
 		else if (mb == Qt::MouseButton::RightButton)
+		{
 			viewer.mouse_up(Viewer::MouseButton::Right);
+			PathTrace::CameraController::Instance().mouseRightRelease();
+		}
+
 	}
 
 	void ViewerWindow::wheelEvent(QWheelEvent* event)
 	{
 		viewer.mouse_scroll(event->angleDelta().y());
+		PathTrace::CameraController::Instance().wheelMouseWheel(event->angleDelta().y());
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{

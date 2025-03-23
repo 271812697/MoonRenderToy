@@ -2,6 +2,7 @@
 #include "LoadScene.h"
 #include "Scene.h"
 #include "RendererOptions.h"
+#include "Camera.h"
 #include "Renderer.h"
 #include <filesystem>
 namespace PathTrace {
@@ -111,6 +112,60 @@ namespace PathTrace {
 	void Ret() {
 		delete renderer;
 		delete scene;
+	}
+
+	CameraController::CameraController()
+	{
+	}
+
+	CameraController& CameraController::Instance()
+	{
+		static CameraController instance;
+		return instance;
+	}
+
+	void CameraController::mouseMove(int _x, int _y)
+	{
+
+		if (mouseMiddle) {
+			scene->camera->Strafe((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->dirty = true;
+		}
+		else if (mouseRight)
+		{
+			scene->camera->OffsetOrientation((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->dirty = true;
+		}
+		x = _x;
+		y = _y;
+	}
+
+	void CameraController::mouseMiddlePress()
+	{
+		mouseMiddle = true;
+	}
+
+	void CameraController::mouseRightPress()
+	{
+		mouseRight = true;
+	}
+
+
+
+	void CameraController::mouseMiddleRelease()
+	{
+		mouseMiddle = false;
+	}
+
+	void CameraController::mouseRightRelease()
+	{
+		mouseRight = false;
+	}
+
+	void CameraController::wheelMouseWheel(float delta)
+	{
+		scene->camera->SetRadius(delta * 0.1);
+		GetScene()->dirty = true;
 	}
 
 }

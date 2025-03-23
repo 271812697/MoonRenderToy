@@ -33,4 +33,21 @@ namespace PathTrace {
 	bool InitRenderer();
 
 	void Ret();
+
+	class CameraController {
+		CameraController();
+	public:
+		static CameraController& Instance();
+		void mouseMove(int _x, int _y);
+		void mouseMiddlePress();
+		void mouseRightPress();
+		void mouseMiddleRelease();
+		void mouseRightRelease();
+		void wheelMouseWheel(float delta);
+	private:
+		int x, y;
+		bool mouseMiddle = false;
+
+		bool mouseRight = false;
+	};
 }

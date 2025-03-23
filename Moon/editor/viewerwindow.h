@@ -40,6 +40,7 @@ namespace MOON {
 		vtkBoxWidget2* boxWidget = nullptr;
 		bool initFlag = false;
 
+
 	public Q_SLOTS:
 		void viewnode(const std::shared_ptr<NodeData>& node);
 	};
