@@ -158,8 +158,6 @@ const char* qt_key_to_key_sym(Qt::Key i, Qt::KeyboardModifiers modifiers)
 	return ret;
 }
 namespace MOON {
-	//static float cursorX;
-	//static float cursorY;
 	static float viewW;
 	static float viewH;
 	Eigen::Matrix4f LookAt(const  Eigen::Vector3<float>& _from, const  Eigen::Vector3<float>& _to, const  Eigen::Vector3<float>& _up = Eigen::Vector3<float>(0.0f, 1.0f, 0.0f));

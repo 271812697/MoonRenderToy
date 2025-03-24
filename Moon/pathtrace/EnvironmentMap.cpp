@@ -33,24 +33,21 @@ namespace PathTrace
 			cdf[i] = cdf[i - 1] + weights[i];
 
 		totalSum = cdf[width * height - 1];
-
 		delete[] weights;
 	}
 
 	EnvironmentMap::~EnvironmentMap()
 	{
-		stbi_image_free(img); delete[] cdf;
+		stbi_image_free(img);
+		delete[] cdf;
 	}
 
 	bool EnvironmentMap::LoadMap(const std::string& filename)
 	{
 		img = stbi_loadf(filename.c_str(), &width, &height, NULL, 3);
-
 		if (img == nullptr)
 			return false;
-
 		BuildCDF();
-
 		return true;
 	}
 }

@@ -4,6 +4,7 @@
 #include "RendererOptions.h"
 #include "Camera.h"
 #include "Renderer.h"
+#include "core/log.h"
 #include <filesystem>
 namespace PathTrace {
 
@@ -89,7 +90,7 @@ namespace PathTrace {
 
 		if (!success)
 		{
-			printf("Unable to load scene\n");
+			CORE_ERROR("Unable to load scene");
 			exit(0);
 		}
 
@@ -151,8 +152,6 @@ namespace PathTrace {
 	{
 		mouseRight = true;
 	}
-
-
 
 	void CameraController::mouseMiddleRelease()
 	{

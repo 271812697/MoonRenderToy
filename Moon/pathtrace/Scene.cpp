@@ -119,11 +119,12 @@ namespace PathTrace
 			delete envMap;
 
 		envMap = new EnvironmentMap;
-		if (envMap->LoadMap(filename.c_str()))
-			printf("HDR %s loaded\n", filename.c_str());
+		if (envMap->LoadMap(filename.c_str())) {
+			CORE_INFO("HDR {0} loaded\n", filename.c_str());
+		}
 		else
 		{
-			printf("Unable to load HDR\n");
+			CORE_ERROR("Unable to load HDR");
 			delete envMap;
 			envMap = nullptr;
 		}
@@ -172,8 +173,6 @@ namespace PathTrace
 		Ray rTrans;
 		rTrans.origin = r.origin;
 		rTrans.direction = r.direction;
-
-
 		while (index != -1)
 		{
 			Vec3 LRLeaf = bvhTranslator.nodes[index].LRLeaf;
@@ -184,13 +183,12 @@ namespace PathTrace
 			{
 				for (int i = 0; i < rightIndex; i++) // Loop through tris
 				{
-					// Vec3 vIx= vertIndices[leftIndex + i]; //ivec3(texelFetch(vertexIndicesTex, leftIndex + i).xyz);
 
 					Vec4 v0 = verticesUVX[vertIndices[leftIndex + i].x];
 					Vec4 v1 = verticesUVX[vertIndices[leftIndex + i].y];
 					Vec4 v2 = verticesUVX[vertIndices[leftIndex + i].z];
 
-					Vec3 e0 = { v1.x - v0.x,v1.y - v0.y,v1.z - v0.z };
+					Vec3 e0 = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
 					Vec3 e1 = { v2.x - v0.x,v2.y - v0.y,v2.z - v0.z };
 					Vec3 pv = Vec3::Cross(rTrans.direction, e1);
 					float det = Vec3::Dot(e0, pv);
@@ -282,7 +280,6 @@ namespace PathTrace
 				rTrans.origin = r.origin;
 				rTrans.direction = r.direction;
 			}
-
 		}
 		return instanceId;
 	}
