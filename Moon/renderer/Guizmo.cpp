@@ -640,7 +640,7 @@ void main()
 )";
 		teapotShader = create_shader_program(teapotVertexShader, teapotFragmentShader, {});
 
-		std::shared_ptr<asset::Shader> s = std::make_shared<asset::Shader>("D:/Project/C++/opengl/res/shaders/pbr02.glsl");;
+		//std::shared_ptr<asset::Shader> s = std::make_shared<asset::Shader>("D:/Project/C++/opengl/res/shaders/pbr02.glsl");;
 
 		glGenBuffers(1, &VertexBuffer);;
 		glGenVertexArrays(1, &VertexArray);

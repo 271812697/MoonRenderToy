@@ -739,7 +739,7 @@ namespace PathTrace
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		glViewport(0, 0, renderSize.x, renderSize.y);
 		glActiveTexture(GL_TEXTURE0);
 
 		if (scene->dirty || sampleCounter == 1)
