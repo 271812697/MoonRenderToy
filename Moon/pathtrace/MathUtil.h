@@ -41,6 +41,7 @@ namespace PathTrace {
 	{
 	public:
 		Vec3();
+		Vec3(float v);
 		Vec3(float x, float y, float z);
 		Vec3(const Vec4& b);
 

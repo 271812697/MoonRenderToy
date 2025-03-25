@@ -1,12 +1,7 @@
 #pragma once
-
-
 #include "MathUtil.h"
-
 namespace PathTrace
 {
-
-
 	struct RenderOptions
 	{
 		RenderOptions()

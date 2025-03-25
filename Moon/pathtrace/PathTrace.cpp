@@ -143,6 +143,12 @@ namespace PathTrace {
 		y = _y;
 	}
 
+	void CameraController::mouseLeftPress(int x, int y)
+	{
+
+		scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y);;
+	}
+
 	void CameraController::mouseMiddlePress()
 	{
 		mouseMiddle = true;

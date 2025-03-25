@@ -39,6 +39,7 @@ namespace PathTrace {
 	public:
 		static CameraController& Instance();
 		void mouseMove(int _x, int _y);
+		void mouseLeftPress(int x, int y);
 		void mouseMiddlePress();
 		void mouseRightPress();
 		void mouseMiddleRelease();

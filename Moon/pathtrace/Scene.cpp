@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Renderer.h"
+#include "Trace.h"
 #include "core/log.h"
 
 
@@ -134,11 +135,8 @@ namespace PathTrace
 
 	int Scene::IntersectionByScreen(float x, float y)
 	{
-		struct Ray
-		{
-			Vec3 origin;
-			Vec3 direction;
-		};
+
+
 		Vec2 dd = { 2 * x - 1.0f,2 * y - 1.0f };
 		float scale = tan(camera->fov * 0.5);
 		//fov水平方向的张角
@@ -281,7 +279,16 @@ namespace PathTrace
 				rTrans.direction = r.direction;
 			}
 		}
+		if (instanceId != -1) {
+			CORE_INFO("Hit {0} pos ({1},{2})", meshInstances[instanceId].name, x, y);
+		}
+
 		return instanceId;
+	}
+
+	Vec3 Scene::PathTrace(Vec3 origin, Vec3 direction)
+	{
+		return Vec3();
 	}
 
 	int Scene::AddMeshInstance(const MeshInstance& meshInstance)

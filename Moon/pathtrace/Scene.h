@@ -6,6 +6,7 @@
 #include "Material.h"
 #include "RendererOptions.h"
 #include "Mesh.h"
+#include "Trace.h"
 #include "RadeonRays/bvh_translator.h"
 namespace PathTrace
 {
@@ -14,23 +15,6 @@ namespace PathTrace
 	class Texture;
 	class Material;
 
-	enum LightType
-	{
-		RectLight,
-		SphereLight,
-		DistantLight
-	};
-
-	struct Light
-	{
-		Vec3 position;
-		Vec3 emission;
-		Vec3 u;
-		Vec3 v;
-		float radius;
-		float area;
-		float type;
-	};
 
 	struct Indices
 	{
@@ -52,6 +36,7 @@ namespace PathTrace
 		void AddCamera(Vec3 eye, Vec3 lookat, float fov);
 		void AddEnvMap(const std::string& filename);
 		int IntersectionByScreen(float x, float y);
+		Vec3 PathTrace(Vec3 origin, Vec3 direction);
 
 		void ProcessScene();
 		void RebuildInstances();

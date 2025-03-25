@@ -283,10 +283,20 @@ namespace MOON {
 		if (blockMouseMessage) {
 			return;
 		}
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto x = e2->x();
+		auto y = e2->y();
+#else
+		auto x = e2->position().x();
+		auto y = e2->position().y();
+#endif
 		Qt::MouseButton mb = e->button();
 		if (mb == Qt::MouseButton::LeftButton) {
 			viewer.mouse_down(Viewer::MouseButton::Left);
 
+			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
 		}
 
 		else if (mb == Qt::MouseButton::MiddleButton) {

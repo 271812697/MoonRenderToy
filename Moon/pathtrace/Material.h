@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "MathUtil.h"
 
 namespace PathTrace
