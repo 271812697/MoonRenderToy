@@ -1,8 +1,18 @@
 #pragma once
 #include <cmath>
 #include <algorithm>
-#define PI 3.14159265358979323846f
+
 namespace PathTrace {
+#define QUAD_LIGHT 0
+#define SPHERE_LIGHT 1
+#define DISTANT_LIGHT 2
+	inline float PI = 3.14159265358979323;
+	inline float INV_PI = 0.31830988618379067;
+	inline float TWO_PI = 6.28318530717958648;
+	inline float INV_TWO_PI = 0.15915494309189533;
+	inline float INV_4_PI = 0.07957747154594766;
+	inline float EPS = 0.0003;
+	inline float INF = 1000000.0;
 	struct Math
 	{
 	public:
@@ -10,6 +20,8 @@ namespace PathTrace {
 		static inline float Radians(float degrees) { return degrees * (PI / 180.f); };
 		static inline float Clamp(float x, float lower, float upper) { return std::min(upper, std::max(x, lower)); };
 	};
+	struct Vec3;
+
 	struct iVec2
 	{
 	public:
@@ -31,6 +43,7 @@ namespace PathTrace {
 	public:
 		Vec4();
 		Vec4(float x, float y, float z, float w);
+		Vec4(const Vec3& v, float w);
 
 		float operator[](int i) const;
 
@@ -46,9 +59,11 @@ namespace PathTrace {
 		Vec3(const Vec4& b);
 
 		Vec3 operator*(const Vec3& b) const;
+		Vec3& operator*=(float c);
 
 		Vec3 operator+(const Vec3& b) const;
 		Vec3 operator-(const Vec3& b) const;
+		Vec3 operator-()const;
 		Vec3 operator*(float b) const;
 
 		float operator[](int i) const;
@@ -66,7 +81,12 @@ namespace PathTrace {
 
 		float x, y, z;
 	};
-
+	Vec3 operator*(float b, const Vec3& v);
+	struct Ray
+	{
+		Vec3 origin;
+		Vec3 direction;
+	};
 	struct Mat4
 	{
 
@@ -85,4 +105,10 @@ namespace PathTrace {
 
 		float data[4][4];
 	};
+
+
+	//
+	//pos the start of rectangle , plane that includes the the rectangle ,u v the two axis of rectangle and the lenght is inverse
+	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r);
+	float SphereIntersect(float rad, const Vec3& pos, const Ray& r);
 }

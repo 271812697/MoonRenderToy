@@ -13,6 +13,11 @@ namespace PathTrace {
 	{
 	}
 
+	Vec4::Vec4(const Vec3& v, float _w) :
+		x(v.x), y(v.y), z(v.z), w(_w)
+	{
+	}
+
 	float Vec4::operator[](int i) const
 	{
 		if (i == 0)
@@ -51,7 +56,16 @@ namespace PathTrace {
 	Vec3 Vec3::operator*(const Vec3& b) const
 	{
 		return Vec3(x * b.x, y * b.y, z * b.z);
-	};
+	}
+	Vec3& Vec3::operator*=(float c)
+	{
+		x *= c;
+		y *= c;
+		z *= c;
+		return *this;
+		// TODO: 在此处插入 return 语句
+	}
+	;
 
 	Vec3 Vec3::operator+(const Vec3& b) const
 	{
@@ -62,6 +76,9 @@ namespace PathTrace {
 	{
 		return Vec3(x - b.x, y - b.y, z - b.z);
 	};
+	Vec3 Vec3::operator-()const {
+		return Vec3(-x, -y, -z);
+	}
 
 	Vec3 Vec3::operator*(float b) const
 	{
@@ -329,6 +346,54 @@ namespace PathTrace {
 			data[0][1] * v.x + data[1][1] * v.y + data[2][1] * v.z,
 			data[0][2] * v.x + data[1][2] * v.y + data[2][2] * v.z
 		);
+	}
+
+	Vec3 operator*(float b, const Vec3& v)
+	{
+		return Vec3(b * v.x, b * v.y, b * v.z);
+	}
+
+	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r)
+	{
+		Vec3 n = Vec3(plane);
+		float dt = Vec3::Dot(r.direction, n);
+		float t = (plane.w - Vec3::Dot(n, r.origin)) / dt;
+
+		if (t > EPS)
+		{
+			Vec3 p = r.origin + r.direction * t;
+			Vec3 vi = p - pos;
+			float a1 = Vec3::Dot(u, vi);
+			if (a1 >= 0.0 && a1 <= 1.0)
+			{
+				float a2 = Vec3::Dot(v, vi);
+				if (a2 >= 0.0 && a2 <= 1.0)
+					return t;
+			}
+		}
+
+		return INF;
+	}
+
+	float SphereIntersect(float rad, const Vec3& pos, const Ray& r)
+	{
+		Vec3 op = pos - r.origin;
+		float eps = 0.001;
+		float b = Vec3::Dot(op, r.direction);
+		float det = b * b - Vec3::Dot(op, op) + rad * rad;
+		if (det < 0.0)
+			return INF;
+
+		det = sqrt(det);
+		float t1 = b - det;
+		if (t1 > eps)
+			return t1;
+
+		float t2 = b + det;
+		if (t2 > eps)
+			return t2;
+
+		return INF;
 	}
 
 }

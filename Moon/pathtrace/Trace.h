@@ -4,11 +4,7 @@
 namespace PathTrace
 {
 	struct RenderOptions;
-	struct Ray
-	{
-		Vec3 origin;
-		Vec3 direction;
-	};
+
 	struct Medium
 	{
 		int type;
@@ -70,5 +66,5 @@ namespace PathTrace
 		float dist;
 		float pdf;
 	};
-	Vec4 Trace(const Ray& r, const RenderOptions& opt);
+	Vec4 Trace(const Ray& r);
 }
