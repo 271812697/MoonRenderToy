@@ -18,6 +18,11 @@ namespace PathTrace {
 	{
 	}
 
+	Vec3 Vec4::xyz()
+	{
+		return Vec3(x, y, z);
+	}
+
 	float Vec4::operator[](int i) const
 	{
 		if (i == 0)
@@ -330,6 +335,17 @@ namespace PathTrace {
 		return ans;
 	}
 
+	Mat4 Mat4::Transpose()
+	{
+		Mat4 res;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				res.data[i][j] = data[j][i];
+			}
+		}
+		return res;
+	}
+
 	Vec3 Mat4::MulPoint(const Vec3& v)
 	{
 		return Vec3(
@@ -394,6 +410,38 @@ namespace PathTrace {
 			return t2;
 
 		return INF;
+	}
+
+	float AABBIntersect(const Vec3& minCorner, const Vec3& maxCorner, const Vec3& p, const Vec3& d)
+	{
+		Vec3 invDir = { 1.0f / d.x,1.0f / d.y, 1.0f / d.z };
+
+		Vec3 f = (maxCorner - p) * invDir;
+		Vec3 n = (minCorner - p) * invDir;
+
+		Vec3 tmax = Vec3::Max(f, n);
+		Vec3 tmin = Vec3::Min(f, n);
+
+		float t1 = std::min(tmax.x, std::min(tmax.y, tmax.z));
+		float t0 = std::max(tmin.x, std::max(tmin.y, tmin.z));
+
+		return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
+	}
+
+	float AABBIntersect(const Vec3& minCorner, const Vec3& maxCorner, const Ray& r)
+	{
+		return AABBIntersect(minCorner, maxCorner, r.origin, r.direction);
+	}
+
+	Vec2 Vec2::operator*(float b) const
+	{
+		return Vec2(x * b, y * b);
+	}
+	Vec2 Vec2::operator+(const Vec2& b)const {
+		return Vec2(x + b.x, y + b.y);
+	}
+	Vec2 Vec2::operator-(const Vec2& b)const {
+		return Vec2(x - b.x, y - b.y);
 	}
 
 }

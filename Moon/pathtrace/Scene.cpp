@@ -16,21 +16,8 @@
 
 namespace PathTrace
 {
-	float AABBIntersect(Vec3 minCorner, Vec3 maxCorner, Vec3 p, Vec3 d)
-	{
-		Vec3 invDir = { 1.0f / d.x,1.0f / d.y, 1.0f / d.z };
 
-		Vec3 f = (maxCorner - p) * invDir;
-		Vec3 n = (minCorner - p) * invDir;
 
-		Vec3 tmax = Vec3::Max(f, n);
-		Vec3 tmin = Vec3::Min(f, n);
-
-		float t1 = std::min(tmax.x, std::min(tmax.y, tmax.z));
-		float t0 = std::max(tmin.x, std::max(tmin.y, tmin.z));
-
-		return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
-	}
 	Scene::Scene() : camera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
 		sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
 	}

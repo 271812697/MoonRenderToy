@@ -35,7 +35,9 @@ namespace PathTrace {
 	public:
 		Vec2() { x = 0, y = 0; };
 		Vec2(float x, float y) { this->x = x; this->y = y; };
-
+		Vec2 operator*(float b) const;
+		Vec2 operator+(const Vec2& b) const;
+		Vec2 operator-(const Vec2& b) const;
 		float x, y;
 	};
 	struct Vec4
@@ -44,12 +46,16 @@ namespace PathTrace {
 		Vec4();
 		Vec4(float x, float y, float z, float w);
 		Vec4(const Vec3& v, float w);
+		Vec3 xyz();
 
 		float operator[](int i) const;
 
 		float x, y, z, w;
 	};
-
+	struct ivec3 {
+		int x, y, z;
+		ivec3(int v) :x(v), y(v), z(v) {}
+	};
 	struct Vec3
 	{
 	public:
@@ -100,6 +106,7 @@ namespace PathTrace {
 		static Mat4 Scale(const Vec3& a);
 		static Mat4 QuatToMatrix(float x, float y, float z, float w);
 		Mat4 Inverse();
+		Mat4 Transpose();
 		Vec3 MulPoint(const Vec3& v);
 		Vec3 MulDir(const Vec3& v);
 
@@ -111,4 +118,6 @@ namespace PathTrace {
 	//pos the start of rectangle , plane that includes the the rectangle ,u v the two axis of rectangle and the lenght is inverse
 	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r);
 	float SphereIntersect(float rad, const Vec3& pos, const Ray& r);
+	float AABBIntersect(const Vec3& minCorner, const Vec3& maxCorner, const Vec3& p, const Vec3& d);
+	float AABBIntersect(const Vec3& minCorner, const Vec3& maxCorner, const Ray& r);
 }
