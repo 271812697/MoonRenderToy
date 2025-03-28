@@ -2,6 +2,7 @@
 #include<string>
 namespace PathTrace
 {
+	struct Vec3;
 	class EnvironmentMap
 	{
 	public:
@@ -11,6 +12,8 @@ namespace PathTrace
 		bool LoadMap(const std::string& filename);
 		void BuildCDF();
 
+		Vec3 Sample(float u, float v);
+		Vec3 Color(int x, int y);
 		int width;
 		int height;
 		//环境的总亮度

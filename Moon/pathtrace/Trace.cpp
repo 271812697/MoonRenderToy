@@ -1,6 +1,7 @@
 #include "Trace.h"
 #include "RendererOptions.h"
 #include "Scene.h"
+#include <cmath>
 
 namespace PathTrace
 {
@@ -235,6 +236,14 @@ namespace PathTrace
 
 		return true;
 	}
+	Vec4 EvalEnvMap(const Ray&r) {
+		float theta = acos(clamp(r.direction.y, -1.0, 1.0));
+		
+		Vec2 uv = Vec2((PI + atan2(r.direction.z, r.direction.x)) * INV_TWO_PI, theta * INV_PI) + Vec2(renderOpt.envMapRot/360.0f, 0.0);
+		Vec3 color = scene->envMap->Sample(uv.x,uv.y);
+		float pdf = Luminance(color.x, color.y, color.z) / scene->envMap->totalSum;
+		return Vec4(color, (pdf * scene->envMap->width *scene->envMap->height) / (TWO_PI * PI * sin(theta)));
+	}
 	Vec4 Trace(const Ray& r)
 	{
 		Vec3 radiance = Vec3(0.0);
@@ -250,7 +259,24 @@ namespace PathTrace
 		bool mediumSampled = false;
 		bool surfaceScatter = false;
 		for (state.depth = 0;; state.depth++) {
+			bool hit = ClosestHit(r, state, lightSample);
+			if (!hit) {
+				if (renderOpt.enableBackground || renderOpt.transparentBackground) {
+					if (state.depth == 0) {
+						alpha = 0.0;
+					}
+				}
+				if (!renderOpt.hideEmitters || (renderOpt.hideEmitters && state.depth > 0)) {
+					if (renderOpt.enableUniformLight) {
+						radiance += renderOpt.uniformLightCol * throughput;
+					}
+					else if (renderOpt.enableEnvMap) {
 
+					}
+
+				}
+
+			}
 		}
 
 		return Vec4();

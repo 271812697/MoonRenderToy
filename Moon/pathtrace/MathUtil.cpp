@@ -70,7 +70,13 @@ namespace PathTrace {
 		return *this;
 		// TODO: 在此处插入 return 语句
 	}
-	;
+	Vec3& Vec3::operator +=(const Vec3& b) {
+		x += b.x;
+		y += b.y;
+		z += b.z;
+		return *this;
+
+	}
 
 	Vec3 Vec3::operator+(const Vec3& b) const
 	{
@@ -368,7 +374,15 @@ namespace PathTrace {
 	{
 		return Vec3(b * v.x, b * v.y, b * v.z);
 	}
-
+	float Luminance(float r, float g, float b)
+	{
+		return 0.212671f * r + 0.715160f * g + 0.072169f * b;
+	}
+	float clamp(float x, float min, float max){
+		if (x < min) return min;
+		if (x > max) return max;
+		return x;
+	}
 	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r)
 	{
 		Vec3 n = Vec3(plane);

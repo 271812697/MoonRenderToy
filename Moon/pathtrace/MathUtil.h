@@ -66,6 +66,7 @@ namespace PathTrace {
 
 		Vec3 operator*(const Vec3& b) const;
 		Vec3& operator*=(float c);
+		Vec3& operator +=(const Vec3& b);
 
 		Vec3 operator+(const Vec3& b) const;
 		Vec3 operator-(const Vec3& b) const;
@@ -112,8 +113,9 @@ namespace PathTrace {
 
 		float data[4][4];
 	};
-
-
+	float Luminance(float r, float g, float b);
+	
+	float clamp(float x, float min, float max);
 	//
 	//pos the start of rectangle , plane that includes the the rectangle ,u v the two axis of rectangle and the lenght is inverse
 	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r);
