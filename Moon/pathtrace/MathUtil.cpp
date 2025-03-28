@@ -23,6 +23,11 @@ namespace PathTrace {
 		return Vec3(x, y, z);
 	}
 
+	Vec4 Vec4::operator*(float b) const
+	{
+		return Vec4(x * b, y * b, z * b, w * b);
+	}
+
 	float Vec4::operator[](int i) const
 	{
 		if (i == 0)
@@ -369,9 +374,18 @@ namespace PathTrace {
 		);
 	}
 
+	Vec4 operator*(float b, const Vec4& v)
+	{
+		return Vec4(b * v.x, b * v.y, b * v.z, b * v.w);
+	}
+
 	Vec3 operator*(float b, const Vec3& v)
 	{
 		return Vec3(b * v.x, b * v.y, b * v.z);
+	}
+	Vec3 pow(const Vec3& a, const Vec3& b)
+	{
+		return Vec3(pow(a.x, b.x), pow(a.y, b.y), pow(a.z, b.z));
 	}
 	float Luminance(float r, float g, float b)
 	{
@@ -383,7 +397,7 @@ namespace PathTrace {
 		return t / (b * b + t);
 	}
 
-	float clamp(float x, float min, float max){
+	float clamp(float x, float min, float max) {
 		if (x < min) return min;
 		if (x > max) return max;
 		return x;

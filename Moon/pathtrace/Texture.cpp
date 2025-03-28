@@ -33,11 +33,11 @@ namespace PathTrace
 
 		glDeleteTextures(1, &id);
 	}
-	Vec3 Texture::Color(int x,int y) {
+	Vec4 Texture::Color(int x, int y) {
 		int imgIdx = y * width * 4 + x * 4;
-		return Vec3(texData[imgIdx]/255.0f,texData[imgIdx+1]/255.0f,texData[imgIdx+2]/255.0f);
+		return Vec4(texData[imgIdx] / 255.0f, texData[imgIdx + 1] / 255.0f, texData[imgIdx + 2] / 255.0f, texData[imgIdx + 3] / 255.0f);
 	}
-	Vec3 Texture::Sample(float u, float v) {
+	Vec4 Texture::Sample(float u, float v) {
 		float w;
 		float alpha;
 		alpha = modf(u * (width - 1), &w);
