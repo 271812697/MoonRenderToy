@@ -1,7 +1,7 @@
 
-
 #include <iostream>
 #include "Texture.h"
+#include "MathUtil.h"
 #include <glad/glad.h>
 #include <stb_image/stb_image.h>
 
@@ -32,6 +32,20 @@ namespace PathTrace
 	Texture::~Texture() {
 
 		glDeleteTextures(1, &id);
+	}
+	Vec3 Texture::Color(int x,int y) {
+		int imgIdx = y * width * 4 + x * 4;
+		return Vec3(texData[imgIdx]/255.0f,texData[imgIdx+1]/255.0f,texData[imgIdx+2]/255.0f);
+	}
+	Vec3 Texture::Sample(float u, float v) {
+		float w;
+		float alpha;
+		alpha = modf(u * (width - 1), &w);
+
+		float h;
+		float betha;
+		betha = modf(v * (height - 1), &h);
+		return (1 - betha) * ((1 - alpha) * this->Color(w, h) + alpha * this->Color(w + 1, h)) + betha * ((1 - alpha) * this->Color(w, h + 1) + alpha * this->Color(w + 1, h + 1));
 	}
 
 	bool Texture::LoadTexture(const std::string& filename)

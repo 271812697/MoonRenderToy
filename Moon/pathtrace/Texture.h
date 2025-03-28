@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
-#include <algorithm>
-
+#include <string>
 namespace PathTrace
 {
+	struct Vec3;
 	class Texture
 	{
 	public:
@@ -12,11 +12,13 @@ namespace PathTrace
 		~Texture();
 		bool LoadTexture(const std::string& filename);
 
+		Vec3 Sample(float u, float v);
+		Vec3 Color(int x, int y);
 		unsigned int id = 0;
 		int width;
 		int height;
 		int components;
-		std::vector<unsigned char> texData;
+		std::vector<uint8_t> texData;
 		std::string name;
 	};
 }

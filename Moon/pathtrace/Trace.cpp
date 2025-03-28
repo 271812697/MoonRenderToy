@@ -244,6 +244,17 @@ namespace PathTrace
 		float pdf = Luminance(color.x, color.y, color.z) / scene->envMap->totalSum;
 		return Vec4(color, (pdf * scene->envMap->width *scene->envMap->height) / (TWO_PI * PI * sin(theta)));
 	}
+	void GetMaterial(State& state, const Ray& r) {
+		Material& mat= scene->materials[state.matID];
+		scene->materials[state.matID];
+		Medium medium;
+		if (mat.baseColorTexId >= 0) {
+			scene->textureMapsArray[mat.baseColorTexId];
+		}
+
+
+
+	}
 	Vec4 Trace(const Ray& r)
 	{
 		Vec3 radiance = Vec3(0.0);
