@@ -75,7 +75,6 @@ namespace PathTrace {
 		y += b.y;
 		z += b.z;
 		return *this;
-
 	}
 
 	Vec3 Vec3::operator+(const Vec3& b) const
@@ -378,6 +377,12 @@ namespace PathTrace {
 	{
 		return 0.212671f * r + 0.715160f * g + 0.072169f * b;
 	}
+	float PowerHeuristic(float a, float b)
+	{
+		float t = a * a;
+		return t / (b * b + t);
+	}
+
 	float clamp(float x, float min, float max){
 		if (x < min) return min;
 		if (x > max) return max;

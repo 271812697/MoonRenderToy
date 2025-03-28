@@ -114,7 +114,7 @@ namespace PathTrace {
 		float data[4][4];
 	};
 	float Luminance(float r, float g, float b);
-	
+	float PowerHeuristic(float a, float b);
 	float clamp(float x, float min, float max);
 	//
 	//pos the start of rectangle , plane that includes the the rectangle ,u v the two axis of rectangle and the lenght is inverse

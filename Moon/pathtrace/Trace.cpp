@@ -271,11 +271,24 @@ namespace PathTrace
 						radiance += renderOpt.uniformLightCol * throughput;
 					}
 					else if (renderOpt.enableEnvMap) {
+						Vec4 envMapColPdf = EvalEnvMap(r);
+
+						float misWeight = 1.0;
+						if (state.depth > 0) {
+							misWeight = PowerHeuristic(scatterSample.pdf, envMapColPdf.w);
+						}
+						if (true && !renderOpt.enableVolumeMIS) {//#if defined(OPT_MEDIUM) && !defined(OPT_VOL_MIS)
+							if (!surfaceScatter)
+								misWeight = 1.0f;
+						}
+
+						if (misWeight > 0)
+							radiance += misWeight * envMapColPdf.xyz() * throughput * renderOpt.envMapIntensity;
 
 					}
 
 				}
-
+				break;
 			}
 		}
 
