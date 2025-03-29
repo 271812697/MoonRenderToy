@@ -65,7 +65,7 @@ namespace PathTrace
 		float anisotropic;
 
 		Vec3 emission;
-		float padding1;
+		float ax;
 
 		float metallic;
 		float roughness;
@@ -93,6 +93,6 @@ namespace PathTrace
 		float opacity;
 		float alphaMode;
 		float alphaCutoff;
-		float padding2;
+		float ay;
 	};
 }

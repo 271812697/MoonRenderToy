@@ -4,6 +4,7 @@
 namespace PathTrace
 {
 	struct Vec3;
+	struct Vec4;
 	class Texture
 	{
 	public:
@@ -12,8 +13,8 @@ namespace PathTrace
 		~Texture();
 		bool LoadTexture(const std::string& filename);
 
-		Vec3 Sample(float u, float v);
-		Vec3 Color(int x, int y);
+		Vec4 Sample(float u, float v);
+		Vec4 Color(int x, int y);
 		unsigned int id = 0;
 		int width;
 		int height;

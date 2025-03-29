@@ -6,6 +6,15 @@ namespace PathTrace {
 #define QUAD_LIGHT 0
 #define SPHERE_LIGHT 1
 #define DISTANT_LIGHT 2
+
+#define ALPHA_MODE_OPAQUE 0
+#define ALPHA_MODE_BLEND 1
+#define ALPHA_MODE_MASK 2
+
+#define MEDIUM_NONE 0
+#define MEDIUM_ABSORB 1
+#define MEDIUM_SCATTER 2
+#define MEDIUM_EMISSIVE 3
 	inline float PI = 3.14159265358979323;
 	inline float INV_PI = 0.31830988618379067;
 	inline float TWO_PI = 6.28318530717958648;
@@ -47,11 +56,16 @@ namespace PathTrace {
 		Vec4(float x, float y, float z, float w);
 		Vec4(const Vec3& v, float w);
 		Vec3 xyz();
-
+		Vec4 operator*(float b) const;
+		Vec4 operator+(const Vec4& b) const;
 		float operator[](int i) const;
 
 		float x, y, z, w;
 	};
+	struct uvec4 {
+		unsigned int x, y, z, w;
+	};
+	Vec4 operator*(float b, const Vec4& v);
 	struct ivec3 {
 		int x, y, z;
 		ivec3(int v) :x(v), y(v), z(v) {}
@@ -66,13 +80,16 @@ namespace PathTrace {
 
 		Vec3 operator*(const Vec3& b) const;
 		Vec3& operator*=(float c);
-		Vec3& operator +=(const Vec3& b);
+		Vec3& operator/=(float c);
+		Vec3& operator*=(const Vec3 c);
+		Vec3& operator+=(const Vec3& b);
 
 		Vec3 operator+(const Vec3& b) const;
 		Vec3 operator-(const Vec3& b) const;
+		Vec3 operator-(float c)const;
 		Vec3 operator-()const;
 		Vec3 operator*(float b) const;
-
+		Vec3 operator/(float b) const;
 		float operator[](int i) const;
 		float& operator[](int i);
 
@@ -89,10 +106,13 @@ namespace PathTrace {
 		float x, y, z;
 	};
 	Vec3 operator*(float b, const Vec3& v);
+	Vec3 pow(const Vec3& a, const Vec3& b);
 	struct Ray
 	{
 		Vec3 origin;
 		Vec3 direction;
+		Ray() = default;
+		Ray(const Vec3& o, const Vec3& d) :origin(o), direction(d) {}
 	};
 	struct Mat4
 	{
@@ -113,10 +133,20 @@ namespace PathTrace {
 
 		float data[4][4];
 	};
+	void InitRNG(Vec2 p, int frame);
+	void pcg4d();
+	float uniform_float();
+	float PhaseHG(float cosTheta, float g);
+
 	float Luminance(float r, float g, float b);
+	float Luminance(const Vec3& a);
 	float PowerHeuristic(float a, float b);
 	float clamp(float x, float min, float max);
-	//
+	Vec3 exp(const Vec3& epo);
+	Vec3 mix(const Vec3& a, const Vec3& b, float c);
+	float mix(float a, float b, float alpha);
+	Vec3 reflect(const Vec3& v, const Vec3& n);
+	Vec3 refract(const Vec3& uv, const Vec3& n, float etai_over_etat);
 	//pos the start of rectangle , plane that includes the the rectangle ,u v the two axis of rectangle and the lenght is inverse
 	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r);
 	float SphereIntersect(float rad, const Vec3& pos, const Ray& r);

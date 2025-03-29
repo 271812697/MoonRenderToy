@@ -66,5 +66,5 @@ namespace PathTrace
 		float dist;
 		float pdf;
 	};
-	Vec4 Trace(const Ray& r);
+	Vec4 Trace(Ray& r);
 }

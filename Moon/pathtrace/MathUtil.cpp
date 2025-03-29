@@ -27,6 +27,10 @@ namespace PathTrace {
 	{
 		return Vec4(x * b, y * b, z * b, w * b);
 	}
+	Vec4 Vec4::operator+(const Vec4& b) const
+	{
+		return Vec4(x + b.x, y + b.y, z + b.z, w + b.w);
+	}
 
 	float Vec4::operator[](int i) const
 	{
@@ -73,9 +77,24 @@ namespace PathTrace {
 		y *= c;
 		z *= c;
 		return *this;
-		// TODO: 在此处插入 return 语句
+
 	}
-	Vec3& Vec3::operator +=(const Vec3& b) {
+	Vec3& Vec3::operator/=(float c)
+	{
+		x /= c;
+		y /= c;
+		z /= c;
+		return *this;
+
+	}
+	Vec3& Vec3::operator*=(const Vec3 c)
+	{
+		x *= c.x;
+		y *= c.y;
+		z *= c.z;
+		return *this;
+	}
+	Vec3& Vec3::operator+=(const Vec3& b) {
 		x += b.x;
 		y += b.y;
 		z += b.z;
@@ -90,7 +109,12 @@ namespace PathTrace {
 	Vec3 Vec3::operator-(const Vec3& b) const
 	{
 		return Vec3(x - b.x, y - b.y, z - b.z);
-	};
+	}
+	Vec3 Vec3::operator-(float c) const
+	{
+		return Vec3(x - c, y - c, z - c);
+	}
+	;
 	Vec3 Vec3::operator-()const {
 		return Vec3(-x, -y, -z);
 	}
@@ -98,6 +122,10 @@ namespace PathTrace {
 	Vec3 Vec3::operator*(float b) const
 	{
 		return Vec3(x * b, y * b, z * b);
+	};
+	Vec3 Vec3::operator/(float b) const
+	{
+		return Vec3(x / b, y / b, z / b);
 	};
 
 	float Vec3::operator[](int i) const
@@ -385,11 +413,47 @@ namespace PathTrace {
 	}
 	Vec3 pow(const Vec3& a, const Vec3& b)
 	{
-		return Vec3(pow(a.x, b.x), pow(a.y, b.y), pow(a.z, b.z));
+		return Vec3(std::pow(a.x, b.x), std::pow(a.y, b.y), std::pow(a.z, b.z));
 	}
+	uvec4 seed;
+	void InitRNG(Vec2 p, int frame)
+	{
+		seed.x = p.x;
+		seed.y = p.y;
+		seed.z = frame;
+		seed.w = p.x + p.y;
+		//seed = { ,p.y,frame,};// uvec4(p, uint(frame), uint(p.x) + uint(p.y));
+	}
+	void pcg4d()
+	{
+		seed.x = seed.x * 1664525 + 1013904223;
+		seed.y = seed.y * 1664525 + 1013904223;
+		seed.z = seed.z * 1664525u + 1013904223u;
+		seed.w = seed.w * 1664525u + 1013904223u;
+		seed.x += seed.y * seed.w; seed.y += seed.z * seed.x; seed.z += seed.x * seed.y; seed.w += seed.y * seed.z;
+		seed.x = seed.x ^ (seed.x >> 16);
+		seed.y = seed.y ^ (seed.y >> 16);
+		seed.z = seed.z ^ (seed.z >> 16);
+		seed.w = seed.w ^ (seed.w >> 16);
+		seed.x += seed.y * seed.w; seed.y += seed.z * seed.x; seed.z += seed.x * seed.y; seed.w += seed.y * seed.z;
+	}
+	float uniform_float()
+	{
+		pcg4d();
+		return  float(seed.x) / float(0xffffffffu);
+	}
+	float PhaseHG(float cosTheta, float g)
+	{
+		float denom = 1 + g * g + 2 * g * cosTheta;
+		return INV_4_PI * (1 - g * g) / (denom * sqrt(denom));
+	}
+
 	float Luminance(float r, float g, float b)
 	{
 		return 0.212671f * r + 0.715160f * g + 0.072169f * b;
+	}
+	float Luminance(const Vec3& a) {
+		return Luminance(a.x, a.y, a.z);
 	}
 	float PowerHeuristic(float a, float b)
 	{
@@ -402,6 +466,30 @@ namespace PathTrace {
 		if (x > max) return max;
 		return x;
 	}
+	Vec3 exp(const Vec3& epo)
+	{
+		return Vec3(std::exp(epo.x), std::exp(epo.y), std::exp(epo.z));
+	}
+	Vec3 mix(const Vec3& a, const Vec3& b, float c) {
+		return a * (1 - c) + c * b;
+	}
+	float mix(float a, float b, float alpha) {
+		return a * (1 - alpha) + alpha * b;
+	}
+
+	Vec3 reflect(const Vec3& v, const Vec3& n)
+	{
+		return v - 2 * Vec3::Dot(v, n) * n;
+	}
+
+	Vec3 refract(const Vec3& uv, const Vec3& n, float etai_over_etat)
+	{
+		auto cos_theta = fmin(Vec3::Dot(-uv, n), 1.0);
+		Vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
+		Vec3 r_out_parallel = -sqrt(fabs(1.0 - Vec3::Dot(r_out_perp, r_out_perp))) * n;
+		return r_out_perp + r_out_parallel;
+	}
+
 	float RectIntersect(const Vec3& pos, const Vec3& u, const Vec3& v, const Vec4& plane, const Ray& r)
 	{
 		Vec3 n = Vec3(plane);

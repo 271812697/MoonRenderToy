@@ -39,18 +39,40 @@ namespace PathTrace
 		delete[] cdf;
 	}
 	Vec3 EnvironmentMap::Sample(float u, float v) {
-		float w ;
-		float alpha ;
-		alpha=modf(u*(width-1),&w);
+		float w;
+		float alpha;
+		alpha = modf(u * (width - 1), &w);
 
 		float h;
 		float betha;
-		betha = modf(v*(height-1),&h);
-		return (1-betha)*((1-alpha)*this->Color(w, h) + alpha*this->Color(w+1,h))+betha*((1-alpha)*this->Color(w,h+1)+alpha*this->Color(w+1,h+1));
+		betha = modf(v * (height - 1), &h);
+		return (1 - betha) * ((1 - alpha) * this->Color(w, h) + alpha * this->Color(w + 1, h)) + betha * ((1 - alpha) * this->Color(w, h + 1) + alpha * this->Color(w + 1, h + 1));
 	}
 	Vec3 EnvironmentMap::Color(int x, int y) {
 		int imgIdx = y * width * 3 + x * 3;
 		return Vec3(img[imgIdx + 0], img[imgIdx + 1], img[imgIdx + 2]);
+	}
+	Vec3 EnvironmentMap::Sample(float u, Vec2* out)
+	{
+		float value = totalSum * u;
+		int left = 0;
+		int right = width * height - 1;
+		int mid = 0;
+		while (left < right) {
+			mid = (left + right) / 2;
+			if (cdf[mid] < value) {
+				left = mid + 1;
+			}
+			else {
+				right = mid;
+			}
+		}
+		mid = (left + right) / 2;
+		int row = mid / width;
+		int col = mid % width;
+		*out = { 1.0f * row / width,1.0f * col / height };
+		//clamp?
+		return Color(row, col);
 	}
 	bool EnvironmentMap::LoadMap(const std::string& filename)
 	{

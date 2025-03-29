@@ -3,6 +3,7 @@
 namespace PathTrace
 {
 	struct Vec3;
+	struct Vec2;
 	class EnvironmentMap
 	{
 	public:
@@ -14,6 +15,8 @@ namespace PathTrace
 
 		Vec3 Sample(float u, float v);
 		Vec3 Color(int x, int y);
+		//importance sample
+		Vec3 Sample(float u, Vec2* out);
 		int width;
 		int height;
 		//环境的总亮度
