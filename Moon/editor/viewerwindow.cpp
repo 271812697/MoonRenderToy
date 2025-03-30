@@ -251,7 +251,8 @@ namespace MOON {
 		PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		PathTrace::GetRenderer()->Present();
-		//PathTrace::GetRenderer()->SaveFrame();
+		PathTrace::TraceScene();
+
 	}
 
 	bool ViewerWindow::event(QEvent* evt)

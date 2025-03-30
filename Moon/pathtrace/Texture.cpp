@@ -34,7 +34,7 @@ namespace PathTrace
 		glDeleteTextures(1, &id);
 	}
 	Vec4 Texture::Color(int x, int y) {
-		int imgIdx = y * width * 4 + x * 4;
+		int imgIdx = x * width * 4 + y * 4;
 		return Vec4(texData[imgIdx] / 255.0f, texData[imgIdx + 1] / 255.0f, texData[imgIdx + 2] / 255.0f, texData[imgIdx + 3] / 255.0f);
 	}
 	Vec4 Texture::Sample(float u, float v) {

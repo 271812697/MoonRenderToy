@@ -67,4 +67,6 @@ namespace PathTrace
 		float pdf;
 	};
 	Vec4 Trace(Ray& r);
+	void TraceScreen(int width, int height);
+
 }

@@ -31,6 +31,10 @@ namespace PathTrace
 			independentRenderSize = false;
 			enableRoughnessMollification = false;
 			enableVolumeMIS = false;
+			optLight = false;
+			optAlphaTest = false;
+			optMedium = false;
+
 
 			envMapIntensity = 1.0f;
 			envMapRot = 0.0f;
@@ -49,6 +53,9 @@ namespace PathTrace
 		int texArrayWidth;
 		int texArrayHeight;
 		int denoiserFrameCnt;
+		bool optLight;
+		bool optAlphaTest;
+		bool optMedium;
 		bool enableRR;
 		bool enableDenoiser;
 		bool enableTonemap;

@@ -30,6 +30,8 @@ namespace PathTrace {
 	void Resize(int width, int height);
 	void LoadScene(std::string sceneName);
 
+	void TraceScene();
+
 	bool InitRenderer();
 
 	void Ret();

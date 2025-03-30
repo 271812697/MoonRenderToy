@@ -383,8 +383,11 @@ namespace PathTrace
 		if (scene->renderOptions.enableEnvMap && scene->envMap != nullptr)
 			pathtraceDefines += "#define OPT_ENVMAP\n";
 
-		if (!scene->lights.empty())
+		if (!scene->lights.empty()) {
 			pathtraceDefines += "#define OPT_LIGHTS\n";
+			scene->renderOptions.optLight = true;
+		}
+
 
 		if (scene->renderOptions.enableRR)
 		{
@@ -418,6 +421,7 @@ namespace PathTrace
 			if ((int)scene->materials[i].alphaMode != AlphaMode::Opaque)
 			{
 				pathtraceDefines += "#define OPT_ALPHA_TEST\n";
+				scene->renderOptions.optAlphaTest = true;
 				break;
 			}
 		}
@@ -430,6 +434,7 @@ namespace PathTrace
 			if ((int)scene->materials[i].mediumType != MediumType::None)
 			{
 				pathtraceDefines += "#define OPT_MEDIUM\n";
+				scene->renderOptions.optMedium = true;
 				break;
 			}
 		}

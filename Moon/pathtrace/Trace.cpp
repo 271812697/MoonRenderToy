@@ -2,15 +2,13 @@
 #include "RendererOptions.h"
 #include "Scene.h"
 #include "Texture.h"
+#include "Camera.h"
 #include <cmath>
 
 namespace PathTrace
 {
-
-
-
-	static RenderOptions renderOpt;
-	static Scene* scene = nullptr;
+	extern RenderOptions renderOptions;
+	extern Scene* scene;
 	float SmithG(float NDotV, float alphaG)
 	{
 		float a = alphaG * alphaG;
@@ -146,42 +144,44 @@ namespace PathTrace
 	//to query BVH for Ray r to konw whether if r hit the scene
 	bool AnyHit(Ray r, float maxDist)
 	{
-
-
-		// Intersect Emitters
-		for (int i = 0; i < scene->lights.size(); i++)
-		{
-			// Fetch light Data
-			Vec3 position = scene->lights[i].position;
-			Vec3 emission = scene->lights[i].emission;
-			Vec3 u = scene->lights[i].u;
-			Vec3 v = scene->lights[i].v;
-			//Vec3 params = texelFetch(lightsTex, ivec2(i * 5 + 4, 0), 0).xyz;
-			float radius = scene->lights[i].radius;
-			float area = scene->lights[i].area;
-			float type = scene->lights[i].type;
-
-			// Intersect rectangular area light
-			if (type == QUAD_LIGHT)
+		if (renderOptions.optLight) {
+			// Intersect Emitters
+			for (int i = 0; i < scene->lights.size(); i++)
 			{
-				Vec3 normal = Vec3::Normalize(Vec3::Cross(u, v));
-				Vec4 plane = Vec4(normal, Vec3::Dot(normal, position));
-				u *= 1.0f / Vec3::Dot(u, u);
-				v *= 1.0f / Vec3::Dot(v, v);
+				// Fetch light Data
+				Vec3 position = scene->lights[i].position;
+				Vec3 emission = scene->lights[i].emission;
+				Vec3 u = scene->lights[i].u;
+				Vec3 v = scene->lights[i].v;
+				//Vec3 params = texelFetch(lightsTex, ivec2(i * 5 + 4, 0), 0).xyz;
+				float radius = scene->lights[i].radius;
+				float area = scene->lights[i].area;
+				float type = scene->lights[i].type;
 
-				float d = RectIntersect(position, u, v, plane, r);
-				if (d > 0.0 && d < maxDist)
-					return true;
+				// Intersect rectangular area light
+				if (type == QUAD_LIGHT)
+				{
+					Vec3 normal = Vec3::Normalize(Vec3::Cross(u, v));
+					Vec4 plane = Vec4(normal, Vec3::Dot(normal, position));
+					u *= 1.0f / Vec3::Dot(u, u);
+					v *= 1.0f / Vec3::Dot(v, v);
+
+					float d = RectIntersect(position, u, v, plane, r);
+					if (d > 0.0 && d < maxDist)
+						return true;
+				}
+
+				// Intersect spherical area light
+				if (type == SPHERE_LIGHT)
+				{
+					float d = SphereIntersect(radius, position, r);
+					if (d > 0.0 && d < maxDist)
+						return true;
+				}
 			}
 
-			// Intersect spherical area light
-			if (type == SPHERE_LIGHT)
-			{
-				float d = SphereIntersect(radius, position, r);
-				if (d > 0.0 && d < maxDist)
-					return true;
-			}
 		}
+
 
 
 		// Intersect BVH and tris
@@ -334,54 +334,57 @@ namespace PathTrace
 	bool ClosestHit(Ray r, State& state, LightSampleRec& lightSample) {
 		float t = INF;
 		float d;
-		if ((renderOpt.hideEmitters && state.depth > 0) || !renderOpt.hideEmitters) {
-			for (int i = 0; i < scene->lights.size(); i++) {
-				Vec3 position = scene->lights[i].position;
-				Vec3 emission = scene->lights[i].emission;
-				Vec3 u = scene->lights[i].u;
-				Vec3 v = scene->lights[i].v;
+		if (renderOptions.optLight) {
+			if ((renderOptions.hideEmitters && state.depth > 0) || !renderOptions.hideEmitters) {
+				for (int i = 0; i < scene->lights.size(); i++) {
+					Vec3 position = scene->lights[i].position;
+					Vec3 emission = scene->lights[i].emission;
+					Vec3 u = scene->lights[i].u;
+					Vec3 v = scene->lights[i].v;
 
-				float radius = scene->lights[i].radius;
-				float area = scene->lights[i].area;
-				float type = scene->lights[i].type;
-				if (type == QUAD_LIGHT) {
+					float radius = scene->lights[i].radius;
+					float area = scene->lights[i].area;
+					float type = scene->lights[i].type;
+					if (type == QUAD_LIGHT) {
 
-					Vec3 normal = Vec3::Normalize(Vec3::Cross(u, v));
-					if (Vec3::Dot(normal, r.direction) > 0.0) {
-						continue;
+						Vec3 normal = Vec3::Normalize(Vec3::Cross(u, v));
+						if (Vec3::Dot(normal, r.direction) > 0.0) {
+							continue;
+						}
+						Vec4 plane = Vec4(normal, Vec3::Dot(normal, position));
+						u *= (1.0f / Vec3::Dot(u, u));
+						v *= (1.0f / Vec3::Dot(v, v));
+						d = RectIntersect(position, u, v, plane, r);
+						if (d < 0.)
+							d = INF;
+						if (d < t)
+						{
+							t = d;
+							float cosTheta = Vec3::Dot(-r.direction, normal);
+							lightSample.pdf = (t * t) / (area * cosTheta);
+							lightSample.emission = emission;
+							state.isEmitter = true;
+						}
 					}
-					Vec4 plane = Vec4(normal, Vec3::Dot(normal, position));
-					u *= (1.0f / Vec3::Dot(u, u));
-					v *= (1.0f / Vec3::Dot(v, v));
-					d = RectIntersect(position, u, v, plane, r);
-					if (d < 0.)
-						d = INF;
-					if (d < t)
+					if (type == SPHERE_LIGHT)
 					{
-						t = d;
-						float cosTheta = Vec3::Dot(-r.direction, normal);
-						lightSample.pdf = (t * t) / (area * cosTheta);
-						lightSample.emission = emission;
-						state.isEmitter = true;
-					}
-				}
-				if (type == SPHERE_LIGHT)
-				{
-					d = SphereIntersect(radius, position, r);
-					if (d < 0.)
-						d = INF;
-					if (d < t)
-					{
-						t = d;
-						Vec3 hitPt = r.origin + t * r.direction;
-						float cosTheta = Vec3::Dot(-r.direction, Vec3::Normalize(hitPt - position));
-						// TODO: Fix this. Currently assumes the light will be hit only from the outside
-						lightSample.pdf = (t * t) / (area * cosTheta * 0.5);
-						lightSample.emission = emission;
-						state.isEmitter = true;
+						d = SphereIntersect(radius, position, r);
+						if (d < 0.)
+							d = INF;
+						if (d < t)
+						{
+							t = d;
+							Vec3 hitPt = r.origin + t * r.direction;
+							float cosTheta = Vec3::Dot(-r.direction, Vec3::Normalize(hitPt - position));
+							// TODO: Fix this. Currently assumes the light will be hit only from the outside
+							lightSample.pdf = (t * t) / (area * cosTheta * 0.5);
+							lightSample.emission = emission;
+							state.isEmitter = true;
+						}
 					}
 				}
 			}
+
 		}
 		// Intersect BVH and tris
 		int stack[64];
@@ -405,7 +408,7 @@ namespace PathTrace
 		Ray rTrans = { r.origin,r.direction };
 
 
-		while (index != 1)
+		while (index != -1)
 		{
 			Vec3 LRLeaf = scene->bvhTranslator.nodes[index].LRLeaf;
 			int leftIndex = int(LRLeaf.x);
@@ -443,9 +446,9 @@ namespace PathTrace
 						triID.x = scene->vertIndices[leftIndex + i].x;
 						triID.y = scene->vertIndices[leftIndex + i].y;
 						triID.z = scene->vertIndices[leftIndex + i].z;
+						state.matID = currMatID;
 						bary = { uvt.w ,uvt.x,uvt.y };
 						vert0 = v0, vert1 = v1, vert2 = v2;
-
 						transform = transMat;
 					}
 				}
@@ -532,6 +535,11 @@ namespace PathTrace
 
 			// Interpolate texture coords and normals using barycentric coords
 			state.texCoord = t0 * bary.x + t1 * bary.y + t2 * bary.z;
+			float wi;
+			state.texCoord.x = modf(state.texCoord.x, &wi);
+			state.texCoord.y = modf(state.texCoord.y, &wi);
+			//state.texCoord.x = modf(state.texCoord.x, &wi);
+
 			Vec3 normal = Vec3::Normalize(n0.xyz() * bary.x + n1.xyz() * bary.y + n2.xyz() * bary.z);
 
 			state.normal = transform.Inverse().Transpose().MulDir(normal);
@@ -579,7 +587,7 @@ namespace PathTrace
 	Vec4 EvalEnvMap(const Ray& r) {
 		float theta = acos(clamp(r.direction.y, -1.0, 1.0));
 
-		Vec2 uv = Vec2((PI + atan2(r.direction.z, r.direction.x)) * INV_TWO_PI, theta * INV_PI) + Vec2(renderOpt.envMapRot / 360.0f, 0.0);
+		Vec2 uv = Vec2((PI + atan2(r.direction.z, r.direction.x)) * INV_TWO_PI, theta * INV_PI) + Vec2(renderOptions.envMapRot / 360.0f, 0.0);
 		Vec3 color = scene->envMap->Sample(uv.x, uv.y);
 		float pdf = Luminance(color.x, color.y, color.z) / scene->envMap->totalSum;
 		return Vec4(color, (pdf * scene->envMap->width * scene->envMap->height) / (TWO_PI * PI * sin(theta)));
@@ -604,7 +612,7 @@ namespace PathTrace
 
 		if (mat.normalmapTexID >= 0) {
 			Vec3 texNormal = scene->textures[mat.normalmapTexID]->Sample(state.texCoord.x, state.texCoord.y).xyz();
-			if (renderOpt.openglNormalMap) {
+			if (renderOptions.openglNormalMap) {
 				texNormal.y = 1.0 - texNormal.y;
 			}
 			texNormal = Vec3::Normalize(texNormal * 2 - 1.0f);
@@ -613,9 +621,9 @@ namespace PathTrace
 			state.ffnormal = Vec3::Dot(origNormal, r.direction) <= 0.0 ? state.normal : -state.normal;
 		}
 
-		if (renderOpt.enableRoughnessMollification) {
+		if (renderOptions.enableRoughnessMollification) {
 			if (state.depth > 0)
-				mat.roughness = std::max(state.mat.roughness * renderOpt.roughnessMollificationAmt, mat.roughness);
+				mat.roughness = std::max(state.mat.roughness * renderOptions.roughnessMollificationAmt, mat.roughness);
 		}
 
 		if (mat.emissionmapTexID >= 0) {
@@ -642,7 +650,7 @@ namespace PathTrace
 		State state;
 		Vec3 transmittance = Vec3(1.0);
 
-		for (int depth = 0; depth < renderOpt.maxDepth; depth++)
+		for (int depth = 0; depth < renderOptions.maxDepth; depth++)
 		{
 			bool hit = ClosestHit(r, state, lightSample);
 
@@ -756,13 +764,13 @@ namespace PathTrace
 		Vec3 scatterPos = state.fhp + state.normal * EPS;
 
 		ScatterSampleRec scatterSample;
-		if (renderOpt.enableEnvMap && !renderOpt.enableUniformLight) {
+		if (renderOptions.enableEnvMap && !renderOptions.enableUniformLight) {
 			Vec3 color;
 			Vec4 dirPdf = SampleEnvMap(Li);
 			Vec3 lightDir = dirPdf.xyz();
 			float lightPdf = dirPdf.w;
 			Ray shadowRay = Ray(scatterPos, lightDir);
-			if (renderOpt.enableVolumeMIS) {
+			if (renderOptions.enableVolumeMIS) {
 				Li *= EvalTransmittance(shadowRay);
 				if (isSurface)
 					scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightDir, scatterSample.pdf);
@@ -794,65 +802,68 @@ namespace PathTrace
 
 						float misWeight = PowerHeuristic(lightPdf, scatterSample.pdf);
 						if (misWeight > 0.0)
-							Ld += misWeight * Li * scatterSample.f * renderOpt.envMapIntensity / lightPdf;
+							Ld += misWeight * Li * scatterSample.f * renderOptions.envMapIntensity / lightPdf;
 					}
 				}
 			}
 		}
 		// Analytic Lights
-		LightSampleRec lightSample;
-		Light light;
+		if (renderOptions.optLight) {
+			LightSampleRec lightSample;
+			Light light;
 
-		//Pick a light to sample
-		int index = int(uniform_float() * float(scene->lights.size())) * 5;
+			//Pick a light to sample
+			int index = int(uniform_float() * float(scene->lights.size())) * 5;
 
-		// Fetch light Data
+			// Fetch light Data
 
 
-		light = scene->lights[index];
-		SampleOneLight(light, scatterPos, lightSample);
-		Li = lightSample.emission;
-		if (Vec3::Dot(lightSample.direction, lightSample.normal)) {
-			Ray shadowRay = Ray(scatterPos, lightSample.direction);
-			if (renderOpt.enableVolumeMIS) {
-				Li *= EvalTransmittance(shadowRay);
+			light = scene->lights[index];
+			SampleOneLight(light, scatterPos, lightSample);
+			Li = lightSample.emission;
+			if (Vec3::Dot(lightSample.direction, lightSample.normal)) {
+				Ray shadowRay = Ray(scatterPos, lightSample.direction);
+				if (renderOptions.enableVolumeMIS) {
+					Li *= EvalTransmittance(shadowRay);
 
-				if (isSurface)
-					scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightSample.direction, scatterSample.pdf);
-				else
-				{
-					float p = PhaseHG(Vec3::Dot(-r.direction, lightSample.direction), state.medium.anisotropy);
-					scatterSample.f = Vec3(p);
-					scatterSample.pdf = p;
-				}
-
-				float misWeight = 1.0;
-				if (light.area > 0.0) // No MIS for distant light
-					misWeight = PowerHeuristic(lightSample.pdf, scatterSample.pdf);
-
-				if (scatterSample.pdf > 0.0)
-					Ld += misWeight * scatterSample.f * Li / lightSample.pdf;
-
-			}
-			else
-			{
-				// If there are no volumes in the scene then use a simple binary hit test
-				bool inShadow = AnyHit(shadowRay, lightSample.dist - EPS);
-
-				if (!inShadow)
-				{
-					scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightSample.direction, scatterSample.pdf);
+					if (isSurface)
+						scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightSample.direction, scatterSample.pdf);
+					else
+					{
+						float p = PhaseHG(Vec3::Dot(-r.direction, lightSample.direction), state.medium.anisotropy);
+						scatterSample.f = Vec3(p);
+						scatterSample.pdf = p;
+					}
 
 					float misWeight = 1.0;
 					if (light.area > 0.0) // No MIS for distant light
 						misWeight = PowerHeuristic(lightSample.pdf, scatterSample.pdf);
 
 					if (scatterSample.pdf > 0.0)
-						Ld += misWeight * Li * scatterSample.f / lightSample.pdf;
-				}
-			}
+						Ld += misWeight * scatterSample.f * Li / lightSample.pdf;
 
+				}
+				else
+				{
+					// If there are no volumes in the scene then use a simple binary hit test
+					bool inShadow = AnyHit(shadowRay, lightSample.dist - EPS);
+
+					if (!inShadow)
+					{
+						scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightSample.direction, scatterSample.pdf);
+
+						float misWeight = 1.0;
+						if (light.area > 0.0) // No MIS for distant light
+							misWeight = PowerHeuristic(lightSample.pdf, scatterSample.pdf);
+
+						if (scatterSample.pdf > 0.0)
+							Ld += misWeight * Li * scatterSample.f / lightSample.pdf;
+					}
+				}
+
+			}
 		}
+
 
 		return Ld;
 
@@ -1158,29 +1169,29 @@ namespace PathTrace
 		for (state.depth = 0;; state.depth++) {
 			bool hit = ClosestHit(r, state, lightSample);
 			if (!hit) {
-				if (renderOpt.enableBackground || renderOpt.transparentBackground) {
+				if (renderOptions.enableBackground || renderOptions.transparentBackground) {
 					if (state.depth == 0) {
 						alpha = 0.0;
 					}
 				}
-				if (!renderOpt.hideEmitters || (renderOpt.hideEmitters && state.depth > 0)) {
-					if (renderOpt.enableUniformLight) {
-						radiance += renderOpt.uniformLightCol * throughput;
+				if (!renderOptions.hideEmitters || (renderOptions.hideEmitters && state.depth > 0)) {
+					if (renderOptions.enableUniformLight) {
+						radiance += renderOptions.uniformLightCol * throughput;
 					}
-					else if (renderOpt.enableEnvMap) {
+					else if (renderOptions.enableEnvMap) {
 						Vec4 envMapColPdf = EvalEnvMap(r);
 
 						float misWeight = 1.0;
 						if (state.depth > 0) {
 							misWeight = PowerHeuristic(scatterSample.pdf, envMapColPdf.w);
 						}
-						if (true && !renderOpt.enableVolumeMIS) {//#if defined(OPT_MEDIUM) && !defined(OPT_VOL_MIS)
+						if (true && !renderOptions.enableVolumeMIS) {//#if defined(OPT_MEDIUM) && !defined(OPT_VOL_MIS)
 							if (!surfaceScatter)
 								misWeight = 1.0f;
 						}
 
 						if (misWeight > 0)
-							radiance += misWeight * envMapColPdf.xyz() * throughput * renderOpt.envMapIntensity;
+							radiance += misWeight * envMapColPdf.xyz() * throughput * renderOptions.envMapIntensity;
 
 					}
 
@@ -1190,20 +1201,23 @@ namespace PathTrace
 			GetMaterial(state, r);
 			// Gather radiance from emissive objects. Emission from meshes is not importance sampled
 			radiance += state.mat.emission * throughput;
-			// Gather radiance from light and use scatterSample.pdf from previous bounce for MIS
-			if (state.isEmitter) {
-				float misWeight = 1.0;
-				if (state.depth > 0)
-					misWeight = PowerHeuristic(scatterSample.pdf, lightSample.pdf);
-				if (!renderOpt.enableVolumeMIS) {
-					if (!surfaceScatter)
-						misWeight = 1.0f;
+			if (renderOptions.optLight) {
+				// Gather radiance from light and use scatterSample.pdf from previous bounce for MIS
+				if (state.isEmitter) {
+					float misWeight = 1.0;
+					if (state.depth > 0)
+						misWeight = PowerHeuristic(scatterSample.pdf, lightSample.pdf);
+					if (!renderOptions.enableVolumeMIS) {
+						if (!surfaceScatter)
+							misWeight = 1.0f;
+					}
+					radiance += misWeight * lightSample.emission * throughput;
+					break;
 				}
-				radiance += misWeight * lightSample.emission * throughput;
-				break;
 			}
+
 			// Stop tracing ray if maximum depth was reached
-			if (state.depth == renderOpt.maxDepth)
+			if (state.depth == renderOptions.maxDepth)
 				break;
 			mediumSampled = false;
 			surfaceScatter = false;
@@ -1287,7 +1301,7 @@ namespace PathTrace
 				else if (state.mat.mediumType != MEDIUM_NONE)
 					inMedium = false;
 			}
-			if (renderOpt.enableRR && state.depth >= renderOpt.RRDepth) {
+			if (renderOptions.enableRR && state.depth >= renderOptions.RRDepth) {
 				float q = std::min(std::max(throughput.x, std::max(throughput.y, throughput.z)) + 0.001, 0.95);
 				if (uniform_float() > q)
 					break;
@@ -1297,5 +1311,29 @@ namespace PathTrace
 		}
 
 		return Vec4(radiance, alpha);
+	}
+	void TraceScreen(int width, int height) {
+
+		int x = width / 2;
+		int y = height / 2;
+		InitRNG(Vec2(x, y), 0);
+		float r1 = 2.0 * uniform_float();
+		float r2 = 2.0 * uniform_float();
+		Vec2 jitter;
+		jitter.x = r1 < 1.0 ? sqrt(r1) - 1.0 : 1.0 - sqrt(2.0 - r1);
+		jitter.y = r2 < 1.0 ? sqrt(r2) - 1.0 : 1.0 - sqrt(2.0 - r2);
+		jitter.x /= 2.0f / width;
+		jitter.y /= 2.0f / height;
+
+		Vec2 dd = { 0.7f,0.7f };
+		float scale = tan(scene->camera->fov * 0.5);
+		//fov水平方向的张角
+		dd.y *= height * 1.0f / width * scale;
+		dd.x *= scale;
+		Vec3 RayDir = scene->camera->right * dd.x + scene->camera->up * dd.y + scene->camera->forward;
+		RayDir = Vec3::Normalize(RayDir);
+		Vec3 RayPos = scene->camera->position;
+		Ray r = { RayPos ,RayDir };
+		Trace(r);
 	}
 }
