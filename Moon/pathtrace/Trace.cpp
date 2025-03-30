@@ -192,10 +192,11 @@ namespace PathTrace
 		int index = scene->bvhTranslator.topLevelIndex;
 		float leftHit = 0.0;
 		float rightHit = 0.0;
+		int currMatID = -1;
+		if (renderOptions.optAlphaTest && !renderOptions.optMedium) {
+			currMatID = 0;
+		}
 
-#if defined(OPT_ALPHA_TEST) && !defined(OPT_MEDIUM)
-		int currMatID = 0;
-#endif
 		bool BLAS = false;
 
 		Ray rTrans = { r.origin,r.direction };
@@ -233,33 +234,34 @@ namespace PathTrace
 					uvt.y = uvt.y / det;
 					uvt.z = uvt.z / det;
 					uvt.w = 1.0 - uvt.x - uvt.y;
-
+					//scene->normalsUVY[scene->vertIndices[leftIndex + i].x].w;
 					if (uvt.x >= 0 && uvt.y >= 0 && uvt.z >= 0 && uvt.w >= 0 && uvt.z < maxDist)
 					{
-#if defined(OPT_ALPHA_TEST) && !defined(OPT_MEDIUM)
-						vec2 t0 = vec2(v0.w, texelFetch(normalsTex, vertIndices.x).w);
-						vec2 t1 = vec2(v1.w, texelFetch(normalsTex, vertIndices.y).w);
-						vec2 t2 = vec2(v2.w, texelFetch(normalsTex, vertIndices.z).w);
+						if (renderOptions.optAlphaTest && !renderOptions.optMedium) {
+							Vec2 t0 = Vec2(v0.w, scene->normalsUVY[scene->vertIndices[leftIndex + i].x].w);
+							Vec2 t1 = Vec2(v1.w, scene->normalsUVY[scene->vertIndices[leftIndex + i].y].w);
+							Vec2 t2 = Vec2(v2.w, scene->normalsUVY[scene->vertIndices[leftIndex + i].z].w);
 
-						vec2 texCoord = t0 * uvt.w + t1 * uvt.x + t2 * uvt.y;
+							//clamp
+							Vec2 texCoord = t0 * uvt.w + t1 * uvt.x + t2 * uvt.y;
+							float alpha = scene->textures[scene->materials[currMatID].baseColorTexId]->Sample(texCoord.x, texCoord.y).w;
+							//float alpha = texture(textureMapsArrayTex, Vec3(texCoord, texIDs.x)).a;
 
-						vec4 texIDs = texelFetch(materialsTex, ivec2(currMatID * 8 + 6, 0), 0);
-						vec4 alphaParams = texelFetch(materialsTex, ivec2(currMatID * 8 + 7, 0), 0);
+							float opacity = scene->materials[currMatID].opacity;
+							int alphaMode = int(scene->materials[currMatID].alphaMode);
+							float alphaCutoff = scene->materials[currMatID].alphaCutoff;
+							opacity *= alpha;
 
-						float alpha = texture(textureMapsArrayTex, Vec3(texCoord, texIDs.x)).a;
-
-						float opacity = alphaParams.x;
-						int alphaMode = int(alphaParams.y);
-						float alphaCutoff = alphaParams.z;
-						opacity *= alpha;
-
-						// Ignore intersection and continue ray based on alpha test
-						if (!((alphaMode == ALPHA_MODE_MASK && opacity < alphaCutoff) ||
-							(alphaMode == ALPHA_MODE_BLEND && rand() > opacity)))
+							// Ignore intersection and continue ray based on alpha test
+							if (!((alphaMode == ALPHA_MODE_MASK && opacity < alphaCutoff) ||
+								(alphaMode == ALPHA_MODE_BLEND && rand() > opacity)))
+								return true;
+						}
+						else
+						{
 							return true;
-#else
-						return true;
-#endif
+						}
+
 					}
 
 				}
@@ -277,9 +279,9 @@ namespace PathTrace
 
 				index = leftIndex;
 				BLAS = true;
-#if defined(OPT_ALPHA_TEST) && !defined(OPT_MEDIUM)
-				currMatID = rightIndex;
-#endif
+				if (renderOptions.optAlphaTest && !renderOptions.optMedium) {
+					currMatID = rightIndex;
+				}
 				continue;
 			}
 			else
@@ -770,7 +772,7 @@ namespace PathTrace
 			Vec3 lightDir = dirPdf.xyz();
 			float lightPdf = dirPdf.w;
 			Ray shadowRay = Ray(scatterPos, lightDir);
-			if (renderOptions.enableVolumeMIS) {
+			if (renderOptions.optMedium && renderOptions.enableVolumeMIS) {
 				Li *= EvalTransmittance(shadowRay);
 				if (isSurface)
 					scatterSample.f = DisneyEval(state, -r.direction, state.ffnormal, lightDir, scatterSample.pdf);
@@ -823,7 +825,7 @@ namespace PathTrace
 			Li = lightSample.emission;
 			if (Vec3::Dot(lightSample.direction, lightSample.normal)) {
 				Ray shadowRay = Ray(scatterPos, lightSample.direction);
-				if (renderOptions.enableVolumeMIS) {
+				if (renderOptions.optMedium && renderOptions.enableVolumeMIS) {
 					Li *= EvalTransmittance(shadowRay);
 
 					if (isSurface)
@@ -1185,7 +1187,7 @@ namespace PathTrace
 						if (state.depth > 0) {
 							misWeight = PowerHeuristic(scatterSample.pdf, envMapColPdf.w);
 						}
-						if (true && !renderOptions.enableVolumeMIS) {//#if defined(OPT_MEDIUM) && !defined(OPT_VOL_MIS)
+						if (renderOptions.optMedium && !renderOptions.enableVolumeMIS) {//#if defined(OPT_MEDIUM) && !defined(OPT_VOL_MIS)
 							if (!surfaceScatter)
 								misWeight = 1.0f;
 						}
@@ -1207,7 +1209,7 @@ namespace PathTrace
 					float misWeight = 1.0;
 					if (state.depth > 0)
 						misWeight = PowerHeuristic(scatterSample.pdf, lightSample.pdf);
-					if (!renderOptions.enableVolumeMIS) {
+					if (renderOptions.optMedium && !renderOptions.enableVolumeMIS) {
 						if (!surfaceScatter)
 							misWeight = 1.0f;
 					}
@@ -1219,54 +1221,60 @@ namespace PathTrace
 			// Stop tracing ray if maximum depth was reached
 			if (state.depth == renderOptions.maxDepth)
 				break;
-			mediumSampled = false;
-			surfaceScatter = false;
-			// Handle absorption/emission/scattering from medium
-			// TODO: Handle light sources placed inside medium
-			if (inMedium)
-			{
-				if (state.medium.type == MEDIUM_ABSORB)
+			if (renderOptions.optMedium) {
+				mediumSampled = false;
+				surfaceScatter = false;
+				// Handle absorption/emission/scattering from medium
+				// TODO: Handle light sources placed inside medium
+				if (inMedium)
 				{
-
-					throughput *= exp(-(-state.medium.color + 1.0) * state.hitDist * state.medium.density);
-				}
-				else if (state.medium.type == MEDIUM_EMISSIVE)
-				{
-					radiance += state.medium.color * state.hitDist * state.medium.density * throughput;
-				}
-				else
-				{
-					// Sample a distance in the medium
-					float scatterDist = std::min(-log(uniform_float()) / state.medium.density, state.hitDist);
-					mediumSampled = scatterDist < state.hitDist;
-
-					if (mediumSampled)
+					if (state.medium.type == MEDIUM_ABSORB)
 					{
-						throughput *= state.medium.color;
 
-						// Move ray origin to scattering position
-						r.origin += r.direction * scatterDist;
-						state.fhp = r.origin;
+						throughput *= exp(-(-state.medium.color + 1.0) * state.hitDist * state.medium.density);
+					}
+					else if (state.medium.type == MEDIUM_EMISSIVE)
+					{
+						radiance += state.medium.color * state.hitDist * state.medium.density * throughput;
+					}
+					else
+					{
+						// Sample a distance in the medium
+						float scatterDist = std::min(-log(uniform_float()) / state.medium.density, state.hitDist);
+						mediumSampled = scatterDist < state.hitDist;
 
-						// Transmittance Evaluation
-						radiance += DirectLight(r, state, false) * throughput;
+						if (mediumSampled)
+						{
+							throughput *= state.medium.color;
 
-						// Pick a new direction based on the phase function
-						Vec3 scatterDir = SampleHG(-r.direction, state.medium.anisotropy, rand(), rand());
-						scatterSample.pdf = PhaseHG(Vec3::Dot(-r.direction, scatterDir), state.medium.anisotropy);
-						r.direction = scatterDir;
+							// Move ray origin to scattering position
+							r.origin += r.direction * scatterDist;
+							state.fhp = r.origin;
+
+							// Transmittance Evaluation
+							radiance += DirectLight(r, state, false) * throughput;
+
+							// Pick a new direction based on the phase function
+							Vec3 scatterDir = SampleHG(-r.direction, state.medium.anisotropy, rand(), rand());
+							scatterSample.pdf = PhaseHG(Vec3::Dot(-r.direction, scatterDir), state.medium.anisotropy);
+							r.direction = scatterDir;
+						}
 					}
 				}
 			}
+
+
 			// If medium was not sampled then proceed with surface BSDF evaluation
-			if (!mediumSampled)
+			if ((renderOptions.optMedium && !mediumSampled) || !renderOptions.optMedium)
 			{
-				// Ignore intersection and continue ray based on alpha test
-				if ((state.mat.alphaMode == ALPHA_MODE_MASK && state.mat.opacity < state.mat.alphaCutoff) ||
-					(state.mat.alphaMode == ALPHA_MODE_BLEND && rand() > state.mat.opacity))
-				{
-					scatterSample.L = r.direction;
-					state.depth--;
+				if (renderOptions.optAlphaTest) {
+					// Ignore intersection and continue ray based on alpha test
+					if ((state.mat.alphaMode == ALPHA_MODE_MASK && state.mat.opacity < state.mat.alphaCutoff) ||
+						(state.mat.alphaMode == ALPHA_MODE_BLEND && rand() > state.mat.opacity))
+					{
+						scatterSample.L = r.direction;
+						state.depth--;
+					}
 				}
 				else
 				{
@@ -1286,20 +1294,21 @@ namespace PathTrace
 				r.direction = scatterSample.L;
 				r.origin = state.fhp + r.direction * EPS;
 
-
-				// Note: Nesting of volumes isn't supported due to lack of a volume stack for performance reasons
-				// Ray is in medium only if it is entering a surface containing a medium
-				if (Vec3::Dot(r.direction, state.normal) < 0 && state.mat.mediumType != MEDIUM_NONE)
-				{
-					inMedium = true;
-					//state.mat.subsurface
-					// Get medium params from the intersected object
-					state.medium.type = state.mat.mediumType;
+				if (renderOptions.optMedium) {
+					// Note: Nesting of volumes isn't supported due to lack of a volume stack for performance reasons
+					// Ray is in medium only if it is entering a surface containing a medium
+					if (Vec3::Dot(r.direction, state.normal) < 0 && state.mat.mediumType != MEDIUM_NONE)
+					{
+						inMedium = true;
+						//state.mat.subsurface
+						// Get medium params from the intersected object
+						state.medium.type = state.mat.mediumType;
+					}
+					// FIXME: Objects clipping or inside a medium were shaded incorrectly as inMedium would be set to false.
+					// This hack works for now but needs some rethinking
+					else if (state.mat.mediumType != MEDIUM_NONE)
+						inMedium = false;
 				}
-				// FIXME: Objects clipping or inside a medium were shaded incorrectly as inMedium would be set to false.
-				// This hack works for now but needs some rethinking
-				else if (state.mat.mediumType != MEDIUM_NONE)
-					inMedium = false;
 			}
 			if (renderOptions.enableRR && state.depth >= renderOptions.RRDepth) {
 				float q = std::min(std::max(throughput.x, std::max(throughput.y, throughput.z)) + 0.001, 0.95);
