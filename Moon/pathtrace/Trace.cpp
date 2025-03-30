@@ -540,6 +540,10 @@ namespace PathTrace
 			float wi;
 			state.texCoord.x = modf(state.texCoord.x, &wi);
 			state.texCoord.y = modf(state.texCoord.y, &wi);
+			state.texCoord.x = state.texCoord.x + 1;
+			state.texCoord.y = state.texCoord.y + 1;
+			state.texCoord.x = modf(state.texCoord.x, &wi);
+			state.texCoord.y = modf(state.texCoord.y, &wi);
 			//state.texCoord.x = modf(state.texCoord.x, &wi);
 
 			Vec3 normal = Vec3::Normalize(n0.xyz() * bary.x + n1.xyz() * bary.y + n2.xyz() * bary.z);
@@ -1318,7 +1322,7 @@ namespace PathTrace
 			}
 
 		}
-
+		std::cout << "(" << radiance.x << "," << radiance.y << "," << radiance.z << ")" << std::endl;
 		return Vec4(radiance, alpha);
 	}
 	void TraceScreen(int width, int height) {
