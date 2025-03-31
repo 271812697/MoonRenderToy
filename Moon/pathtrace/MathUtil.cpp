@@ -137,6 +137,9 @@ namespace PathTrace {
 		else
 			return z;
 	};
+	Vec3 Vec3::operator/(const Vec3& b) const {
+		return Vec3(x / b.x, y / b.y, z / b.z);
+	}
 
 	float& Vec3::operator[](int i)
 	{
@@ -465,6 +468,10 @@ namespace PathTrace {
 		if (x < min) return min;
 		if (x > max) return max;
 		return x;
+	}
+	Vec3 clamp(const Vec3& v, float min, float max)
+	{
+		return Vec3(clamp(v.x, min, max), clamp(v.y, min, max), clamp(v.z, min, max));
 	}
 	Vec3 exp(const Vec3& epo)
 	{

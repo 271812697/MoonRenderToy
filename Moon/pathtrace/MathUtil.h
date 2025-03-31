@@ -90,6 +90,7 @@ namespace PathTrace {
 		Vec3 operator-()const;
 		Vec3 operator*(float b) const;
 		Vec3 operator/(float b) const;
+		Vec3 operator/(const Vec3& b) const;
 		float operator[](int i) const;
 		float& operator[](int i);
 
@@ -142,6 +143,7 @@ namespace PathTrace {
 	float Luminance(const Vec3& a);
 	float PowerHeuristic(float a, float b);
 	float clamp(float x, float min, float max);
+	Vec3 clamp(const Vec3& v, float min, float max);
 	Vec3 exp(const Vec3& epo);
 	Vec3 mix(const Vec3& a, const Vec3& b, float c);
 	float mix(float a, float b, float alpha);

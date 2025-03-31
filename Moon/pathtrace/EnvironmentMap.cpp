@@ -46,7 +46,7 @@ namespace PathTrace
 		float h;
 		float betha;
 		betha = modf(v * (height - 1), &h);
-		return (1 - betha) * ((1 - alpha) * this->Color(w, h) + alpha * this->Color(w + 1, h)) + betha * ((1 - alpha) * this->Color(w, h + 1) + alpha * this->Color(w + 1, h + 1));
+		return (1 - betha) * ((1 - alpha) * this->Color(h, w) + alpha * this->Color(h, w + 1)) + betha * ((1 - alpha) * this->Color(h + 1, w) + alpha * this->Color(h + 1, w + 1));
 	}
 	Vec3 EnvironmentMap::Color(int x, int y) {
 		int imgIdx = x * width * 3 + y * 3;
