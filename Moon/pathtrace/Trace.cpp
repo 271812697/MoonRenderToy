@@ -255,7 +255,7 @@ namespace PathTrace
 
 							// Ignore intersection and continue ray based on alpha test
 							if (!((alphaMode == ALPHA_MODE_MASK && opacity < alphaCutoff) ||
-								(alphaMode == ALPHA_MODE_BLEND && rand() > opacity)))
+								(alphaMode == ALPHA_MODE_BLEND && uniform_float() > opacity)))
 								return true;
 						}
 						else
@@ -668,7 +668,7 @@ namespace PathTrace
 			// TODO: Get only parameters that are needed to calculate transmittance
 			GetMaterial(state, r);
 
-			bool alphatest = (state.mat.alphaMode == ALPHA_MODE_MASK && state.mat.opacity < state.mat.alphaCutoff) || (state.mat.alphaMode == ALPHA_MODE_BLEND && rand() > state.mat.opacity);
+			bool alphatest = (state.mat.alphaMode == ALPHA_MODE_MASK && state.mat.opacity < state.mat.alphaCutoff) || (state.mat.alphaMode == ALPHA_MODE_BLEND && uniform_float() > state.mat.opacity);
 			bool refractive = (1.0 - state.mat.metallic) * state.mat.specTrans > 0.0;
 
 			// Refraction is ignored (Not physically correct but helps with sampling lights from inside refractive objects)
@@ -704,8 +704,8 @@ namespace PathTrace
 	Vec3 DisneyEval(const State& state, Vec3 V, const Vec3& N, Vec3 L, float& pdf);
 	void SampleSphereLight(const Light& light, const Vec3& scatterPos, LightSampleRec& lightSample)
 	{
-		float r1 = rand();
-		float r2 = rand();
+		float r1 = uniform_float();
+		float r2 = uniform_float();
 
 		Vec3 sphereCentertoSurface = scatterPos - light.position;
 		float distToSphereCenter = Vec3::Length(sphereCentertoSurface);
@@ -732,8 +732,8 @@ namespace PathTrace
 
 	void SampleRectLight(const Light& light, const Vec3& scatterPos, LightSampleRec& lightSample)
 	{
-		float r1 = rand();
-		float r2 = rand();
+		float r1 = uniform_float();
+		float r2 = uniform_float();
 
 		Vec3 lightSurfacePos = light.position + light.u * r1 + light.v * r2;
 		lightSample.direction = lightSurfacePos - scatterPos;
@@ -1061,8 +1061,8 @@ namespace PathTrace
 	{
 		pdf = 0.0;
 
-		float r1 = rand();
-		float r2 = rand();
+		float r1 = uniform_float();
+		float r2 = uniform_float();
 
 		// TODO: Tangent and bitangent should be calculated from mesh (provided, the mesh has proper uvs)
 		Vec3 T, B;
@@ -1107,7 +1107,7 @@ namespace PathTrace
 		cdf[4] = cdf[3] + clearCtPr;
 
 		// Sample a lobe based on its importance
-		float r3 = rand();
+		float r3 = uniform_float();
 
 		if (r3 < cdf[0]) // Diffuse
 		{
@@ -1260,7 +1260,7 @@ namespace PathTrace
 							radiance += DirectLight(r, state, false) * throughput;
 
 							// Pick a new direction based on the phase function
-							Vec3 scatterDir = SampleHG(-r.direction, state.medium.anisotropy, rand(), rand());
+							Vec3 scatterDir = SampleHG(-r.direction, state.medium.anisotropy, uniform_float(), uniform_float());
 							scatterSample.pdf = PhaseHG(Vec3::Dot(-r.direction, scatterDir), state.medium.anisotropy);
 							r.direction = scatterDir;
 						}
@@ -1275,7 +1275,7 @@ namespace PathTrace
 				if (renderOptions.optAlphaTest) {
 					// Ignore intersection and continue ray based on alpha test
 					if ((state.mat.alphaMode == ALPHA_MODE_MASK && state.mat.opacity < state.mat.alphaCutoff) ||
-						(state.mat.alphaMode == ALPHA_MODE_BLEND && rand() > state.mat.opacity))
+						(state.mat.alphaMode == ALPHA_MODE_BLEND && uniform_float() > state.mat.opacity))
 					{
 						scatterSample.L = r.direction;
 						state.depth--;
@@ -1353,9 +1353,9 @@ namespace PathTrace
 		float* sum = imagesum;
 		unsigned char* data = image;
 		static int cnt = 50;
-		for (int k = 0;k < cnt;k++) {
-			 for (int i = 0; i < h; i++){
-				 for (int j = 0; j < w; j++){
+		for (int k = 0; k < cnt; k++) {
+			for (int i = 0; i < h; i++) {
+				for (int j = 0; j < w; j++) {
 					InitRNG(Vec2(i, j), k);
 					float r1 = 2.0 * uniform_float();
 					float r2 = 2.0 * uniform_float();
@@ -1372,27 +1372,34 @@ namespace PathTrace
 					dd.x *= scale;
 					Vec3 RayDir = scene->camera->right * dd.x + scene->camera->up * dd.y + scene->camera->forward;
 					RayDir = Vec3::Normalize(RayDir);
-					Vec3 RayPos = scene->camera->position;
-					Ray r = { RayPos ,RayDir };
+
+					Vec3 focalPoint = scene->camera->focalDist * RayDir;
+					float cam_r1 = uniform_float() * TWO_PI;
+					float cam_r2 = uniform_float() * scene->camera->aperture;
+					Vec3 randomAperturePos = (cos(cam_r1) * scene->camera->right + sin(cam_r1) * scene->camera->up) * sqrt(cam_r2);
+					Vec3 finalRayDir = Vec3::Normalize(focalPoint - randomAperturePos);
+
+
+					Ray r = { scene->camera->position + randomAperturePos ,finalRayDir };
 					Vec3 res = Trace(r).xyz();
-					int index=(i* w + j)*4;
+					int index = (i * w + j) * 4;
 					imagesum[index] += res.x;
-					imagesum[index+1] += res.y;
-					imagesum[index+2] += res.z;
+					imagesum[index + 1] += res.y;
+					imagesum[index + 2] += res.z;
 				}
 			}
 		}
 
-		for (int i = 0;i < h;i++) {
-			for (int j = 0;j < w;j++) {
-				int index = (i * w + j)*4;
-				Vec3 res = Vec3(imagesum[index]/cnt, imagesum[index+1]/cnt, imagesum[index+2]/cnt);
+		for (int i = 0; i < h; i++) {
+			for (int j = 0; j < w; j++) {
+				int index = (i * w + j) * 4;
+				Vec3 res = Vec3(imagesum[index] / cnt, imagesum[index + 1] / cnt, imagesum[index + 2] / cnt);
 				res = ACES(res);
-				res = pow(res, Vec3(2.2));
+				//res = pow(res, Vec3(2.2));
 				image[index] = res.x * 255.0;
-				image[index+1] = res.y * 255.0;
-				image[index+2] = res.z * 255.0;
-				image[index+3] = 255;
+				image[index + 1] = res.y * 255.0;
+				image[index + 2] = res.z * 255.0;
+				image[index + 3] = 255;
 
 			}
 		}
