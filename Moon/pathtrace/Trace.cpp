@@ -1323,7 +1323,6 @@ namespace PathTrace
 			}
 
 		}
-		//std::cout << "(" << radiance.x << "," << radiance.y << "," << radiance.z << ")" << std::endl;
 		return Vec4(radiance, alpha);
 	}
 	Vec3 ACES(const Vec3& c)
@@ -1338,11 +1337,9 @@ namespace PathTrace
 	}
 
 	void TraceScreen(int width, int height) {
-		if (height < 500) {
-			return;
-		}
-		int w = 800;
-		int h = 800;
+
+		int w = 1000;
+		int h = 1000;
 		static float* imagesum = nullptr;//
 		static unsigned char* image = nullptr;
 		if (imagesum == nullptr) {
@@ -1355,46 +1352,51 @@ namespace PathTrace
 		}
 		float* sum = imagesum;
 		unsigned char* data = image;
-		static int cnt = 1;
-		for (int i = 0; i < w; i++) {
-			for (int j = 0; j < h; j++) {
-				InitRNG(Vec2(i, j), cnt);
-				float r1 = 2.0 * uniform_float();
-				float r2 = 2.0 * uniform_float();
-				Vec2 jitter;
-				jitter.x = r1 < 1.0 ? sqrt(r1) - 1.0 : 1.0 - sqrt(2.0 - r1);
-				jitter.y = r2 < 1.0 ? sqrt(r2) - 1.0 : 1.0 - sqrt(2.0 - r2);
-				jitter.x /= 2.0f * w;
-				jitter.y /= 2.0f * h;
-				Vec2 dd = Vec2(i * 2.0f / w - 1.0f, j * 2.0f / h - 1.0f) + jitter;
+		static int cnt = 50;
+		for (int k = 0;k < cnt;k++) {
+			 for (int i = 0; i < h; i++){
+				 for (int j = 0; j < w; j++){
+					InitRNG(Vec2(i, j), k);
+					float r1 = 2.0 * uniform_float();
+					float r2 = 2.0 * uniform_float();
+					Vec2 jitter;
+					jitter.x = r1 < 1.0 ? sqrt(r1) - 1.0 : 1.0 - sqrt(2.0 - r1);
+					jitter.y = r2 < 1.0 ? sqrt(r2) - 1.0 : 1.0 - sqrt(2.0 - r2);
+					jitter.x /= 2.0f * w;
+					jitter.y /= 2.0f * h;
+					Vec2 dd = Vec2(i * 2.0f / w - 1.0f, j * 2.0f / h - 1.0f) + jitter;
 
-				float scale = tan(scene->camera->fov * 0.5);
-				//fov水平方向的张角
-				dd.y *= h * 1.0f / w * scale;
-				dd.x *= scale;
-				Vec3 RayDir = scene->camera->right * dd.x + scene->camera->up * dd.y + scene->camera->forward;
-				RayDir = Vec3::Normalize(RayDir);
-				Vec3 RayPos = scene->camera->position;
-				Ray r = { RayPos ,RayDir };
-				Vec3 res = Trace(r).xyz();
-				*sum = *sum + res.x;
-				*(sum + 1) = *(sum + 1) + res.y;
-				*(sum + 2) = *(sum + 2) + res.z;
-				res = ACES(Vec3(*(sum) / cnt, *(sum + 1) / cnt, *(sum + 2) / cnt));
-				res = pow(res, Vec3(2.2));
-
-				*data++ = res.x * 255.0;
-				*data++ = res.y * 255.0;
-				*data++ = res.z * 255.0;
-				*data++ = 255;
-				sum += 4;;
+					float scale = tan(scene->camera->fov * 0.5);
+					//fov水平方向的张角
+					dd.y *= h * 1.0f / w * scale;
+					dd.x *= scale;
+					Vec3 RayDir = scene->camera->right * dd.x + scene->camera->up * dd.y + scene->camera->forward;
+					RayDir = Vec3::Normalize(RayDir);
+					Vec3 RayPos = scene->camera->position;
+					Ray r = { RayPos ,RayDir };
+					Vec3 res = Trace(r).xyz();
+					int index=(i* w + j)*4;
+					imagesum[index] += res.x;
+					imagesum[index+1] += res.y;
+					imagesum[index+2] += res.z;
+				}
 			}
 		}
 
+		for (int i = 0;i < h;i++) {
+			for (int j = 0;j < w;j++) {
+				int index = (i * w + j)*4;
+				Vec3 res = Vec3(imagesum[index]/cnt, imagesum[index+1]/cnt, imagesum[index+2]/cnt);
+				res = ACES(res);
+				res = pow(res, Vec3(2.2));
+				image[index] = res.x * 255.0;
+				image[index+1] = res.y * 255.0;
+				image[index+2] = res.z * 255.0;
+				image[index+3] = 255;
 
-		std::string file = "res_" + std::to_string(cnt++) + ".png";
+			}
+		}
+		std::string file = "res_" + std::to_string(cnt) + ".png";
 		stbi_write_png(file.c_str(), w, h, 4, image, 0);
-
-		//delete[] data;
 	}
 }
