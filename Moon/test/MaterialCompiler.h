@@ -4,12 +4,13 @@
 #include "mat/MaterialLexeme.h"
 
 namespace TEST {
+	class Program;
 	class JsonishValue;
 	class MaterialBuilder;
 	class MaterialCompiler {
 	public:
 		MaterialCompiler();
-		static void compile(const std::string shaderFilePath);
+		static Program compile(const std::string shaderFilePath);
 
 		static bool parseMaterial(const char* buffer, size_t size,
 			MaterialBuilder& builder);

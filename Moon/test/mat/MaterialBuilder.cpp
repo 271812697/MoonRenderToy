@@ -1,4 +1,5 @@
 #include "MaterialBuilder.h"
+#include "DescriptorSets.h"
 #include "BufferInterfaceBlock.h"
 #include "PushConstantDefinitions.h"
 #include "Includes.h"
@@ -444,7 +445,7 @@ namespace TEST {
 		return *this;
 	}
 
-	void MaterialBuilder::build()
+	Program MaterialBuilder::build()
 	{
 		if (mMaterialDomain == MaterialDomain::POST_PROCESS) {
 			mShading = Shading::UNLIT;
@@ -456,39 +457,75 @@ namespace TEST {
 		// Resolve all the #include directives within user code.
 		if (!mMaterialFragmentCode.resolveIncludes(mIncludeCallback, mFileName) ||
 			!mMaterialVertexCode.resolveIncludes(mIncludeCallback, mFileName)) {
-			;
-		}
-		MaterialInfo info{};
-		prepareToBuild(info);
-		std::vector<MaterialVariant> variants;
-		switch (mMaterialDomain) {
-		case MaterialDomain::SURFACE:
-			variants = determineSurfaceVariants(mVariantFilter, isLit(), mShadowMultiplier);
-			break;
-		case MaterialDomain::POST_PROCESS:
-			variants = determinePostProcessVariants();
-			break;
-		case MaterialDomain::COMPUTE:
-			variants = determineComputeVariants();
-			break;
-		}
 
+		}
 		ShaderGenerator sg(mProperties, mVariables, mOutputs, mDefines, mConstants, mPushConstants,
 			mMaterialFragmentCode.getResolved(), mMaterialFragmentCode.getLineOffset(),
 			mMaterialVertexCode.getResolved(), mMaterialVertexCode.getLineOffset(),
 			mMaterialDomain);
-		for (const auto& v : variants) {
+		MaterialInfo info{};
+		prepareToBuild(info);
+		utils::FixedCapacityVector<uint8_t> vsBuilder;
+		utils::FixedCapacityVector<uint8_t> fsBuilder;
+		utils::FixedCapacityVector<uint8_t> csBuilder;
+		for (const auto& stage : { ShaderStage::VERTEX ,ShaderStage::FRAGMENT }) {
 			std::string shader;
-			if (v.stage == ShaderStage::VERTEX) {
-				shader = sg.createVertexProgram(info, v.variant, mInterpolation, mVertexDomain);
+			if (stage == ShaderStage::VERTEX) {
+				shader = sg.createVertexProgram(info, Variant(103), mInterpolation, mVertexDomain);
+
+
+				vsBuilder.reserve(shader.size());
+				vsBuilder.resize(shader.size());
+				memcpy(&vsBuilder[0], shader.c_str(), shader.size());
+				vsBuilder.back() = 0;
 			}
-			else if (v.stage == ShaderStage::FRAGMENT) {
-				shader = sg.createFragmentProgram(info, v.variant, mInterpolation, mVariantFilter);
+			else if (stage == ShaderStage::FRAGMENT) {
+				shader = sg.createFragmentProgram(info, Variant(103), mInterpolation, mVariantFilter);
+
+				fsBuilder.reserve(shader.size());
+				fsBuilder.resize(shader.size());
+				memcpy(&fsBuilder[0], shader.data(), shader.size());
+				fsBuilder.back() = 0;
 			}
-			else if (v.stage == ShaderStage::COMPUTE) {
+			else if (stage == ShaderStage::COMPUTE) {
 				shader = sg.createComputeProgram(info);
+
+				csBuilder.reserve(shader.size());
+				csBuilder.resize(shader.size());
+				memcpy(&csBuilder[0], shader.data(), shader.size());
+				csBuilder.back() = 0;
 			}
+
 		}
+		utils::FixedCapacityVector<Program::PushConstant> vertexPushConstant;
+		utils::FixedCapacityVector<Program::PushConstant> fragPushConstant;
+		vertexPushConstant.reserve(mPushConstants.size());
+		fragPushConstant.reserve(mPushConstants.size());
+		for (auto& push : mPushConstants) {
+			if (push.stage == ShaderStage::VERTEX) {
+				vertexPushConstant.push_back({ push.name,push.type });
+			}
+			else if (push.stage == ShaderStage::FRAGMENT) {
+				fragPushConstant.push_back({ push.name,push.type });
+			}
+
+		}
+		//Per_Material
+		Program::DescriptorBindingsInfo bindInfo;
+		bindInfo.reserve(1 + info.sib.getSamplerInfoList().size());
+		bindInfo.push_back({ TEST::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0),DescriptorType::UNIFORM_BUFFER,0 });
+		for (auto& sampleItem : info.sib.getSamplerInfoList()) {
+			bindInfo.push_back({ sampleItem.uniformName,
+				sampleItem.type == SamplerType::SAMPLER_EXTERNAL ? DescriptorType::SAMPLER_EXTERNAL : DescriptorType::SAMPLER,sampleItem.binding });
+		}
+		Program program;
+		program.shader(ShaderStage::VERTEX, vsBuilder.data(), vsBuilder.size())
+			.shader(ShaderStage::FRAGMENT, fsBuilder.data(), fsBuilder.size()).
+			shaderLanguage(ShaderLanguage::ESSL3).
+			pushConstants(ShaderStage::VERTEX, vertexPushConstant)
+			.pushConstants(ShaderStage::FRAGMENT, fragPushConstant).
+			descriptorBindings(0, bindInfo);
+		return program;
 
 	}
 
@@ -553,7 +590,7 @@ namespace TEST {
 
 		mRequiredAttributes.set(VertexAttribute::POSITION);
 		if (mShading != Shading::UNLIT || mShadowMultiplier) {
-			mRequiredAttributes.set(VertexAttribute::TANGENTS);
+			//mRequiredAttributes.set(VertexAttribute::TANGENTS);
 		}
 
 		info.sib = sbb.name("MaterialParams").build();

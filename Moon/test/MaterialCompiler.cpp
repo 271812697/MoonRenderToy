@@ -22,7 +22,7 @@ namespace TEST {
 
 	}
 
-	void MaterialCompiler::compile(const std::string shaderFilePath)
+	Program MaterialCompiler::compile(const std::string shaderFilePath)
 	{
 		static bool initFlag = false;
 		if (!initFlag) {
@@ -40,23 +40,23 @@ namespace TEST {
 			initFlag = true;
 		}
 		std::ifstream file;
-		file.open("D:/Project/UseQt/Build/bin/Debug/normalColor.mat", std::ifstream::binary | std::ios::ate);
+		file.open(shaderFilePath, std::ifstream::binary | std::ios::ate);
 		if (!file) {
 			std::cerr << "Unable to open material source file '" << shaderFilePath << "'" << std::endl;
-			return;
+			return{};
 		}
 
 		size_t fileSize = file.tellg();
 		file.seekg(0, std::ios::beg);
 		if (fileSize < 0) {
 			std::cerr << "Material source file is empty" << std::endl;
-			return;
+			return {};
 		}
 
 		std::unique_ptr<char[]> buffer = std::make_unique<char[]>(fileSize);
 		if (!file.read(buffer.get(), fileSize)) {
 			std::cerr << "Unable to read material source file '" << shaderFilePath << "'" << std::endl;
-			return;
+			return {};
 		}
 		MaterialBuilder builder;
 		bool parsed;
@@ -68,13 +68,9 @@ namespace TEST {
 		}
 
 		if (!parsed) {
-			return;
+			return {};
 		}
-		builder.build();
-
-
-
-
+		return  builder.build();
 	}
 
 	bool MaterialCompiler::parseMaterial(const char* buffer, size_t size, MaterialBuilder& builder)

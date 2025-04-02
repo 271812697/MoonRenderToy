@@ -1,6 +1,7 @@
 #include "OpenGLContext.h"
 #include "DriverEnums.h"
 #include "utils/GLUtils.h"
+#include "core/log.h"
 #include <functional>
 #include <string_view>
 #include <utility>
@@ -609,11 +610,11 @@ namespace TEST {
 		for (GLint i = 0; i < n; i++) {
 			exts.emplace((const char*)glGetStringi(GL_EXTENSIONS, (GLuint)i));
 		}
+		CORE_INFO("Support Gl extension:");
 		if (true) {
 			for (auto extension : exts) {
-				std::cout << "\"" << std::string_view(extension) << "\"\n";
+				CORE_INFO("{}", extension.data());
 			}
-
 		}
 
 		using namespace std::literals;

@@ -1,0 +1,184 @@
+#include "PathTrace.h"
+#include "LoadScene.h"
+#include "Scene.h"
+#include "RendererOptions.h"
+#include "Camera.h"
+#include "Renderer.h"
+#include "core/log.h"
+#include "Trace.h"
+#include <filesystem>
+namespace PathTrace {
+
+	Scene* scene = nullptr;
+	Renderer* renderer = nullptr;
+	std::vector<string> sceneFiles;
+	std::vector<string> envMaps;
+	int sampleSceneIdx = 0;
+	int selectedInstance = -1;
+	int selectedMat = 0;
+	int envMapIdx = 0;
+	float CameraMoveSpeed = 3.0f;
+	bool objectPropChanged = false;
+	bool showTransform = false;
+	bool space_down = false;
+	float screenX[2] = { 0,0 };
+	float screenY[2] = { 0,0 };
+
+	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+
+	RenderOptions renderOptions;
+
+	Scene* GetScene() {
+		return scene;
+	}
+	Renderer* GetRenderer() {
+		return renderer;
+	}
+	RenderOptions& GetRenderOptions() {
+		return renderOptions;
+	}
+	void GetSceneFiles()
+	{
+		std::filesystem::directory_entry p_directory(assetsDir);
+		for (auto& item : std::filesystem::directory_iterator(p_directory))
+			if (!item.is_directory()) {
+				auto ext = item.path().extension();
+				if (ext == ".scene" || ext == ".gltf" || ext == ".glb")
+				{
+					sceneFiles.push_back(item.path().generic_string());
+				}
+			}
+	}
+	void Resize(int width, int height) {
+		renderOptions.windowResolution.x = width;
+		renderOptions.windowResolution.y = height;
+		if (!renderOptions.independentRenderSize)
+			renderOptions.renderResolution = renderOptions.windowResolution;
+		scene->renderOptions = renderOptions;
+		renderer->ResizeRenderer();
+	}
+	void GetEnvMaps()
+	{
+		std::filesystem::directory_entry p_directory(envMapDir);
+		for (auto& item : std::filesystem::directory_iterator(p_directory)) {
+			if (item.path().extension() == ".hdr")
+			{
+				envMaps.push_back(item.path().generic_string());
+			}
+		}
+	}
+
+	void LoadScene(std::string sceneName)
+	{
+		delete scene;
+		scene = new Scene();
+		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
+
+		bool success = false;
+		Mat4 xform;
+
+		if (ext == "scene")
+			success = LoadSceneFromFile(sceneName, scene, renderOptions);
+		else if (ext == "gltf")
+			success = LoadGLTF(sceneName, scene, renderOptions, xform, false);
+		else if (ext == "glb")
+			success = LoadGLTF(sceneName, scene, renderOptions, xform, true);
+
+		if (!success)
+		{
+			CORE_ERROR("Unable to load scene");
+			exit(0);
+		}
+
+		selectedInstance = 0;
+		selectedMat = 0;
+		// Add a default HDR if there are no lights in the scene
+		if (!scene->envMap && !envMaps.empty())
+		{
+			scene->AddEnvMap(envMaps[envMapIdx]);
+			renderOptions.enableEnvMap = true;
+			renderOptions.envMapIntensity = 1.5f;
+		}
+
+		scene->renderOptions = renderOptions;
+	}
+	void TraceScene()
+	{
+
+		TraceScreen(renderOptions.windowResolution.x, renderOptions.windowResolution.y);
+	}
+	bool InitRenderer()
+	{
+		delete renderer;
+		renderer = new Renderer(scene, shadersDir);
+		return true;
+	}
+	void Ret() {
+		delete renderer;
+		delete scene;
+	}
+
+	CameraController::CameraController()
+	{
+	}
+
+	CameraController& CameraController::Instance()
+	{
+		static CameraController instance;
+		return instance;
+	}
+
+	void CameraController::mouseMove(int _x, int _y)
+	{
+
+		if (mouseMiddle) {
+			scene->camera->Strafe((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->dirty = true;
+		}
+		else if (mouseRight)
+		{
+			scene->camera->OffsetOrientation((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->dirty = true;
+		}
+		x = _x;
+		y = _y;
+	}
+
+	void CameraController::mouseLeftPress(int x, int y)
+	{
+
+		scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y);;
+	}
+
+	void CameraController::mouseMiddlePress()
+	{
+		mouseMiddle = true;
+	}
+
+	void CameraController::mouseRightPress()
+	{
+		mouseRight = true;
+	}
+
+	void CameraController::mouseMiddleRelease()
+	{
+		mouseMiddle = false;
+	}
+
+	void CameraController::mouseRightRelease()
+	{
+		mouseRight = false;
+	}
+
+	void CameraController::wheelMouseWheel(float delta)
+	{
+		scene->camera->SetRadius(delta * 0.025);
+		GetScene()->dirty = true;
+	}
+
+}

@@ -23,12 +23,9 @@
 
 namespace TEST {
 
-
-
-
 	class Dispatcher;
 	class CommandStream;
-
+	class OpenGLProgram;
 	class Driver {
 	public:
 		static size_t getElementTypeSize(ElementType type) noexcept;
@@ -65,17 +62,21 @@ namespace TEST {
 				unsigned int buffer{};
 			} gl;
 		};
-
-
-		// called from CommandStream::execute on the render-thread
-		// the fn function will execute a batch of driver commands
-		// this gives the driver a chance to wrap their execution in a meaningful manner
-		// the default implementation simply calls fn
+		bool useProgram(OpenGLProgram* p);
 		virtual void execute(std::function<void(void)> const& fn);
+	public:
 
 		void test(int val);
+		Handle<HwProgram>createProgramS();
+		void createProgramR(Handle<HwProgram> ph, Program&& program);
+		Handle<HwVertexBuffer> createVertexBufferS();
+		void createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih);
+		Handle<HwIndexBuffer> createIndexBufferS();
+		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
+		void createBufferObjectR(Handle<HwBufferObject> boh, uint32_t byteCount, BufferObjectBinding bindingType, BufferUsage usage);
 	private:
-
+		OpenGLProgram* mBoundProgram = nullptr;
+		utils::bitset8 mInvalidDescriptorSetBindings;
 		friend class OpenGLProgram;
 		friend class ShaderCompilerService;
 
@@ -124,12 +125,7 @@ namespace TEST {
 			return mHandleAllocator.handle_cast<Dp, B>(handle);
 		}
 
-		Handle<HwVertexBuffer> createVertexBufferS();
-		void createVertexBufferR(Handle<HwVertexBuffer> vbh, uint32_t vertexCount, Handle<HwVertexBufferInfo> vbih);
 
-		Handle<HwIndexBuffer> createIndexBufferS();
-		void createIndexBufferR(Handle<HwIndexBuffer> ibh, ElementType elementType, uint32_t indexCount, BufferUsage usage);
-		void createBufferObjectR(Handle<HwBufferObject> boh, uint32_t byteCount, BufferObjectBinding bindingType, BufferUsage usage);
 	};
 
 } // namespace filament::backend

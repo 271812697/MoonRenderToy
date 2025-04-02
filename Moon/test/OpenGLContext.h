@@ -76,17 +76,17 @@ namespace TEST {
 		void useProgram(unsigned int program) noexcept;
 
 		void pixelStore(unsigned int, int) noexcept;
-		inline void activeTexture(unsigned int unit) noexcept;
-		inline void bindTexture(unsigned int unit, unsigned int target, unsigned int texId) noexcept;
+		void activeTexture(unsigned int unit) noexcept;
+		void bindTexture(unsigned int unit, unsigned int target, unsigned int texId) noexcept;
 
 		void unbindTexture(unsigned int target, unsigned int id) noexcept;
 		void unbindTextureUnit(unsigned int unit) noexcept;
-		inline void bindVertexArray(RenderPrimitive const* p) noexcept;
-		inline void bindSampler(unsigned int unit, unsigned int sampler) noexcept;
+		void bindVertexArray(RenderPrimitive const* p) noexcept;
+		void bindSampler(unsigned int unit, unsigned int sampler) noexcept;
 		void unbindSampler(unsigned int sampler) noexcept;
 
 		void bindBuffer(unsigned int target, unsigned int buffer) noexcept;
-		inline void bindBufferRange(unsigned int target, unsigned int index, unsigned int buffer,
+		void bindBufferRange(unsigned int target, unsigned int index, unsigned int buffer,
 			__int64 offset, __int64 size) noexcept;
 
 		unsigned int bindFramebuffer(unsigned int target, unsigned int buffer) noexcept;

@@ -11,6 +11,11 @@
 #include "Guizmo/RenderWindowInteractor.h"
 #include "Guizmo/ExecuteCommand.h"
 #include "Guizmo/BoxWidget2.h"
+#include "pathtrace/PathTrace.h"
+#include "pathtrace/Renderer.h"
+#include "pathtrace/Scene.h"
+#include "pathtrace/Camera.h"
+
 
 static const char* AsciiToKeySymTable[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   nullptr, nullptr, nullptr, "Tab", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -153,8 +158,6 @@ const char* qt_key_to_key_sym(Qt::Key i, Qt::KeyboardModifiers modifiers)
 	return ret;
 }
 namespace MOON {
-	//static float cursorX;
-	//static float cursorY;
 	static float viewW;
 	static float viewH;
 	Eigen::Matrix4f LookAt(const  Eigen::Vector3<float>& _from, const  Eigen::Vector3<float>& _to, const  Eigen::Vector3<float>& _up = Eigen::Vector3<float>(0.0f, 1.0f, 0.0f));
@@ -186,10 +189,7 @@ namespace MOON {
 				boxWidget = vtkBoxWidget2::New();
 				boxWidget->SetInteractor(windowInteractor);
 				boxWidget->SetEnabled(1);
-
 			}
-
-
 		}
 	}
 
@@ -207,9 +207,9 @@ namespace MOON {
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		TEST::TestInstance::Instance().getCommandStream()->test(8);
 		TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
-
 			std::cout << "say hello" << std::endl;
 			});
+
 		viewer.append_mesh();
 		viewer.append_mesh();
 		viewer.append_mesh();
@@ -225,6 +225,15 @@ namespace MOON {
 
 		//¿ªÆô¼ÆÊ±Æ÷
 		this->startTimer(16);
+
+
+		PathTrace::GetSceneFiles();
+		PathTrace::GetEnvMaps();
+		PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
+		if (!PathTrace::InitRenderer()) {
+			std::cout << "error" << std::endl;
+		}
+		initFlag = true;
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -238,86 +247,11 @@ namespace MOON {
 	{
 		TEST::TestInstance::Instance().flush();
 		TEST::TestInstance::Instance().execute();
+		PathTrace::GetRenderer()->Update(0.016);
+		PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		guizmoRender->Clear();
-		viewer.draw();
-
-
-		const auto view = viewer.core().view;
-		const auto viewinverse = view.inverse();
-		const auto proj = viewer.core().proj;
-		Eigen::Vector3<float> vieweye = Eigen::Vector3<float>(viewinverse(0, 3), viewinverse(1, 3), viewinverse(2, 3));
-		Eigen::Vector3<float> viewforward = Eigen::Vector3<float>(viewinverse(0, 2), viewinverse(1, 2), viewinverse(2, 2)).normalized();
-		Eigen::Matrix4f camWorld = viewinverse;
-
-		// World space cursor ray from mouse position; for VR this might be the position/orientation of the HMD or a tracked controller.
-		Eigen::Vector2<float> cursorPos = Eigen::Vector2<float>(viewer.current_mouse_x, viewer.current_mouse_y);
-		//this->cursor().pos().x
-
-		cursorPos = Eigen::Vector2<float>((cursorPos.x() / viewer.core().viewport(2)) * 2.0f - 1.0f, (cursorPos.y() / viewer.core().viewport(3)) * 2.0f - 1.0f);
-
-		cursorPos(1) = -cursorPos(1); // window origin is top-left, ndc is bottom-left
-		//printf("curpos(%f %f) viewport(%f,%f)\n", cursorPos.x(), cursorPos.y(), viewW, viewH);
-		Eigen::Vector3<float> rayOrigin, rayDirection;
-		if (viewer.core().orthographic)
-		{
-			rayOrigin(0) = cursorPos.x() / proj(0, 0);
-			rayOrigin(1) = cursorPos.y() / proj(1, 1);
-			rayOrigin(2) = 0.0f;
-			Eigen::Vector4<float> it = camWorld * Eigen::Vector4<float>(rayOrigin.x(), rayOrigin.y(), rayOrigin.z(), 1.0f);
-			rayOrigin = Eigen::Vector3<float>(it.x() / it.w(), it.y() / it.w(), it.z() / it.w());
-			it = camWorld * Eigen::Vector4<float>(0.0f, 0.0f, -1.0f, 0.0f);
-			rayDirection = Eigen::Vector3<float>(it.x() / it.w(), it.y() / it.w(), it.z() / it.w()); ;
-
-		}
-		else
-		{
-			rayOrigin = vieweye;
-			rayDirection(0) = cursorPos.x() / proj(0, 0);
-			rayDirection(1) = cursorPos.y() / proj(1, 1);
-			rayDirection(2) = -1.0f;
-
-			Eigen::Vector3<float>rayDirectionNormalized = rayDirection.normalized();
-			Eigen::Vector4<float> it = camWorld * Eigen::Vector4<float>(rayDirectionNormalized.x(), rayDirectionNormalized.y(), rayDirectionNormalized.z(), 0.0f);
-			rayDirection = Eigen::Vector3<float>(it.x(), it.y(), it.z());
-			//printf("Ray Direction(%f,%f,%f)\n", rayDirection.x(), rayDirection.y(), rayDirection.z());
-
-		}
-		CameraParam& cameraParam = guizmoRender->getCameraParam();
-		cameraParam.viewportWidth = viewer.core().viewport.z();
-		cameraParam.viewportHeight = viewer.core().viewport.w();
-		cameraParam.projectY = tan(90.0 / 360.0 * PI) * 2;
-		cameraParam.orthProj = false;
-		cameraParam.eye = vieweye;
-		cameraParam.viewDirectioin = viewforward;
-		cameraParam.rayOrigin = rayOrigin;
-		cameraParam.rayDirection = rayDirection;
-		cameraParam.view = view;
-		cameraParam.proj = proj;
-		cameraParam.viewProj = proj * view;
-		//printf("view Direction(%f,%f,%f)\n", viewforward.x(), viewforward.y(), viewforward.z());
-		cameraParam.m_keyDown[Mouse_Left] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-		bool ctrlDown = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0;
-		cameraParam.m_keyDown[Key_L] = ctrlDown && (GetAsyncKeyState(0x4c) & 0x8000) != 0;
-		cameraParam.m_keyDown[Key_T] = ctrlDown && (GetAsyncKeyState(0x54) & 0x8000) != 0;
-		cameraParam.m_keyDown[Key_R] = ctrlDown && (GetAsyncKeyState(0x52) & 0x8000) != 0;
-		cameraParam.m_keyDown[Key_S] = ctrlDown && (GetAsyncKeyState(0x53) & 0x8000) != 0;
-
-		cameraParam.m_snapTranslation = ctrlDown ? 0.5f : 0.0f;
-		cameraParam.m_snapRotation = ctrlDown ? 0.523f : 0.0f;
-		cameraParam.m_snapScale = ctrlDown ? 0.5f : 0.0f;
-
-		//guizmoRender->NewFrame();
-		//static Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-
-
-		//guizmoRender->Draw(model);
-		//guizmoRender->DrawManpulate("Mode", model);
-		//guizmoRender->DrawTeapot(model, proj * view);
-		//guizmoRender->Submit();
-		//guizmoRender->EndFrame();
-		grid_render->DrawGrid(viewer.core().camera_eye, proj * view);
-
+		PathTrace::GetRenderer()->Present();
+		PathTrace::TraceScene();
 
 	}
 
@@ -339,6 +273,10 @@ namespace MOON {
 
 		viewW = event->size().width();
 		viewH = event->size().height();
+		if (initFlag) {
+			PathTrace::Resize(viewW, viewH);
+		}
+
 	}
 
 	void ViewerWindow::mousePressEvent(QMouseEvent* e)
@@ -346,13 +284,33 @@ namespace MOON {
 		if (blockMouseMessage) {
 			return;
 		}
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto x = e2->x();
+		auto y = e2->y();
+#else
+		auto x = e2->position().x();
+		auto y = e2->position().y();
+#endif
 		Qt::MouseButton mb = e->button();
-		if (mb == Qt::MouseButton::LeftButton)
+		if (mb == Qt::MouseButton::LeftButton) {
 			viewer.mouse_down(Viewer::MouseButton::Left);
-		else if (mb == Qt::MouseButton::MiddleButton)
+
+			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
+		}
+
+		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_down(Viewer::MouseButton::Middle);
+			PathTrace::CameraController::Instance().mouseMiddlePress();
+		}
+
 		else if (mb == Qt::MouseButton::RightButton)
+		{
+			PathTrace::CameraController::Instance().mouseRightPress();
 			viewer.mouse_down(Viewer::MouseButton::Right);
+		}
+
 	}
 
 	void ViewerWindow::mouseMoveEvent(QMouseEvent* event)
@@ -361,6 +319,8 @@ namespace MOON {
 		auto pos = event->localPos();
 		//cursorX = pos.x() * 1.5;
 		//cursorY = pos.y() * 1.5;
+
+		PathTrace::CameraController::Instance().mouseMove(pos.x(), pos.y());
 		viewer.mouse_move(pos.x() * 1.5, pos.y() * 1.5);
 	}
 
@@ -372,15 +332,23 @@ namespace MOON {
 		Qt::MouseButton mb = event->button();
 		if (mb == Qt::MouseButton::LeftButton)
 			viewer.mouse_up(Viewer::MouseButton::Left);
-		else if (mb == Qt::MouseButton::MiddleButton)
+		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_up(Viewer::MouseButton::Middle);
+			PathTrace::CameraController::Instance().mouseMiddleRelease();
+		}
+
 		else if (mb == Qt::MouseButton::RightButton)
+		{
 			viewer.mouse_up(Viewer::MouseButton::Right);
+			PathTrace::CameraController::Instance().mouseRightRelease();
+		}
+
 	}
 
 	void ViewerWindow::wheelEvent(QWheelEvent* event)
 	{
 		viewer.mouse_scroll(event->angleDelta().y());
+		PathTrace::CameraController::Instance().wheelMouseWheel(event->angleDelta().y());
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{

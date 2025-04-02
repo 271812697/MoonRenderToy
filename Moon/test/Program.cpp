@@ -52,6 +52,12 @@ namespace TEST {
 		return *this;
 	}
 
+	Program& Program::name(utils::CString& name)
+	{
+		mName = name;
+		return *this;
+	}
+
 	Program& Program::specializationConstants(SpecializationConstantsInfo specConstants) noexcept {
 		mSpecializationConstants = std::move(specConstants);
 		return *this;

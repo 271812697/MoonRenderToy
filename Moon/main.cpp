@@ -2,6 +2,7 @@
 #include <QFontDatabase>
 #include <editor/editor.h>
 #include "resource/DarkStyle.h"
+#include "core/log.h"
 
 int main(int argc, char* argv[])
 {
@@ -11,11 +12,14 @@ int main(int argc, char* argv[])
 		":/darkstyle/Ubuntu-R.ttf");
 	QFont font(QFontDatabase::applicationFontFamilies(font_id).at(0));
 	font.setPointSize(9);
+	MOON::Log::Init();
+	CORE_INFO("start");
 	QApplication::setFont(font);
 	MOON::Editor editor;
 	editor.setWindowTitle("Editor");
 	editor.resize(1440, 768);
 	editor.show();
-	
-	return QApplication::exec();
+	int res = QApplication::exec();
+	MOON::Log::Shutdown();
+	return res;
 }

@@ -1,21 +1,10 @@
-
 #include<glad/glad.h>
 #include "ShaderCompilerService.h"
-
-//#include "BlobCacheKey.h"
-//#include "OpenGLBlobCache.h"
 #include "Driver.h"
-
-//#include <private/backend/BackendUtils.h>
-
-#include "Program.h"//<backend/>
-
-
-#include "utils/CString.h"//<>
-
-#include "utils/FixedCapacityVector.h"//<>
-
-
+#include "Program.h"
+#include "utils/CString.h"
+#include "utils/FixedCapacityVector.h"
+#include "core/log.h"
 #include <array>
 #include <cctype>
 #include <chrono>
@@ -26,7 +15,6 @@
 #include <thread>
 #include <utility>
 #include <variant>
-
 #include <stddef.h>
 #include <stdint.h>
 #include <iostream>
@@ -34,9 +22,6 @@
 namespace TEST {
 
 	using namespace utils;
-
-	// ------------------------------------------------------------------------------------------------
-
 	static void logCompilationError(
 		ShaderStage shaderType, const char* name,
 		unsigned int shaderId, CString const& sourceCode) noexcept;
@@ -134,9 +119,7 @@ namespace TEST {
 	// ------------------------------------------------------------------------------------------------
 
 	ShaderCompilerService::ShaderCompilerService(Driver& driver)
-		: mDriver(driver)//,
-		//mBlobCache(driver.getContext()),
-		//mCallbackManager(driver) 
+		: mDriver(driver)
 	{
 	}
 
@@ -154,34 +137,19 @@ namespace TEST {
 			return;
 		}
 
-
-
 		if (mMode == Mode::THREAD_POOL) {
 			//to do:
 		}
 	}
 
 	void ShaderCompilerService::terminate() noexcept {
-		// Finally stop the thread pool immediately. Pending jobs will be discarded. We guarantee by
-		// construction that nobody is waiting on a token (because waiting is only done on the main
-		// backend thread, and if we're here, we're on the backend main thread).
-		//mCompilerThreadPool.terminate();
-
 		mRunAtNextTickOps.clear();
-
-		// We could have some pending callbacks here, we need to execute them.
-		// This is equivalent to calling cancelTickOp() on all active tokens.
-		//mCallbackManager.terminate();
 	}
 
 	ShaderCompilerService::program_token_t ShaderCompilerService::createProgram(
 		utils::CString const& name, Program&& program) {
 		auto& gl = mDriver.getContext();
-
 		auto token = std::make_shared<OpenGLProgramToken>(*this, name);
-
-
-
 		CompilerPriorityQueue const priorityQueue = program.getPriorityQueue();
 		if (mMode == Mode::THREAD_POOL) {
 			//to do:
@@ -228,32 +196,16 @@ namespace TEST {
 						return false;
 					}
 				}
-
 				assert(token->gl.program);
-
-				//mCallbackManager.put(token->handle);
-
-				//if (token->key) {
-					// TODO: technically we don't have to cache right now. Is it advantageous to
-					//       do this later, maybe depending on CPU usage?
-					// attempt to cache if we don't have a thread pool (otherwise it's done
-					// by the pool).
-					//mBlobCache.insert(mDriver.mPlatform, token->key, token->gl.program);
-				//}
-
 				return true;
 				});
 		}
-
 		return token;
 	}
 
 	unsigned int ShaderCompilerService::getProgram(ShaderCompilerService::program_token_t& token) {
 		unsigned int const program = initialize(token);
 		assert(token == nullptr);
-#if !FILAMENT_ENABLE_MATDBG
-		assert(program);
-#endif
 		return program;
 	}
 
@@ -295,14 +247,6 @@ namespace TEST {
 		}
 	}
 
-	//void ShaderCompilerService::notifyWhenAllProgramsAreReady(
-	//	CallbackHandler* handler, CallbackHandler::Callback callback, void* user) {
-	//	if (callback) {
-	//		mCallbackManager.setCallback(handler, callback, user);
-	//	}
-	//}
-
-	// ------------------------------------------------------------------------------------------------
 
 	void ShaderCompilerService::getProgramFromCompilerPool(program_token_t& token) noexcept {
 		OpenGLProgramToken::ProgramData const& programData{ token->get() };
@@ -313,7 +257,6 @@ namespace TEST {
 	}
 
 	unsigned int ShaderCompilerService::initialize(program_token_t& token) noexcept {
-
 		if (!token->gl.program) {
 			if (mMode == Mode::THREAD_POOL) {
 				//to do:
@@ -322,17 +265,8 @@ namespace TEST {
 				// we force the program link -- which might stall, either here or below in
 				// checkProgramStatus(), but we don't have a choice, we need to use the program now.
 				token->compiler.cancelTickOp(token);
-
-				token->gl.program = linkProgram(mDriver.getContext(),
-					token->gl.shaders, token->attributes);
-
+				token->gl.program = linkProgram(mDriver.getContext(), token->gl.shaders, token->attributes);
 				assert(token->gl.program);
-
-				//mCallbackManager.put(token->handle);
-
-				//if (token->key) {
-					//mBlobCache.insert(mDriver.mPlatform, token->key, token->gl.program);
-				//}
 			}
 			else {
 				// if we don't have a program yet, block until we get it.
@@ -348,11 +282,7 @@ namespace TEST {
 		// check status of program linking and shader compilation, logs error and free all resources
 		// in case of error.
 		bool const success = checkProgramStatus(token);
-
-		// Unless we have matdbg, we panic if a program is invalid. Otherwise, we'd get a UB.
-		// The compilation error has been logged to log.e by this point.
-		//FILAMENT_CHECK_POSTCONDITION(FILAMENT_ENABLE_MATDBG || success)
-		  //      << "OpenGL program " << token->name.c_str_safe() << " failed to link or compile";
+		CORE_ASERT(success, "OpenGL program  failed to link or compile");
 
 		if ((success)) {
 			program = token->gl.program;
@@ -385,46 +315,24 @@ namespace TEST {
 		bool multiview,
 		std::array<unsigned int, Program::SHADER_TYPE_COUNT>& outShaders,
 		std::array<CString, Program::SHADER_TYPE_COUNT>& outShaderSourceCode) noexcept {
-
-
-
-		auto appendSpecConstantString = +[](std::string& s, Program::SpecializationConstant const& sc) {
-			s += "#define SPIRV_CROSS_CONSTANT_ID_" + std::to_string(sc.id) + ' ';
-			s += std::visit([](auto&& arg) { return to_string(arg); }, sc.value);
-			s += '\n';
-			return s;
-			};
-
 		std::string specializationConstantString;
 		int32_t numViews = 2;
-		for (auto const& sc : specializationConstants) {
-			appendSpecConstantString(specializationConstantString, sc);
-			if (sc.id == 8) {
-				// This constant must match
-				// ReservedSpecializationConstants::CONFIG_STEREO_EYE_COUNT
-				// which we can't use here because it's defined in EngineEnums.h.
-				// (we're breaking layering here, but it's for the good cause).
-				numViews = std::get<int32_t>(sc.value);
-			}
-		}
-		if (!specializationConstantString.empty()) {
-			specializationConstantString += '\n';
-		}
-
 		// build all shaders
-
 		for (size_t i = 0; i < Program::SHADER_TYPE_COUNT; i++) {
 			const ShaderStage stage = static_cast<ShaderStage>(i);
 			GLenum glShaderType{};
 			switch (stage) {
 			case ShaderStage::VERTEX:
 				glShaderType = GL_VERTEX_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::VERTEX");
 				break;
 			case ShaderStage::FRAGMENT:
 				glShaderType = GL_FRAGMENT_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::FRAGMENT");
 				break;
 			case ShaderStage::COMPUTE:
 				glShaderType = GL_COMPUTE_SHADER;
+				CORE_INFO("Begin to compile:ShaderStage::COMPUTE");
 				break;
 			}
 
@@ -432,60 +340,45 @@ namespace TEST {
 				Program::ShaderBlob& shader = shadersSource[i];
 				char* shader_src = reinterpret_cast<char*>(shader.data());
 				size_t shader_len = shader.size();
-
-				// remove GOOGLE_cpp_style_line_directive
-				process_GOOGLE_cpp_style_line_directive(context, shader_src, shader_len);
-
-				// replace the value of layout(num_views = X) for multiview extension
-				if (multiview && stage == ShaderStage::VERTEX) {
-					process_OVR_multiview2(context, numViews, shader_src, shader_len);
-				}
-
-				// add support for ARB_shading_language_packing if needed
-				auto const packingFunctions = process_ARB_shading_language_packing(context);
-
-				// split shader source, so we can insert the specialization constants and the packing
-				// functions
 				auto [version, prolog, body] = splitShaderSource({ shader_src, shader_len });
-
-				// enable ESSL 3.10 if available
-				if (true) {
-					version = "#version 310 es\n";
-				}
-
-				std::array<std::string_view, 5> sources = {
+				std::array<std::string_view, 4> sources = {
 					version,
 					prolog,
 					specializationConstantString,
-					packingFunctions,
 					{ body.data(), body.size() - 1 }  // null-terminated
 				};
 
-				// Some of the sources may be zero-length. Remove them as to avoid passing lengths of
-				// zero to glShaderSource(). glShaderSource should work with lengths of zero, but some
-				// drivers instead interpret zero as a sentinel for a null-terminated string.
 				auto partitionPoint = std::stable_partition(
 					sources.begin(), sources.end(), [](std::string_view s) { return !s.empty(); });
 				size_t count = std::distance(sources.begin(), partitionPoint);
 
-				std::array<const char*, 5> shaderStrings;
-				std::array<int, 5> lengths;
+				std::array<const char*, 4> shaderStrings;
+				std::array<int, 4> lengths;
 				for (size_t i = 0; i < count; i++) {
 					shaderStrings[i] = sources[i].data();
 					lengths[i] = sources[i].size();
 				}
 
 				unsigned int const shaderId = glCreateShader(glShaderType);
-				glShaderSource(shaderId, count, shaderStrings.data(), lengths.data());
-
+				glShaderSource(shaderId, 1, &shader_src, nullptr);
 				glCompileShader(shaderId);
+				int status;
+				glGetShaderiv(shaderId, GL_COMPILE_STATUS, &status);
+				if (status == GL_FALSE) {
+					int info_log_length;
+					glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &info_log_length);
+					GLchar* info_log = new GLchar[info_log_length + 1];
+					glGetShaderInfoLog(shaderId, info_log_length, NULL, info_log);
+					CORE_ERROR("Failed to compile shader: {0}", info_log);
+					CORE_WARN("The source is:\n{0}", shader_src);
+					delete[] info_log;
+					glDeleteShader(shaderId);  // prevent shader leak
+				}
+				else {
+					CORE_INFO("compile shader success\nThe source is:\n{0}", shader_src);
+				}
 
-#ifndef NDEBUG
-				// for debugging we return the original shader source (without the modifications we
-				// made here), otherwise the line numbers wouldn't match.
 				outShaderSourceCode[i] = { shader_src, shader_len };
-#endif
-
 				outShaders[i] = shaderId;
 			}
 		}
@@ -591,24 +484,13 @@ namespace TEST {
 	unsigned int ShaderCompilerService::linkProgram(OpenGLContext& context,
 		std::array<unsigned int, Program::SHADER_TYPE_COUNT> shaders,
 		utils::FixedCapacityVector<std::pair<utils::CString, uint8_t>> const& attributes) noexcept {
-
-
-
 		unsigned int const program = glCreateProgram();
 		for (auto shader : shaders) {
 			if (shader) {
 				glAttachShader(program, shader);
 			}
 		}
-
-		//if (UTILS_UNLIKELY(context.isES2())) {
-		//	for (auto const& [name, loc] : attributes) {
-		//		glBindAttribLocation(program, loc, name.c_str());
-		//	}
-		//}
-
 		glLinkProgram(program);
-
 		return program;
 	}
 
@@ -623,9 +505,6 @@ namespace TEST {
 				return std::get<0>(lhs) < priorityQueue;
 			});
 		ops.emplace(pos, priority, token, std::move(job));
-
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", mRunAtNextTickOps.size());
 	}
 
 	bool ShaderCompilerService::cancelTickOp(program_token_t token) noexcept {
@@ -638,8 +517,6 @@ namespace TEST {
 			ops.erase(pos);
 			return true;
 		}
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", ops.size());
 		return false;
 	}
 
@@ -656,22 +533,9 @@ namespace TEST {
 				++it;
 			}
 		}
-		//SYSTRACE_CONTEXT();
-		//SYSTRACE_VALUE32("ShaderCompilerService Jobs", ops.size());
 	}
-
-	// ------------------------------------------------------------------------------------------------
-
-	/*
-	 * Checks a program link status and logs errors and frees resources on failure.
-	 * Returns true on success.
-	 */
 	bool ShaderCompilerService::checkProgramStatus(program_token_t const& token) noexcept {
-
-		//SYSTRACE_CALL();
-
 		assert(token->gl.program);
-
 		int status;
 		glGetProgramiv(token->gl.program, GL_LINK_STATUS, &status);
 		if ((status == GL_TRUE)) {
@@ -679,7 +543,6 @@ namespace TEST {
 		}
 
 		// only if the link fails, we check the compilation status
-
 		for (size_t i = 0; i < Program::SHADER_TYPE_COUNT; i++) {
 			const ShaderStage type = static_cast<ShaderStage>(i);
 			const unsigned int shader = token->gl.shaders[i];
@@ -717,13 +580,9 @@ namespace TEST {
 		{ // scope for the temporary string storage
 			int length = 0;
 			glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &length);
-
 			CString infoLog(length);
 			glGetShaderInfoLog(shaderId, length, nullptr, infoLog.data());
-
-			std::cout << "Compilation error in " << to_string(shaderType) << " shader \"" << name << "\":\n"
-				<< "\"" << infoLog.c_str() << "\""
-				<< std::endl;;
+			CORE_ERROR("Compilation error in {0} shader \" {1} \"\n \" {2}\"", to_string(shaderType), name, infoLog.c_str());
 		}
 
 #ifndef NDEBUG
@@ -755,10 +614,7 @@ namespace TEST {
 
 		CString infoLog(length);
 		glGetProgramInfoLog(program, length, nullptr, infoLog.data());
-
-		std::cout << "Link error in \"" << name << "\":\n"
-			<< "\"" << infoLog.c_str() << "\""
-			<< std::endl;
+		CORE_ERROR("Link error in \"{0}\":\n\"{1}\"",name,infoLog.c_str());
 	}
 
 

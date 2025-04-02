@@ -19,6 +19,16 @@ namespace TEST {
 		using Cmd = CommandType<decltype(&Driver::test)>::Command<&Driver::test>;
 		void* const p = allocateCommand(CommandBase::align(sizeof(Cmd)));
 		new(p) Cmd(&Dispatcher::test, std::move(val));
+
+	}
+
+	Handle<HwProgram> CommandStream::createProgram(Program&& program)
+	{
+		Handle<HwProgram> result = mDriver.createProgramS();
+		using Cmd = CommandType<decltype(&Driver::createProgramR)>::Command<&Driver::createProgramR>;
+		void* const p = allocateCommand(CommandBase::align(sizeof(Cmd)));
+		new(p) Cmd(&Dispatcher::createProgram, result, std::move(program));
+		return result;
 	}
 
 	void CommandStream::execute(void* buffer) {

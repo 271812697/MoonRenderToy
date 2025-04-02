@@ -4,6 +4,7 @@ project(UseQt LANGUAGES C CXX)
 option(USE_QT6 "Build with Qt6 (Enabled by default)" OFF)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+set(CMAKE_CXX_STANDARD 17)
 
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -32,6 +33,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
 add_subdirectory(test)
 add_subdirectory(Extern)
 add_subdirectory(Block)
@@ -39,7 +41,10 @@ add_subdirectory(RayTrace)
 add_subdirectory(QtSunEarth)
 add_subdirectory(DirectX11Init)
 add_subdirectory(ScreenWidget)
-#add_subdirectory(opengl)
+add_subdirectory(opengl)
 add_subdirectory(QtNode)
 add_subdirectory(Moon)
 add_subdirectory(LLGL)
+
+
+#add_subdirectory(filament)

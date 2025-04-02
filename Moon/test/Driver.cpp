@@ -2,7 +2,10 @@
 #include "Driver.h"
 #include "CommandStream.h"
 #include "OpenGLContext.h"
+#include "OpenGLProgram.h"
 #include "test/utils/GLUtils.h"
+
+#include "core/log.h"
 #include <functional>
 #include <mutex>
 #include <utility>
@@ -55,10 +58,30 @@ namespace TEST {
 
 		}
 		mContext = std::make_shared<OpenGLContext>();
+		mShaderCompilerService.init();
 	}
 
 	Driver::~Driver()
 	{
+	}
+
+	bool Driver::useProgram(OpenGLProgram* p)
+	{
+		bool success = true;
+		if (mBoundProgram != p) {
+			// compile/link the program if needed and call glUseProgram
+			success = p->use(this, *mContext.get());
+			assert(success == p->isValid());
+			if (success) {
+
+				decltype(mInvalidDescriptorSetBindings) changed;
+				changed.setValue((1 << MAX_DESCRIPTOR_SET_COUNT) - 1);
+				mInvalidDescriptorSetBindings |= changed;
+
+				mBoundProgram = p;
+			}
+		}
+		return success;
 	}
 
 	void Driver::execute(std::function<void(void)> const& fn) {
@@ -113,7 +136,20 @@ namespace TEST {
 		glGenBuffers(1, &bo->gl.id);
 		gl->bindBuffer(bo->gl.binding, bo->gl.id);
 		glBufferData(bo->gl.binding, byteCount, nullptr, GLUtils::getBufferUsage(usage));
-		CHECK_GL_ERROR
+
+	}
+
+	Handle<HwProgram> Driver::createProgramS()
+	{
+
+		return initHandle<OpenGLProgram>();
+	}
+
+	void Driver::createProgramR(Handle<HwProgram> ph, Program&& program)
+	{
+		CORE_INFO("Create Program{}", 1);
+
+		construct<OpenGLProgram>(ph, *this, std::move(program));
 	}
 
 
