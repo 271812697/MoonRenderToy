@@ -1,6 +1,8 @@
 #include <qpushbutton.h>
 #include <qboxlayout.h>
+#include <QtWidgets/QApplication>
 #include <QMenuBar>
+#include <QSplitter>
 #include "editor.h"
 #include "hierarchypanel.h"
 #include "nodepanel.h"
@@ -57,7 +59,35 @@ namespace MOON {
 		vert_splitter_->setOrientation(Qt::Vertical);
 		vert_splitter_->addWidget(up_panel_);
 		vert_splitter_->addWidget(down_panel_);
-		QAction* load_action = new QAction("Load", this);
-		menuBar()->addAction(load_action);
+		buildMenu();
+
+	}
+	void Editor::buildMenu()
+	{
+
+		mMenubar = new QMenuBar(this);
+		mMenubar->setObjectName(QString::fromUtf8("menubar"));
+		mMenubar->setGeometry(QRect(0, 0, 1152, 20));
+
+		this->setMenuBar(mMenubar);
+		menu_File = new QMenu(mMenubar);
+		mMenubar->addAction(menu_File->menuAction());
+		openfile = new QAction(menu_File);
+		menu_File->addAction(openfile);
+		QIcon icon9;
+		icon9.addFile(QString::fromUtf8(":/widgets/icons/pqOpen.svg"), QSize(), QIcon::Normal, QIcon::Off);
+		openfile->setIcon(icon9);
+
+		retranslateUi();
+	}
+	void Editor::retranslateUi()
+	{
+		openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
+		this->setWindowTitle(QCoreApplication::translate("Editor", "MainWindow", nullptr));
+		menu_File->setTitle("&File");
+		openfile->setText("&Open");
+		openfile->setStatusTip("Open");
+		openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
+
 	}
 }
