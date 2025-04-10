@@ -3,13 +3,13 @@
 
 namespace MOON {
 
-	class  vtkRenderWindowInteractor;
+	class  RenderWindowInteractor;
 	class  CallbackCommand;
-	class  vtkInteractorObserver : public GizmoObject
+	class  InteractorObserver : public GizmoObject
 	{
 	public:
-		virtual void SetInteractor(vtkRenderWindowInteractor* iren);
-		virtual vtkRenderWindowInteractor* GetInteractor()
+		virtual void SetInteractor(RenderWindowInteractor* iren);
+		virtual RenderWindowInteractor* GetInteractor()
 		{
 
 			return this->Interactor;
@@ -73,8 +73,8 @@ namespace MOON {
 		void ReleaseFocus();
 
 	protected:
-		vtkInteractorObserver();
-		~vtkInteractorObserver()override;
+		InteractorObserver();
+		~InteractorObserver()override;
 
 		virtual void StartInteraction();
 		virtual void EndInteraction();
@@ -95,13 +95,13 @@ namespace MOON {
 		bool KeyPressActivation;
 		char KeyPressActivationValue;
 		// Used to associate observers with the interactor
-		vtkRenderWindowInteractor* Interactor;
+		RenderWindowInteractor* Interactor;
 		unsigned long CharObserverTag;
 		unsigned long DeleteObserverTag;
 
 	private:
-		vtkInteractorObserver(const vtkInteractorObserver&) = delete;
-		void operator=(const vtkInteractorObserver&) = delete;
+		InteractorObserver(const InteractorObserver&) = delete;
+		void operator=(const InteractorObserver&) = delete;
 	};
 
 }

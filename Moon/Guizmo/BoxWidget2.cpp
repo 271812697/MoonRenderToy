@@ -13,9 +13,9 @@
 namespace MOON {
 
 	//------------------------------------------------------------------------------
-	vtkBoxWidget2::vtkBoxWidget2()
+	BoxWidget2::BoxWidget2()
 	{
-		this->WidgetState = vtkBoxWidget2::Start;
+		this->WidgetState = BoxWidget2::Start;
 
 		this->TranslationEnabled = true;
 		this->ScalingEnabled = true;
@@ -23,50 +23,50 @@ namespace MOON {
 		this->MoveFacesEnabled = true;
 
 		// Define widget events
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, vtkEvent::NoModifier, 0,
-			0, nullptr, vtkWidgetEvent::Select, this, vtkBoxWidget2::SelectAction);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, vtkEvent::NoModifier,
-			0, 0, nullptr, vtkWidgetEvent::EndSelect, this, vtkBoxWidget2::EndSelectAction);
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::NoModifier, 0,
+			0, nullptr, WidgetEvent::Select, this, BoxWidget2::SelectAction);
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, GizmoEvent::NoModifier,
+			0, 0, nullptr, WidgetEvent::EndSelect, this, BoxWidget2::EndSelectAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MiddleButtonPressEvent,
-			vtkWidgetEvent::Translate, this, vtkBoxWidget2::TranslateAction);
+			WidgetEvent::Translate, this, BoxWidget2::TranslateAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MiddleButtonReleaseEvent,
-			vtkWidgetEvent::EndTranslate, this, vtkBoxWidget2::EndSelectAction);
+			WidgetEvent::EndTranslate, this, BoxWidget2::EndSelectAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent,
-			vtkEvent::ControlModifier, 0, 0, nullptr, vtkWidgetEvent::Translate, this,
-			vtkBoxWidget2::TranslateAction);
+			GizmoEvent::ControlModifier, 0, 0, nullptr, WidgetEvent::Translate, this,
+			BoxWidget2::TranslateAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent,
-			vtkEvent::ControlModifier, 0, 0, nullptr, vtkWidgetEvent::EndTranslate, this,
-			vtkBoxWidget2::EndSelectAction);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, vtkEvent::ShiftModifier,
-			0, 0, nullptr, vtkWidgetEvent::Translate, this, vtkBoxWidget2::TranslateAction);
+			GizmoEvent::ControlModifier, 0, 0, nullptr, WidgetEvent::EndTranslate, this,
+			BoxWidget2::EndSelectAction);
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::ShiftModifier,
+			0, 0, nullptr, WidgetEvent::Translate, this, BoxWidget2::TranslateAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent,
-			vtkEvent::ShiftModifier, 0, 0, nullptr, vtkWidgetEvent::EndTranslate, this,
-			vtkBoxWidget2::EndSelectAction);
+			GizmoEvent::ShiftModifier, 0, 0, nullptr, WidgetEvent::EndTranslate, this,
+			BoxWidget2::EndSelectAction);
 		this->CallbackMapper->SetCallbackMethod(
-			ExecuteCommand::RightButtonPressEvent, vtkWidgetEvent::Scale, this, vtkBoxWidget2::ScaleAction);
+			ExecuteCommand::RightButtonPressEvent, WidgetEvent::Scale, this, BoxWidget2::ScaleAction);
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonReleaseEvent,
-			vtkWidgetEvent::EndScale, this, vtkBoxWidget2::EndSelectAction);
+			WidgetEvent::EndScale, this, BoxWidget2::EndSelectAction);
 		this->CallbackMapper->SetCallbackMethod(
-			ExecuteCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkBoxWidget2::MoveAction);
+			ExecuteCommand::MouseMoveEvent, WidgetEvent::Move, this, BoxWidget2::MoveAction);
 
 		this->KeyEventCallbackCommand = CallbackCommand::New();
 		this->KeyEventCallbackCommand->SetClientData(this);
-		this->KeyEventCallbackCommand->SetCallback(vtkBoxWidget2::ProcessKeyEvents);
+		this->KeyEventCallbackCommand->SetCallback(BoxWidget2::ProcessKeyEvents);
 	}
 
 	//------------------------------------------------------------------------------
-	vtkBoxWidget2::~vtkBoxWidget2()
+	BoxWidget2::~BoxWidget2()
 	{
 		// this->KeyEventCallbackCommand->Delete();
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::SetEnabled(int enabling)
+	void BoxWidget2::SetEnabled(int enabling)
 	{
 		int enabled = this->Enabled;
 
 		// We do this step first because it sets the CurrentRenderer
-		this->vtkAbstractWidget::SetEnabled(enabling);
+		this->AbstractWidget::SetEnabled(enabling);
 
 		// We defer enabling the handles until the selection process begins
 		if (enabling && !enabled)
@@ -100,42 +100,42 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::SelectAction(vtkAbstractWidget* w)
+	void BoxWidget2::SelectAction(AbstractWidget* w)
 	{
 		// We are in a static method, cast to ourself
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::SelectAction3D(vtkAbstractWidget* w)
+	void BoxWidget2::SelectAction3D(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::TranslateAction(vtkAbstractWidget* w)
-	{
-		// We are in a static method, cast to ourself
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
-	}
-
-	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::ScaleAction(vtkAbstractWidget* w)
+	void BoxWidget2::TranslateAction(AbstractWidget* w)
 	{
 		// We are in a static method, cast to ourself
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
+	}
+
+	//------------------------------------------------------------------------------
+	void BoxWidget2::ScaleAction(AbstractWidget* w)
+	{
+		// We are in a static method, cast to ourself
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::MoveAction(vtkAbstractWidget* w)
+	void BoxWidget2::MoveAction(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 		// See whether we're active
-		if (self->WidgetState == vtkBoxWidget2::Start)
+		if (self->WidgetState == BoxWidget2::Start)
 		{
 			return;
 		}
@@ -143,18 +143,18 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::MoveAction3D(vtkAbstractWidget* w)
+	void BoxWidget2::MoveAction3D(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::EndSelectAction(vtkAbstractWidget* w)
+	void BoxWidget2::EndSelectAction(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
-		if (self->WidgetState == vtkBoxWidget2::Start)
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
+		if (self->WidgetState == BoxWidget2::Start)
 		{
 			return;
 		}
@@ -162,35 +162,35 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::EndSelectAction3D(vtkAbstractWidget* w)
+	void BoxWidget2::EndSelectAction3D(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::StepAction3D(vtkAbstractWidget* w)
+	void BoxWidget2::StepAction3D(AbstractWidget* w)
 	{
-		vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
+		BoxWidget2* self = reinterpret_cast<BoxWidget2*>(w);
 
 	}
 
-	vtkBoxWidget2* vtkBoxWidget2::New()
+	BoxWidget2* BoxWidget2::New()
 	{
-		return new vtkBoxWidget2();
-	}
-
-	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::CreateDefaultRepresentation()
-	{
-
-
+		return new BoxWidget2();
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkBoxWidget2::ProcessKeyEvents(GizmoObject*, unsigned long event, void* clientdata, void*)
+	void BoxWidget2::CreateDefaultRepresentation()
 	{
-		vtkBoxWidget2* self = static_cast<vtkBoxWidget2*>(clientdata);
+
+
+	}
+
+	//------------------------------------------------------------------------------
+	void BoxWidget2::ProcessKeyEvents(GizmoObject*, unsigned long event, void* clientdata, void*)
+	{
+		BoxWidget2* self = static_cast<BoxWidget2*>(clientdata);
 
 	}
 

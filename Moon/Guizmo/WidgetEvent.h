@@ -2,10 +2,10 @@
 #include "GizmoObject.h"
 namespace MOON {
 
-	class vtkWidgetEvent : public GizmoObject
+	class WidgetEvent : public GizmoObject
 	{
 	public:
-		static vtkWidgetEvent* New();
+		static WidgetEvent* New();
 		enum WidgetEventIds
 		{
 			NoEvent = 0,
@@ -47,11 +47,11 @@ namespace MOON {
 		static unsigned long GetEventIdFromString(const char* event);
 
 	protected:
-		vtkWidgetEvent() = default;
-		~vtkWidgetEvent() override = default;
+		WidgetEvent() = default;
+		~WidgetEvent() override = default;
 	private:
-		vtkWidgetEvent(const vtkWidgetEvent&) = delete;
-		void operator=(const vtkWidgetEvent&) = delete;
+		WidgetEvent(const WidgetEvent&) = delete;
+		void operator=(const WidgetEvent&) = delete;
 	};
 
 }

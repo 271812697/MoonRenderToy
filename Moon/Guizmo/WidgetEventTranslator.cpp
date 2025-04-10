@@ -16,18 +16,18 @@ namespace MOON {
 	// This is what is place in the list
 	struct EventItem
 	{
-		std::shared_ptr<vtkEvent> VTKEvent;
+		std::shared_ptr<GizmoEvent> GIZMOEvent;
 		unsigned long WidgetEvent;
-		vtkEventData* EventData = nullptr;
+		GizmoEventData* EventData = nullptr;
 		bool HasData = false;
 
-		EventItem(const std::shared_ptr<vtkEvent>& e, unsigned long we)
+		EventItem(const std::shared_ptr<GizmoEvent>& e, unsigned long we)
 		{
-			this->VTKEvent = e;
+			this->GIZMOEvent = e;
 			this->WidgetEvent = we;
 			this->HasData = false;
 		}
-		EventItem(vtkEventData* edata, unsigned long we)
+		EventItem(GizmoEventData* edata, unsigned long we)
 		{
 			this->EventData = edata;
 			//this->EventData->Register(nullptr);
@@ -45,7 +45,7 @@ namespace MOON {
 
 		EventItem(const EventItem& v)
 		{
-			this->VTKEvent = v.VTKEvent;
+			this->GIZMOEvent = v.GIZMOEvent;
 			this->WidgetEvent = v.WidgetEvent;
 			this->HasData = v.HasData;
 			this->EventData = v.EventData;
@@ -62,33 +62,33 @@ namespace MOON {
 	// A list of events
 	struct EventList : public std::list<EventItem>
 	{
-		unsigned long find(unsigned long VTKEvent)
+		unsigned long find(unsigned long GIZMOEvent)
 		{
 			std::list<EventItem>::iterator liter = this->begin();
 			for (; liter != this->end(); ++liter)
 			{
-				if (VTKEvent == liter->VTKEvent->GetEventId())
+				if (GIZMOEvent == liter->GIZMOEvent->GetEventId())
 				{
 					return liter->WidgetEvent;
 				}
 			}
-			return vtkWidgetEvent::NoEvent;
+			return WidgetEvent::NoEvent;
 		}
 
-		unsigned long find(vtkEvent* VTKEvent)
+		unsigned long find(GizmoEvent* GIZMOEvent)
 		{
 			std::list<EventItem>::iterator liter = this->begin();
 			for (; liter != this->end(); ++liter)
 			{
-				if (*VTKEvent == liter->VTKEvent.get())
+				if (*GIZMOEvent == liter->GIZMOEvent.get())
 				{
 					return liter->WidgetEvent;
 				}
 			}
-			return vtkWidgetEvent::NoEvent;
+			return WidgetEvent::NoEvent;
 		}
 
-		unsigned long find(vtkEventData* edata)
+		unsigned long find(GizmoEventData* edata)
 		{
 			std::list<EventItem>::iterator liter = this->begin();
 			for (; liter != this->end(); ++liter)
@@ -98,16 +98,16 @@ namespace MOON {
 					return liter->WidgetEvent;
 				}
 			}
-			return vtkWidgetEvent::NoEvent;
+			return WidgetEvent::NoEvent;
 		}
 
 		// Remove a mapping
-		int Remove(vtkEvent* VTKEvent)
+		int Remove(GizmoEvent* GIZMOEvent)
 		{
 			std::list<EventItem>::iterator liter = this->begin();
 			for (; liter != this->end(); ++liter)
 			{
-				if (*VTKEvent == liter->VTKEvent.get())
+				if (*GIZMOEvent == liter->GIZMOEvent.get())
 				{
 					this->erase(liter);
 					return 1;
@@ -115,7 +115,7 @@ namespace MOON {
 			}
 			return 0;
 		}
-		int Remove(vtkEventData* edata)
+		int Remove(GizmoEventData* edata)
 		{
 			std::list<EventItem>::iterator liter = this->begin();
 			for (; liter != this->end(); ++liter)
@@ -130,40 +130,40 @@ namespace MOON {
 		}
 	};
 
-	// A STL map used to translate VTK events into lists of events. The reason
+	// A STL map used to translate  events into lists of events. The reason
 	// that we have this list is because of the modifiers on the event. The
-	// VTK event id maps to the list, and then comparisons are done to
+	//  event id maps to the list, and then comparisons are done to
 	// determine which event matches.
-	class vtkEventMap : public std::map<unsigned long, EventList>
+	class EventMap : public std::map<unsigned long, EventList>
 	{
 	};
 	using EventMapIterator = std::map<unsigned long, EventList>::iterator;
 
 	//------------------------------------------------------------------------------
-	vtkWidgetEventTranslator* vtkWidgetEventTranslator::New() {
-		return new vtkWidgetEventTranslator();
+	WidgetEventTranslator* WidgetEventTranslator::New() {
+		return new WidgetEventTranslator();
 	}
-	vtkWidgetEventTranslator::vtkWidgetEventTranslator()
+	WidgetEventTranslator::WidgetEventTranslator()
 	{
-		this->EventMap = new vtkEventMap;
-		this->Event = vtkEvent::New();
+		this->eventMap = new EventMap;
+		this->Event = GizmoEvent::New();
 	}
 
 	//------------------------------------------------------------------------------
-	vtkWidgetEventTranslator::~vtkWidgetEventTranslator()
+	WidgetEventTranslator::~WidgetEventTranslator()
 	{
-		delete this->EventMap;
+		delete this->eventMap;
 		//this->Event->Delete();
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::SetTranslation(unsigned long VTKEvent, unsigned long widgetEvent)
+	void WidgetEventTranslator::SetTranslation(unsigned long GIZMOEvent, unsigned long widgetEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
-		e->SetEventId(VTKEvent); // default modifiers
-		if (widgetEvent != vtkWidgetEvent::NoEvent)
+		std::shared_ptr<GizmoEvent> e = std::make_shared<GizmoEvent>();
+		e->SetEventId(GIZMOEvent); // default modifiers
+		if (widgetEvent != WidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent].push_back(EventItem(e, widgetEvent));
+			(*this->eventMap)[GIZMOEvent].push_back(EventItem(e, widgetEvent));
 		}
 		else
 		{
@@ -172,25 +172,25 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::SetTranslation(const char* VTKEvent, const char* widgetEvent)
+	void WidgetEventTranslator::SetTranslation(const char* GIZMOEvent, const char* widgetEvent)
 	{
 		this->SetTranslation(
-			ExecuteCommand::GetEventIdFromString(VTKEvent), vtkWidgetEvent::GetEventIdFromString(widgetEvent));
+			ExecuteCommand::GetEventIdFromString(GIZMOEvent), WidgetEvent::GetEventIdFromString(widgetEvent));
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::SetTranslation(unsigned long VTKEvent, int modifier, char keyCode,
+	void WidgetEventTranslator::SetTranslation(unsigned long GIZMOEvent, int modifier, char keyCode,
 		int repeatCount, const char* keySym, unsigned long widgetEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
-		e->SetEventId(VTKEvent);
+		std::shared_ptr<GizmoEvent> e = std::make_shared<GizmoEvent>();
+		e->SetEventId(GIZMOEvent);
 		e->SetModifier(modifier);
 		e->SetKeyCode(keyCode);
 		e->SetRepeatCount(repeatCount);
 		e->SetKeySym(keySym);
-		if (widgetEvent != vtkWidgetEvent::NoEvent)
+		if (widgetEvent != WidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent].push_back(EventItem(e, widgetEvent));
+			(*this->eventMap)[GIZMOEvent].push_back(EventItem(e, widgetEvent));
 		}
 		else
 		{
@@ -198,12 +198,12 @@ namespace MOON {
 		}
 	}
 
-	void vtkWidgetEventTranslator::SetTranslation(
-		unsigned long VTKEvent, vtkEventData* edata, unsigned long widgetEvent)
+	void WidgetEventTranslator::SetTranslation(
+		unsigned long GIZMOEvent, GizmoEventData* edata, unsigned long widgetEvent)
 	{
-		if (widgetEvent != vtkWidgetEvent::NoEvent)
+		if (widgetEvent != WidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent].push_back(EventItem(edata, widgetEvent));
+			(*this->eventMap)[GIZMOEvent].push_back(EventItem(edata, widgetEvent));
 		}
 		else
 		{
@@ -212,48 +212,48 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::SetTranslation(vtkEvent* VTKEvent, unsigned long widgetEvent)
+	void WidgetEventTranslator::SetTranslation(GizmoEvent* GIZMOEvent, unsigned long widgetEvent)
 	{
-		if (widgetEvent != vtkWidgetEvent::NoEvent)
+		if (widgetEvent != WidgetEvent::NoEvent)
 		{
-			(*this->EventMap)[VTKEvent->GetEventId()].push_back(EventItem(std::shared_ptr<vtkEvent>(VTKEvent), widgetEvent));
+			(*this->eventMap)[GIZMOEvent->GetEventId()].push_back(EventItem(std::shared_ptr<GizmoEvent>(GIZMOEvent), widgetEvent));
 		}
 		else
 		{
-			this->RemoveTranslation(VTKEvent);
+			this->RemoveTranslation(GIZMOEvent);
 		}
 	}
 
 	//------------------------------------------------------------------------------
-	unsigned long vtkWidgetEventTranslator::GetTranslation(unsigned long VTKEvent)
+	unsigned long WidgetEventTranslator::GetTranslation(unsigned long GIZMOEvent)
 	{
-		EventMapIterator iter = this->EventMap->find(VTKEvent);
-		if (iter != this->EventMap->end())
+		EventMapIterator iter = this->eventMap->find(GIZMOEvent);
+		if (iter != this->eventMap->end())
 		{
 			EventList& elist = (*iter).second;
-			return elist.find(VTKEvent);
+			return elist.find(GIZMOEvent);
 		}
 		else
 		{
-			return vtkWidgetEvent::NoEvent;
+			return WidgetEvent::NoEvent;
 		}
 	}
 
 	//------------------------------------------------------------------------------
-	const char* vtkWidgetEventTranslator::GetTranslation(const char* VTKEvent)
+	const char* WidgetEventTranslator::GetTranslation(const char* GIZMOEvent)
 	{
-		return vtkWidgetEvent::GetStringFromEventId(
-			this->GetTranslation(ExecuteCommand::GetEventIdFromString(VTKEvent)));
+		return WidgetEvent::GetStringFromEventId(
+			this->GetTranslation(ExecuteCommand::GetEventIdFromString(GIZMOEvent)));
 	}
 
 	//------------------------------------------------------------------------------
-	unsigned long vtkWidgetEventTranslator::GetTranslation(
-		unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym)
+	unsigned long WidgetEventTranslator::GetTranslation(
+		unsigned long GIZMOEvent, int modifier, char keyCode, int repeatCount, const char* keySym)
 	{
-		EventMapIterator iter = this->EventMap->find(VTKEvent);
-		if (iter != this->EventMap->end())
+		EventMapIterator iter = this->eventMap->find(GIZMOEvent);
+		if (iter != this->eventMap->end())
 		{
-			this->Event->SetEventId(VTKEvent);
+			this->Event->SetEventId(GIZMOEvent);
 			this->Event->SetModifier(modifier);
 			this->Event->SetKeyCode(keyCode);
 			this->Event->SetRepeatCount(repeatCount);
@@ -261,42 +261,42 @@ namespace MOON {
 			EventList& elist = (*iter).second;
 			return elist.find(this->Event);
 		}
-		return vtkWidgetEvent::NoEvent;
+		return WidgetEvent::NoEvent;
 	}
 
 	//------------------------------------------------------------------------------
-	unsigned long vtkWidgetEventTranslator::GetTranslation(unsigned long, vtkEventData* edata)
+	unsigned long WidgetEventTranslator::GetTranslation(unsigned long, GizmoEventData* edata)
 	{
-		EventMapIterator iter = this->EventMap->find(edata->GetType());
-		if (iter != this->EventMap->end())
+		EventMapIterator iter = this->eventMap->find(edata->GetType());
+		if (iter != this->eventMap->end())
 		{
 			EventList& elist = (*iter).second;
 			return elist.find(edata);
 		}
-		return vtkWidgetEvent::NoEvent;
+		return WidgetEvent::NoEvent;
 	}
 
 	//------------------------------------------------------------------------------
-	unsigned long vtkWidgetEventTranslator::GetTranslation(vtkEvent* VTKEvent)
+	unsigned long WidgetEventTranslator::GetTranslation(GizmoEvent* GIZMOEvent)
 	{
-		EventMapIterator iter = this->EventMap->find(VTKEvent->GetEventId());
-		if (iter != this->EventMap->end())
+		EventMapIterator iter = this->eventMap->find(GIZMOEvent->GetEventId());
+		if (iter != this->eventMap->end())
 		{
 			EventList& elist = (*iter).second;
-			return elist.find(VTKEvent);
+			return elist.find(GIZMOEvent);
 		}
 		else
 		{
-			return vtkWidgetEvent::NoEvent;
+			return WidgetEvent::NoEvent;
 		}
 	}
 
 	//------------------------------------------------------------------------------
-	int vtkWidgetEventTranslator::RemoveTranslation(
-		unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym)
+	int WidgetEventTranslator::RemoveTranslation(
+		unsigned long GIZMOEvent, int modifier, char keyCode, int repeatCount, const char* keySym)
 	{
-		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
-		e->SetEventId(VTKEvent);
+		std::shared_ptr<GizmoEvent> e = std::make_shared<GizmoEvent>();
+		e->SetEventId(GIZMOEvent);
 		e->SetModifier(modifier);
 		e->SetKeyCode(keyCode);
 		e->SetRepeatCount(repeatCount);
@@ -305,17 +305,17 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	int vtkWidgetEventTranslator::RemoveTranslation(vtkEvent* e)
+	int WidgetEventTranslator::RemoveTranslation(GizmoEvent* e)
 	{
-		EventMapIterator iter = this->EventMap->find(e->GetEventId());
+		EventMapIterator iter = this->eventMap->find(e->GetEventId());
 		int numTranslationsRemoved = 0;
-		if (iter != this->EventMap->end())
+		if (iter != this->eventMap->end())
 		{
 			while (iter->second.Remove(e))
 			{
 				++numTranslationsRemoved;
-				iter = this->EventMap->find(e->GetEventId());
-				if (iter == this->EventMap->end())
+				iter = this->eventMap->find(e->GetEventId());
+				if (iter == this->eventMap->end())
 				{
 					break;
 				}
@@ -326,17 +326,17 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	int vtkWidgetEventTranslator::RemoveTranslation(vtkEventData* edata)
+	int WidgetEventTranslator::RemoveTranslation(GizmoEventData* edata)
 	{
-		EventMapIterator iter = this->EventMap->find(edata->GetType());
+		EventMapIterator iter = this->eventMap->find(edata->GetType());
 		int numTranslationsRemoved = 0;
-		if (iter != this->EventMap->end())
+		if (iter != this->eventMap->end())
 		{
 			while (iter->second.Remove(edata))
 			{
 				++numTranslationsRemoved;
-				iter = this->EventMap->find(edata->GetType());
-				if (iter == this->EventMap->end())
+				iter = this->eventMap->find(edata->GetType());
+				if (iter == this->eventMap->end())
 				{
 					break;
 				}
@@ -347,50 +347,50 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	int vtkWidgetEventTranslator::RemoveTranslation(unsigned long VTKEvent)
+	int WidgetEventTranslator::RemoveTranslation(unsigned long GIZMOEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
-		e->SetEventId(VTKEvent);
+		std::shared_ptr<GizmoEvent> e = std::make_shared<GizmoEvent>();
+		e->SetEventId(GIZMOEvent);
 		return this->RemoveTranslation(e.get());
 	}
 
 	//------------------------------------------------------------------------------
-	int vtkWidgetEventTranslator::RemoveTranslation(const char* VTKEvent)
+	int WidgetEventTranslator::RemoveTranslation(const char* GIZMOEvent)
 	{
-		std::shared_ptr<vtkEvent> e = std::make_shared<vtkEvent>();
-		e->SetEventId(ExecuteCommand::GetEventIdFromString(VTKEvent));
+		std::shared_ptr<GizmoEvent> e = std::make_shared<GizmoEvent>();
+		e->SetEventId(ExecuteCommand::GetEventIdFromString(GIZMOEvent));
 		return this->RemoveTranslation(e.get());
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::ClearEvents()
+	void WidgetEventTranslator::ClearEvents()
 	{
-		EventMapIterator iter = this->EventMap->begin();
-		for (; iter != this->EventMap->end(); ++iter)
+		EventMapIterator iter = this->eventMap->begin();
+		for (; iter != this->eventMap->end(); ++iter)
 		{
 			EventList& elist = (*iter).second;
 			elist.clear();
 		}
-		this->EventMap->clear();
+		this->eventMap->clear();
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::AddEventsToInteractor(
-		vtkRenderWindowInteractor* i, CallbackCommand* command, float priority)
+	void WidgetEventTranslator::AddEventsToInteractor(
+		RenderWindowInteractor* i, CallbackCommand* command, float priority)
 	{
-		EventMapIterator iter = this->EventMap->begin();
-		for (; iter != this->EventMap->end(); ++iter)
+		EventMapIterator iter = this->eventMap->begin();
+		for (; iter != this->eventMap->end(); ++iter)
 		{
 			i->AddObserver((*iter).first, command, priority);
 		}
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetEventTranslator::AddEventsToParent(
-		vtkAbstractWidget* w, CallbackCommand* command, float priority)
+	void WidgetEventTranslator::AddEventsToParent(
+		AbstractWidget* w, CallbackCommand* command, float priority)
 	{
-		EventMapIterator iter = this->EventMap->begin();
-		for (; iter != this->EventMap->end(); ++iter)
+		EventMapIterator iter = this->eventMap->begin();
+		for (; iter != this->eventMap->end(); ++iter)
 		{
 			w->AddObserver((*iter).first, command, priority);
 		}

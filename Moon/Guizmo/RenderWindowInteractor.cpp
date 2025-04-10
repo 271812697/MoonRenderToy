@@ -3,9 +3,9 @@
 #include <map>
 
 namespace MOON {
-bool vtkRenderWindowInteractor::InteractorManagesTheEventLoop = true;
+bool RenderWindowInteractor::InteractorManagesTheEventLoop = true;
 
-vtkRenderWindowInteractor::vtkRenderWindowInteractor()
+RenderWindowInteractor::RenderWindowInteractor()
 {
  
   this->Initialized = 0;
@@ -46,14 +46,14 @@ vtkRenderWindowInteractor::vtkRenderWindowInteractor()
 }
 
 //------------------------------------------------------------------------------
-vtkRenderWindowInteractor::~vtkRenderWindowInteractor()
+RenderWindowInteractor::~RenderWindowInteractor()
 {
 
   delete[] this->KeySym;
  
 }
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::Start()
+void RenderWindowInteractor::Start()
 {
 
   if (this->HasObserver(ExecuteCommand::StartEvent) && !this->HandleEventLoop)
@@ -80,7 +80,7 @@ void vtkRenderWindowInteractor::Start()
 
 
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::ExitCallback()
+void RenderWindowInteractor::ExitCallback()
 {
   if (this->HasObserver(ExecuteCommand::ExitEvent))
   {
@@ -93,43 +93,43 @@ void vtkRenderWindowInteractor::ExitCallback()
 }
 
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::UserCallback()
+void RenderWindowInteractor::UserCallback()
 {
   this->InvokeEvent(ExecuteCommand::UserEvent, nullptr);
 }
 
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::StartPickCallback()
+void RenderWindowInteractor::StartPickCallback()
 {
   this->InvokeEvent(ExecuteCommand::StartPickEvent, nullptr);
 }
 
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::EndPickCallback()
+void RenderWindowInteractor::EndPickCallback()
 {
   this->InvokeEvent(ExecuteCommand::EndPickEvent, nullptr);
 }
-vtkRenderWindowInteractor* vtkRenderWindowInteractor::New()
+RenderWindowInteractor* RenderWindowInteractor::New()
 {
-    return new vtkRenderWindowInteractor();
+    return new RenderWindowInteractor();
 }
 
 //------------------------------------------------------------------------------
-void vtkRenderWindowInteractor::Initialize()
+void RenderWindowInteractor::Initialize()
 {
   this->Initialized = 1;
   this->Enable();
 
 }
 
-void vtkRenderWindowInteractor::Terminate()
+void RenderWindowInteractor::Terminate()
 {
     delete this;
 }
 
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MouseMoveEvent()
+void RenderWindowInteractor::MouseMoveEvent()
 {
   if (!this->Enabled)
   {
@@ -140,7 +140,7 @@ void vtkRenderWindowInteractor::MouseMoveEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::RightButtonPressEvent()
+void RenderWindowInteractor::RightButtonPressEvent()
 {
   if (!this->Enabled)
   {
@@ -150,7 +150,7 @@ void vtkRenderWindowInteractor::RightButtonPressEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::RightButtonReleaseEvent()
+void RenderWindowInteractor::RightButtonReleaseEvent()
 {
   if (!this->Enabled)
   {
@@ -160,7 +160,7 @@ void vtkRenderWindowInteractor::RightButtonReleaseEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::LeftButtonPressEvent()
+void RenderWindowInteractor::LeftButtonPressEvent()
 {
   if (!this->Enabled)
   {
@@ -172,7 +172,7 @@ void vtkRenderWindowInteractor::LeftButtonPressEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::LeftButtonReleaseEvent()
+void RenderWindowInteractor::LeftButtonReleaseEvent()
 {
   if (!this->Enabled)
   {
@@ -182,7 +182,7 @@ void vtkRenderWindowInteractor::LeftButtonReleaseEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MiddleButtonPressEvent()
+void RenderWindowInteractor::MiddleButtonPressEvent()
 {
   if (!this->Enabled)
   {
@@ -192,7 +192,7 @@ void vtkRenderWindowInteractor::MiddleButtonPressEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MiddleButtonReleaseEvent()
+void RenderWindowInteractor::MiddleButtonReleaseEvent()
 {
   if (!this->Enabled)
   {
@@ -202,7 +202,7 @@ void vtkRenderWindowInteractor::MiddleButtonReleaseEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MouseWheelForwardEvent()
+void RenderWindowInteractor::MouseWheelForwardEvent()
 {
   if (!this->Enabled)
   {
@@ -212,7 +212,7 @@ void vtkRenderWindowInteractor::MouseWheelForwardEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MouseWheelBackwardEvent()
+void RenderWindowInteractor::MouseWheelBackwardEvent()
 {
   if (!this->Enabled)
   {
@@ -222,7 +222,7 @@ void vtkRenderWindowInteractor::MouseWheelBackwardEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MouseWheelLeftEvent()
+void RenderWindowInteractor::MouseWheelLeftEvent()
 {
   if (!this->Enabled)
   {
@@ -232,7 +232,7 @@ void vtkRenderWindowInteractor::MouseWheelLeftEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::MouseWheelRightEvent()
+void RenderWindowInteractor::MouseWheelRightEvent()
 {
   if (!this->Enabled)
   {
@@ -241,7 +241,7 @@ void vtkRenderWindowInteractor::MouseWheelRightEvent()
   this->InvokeEvent(ExecuteCommand::MouseWheelRightEvent, nullptr);
 }
 
-void vtkRenderWindowInteractor::EnterEvent()
+void RenderWindowInteractor::EnterEvent()
 {
   if (!this->Enabled)
   {
@@ -251,7 +251,7 @@ void vtkRenderWindowInteractor::EnterEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::LeaveEvent()
+void RenderWindowInteractor::LeaveEvent()
 {
   if (!this->Enabled)
   {
@@ -261,7 +261,7 @@ void vtkRenderWindowInteractor::LeaveEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::KeyPressEvent()
+void RenderWindowInteractor::KeyPressEvent()
 {
   if (!this->Enabled)
   {
@@ -271,7 +271,7 @@ void vtkRenderWindowInteractor::KeyPressEvent()
 }
 
 //------------------------------------------------------------------
-void vtkRenderWindowInteractor::KeyReleaseEvent()
+void RenderWindowInteractor::KeyReleaseEvent()
 {
   if (!this->Enabled)
   {

@@ -7,10 +7,10 @@
 #include "WidgetEventTranslator.h"
 //------------------------------------------------------------------------------
 namespace MOON {
-	vtkAbstractWidget::vtkAbstractWidget()
+	AbstractWidget::AbstractWidget()
 	{
 		// Setup event processing
-		this->EventCallbackCommand->SetCallback(vtkAbstractWidget::ProcessEventsHandler);
+		this->EventCallbackCommand->SetCallback(AbstractWidget::ProcessEventsHandler);
 		// There is no parent to this widget currently
 		this->Parent = nullptr;
 		// Set priority higher than interactor styles
@@ -20,17 +20,17 @@ namespace MOON {
 		// Does this widget respond to interaction?
 		this->ProcessEvents = 1;
 		// Okay, set up the event translations for the subclasses.
-		this->EventTranslator = vtkWidgetEventTranslator::New();
-		this->CallbackMapper = vtkWidgetCallbackMapper::New();
+		this->EventTranslator = WidgetEventTranslator::New();
+		this->CallbackMapper = WidgetCallbackMapper::New();
 		this->CallbackMapper->SetEventTranslator(this->EventTranslator);
 	}
 
-	vtkAbstractWidget::~vtkAbstractWidget()
+	AbstractWidget::~AbstractWidget()
 	{
 		this->SetEnabled(0);
 	}
 
-	void vtkAbstractWidget::SetEnabled(int enabling)
+	void AbstractWidget::SetEnabled(int enabling)
 	{
 		if (enabling) //----------------
 		{
@@ -91,10 +91,10 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkAbstractWidget::ProcessEventsHandler(
-		GizmoObject* object, unsigned long vtkEvent, void* clientdata, void* calldata)
+	void AbstractWidget::ProcessEventsHandler(
+		GizmoObject* object, unsigned long GizmoEvent, void* clientdata, void* calldata)
 	{
-		vtkAbstractWidget* self = reinterpret_cast<vtkAbstractWidget*>(clientdata);
+		AbstractWidget* self = reinterpret_cast<AbstractWidget*>(clientdata);
 
 		// if ProcessEvents is Off, we ignore all interaction events.
 		if (!self->GetProcessEvents())
@@ -104,29 +104,29 @@ namespace MOON {
 
 		// if the event has data then get the translation using the
 		// event data
-		unsigned long widgetEvent = vtkWidgetEvent::NoEvent;
-		if (calldata && ExecuteCommand::EventHasData(vtkEvent))
+		unsigned long widgetEvent = WidgetEvent::NoEvent;
+		if (calldata && ExecuteCommand::EventHasData(GizmoEvent))
 		{
 			widgetEvent =
-				self->EventTranslator->GetTranslation(vtkEvent, static_cast<vtkEventData*>(calldata));
+				self->EventTranslator->GetTranslation(GizmoEvent, static_cast<GizmoEventData*>(calldata));
 		}
 		else
 		{
-			int modifier = vtkEvent::GetModifier(self->Interactor);
+			int modifier = GizmoEvent::GetModifier(self->Interactor);
 
 			// If neither the ctrl nor the shift keys are pressed, give
 			// NoModifier a preference over AnyModifier.
-			if (modifier == vtkEvent::AnyModifier)
+			if (modifier == GizmoEvent::AnyModifier)
 			{
-				widgetEvent = self->EventTranslator->GetTranslation(vtkEvent, vtkEvent::NoModifier,
+				widgetEvent = self->EventTranslator->GetTranslation(GizmoEvent, GizmoEvent::NoModifier,
 					self->Interactor->GetKeyCode(), self->Interactor->GetRepeatCount(),
 					self->Interactor->GetKeySym());
 			}
 
-			if (widgetEvent == vtkWidgetEvent::NoEvent)
+			if (widgetEvent == WidgetEvent::NoEvent)
 			{
 				widgetEvent =
-					self->EventTranslator->GetTranslation(vtkEvent, modifier, self->Interactor->GetKeyCode(),
+					self->EventTranslator->GetTranslation(GizmoEvent, modifier, self->Interactor->GetKeyCode(),
 						self->Interactor->GetRepeatCount(), self->Interactor->GetKeySym());
 			}
 		}
@@ -135,14 +135,14 @@ namespace MOON {
 		self->CallData = calldata;
 
 		// Invoke the widget callback
-		if (widgetEvent != vtkWidgetEvent::NoEvent)
+		if (widgetEvent != WidgetEvent::NoEvent)
 		{
 			self->CallbackMapper->InvokeCallback(widgetEvent);
 		}
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkAbstractWidget::Render()
+	void AbstractWidget::Render()
 	{
 		if (!this->Parent && this->Interactor)
 		{
@@ -151,11 +151,11 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkAbstractWidget::SetPriority(float f)
+	void AbstractWidget::SetPriority(float f)
 	{
 		if (f != this->Priority)
 		{
-			this->vtkInteractorObserver::SetPriority(f);
+			this->InteractorObserver::SetPriority(f);
 
 			if (this->Enabled)
 			{

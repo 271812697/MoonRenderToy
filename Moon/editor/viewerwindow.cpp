@@ -184,9 +184,9 @@ namespace MOON {
 			format.setSamples(4);
 			this->setFormat(format);
 			if (windowInteractor == nullptr) {
-				windowInteractor = vtkRenderWindowInteractor::New();
+				windowInteractor = RenderWindowInteractor::New();
 				windowInteractor->Enable();
-				boxWidget = vtkBoxWidget2::New();
+				boxWidget = BoxWidget2::New();
 				boxWidget->SetInteractor(windowInteractor);
 				boxWidget->SetEnabled(1);
 			}
@@ -366,13 +366,13 @@ namespace MOON {
 	bool ViewerWindow::processEventByWindowInteractor(QEvent* e)
 	{
 		if (windowInteractor == nullptr) {
-			windowInteractor = vtkRenderWindowInteractor::New();
+			windowInteractor = RenderWindowInteractor::New();
 			windowInteractor->Enable();
-			boxWidget = vtkBoxWidget2::New();
+			boxWidget = BoxWidget2::New();
 			boxWidget->SetInteractor(windowInteractor);
 			boxWidget->SetEnabled(1);
 		}
-		vtkRenderWindowInteractor* iren = windowInteractor;
+		RenderWindowInteractor* iren = windowInteractor;
 		if (iren == nullptr || e == nullptr)
 			return false;
 

@@ -2,7 +2,7 @@
 #include <algorithm>
 namespace MOON {
 
-	static const char* vtkWidgetEventStrings[] = {
+	static const char* WidgetEventStrings[] = {
 		  "NoEvent",
 		  "Select",
 		  "EndSelect",
@@ -26,21 +26,21 @@ namespace MOON {
 		  "HoverLeave",
 		  nullptr,
 	};
-	vtkWidgetEvent* vtkWidgetEvent::New()
+	WidgetEvent* WidgetEvent::New()
 	{
-		auto result = new vtkWidgetEvent;
+		auto result = new WidgetEvent;
 		return result;
 	}
 
 	//------------------------------------------------------------------------------
-	const char* vtkWidgetEvent::GetStringFromEventId(unsigned long event)
+	const char* WidgetEvent::GetStringFromEventId(unsigned long event)
 	{
 		static unsigned long numevents = 0;
 
 		// find length of table
 		if (!numevents)
 		{
-			while (vtkWidgetEventStrings[numevents] != nullptr)
+			while (WidgetEventStrings[numevents] != nullptr)
 			{
 				numevents++;
 			}
@@ -48,7 +48,7 @@ namespace MOON {
 
 		if (event < numevents)
 		{
-			return vtkWidgetEventStrings[event];
+			return WidgetEventStrings[event];
 		}
 		else
 		{
@@ -57,18 +57,18 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	unsigned long vtkWidgetEvent::GetEventIdFromString(const char* event)
+	unsigned long WidgetEvent::GetEventIdFromString(const char* event)
 	{
 		unsigned long i;
 
-		for (i = 0; vtkWidgetEventStrings[i] != nullptr; i++)
+		for (i = 0; WidgetEventStrings[i] != nullptr; i++)
 		{
-			if (!strcmp(vtkWidgetEventStrings[i], event))
+			if (!strcmp(WidgetEventStrings[i], event))
 			{
 				return i;
 			}
 		}
-		return vtkWidgetEvent::NoEvent;
+		return WidgetEvent::NoEvent;
 	}
 
 }

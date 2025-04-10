@@ -3,13 +3,13 @@
 #include<algorithm>
 
 namespace MOON {
-	class vtkRenderWindowInteractor;
+	class RenderWindowInteractor;
 
-	class  vtkEvent : public GizmoObject
+	class  GizmoEvent : public GizmoObject
 	{
 	public:
 
-		static vtkEvent* New();
+		static GizmoEvent* New();
 
 
 		enum EventModifiers
@@ -108,14 +108,14 @@ namespace MOON {
 			return this->KeySym;
 		};
 
-		static int GetModifier(vtkRenderWindowInteractor*);
+		static int GetModifier(RenderWindowInteractor*);
 
-		bool operator==(vtkEvent*) const;
-		bool operator==(unsigned long VTKEvent) const; // event with no modifiers
+		bool operator==(GizmoEvent*) const;
+		bool operator==(unsigned long GIZMOEvent) const; // event with no modifiers
 
 	public:
-		vtkEvent();
-		~vtkEvent() override;
+		GizmoEvent();
+		~GizmoEvent() override;
 
 		unsigned long EventId;
 		int Modifier;
@@ -124,7 +124,7 @@ namespace MOON {
 		char* KeySym;
 
 	private:
-		vtkEvent(const vtkEvent&) = delete;
-		void operator=(const vtkEvent&) = delete;
+		GizmoEvent(const GizmoEvent&) = delete;
+		void operator=(const GizmoEvent&) = delete;
 	};
 }
