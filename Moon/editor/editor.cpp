@@ -7,6 +7,7 @@
 #include "hierarchypanel.h"
 #include "nodepanel.h"
 #include "uppanel.h"
+#include "pqLoadDataReaction.h"
 
 namespace MOON {
 	Editor::Editor()
@@ -77,6 +78,7 @@ namespace MOON {
 		QIcon icon9;
 		icon9.addFile(QString::fromUtf8(":/widgets/icons/pqOpen.svg"), QSize(), QIcon::Normal, QIcon::Off);
 		openfile->setIcon(icon9);
+		new pqLoadDataReaction(openfile);
 
 		retranslateUi();
 	}
