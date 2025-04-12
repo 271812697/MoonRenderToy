@@ -4,7 +4,7 @@
 
 namespace MOON {
 
-	class vtkEventData
+	class GizmoEventData
 	{
 	public:
 
@@ -12,24 +12,24 @@ namespace MOON {
 		void SetType(int val) { this->Type = val; }
 
 		// are two events equivalent
-		bool operator==(const vtkEventData& a) const
+		bool operator==(const GizmoEventData& a) const
 		{
 			return this->Type == a.Type && this->Equivalent(&a);
 		}
 
 
 	protected:
-		vtkEventData() = default;
-		~vtkEventData() = default;
+		GizmoEventData() = default;
+		~GizmoEventData() = default;
 
 		// subclasses override this to define their
 		// definition of equivalent
-		virtual bool Equivalent(const vtkEventData* ed) const = 0;
+		virtual bool Equivalent(const GizmoEventData* ed) const = 0;
 
 		int Type;
 
 	private:
-		vtkEventData(const vtkEventData& c) = delete;
+		GizmoEventData(const GizmoEventData& c) = delete;
 	};
 
 

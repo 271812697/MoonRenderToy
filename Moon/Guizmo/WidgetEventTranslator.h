@@ -3,48 +3,48 @@
 #include "GizmoObject.h"
 
 namespace MOON {
-	class vtkEventMap;
-	class vtkRenderWindowInteractor;
+	class EventMap;
+	class RenderWindowInteractor;
 	class CallbackCommand;
-	class vtkEvent;
-	class vtkAbstractWidget;
-	class vtkEventData;
+	class GizmoEvent;
+	class AbstractWidget;
+	class GizmoEventData;
 
 	// This is a lightweight class that should be used internally by the widgets
-	class vtkWidgetEventTranslator : public GizmoObject
+	class WidgetEventTranslator : public GizmoObject
 	{
 	public:
 		/**
 		 * Instantiate the object.
 		 */
-		static vtkWidgetEventTranslator* New();
+		static WidgetEventTranslator* New();
 
 
 		///@{
 		/**
-		 * Use these methods to create the translation from a VTK event to a widget
-		 * event. Specifying vtkWidgetEvent::NoEvent or an empty
+		 * Use these methods to create the translation from a  event to a widget
+		 * event. Specifying WidgetEvent::NoEvent or an empty
 		 * string for the (toEvent) erases the mapping for the event.
 		 */
-		void SetTranslation(unsigned long VTKEvent, unsigned long widgetEvent);
-		void SetTranslation(const char* VTKEvent, const char* widgetEvent);
-		void SetTranslation(unsigned long VTKEvent, int modifier, char keyCode, int repeatCount,
+		void SetTranslation(unsigned long GIZMOEvent, unsigned long widgetEvent);
+		void SetTranslation(const char* GIZMOEvent, const char* widgetEvent);
+		void SetTranslation(unsigned long GIZMOEvent, int modifier, char keyCode, int repeatCount,
 			const char* keySym, unsigned long widgetEvent);
-		void SetTranslation(vtkEvent* VTKevent, unsigned long widgetEvent);
-		void SetTranslation(unsigned long VTKEvent, vtkEventData* edata, unsigned long widgetEvent);
+		void SetTranslation(GizmoEvent* GIZMOevent, unsigned long widgetEvent);
+		void SetTranslation(unsigned long GIZMOEvent, GizmoEventData* edata, unsigned long widgetEvent);
 		///@}
 
 		///@{
 		/**
-		 * Translate a VTK event into a widget event. If no event mapping is found,
-		 * then the methods return vtkWidgetEvent::NoEvent or a nullptr string.
+		 * Translate a  event into a widget event. If no event mapping is found,
+		 * then the methods return WidgetEvent::NoEvent or a nullptr string.
 		 */
-		unsigned long GetTranslation(unsigned long VTKEvent);
-		const char* GetTranslation(const char* VTKEvent);
+		unsigned long GetTranslation(unsigned long GIZMOEvent);
+		const char* GetTranslation(const char* GIZMOEvent);
 		unsigned long GetTranslation(
-			unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym);
-		unsigned long GetTranslation(unsigned long VTKEvent, vtkEventData* edata);
-		unsigned long GetTranslation(vtkEvent* VTKEvent);
+			unsigned long GIZMOEvent, int modifier, char keyCode, int repeatCount, const char* keySym);
+		unsigned long GetTranslation(unsigned long GIZMOEvent, GizmoEventData* edata);
+		unsigned long GetTranslation(GizmoEvent* GIZMOEvent);
 		///@}
 
 		///@{
@@ -53,11 +53,11 @@ namespace MOON {
 		 * Returns the number of translations removed.
 		 */
 		int RemoveTranslation(
-			unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym);
-		int RemoveTranslation(vtkEvent* e);
-		int RemoveTranslation(vtkEventData* e);
-		int RemoveTranslation(unsigned long VTKEvent);
-		int RemoveTranslation(const char* VTKEvent);
+			unsigned long GIZMOEvent, int modifier, char keyCode, int repeatCount, const char* keySym);
+		int RemoveTranslation(GizmoEvent* e);
+		int RemoveTranslation(GizmoEventData* e);
+		int RemoveTranslation(unsigned long GIZMOEvent);
+		int RemoveTranslation(const char* GIZMOEvent);
 		///@}
 
 		/**
@@ -70,24 +70,24 @@ namespace MOON {
 		/**
 		 * Add the events in the current translation table to the interactor.
 		 */
-		void AddEventsToParent(vtkAbstractWidget*, CallbackCommand*, float priority);
-		void AddEventsToInteractor(vtkRenderWindowInteractor*, CallbackCommand*, float priority);
+		void AddEventsToParent(AbstractWidget*, CallbackCommand*, float priority);
+		void AddEventsToInteractor(RenderWindowInteractor*, CallbackCommand*, float priority);
 		///@}
 
 	protected:
 		// Constructors/destructors made public for widgets to use
-		vtkWidgetEventTranslator();
-		~vtkWidgetEventTranslator() override;
+		WidgetEventTranslator();
+		~WidgetEventTranslator() override;
 
-		// Map VTK events to widget events
-		vtkEventMap* EventMap;
+		// Map events to widget events
+		EventMap* eventMap;
 
 		// Used for performance reasons to avoid object construction/deletion
-		vtkEvent* Event;
+		GizmoEvent* Event;
 
 	private:
-		vtkWidgetEventTranslator(const vtkWidgetEventTranslator&) = delete;
-		void operator=(const vtkWidgetEventTranslator&) = delete;
+		WidgetEventTranslator(const WidgetEventTranslator&) = delete;
+		void operator=(const WidgetEventTranslator&) = delete;
 	};
 
 }

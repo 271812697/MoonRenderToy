@@ -3,32 +3,32 @@
 #include "RenderWindowInteractor.h"
 
 namespace MOON {
-	vtkEvent::vtkEvent()
+	GizmoEvent::GizmoEvent()
 	{
-		this->Modifier = vtkEvent::AnyModifier;
+		this->Modifier = GizmoEvent::AnyModifier;
 		this->KeyCode = 0;
 		this->RepeatCount = 0;
 		this->KeySym = nullptr;
 		this->EventId = ExecuteCommand::NoEvent;
 	}
 
-	vtkEvent::~vtkEvent()
+	GizmoEvent::~GizmoEvent()
 	{
 		delete[] this->KeySym;
 	}
 
-	bool vtkEvent::operator==(unsigned long VTKEvent) const
+	bool GizmoEvent::operator==(unsigned long GIZMOEvent) const
 	{
-		return this->EventId == VTKEvent;
+		return this->EventId == GIZMOEvent;
 	}
 
-	bool vtkEvent::operator==(vtkEvent* e) const
+	bool GizmoEvent::operator==(GizmoEvent* e) const
 	{
 		if (this->EventId != e->EventId)
 		{
 			return false;
 		}
-		if (this->Modifier != vtkEvent::AnyModifier && e->Modifier != vtkEvent::AnyModifier &&
+		if (this->Modifier != GizmoEvent::AnyModifier && e->Modifier != GizmoEvent::AnyModifier &&
 			this->Modifier != e->Modifier)
 		{
 			return false;
@@ -49,18 +49,18 @@ namespace MOON {
 		return true;
 	}
 
-	vtkEvent* vtkEvent::New()
+	GizmoEvent* GizmoEvent::New()
 	{
-		auto result = new vtkEvent;
+		auto result = new GizmoEvent;
 		return result;
 	}
 
-	int vtkEvent::GetModifier(vtkRenderWindowInteractor* i)
+	int GizmoEvent::GetModifier(RenderWindowInteractor* i)
 	{
 		int modifier = 0;
-		modifier |= (i->GetShiftKey() ? vtkEvent::ShiftModifier : 0);
-		modifier |= (i->GetControlKey() ? vtkEvent::ControlModifier : 0);
-		modifier |= (i->GetAltKey() ? vtkEvent::AltModifier : 0);
+		modifier |= (i->GetShiftKey() ? GizmoEvent::ShiftModifier : 0);
+		modifier |= (i->GetControlKey() ? GizmoEvent::ControlModifier : 0);
+		modifier |= (i->GetAltKey() ? GizmoEvent::AltModifier : 0);
 
 		return modifier;
 	}

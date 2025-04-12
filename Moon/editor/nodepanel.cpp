@@ -43,7 +43,7 @@ namespace MOON {
 
 	Nodepanel::Nodepanel(QWidget* parent) : QWidget(parent)
 	{
-		auto menuBar = new QMenuBar();
+		auto menuBar = new QMenuBar(this);
 		QMenu* menu = menuBar->addMenu("File");
 		auto saveAction = menu->addAction("Save Scene");
 		saveAction->setShortcut(QKeySequence::Save);

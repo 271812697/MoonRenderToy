@@ -2,12 +2,12 @@
 #include "GizmoObserver.h"
 
 namespace MOON {
-	class vtkWidgetEventTranslator;
-	class vtkWidgetCallbackMapper;
-	//class vtkWidgetRepresentation;
+	class WidgetEventTranslator;
+	class WidgetCallbackMapper;
+	//class WidgetRepresentation;
 
-	class  vtkAbstractWidget
-		: public vtkInteractorObserver
+	class  AbstractWidget
+		: public InteractorObserver
 	{
 	public:
 		void SetEnabled(int) override;
@@ -35,7 +35,7 @@ namespace MOON {
 		 * Get the event translator. Careful manipulation of this class enables
 		 * the user to override the default event bindings.
 		 */
-		vtkWidgetEventTranslator* GetEventTranslator() { return this->EventTranslator; }
+		WidgetEventTranslator* GetEventTranslator() { return this->EventTranslator; }
 
 		/**
 		 * Create the default widget representation if one is not set. The
@@ -47,8 +47,8 @@ namespace MOON {
 
 		/**
 		 * This method is called by subclasses when a render method is to be
-		 * invoked on the vtkRenderWindowInteractor. This method should be called
-		 * (instead of vtkRenderWindow::Render() because it has built into it
+		 * invoked on the RenderWindowInteractor. This method should be called
+		 * (instead of RenderWindow::Render() because it has built into it
 		 * optimizations for minimizing renders and/or speeding renders.
 		 */
 		void Render();
@@ -59,8 +59,8 @@ namespace MOON {
 		 * When a widget has a parent, it defers the rendering to the parent. It
 		 * may also defer managing the cursor (see ManagesCursor ivar).
 		 */
-		void SetParent(vtkAbstractWidget* parent) { this->Parent = parent; }
-		virtual vtkAbstractWidget* GetParent()
+		void SetParent(AbstractWidget* parent) { this->Parent = parent; }
+		virtual AbstractWidget* GetParent()
 		{
 
 			return this->Parent;
@@ -69,12 +69,12 @@ namespace MOON {
 
 		///@{
 		/**
-		 * Return an instance of vtkWidgetRepresentation used to represent this
+		 * Return an instance of WidgetRepresentation used to represent this
 		 * widget in the scene. Note that the representation is a subclass of
-		 * vtkProp (typically a subclass of vtkWidgetRepresentation) so it can be
+		 * Prop (typically a subclass of WidgetRepresentation) so it can be
 		 * added to the renderer independent of the widget.
 		 */
-		 //	vtkWidgetRepresentation* GetRepresentation()
+		 //	WidgetRepresentation* GetRepresentation()
 			 //{
 			 //	this->CreateDefaultRepresentation();
 			 //	return this->WidgetRep;
@@ -85,8 +85,8 @@ namespace MOON {
 		void SetPriority(float) override;
 
 	protected:
-		vtkAbstractWidget();
-		~vtkAbstractWidget() override;
+		AbstractWidget();
+		~AbstractWidget() override;
 
 		// Handles the events; centralized here for all widgets.
 		static void ProcessEventsHandler(
@@ -96,17 +96,17 @@ namespace MOON {
 		// SetRepresentation() methods particular to each widget (i.e. subclasses
 		// of this class). This method does the actual work; the SetRepresentation()
 		// methods constrain the type that can be set.
-		//void SetWidgetRepresentation(vtkWidgetRepresentation* r);
-		//vtkWidgetRepresentation* WidgetRep;
+		//void SetWidgetRepresentation(WidgetRepresentation* r);
+		//WidgetRepresentation* WidgetRep;
 
 
 
 		// For translating and invoking events
-		vtkWidgetEventTranslator* EventTranslator;
-		vtkWidgetCallbackMapper* CallbackMapper;
+		WidgetEventTranslator* EventTranslator;
+		WidgetCallbackMapper* CallbackMapper;
 
 		// The parent, if any, for this widget
-		vtkAbstractWidget* Parent;
+		AbstractWidget* Parent;
 
 		// Call data which can be retrieved by the widget. This data is set
 		// by ProcessEvents() if call data is provided during a callback
@@ -119,8 +119,8 @@ namespace MOON {
 
 
 	private:
-		vtkAbstractWidget(const vtkAbstractWidget&) = delete;
-		void operator=(const vtkAbstractWidget&) = delete;
+		AbstractWidget(const AbstractWidget&) = delete;
+		void operator=(const AbstractWidget&) = delete;
 	};
 
 }

@@ -4,7 +4,7 @@
 
 namespace MOON {
 
-	vtkInteractorObserver::vtkInteractorObserver()
+	InteractorObserver::InteractorObserver()
 	{
 		this->Enabled = 0;
 
@@ -17,7 +17,7 @@ namespace MOON {
 
 		this->KeyPressCallbackCommand = CallbackCommand::New();
 		this->KeyPressCallbackCommand->SetClientData(this);
-		this->KeyPressCallbackCommand->SetCallback(vtkInteractorObserver::ProcessEvents);
+		this->KeyPressCallbackCommand->SetCallback(InteractorObserver::ProcessEvents);
 
 
 
@@ -31,7 +31,7 @@ namespace MOON {
 		this->DeleteObserverTag = 0;
 	}
 
-	vtkInteractorObserver::~vtkInteractorObserver()
+	InteractorObserver::~InteractorObserver()
 	{
 
 
@@ -39,7 +39,7 @@ namespace MOON {
 		this->SetInteractor(nullptr);
 	}
 
-	void vtkInteractorObserver::SetInteractor(vtkRenderWindowInteractor* i)
+	void InteractorObserver::SetInteractor(RenderWindowInteractor* i)
 	{
 		if (i == this->Interactor)
 		{
@@ -71,13 +71,13 @@ namespace MOON {
 		}
 	}
 
-	void vtkInteractorObserver::ProcessEvents(
+	void InteractorObserver::ProcessEvents(
 		GizmoObject* object, unsigned long event, void* clientdata, void* calldata)
 	{
 		if (event == ExecuteCommand::CharEvent || event == ExecuteCommand::DeleteEvent)
 		{
 			GizmoObject* vobj = reinterpret_cast<GizmoObject*>(clientdata);
-			vtkInteractorObserver* self = static_cast<vtkInteractorObserver*>(vobj);
+			InteractorObserver* self = static_cast<InteractorObserver*>(vobj);
 			if (self)
 			{
 				if (event == ExecuteCommand::CharEvent)
@@ -96,30 +96,30 @@ namespace MOON {
 		}
 	}
 
-	void vtkInteractorObserver::StartInteraction()
+	void InteractorObserver::StartInteraction()
 	{
 
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkInteractorObserver::EndInteraction()
+	void InteractorObserver::EndInteraction()
 	{
 
 	}
 
 
-	void vtkInteractorObserver::ComputeDisplayToWorld(double x, double y, double z, double worldPt[4])
+	void InteractorObserver::ComputeDisplayToWorld(double x, double y, double z, double worldPt[4])
 	{
 
 	}
 
 
-	void vtkInteractorObserver::ComputeWorldToDisplay(double x, double y, double z, double displayPt[3])
+	void InteractorObserver::ComputeWorldToDisplay(double x, double y, double z, double displayPt[3])
 	{
 
 	}
 
-	void vtkInteractorObserver::OnChar()
+	void InteractorObserver::OnChar()
 	{
 
 		if (this->KeyPressActivation)
@@ -139,7 +139,7 @@ namespace MOON {
 		}
 	}
 
-	void vtkInteractorObserver::GrabFocus(ExecuteCommand* mouseEvents, ExecuteCommand* keypressEvents)
+	void InteractorObserver::GrabFocus(ExecuteCommand* mouseEvents, ExecuteCommand* keypressEvents)
 	{
 		if (this->Interactor)
 		{
@@ -147,7 +147,7 @@ namespace MOON {
 		}
 	}
 
-	void vtkInteractorObserver::ReleaseFocus()
+	void InteractorObserver::ReleaseFocus()
 	{
 		if (this->Interactor)
 		{

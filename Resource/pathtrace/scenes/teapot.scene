@@ -5,7 +5,7 @@ renderer
 	tilewidth 320
 	tileheight 180
 	envmapfile HDR/outdoor.hdr
-	envmapintensity 5.0
+	envmapintensity 2.0
 }
 camera
 {

@@ -2,47 +2,47 @@
 #include "GizmoObject.h"
 
 namespace MOON {
-	class vtkWidgetEvent;
-	class vtkAbstractWidget;
-	class vtkWidgetEventTranslator;
-	class vtkCallbackMap; // PIMPL encapsulation of STL map
-	class vtkEventData;
+	class WidgetEvent;
+	class AbstractWidget;
+	class WidgetEventTranslator;
+	class CallbackMap; // PIMPL encapsulation of STL map
+	class GizmoEventData;
 
-	class  vtkWidgetCallbackMapper : public GizmoObject
+	class  WidgetCallbackMapper : public GizmoObject
 	{
 	public:
 
-		static vtkWidgetCallbackMapper* New();
+		static WidgetCallbackMapper* New();
 
-		void SetEventTranslator(vtkWidgetEventTranslator* t);
-		virtual vtkWidgetEventTranslator* GetEventTranslator()
+		void SetEventTranslator(WidgetEventTranslator* t);
+		virtual WidgetEventTranslator* GetEventTranslator()
 		{
 			return this->EventTranslator;
 		};
 		///@}
 
-		typedef void (*CallbackType)(vtkAbstractWidget*);
+		typedef void (*CallbackType)(AbstractWidget*);
 
 
 		void SetCallbackMethod(
-			unsigned long VTKEvent, unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f);
-		void SetCallbackMethod(unsigned long VTKEvent, int modifiers, char keyCode, int repeatCount,
-			const char* keySym, unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f);
-		void SetCallbackMethod(unsigned long VTKEvent, vtkEventData* ed, unsigned long widgetEvent,
-			vtkAbstractWidget* w, CallbackType f);
+			unsigned long GIZMOEvent, unsigned long widgetEvent, AbstractWidget* w, CallbackType f);
+		void SetCallbackMethod(unsigned long GIZMOEvent, int modifiers, char keyCode, int repeatCount,
+			const char* keySym, unsigned long widgetEvent, AbstractWidget* w, CallbackType f);
+		void SetCallbackMethod(unsigned long GIZMOEvent, GizmoEventData* ed, unsigned long widgetEvent,
+			AbstractWidget* w, CallbackType f);
 
 		void InvokeCallback(unsigned long widgetEvent);
 
 	protected:
-		vtkWidgetCallbackMapper();
-		~vtkWidgetCallbackMapper() override;
-		vtkWidgetEventTranslator* EventTranslator;
-		vtkCallbackMap* CallbackMap;
-		void SetCallbackMethod(unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f);
+		WidgetCallbackMapper();
+		~WidgetCallbackMapper() override;
+		WidgetEventTranslator* EventTranslator;
+		CallbackMap* callbackMap;
+		void SetCallbackMethod(unsigned long widgetEvent, AbstractWidget* w, CallbackType f);
 
 	private:
-		vtkWidgetCallbackMapper(const vtkWidgetCallbackMapper&) = delete;
-		void operator=(const vtkWidgetCallbackMapper&) = delete;
+		WidgetCallbackMapper(const WidgetCallbackMapper&) = delete;
+		void operator=(const WidgetCallbackMapper&) = delete;
 	};
 
 }

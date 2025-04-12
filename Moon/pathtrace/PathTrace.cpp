@@ -110,7 +110,7 @@ namespace PathTrace {
 	void TraceScene()
 	{
 
-		TraceScreen(renderOptions.windowResolution.x, renderOptions.windowResolution.y);
+		//TraceScreen(renderOptions.windowResolution.x, renderOptions.windowResolution.y);
 	}
 	bool InitRenderer()
 	{

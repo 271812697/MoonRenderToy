@@ -64,7 +64,7 @@ namespace MOON {
 		ExecuteCommand();
 		virtual ~ExecuteCommand() = default;
 
-		friend class vtkSubjectHelper;
+		friend class SubjectHelper;
 
 		ExecuteCommand(const ExecuteCommand& c) = default;
 		void operator=(const ExecuteCommand&) {}

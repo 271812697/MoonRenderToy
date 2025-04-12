@@ -4,10 +4,10 @@
 namespace MOON {
 
 	class  ExecuteCommand;
-	class  vtkRenderWindowInteractor : public GizmoObject
+	class  RenderWindowInteractor : public GizmoObject
 	{
 	public:
-		static vtkRenderWindowInteractor* New();
+		static RenderWindowInteractor* New();
 		virtual void Initialize();
 		void Terminate();
 		void ReInitialize()
@@ -197,8 +197,8 @@ namespace MOON {
 		virtual void KeyReleaseEvent();
 		static bool InteractorManagesTheEventLoop;
 	protected:
-		vtkRenderWindowInteractor();
-		~vtkRenderWindowInteractor();
+		RenderWindowInteractor();
+		~RenderWindowInteractor();
 
 		bool Done;
 		int Initialized;
@@ -227,7 +227,7 @@ namespace MOON {
 		int EventSize[2];
 		int Size[2];
 
-		friend class vtkInteractorObserver;
+		friend class InteractorObserver;
 		void GrabFocus(ExecuteCommand* mouseEvents, ExecuteCommand* keypressEvents = nullptr)
 		{
 			this->GizmoObject::InternalGrabFocus(mouseEvents, keypressEvents);
@@ -236,8 +236,8 @@ namespace MOON {
 		int HandleEventLoop;
 		virtual void StartEventLoop() {}
 	private:
-		vtkRenderWindowInteractor(const vtkRenderWindowInteractor&) = delete;
-		void operator=(const vtkRenderWindowInteractor&) = delete;
+		RenderWindowInteractor(const RenderWindowInteractor&) = delete;
+		void operator=(const RenderWindowInteractor&) = delete;
 	};
 
 }

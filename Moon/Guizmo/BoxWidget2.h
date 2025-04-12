@@ -4,11 +4,11 @@
 
 namespace MOON {
 
-	class vtkBoxWidget2 : public vtkAbstractWidget
+	class BoxWidget2 : public AbstractWidget
 	{
 	public:
 
-		static vtkBoxWidget2* New();
+		static BoxWidget2* New();
 
 
 		void CreateDefaultRepresentation() override;
@@ -20,8 +20,8 @@ namespace MOON {
 		void SetEnabled(int enabling) override;
 
 	protected:
-		vtkBoxWidget2();
-		~vtkBoxWidget2() override;
+		BoxWidget2();
+		~BoxWidget2() override;
 
 		// Manage the state of the widget
 		int WidgetState;
@@ -32,15 +32,15 @@ namespace MOON {
 		};
 
 		// These methods handle events
-		static void SelectAction(vtkAbstractWidget*);
-		static void EndSelectAction(vtkAbstractWidget*);
-		static void TranslateAction(vtkAbstractWidget*);
-		static void ScaleAction(vtkAbstractWidget*);
-		static void MoveAction(vtkAbstractWidget*);
-		static void SelectAction3D(vtkAbstractWidget*);
-		static void EndSelectAction3D(vtkAbstractWidget*);
-		static void MoveAction3D(vtkAbstractWidget*);
-		static void StepAction3D(vtkAbstractWidget*);
+		static void SelectAction(AbstractWidget*);
+		static void EndSelectAction(AbstractWidget*);
+		static void TranslateAction(AbstractWidget*);
+		static void ScaleAction(AbstractWidget*);
+		static void MoveAction(AbstractWidget*);
+		static void SelectAction3D(AbstractWidget*);
+		static void EndSelectAction3D(AbstractWidget*);
+		static void MoveAction3D(AbstractWidget*);
+		static void StepAction3D(AbstractWidget*);
 
 		// Control whether scaling, rotation, and translation are supported
 		bool TranslationEnabled;
@@ -52,7 +52,7 @@ namespace MOON {
 		static void ProcessKeyEvents(GizmoObject*, unsigned long, void*, void*);
 
 	private:
-		vtkBoxWidget2(const vtkBoxWidget2&) = delete;
-		void operator=(const vtkBoxWidget2&) = delete;
+		BoxWidget2(const BoxWidget2&) = delete;
+		void operator=(const BoxWidget2&) = delete;
 	};
 }

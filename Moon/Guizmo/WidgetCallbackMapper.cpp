@@ -4,60 +4,60 @@
 #include "EventData.h"
 #include "WidgetEventTranslator.h"
 #include <map>
-#include "WidgetCallbackMapper.h"
+
 
 namespace MOON {
 
 	// Callbacks are stored as a pair of (Object,Method) in the map.
-	struct vtkCallbackPair
+	struct CallbackPair
 	{
-		vtkCallbackPair()
+		CallbackPair()
 			: Widget(nullptr)
 			, Callback(nullptr)
 		{
 		} // map requires empty constructor
-		vtkCallbackPair(vtkAbstractWidget* w, vtkWidgetCallbackMapper::CallbackType f)
+		CallbackPair(AbstractWidget* w, WidgetCallbackMapper::CallbackType f)
 			: Widget(w)
 			, Callback(f)
 		{
 		}
 
-		vtkAbstractWidget* Widget;
-		vtkWidgetCallbackMapper::CallbackType Callback;
+		AbstractWidget* Widget;
+		WidgetCallbackMapper::CallbackType Callback;
 	};
 
 	// The map tracks the correspondence between widget events and callbacks
-	class vtkCallbackMap : public std::map<unsigned long, vtkCallbackPair>
+	class CallbackMap : public std::map<unsigned long, CallbackPair>
 	{
 	public:
-		typedef vtkCallbackMap CallbackMapType;
-		typedef std::map<unsigned long, vtkCallbackPair>::iterator CallbackMapIterator;
+		typedef CallbackMap CallbackMapType;
+		typedef std::map<unsigned long, CallbackPair>::iterator CallbackMapIterator;
 	};
 
 	//------------------------------------------------------------------------------
-	vtkWidgetCallbackMapper::vtkWidgetCallbackMapper()
+	WidgetCallbackMapper::WidgetCallbackMapper()
 	{
-		this->CallbackMap = new vtkCallbackMap;
+		this->callbackMap = new CallbackMap;
 		this->EventTranslator = nullptr;
 	}
 
 	//------------------------------------------------------------------------------
-	vtkWidgetCallbackMapper::~vtkWidgetCallbackMapper()
+	WidgetCallbackMapper::~WidgetCallbackMapper()
 	{
-		delete this->CallbackMap;
+		delete this->callbackMap;
 		if (this->EventTranslator)
 		{
 			//this->EventTranslator->Delete();
 		}
 	}
 
-	vtkWidgetCallbackMapper* MOON::vtkWidgetCallbackMapper::New()
+	WidgetCallbackMapper* MOON::WidgetCallbackMapper::New()
 	{
-		return new vtkWidgetCallbackMapper();
+		return new WidgetCallbackMapper();
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::SetEventTranslator(vtkWidgetEventTranslator* t)
+	void WidgetCallbackMapper::SetEventTranslator(WidgetEventTranslator* t)
 	{
 		if (this->EventTranslator != t)
 		{
@@ -75,48 +75,48 @@ namespace MOON {
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::SetCallbackMethod(
-		unsigned long VTKEvent, unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f)
+	void WidgetCallbackMapper::SetCallbackMethod(
+		unsigned long GIZMOEvent, unsigned long widgetEvent, AbstractWidget* w, CallbackType f)
 	{
-		this->EventTranslator->SetTranslation(VTKEvent, widgetEvent);
+		this->EventTranslator->SetTranslation(GIZMOEvent, widgetEvent);
 		this->SetCallbackMethod(widgetEvent, w, f);
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::SetCallbackMethod(unsigned long VTKEvent, int modifier, char keyCode,
-		int repeatCount, const char* keySym, unsigned long widgetEvent, vtkAbstractWidget* w,
+	void WidgetCallbackMapper::SetCallbackMethod(unsigned long GIZMOEvent, int modifier, char keyCode,
+		int repeatCount, const char* keySym, unsigned long widgetEvent, AbstractWidget* w,
 		CallbackType f)
 	{
 		this->EventTranslator->SetTranslation(
-			VTKEvent, modifier, keyCode, repeatCount, keySym, widgetEvent);
+			GIZMOEvent, modifier, keyCode, repeatCount, keySym, widgetEvent);
 		this->SetCallbackMethod(widgetEvent, w, f);
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::SetCallbackMethod(unsigned long VTKEvent, vtkEventData* edata,
-		unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f)
+	void WidgetCallbackMapper::SetCallbackMethod(unsigned long GIZMOEvent, GizmoEventData* edata,
+		unsigned long widgetEvent, AbstractWidget* w, CallbackType f)
 	{
 		// make sure the type is set
-		edata->SetType(VTKEvent);
+		edata->SetType(GIZMOEvent);
 
-		this->EventTranslator->SetTranslation(VTKEvent, edata, widgetEvent);
+		this->EventTranslator->SetTranslation(GIZMOEvent, edata, widgetEvent);
 		this->SetCallbackMethod(widgetEvent, w, f);
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::SetCallbackMethod(
-		unsigned long widgetEvent, vtkAbstractWidget* w, CallbackType f)
+	void WidgetCallbackMapper::SetCallbackMethod(
+		unsigned long widgetEvent, AbstractWidget* w, CallbackType f)
 	{
-		(*this->CallbackMap)[widgetEvent] = vtkCallbackPair(w, f);
+		(*this->callbackMap)[widgetEvent] = CallbackPair(w, f);
 	}
 
 	//------------------------------------------------------------------------------
-	void vtkWidgetCallbackMapper::InvokeCallback(unsigned long widgetEvent)
+	void WidgetCallbackMapper::InvokeCallback(unsigned long widgetEvent)
 	{
-		vtkCallbackMap::CallbackMapIterator iter = this->CallbackMap->find(widgetEvent);
-		if (iter != this->CallbackMap->end())
+		CallbackMap::CallbackMapIterator iter = this->callbackMap->find(widgetEvent);
+		if (iter != this->callbackMap->end())
 		{
-			vtkAbstractWidget* w = (*iter).second.Widget;
+			AbstractWidget* w = (*iter).second.Widget;
 			CallbackType f = (*iter).second.Callback;
 			(*f)(w);
 		}

@@ -5,8 +5,8 @@
 #include <QtNodes/NodeData>
 using QtNodes::NodeData;
 namespace MOON {
-	class vtkRenderWindowInteractor;
-	class vtkBoxWidget2;
+	class RenderWindowInteractor;
+	class BoxWidget2;
 	class Editor;
 	class ViewerWindow : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
@@ -36,8 +36,8 @@ namespace MOON {
 	private:
 		bool processEventByWindowInteractor(QEvent* event);
 		bool blockMouseMessage = false;
-		vtkRenderWindowInteractor* windowInteractor = nullptr;
-		vtkBoxWidget2* boxWidget = nullptr;
+		RenderWindowInteractor* windowInteractor = nullptr;
+		BoxWidget2* boxWidget = nullptr;
 		bool initFlag = false;
 
 

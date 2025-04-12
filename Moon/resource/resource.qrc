@@ -26,4 +26,7 @@
         <file>darkstyle/icon_radiobutton_checked_disabled.png</file>
         <file>darkstyle/icon_radiobutton_unchecked_disabled.png</file>
     </qresource>
+    <qresource prefix="/widgets">
+        <file>icons/pqOpen.svg</file>
+    </qresource>
 </RCC>
