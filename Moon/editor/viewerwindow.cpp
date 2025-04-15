@@ -247,6 +247,7 @@ namespace MOON {
 	{
 		TEST::TestInstance::Instance().flush();
 		TEST::TestInstance::Instance().execute();
+		PathTrace::Update();
 		PathTrace::GetRenderer()->Update(0.016);
 		PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());

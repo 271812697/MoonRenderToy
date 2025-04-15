@@ -24,10 +24,12 @@ namespace PathTrace {
 	Scene* GetScene();
 	Renderer* GetRenderer();
 	void GetSceneFiles();
+	void Update();
 
 	RenderOptions& GetRenderOptions();
 	void GetEnvMaps();
 	void Resize(int width, int height);
+	void SwitchScene(std::string sceneName);
 	void LoadScene(std::string sceneName);
 
 	void TraceScene();

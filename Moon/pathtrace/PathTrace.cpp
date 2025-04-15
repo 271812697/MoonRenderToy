@@ -21,15 +21,17 @@ namespace PathTrace {
 	bool objectPropChanged = false;
 	bool showTransform = false;
 	bool space_down = false;
+	bool switchScene = false;
+	std::string switchSceneName = "";
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
 
-	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
@@ -41,6 +43,13 @@ namespace PathTrace {
 	}
 	RenderOptions& GetRenderOptions() {
 		return renderOptions;
+	}
+	void Update() {
+		if (switchScene) {
+			switchScene = false;
+			LoadScene(switchSceneName);
+			InitRenderer();
+		}
 	}
 	void GetSceneFiles()
 	{
@@ -73,6 +82,10 @@ namespace PathTrace {
 		}
 	}
 
+	void SwitchScene(std::string sceneName) {
+		switchScene = true;
+		switchSceneName = sceneName;
+	}
 	void LoadScene(std::string sceneName)
 	{
 		delete scene;
