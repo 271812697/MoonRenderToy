@@ -45,16 +45,16 @@ void pqLoadDataReaction::onTriggered()
 	fileDialog.setFileMode(pqFileDialog::ExistingFilesAndDirectories);
 	if (fileDialog.exec() == QDialog::Accepted) {
 
-	}	
+	}
 	*/
 
 	QString fileName = QFileDialog::getOpenFileName(nullptr,
 		tr("Open Flow Scene"),
 		QDir::homePath(),
-		tr("Flow Scene Files (*.scene)"));
+		tr("Flow Scene Files (*.scene;*.gltf)"));
 
 	if (!QFileInfo::exists(fileName))
-		return ;
+		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 	PathTrace::SwitchScene(fileName.toStdString());
 
