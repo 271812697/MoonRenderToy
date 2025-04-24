@@ -155,11 +155,12 @@ namespace PathTrace {
 		}
 		else if (mouseRight)
 		{
-			scene->camera->OffsetOrientation((_x - x) * 0.1, (_y - y) * 0.1);
+			CORE_INFO("{0},{1}", (_x - x) * 0.1, (_y - y) * 0.1);
+			scene->camera->OffsetOrientationPlace((_x - x) * 0.1, (_y - y) * 0.1);
 			scene->dirty = true;
 		}
-		x = _x;
-		y = _y;
+		//x = _x;
+		//y = _y;
 	}
 
 	void CameraController::mouseLeftPress(int x, int y)
@@ -168,22 +169,24 @@ namespace PathTrace {
 		scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y);;
 	}
 
-	void CameraController::mouseMiddlePress()
+	void CameraController::mouseMiddlePress(int x, int y)
 	{
 		mouseMiddle = true;
 	}
 
-	void CameraController::mouseRightPress()
+	void CameraController::mouseRightPress(int x, int y)
 	{
+		this->x = x;
+		this->y = y;
 		mouseRight = true;
 	}
 
-	void CameraController::mouseMiddleRelease()
+	void CameraController::mouseMiddleRelease(int x, int y)
 	{
 		mouseMiddle = false;
 	}
 
-	void CameraController::mouseRightRelease()
+	void CameraController::mouseRightRelease(int x, int y)
 	{
 		mouseRight = false;
 	}

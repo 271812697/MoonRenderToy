@@ -14,7 +14,11 @@ namespace PathTrace
 		Camera& operator = (const Camera& other);
 
 		void OffsetOrientation(float dx, float dy);
+		void OffsetOrientationPlace(float dx, float dy);
+		void OffsetRotateByScreen(float dx, float dy);
+		void setPivot(const Vec3& p);
 		void Strafe(float dx, float dy);
+		void Update();
 		void SetRadius(float dr);
 		void ComputeViewProjectionMatrix(float* view, float* projection, float ratio);
 		void SetFov(float val);
@@ -23,11 +27,16 @@ namespace PathTrace
 		Vec3 up;
 		Vec3 right;
 		Vec3 forward;
+		Vec3 lastposition;
+		Vec3 lastup;
+		Vec3 lastright;
+		Vec3 lastforward;
+		Vec3 pivot;
 
 		float focalDist;
 		float aperture;
 		float fov;
-		Vec3 pivot;
+
 		bool isMoving;
 
 	private:
