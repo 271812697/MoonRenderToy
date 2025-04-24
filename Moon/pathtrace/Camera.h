@@ -13,8 +13,6 @@ namespace PathTrace
 		Camera(const Camera& other);
 		Camera& operator = (const Camera& other);
 
-		void OffsetOrientation(float dx, float dy);
-		void OffsetOrientationPlace(float dx, float dy);
 		void OffsetRotateByScreen(float dx, float dy);
 		void setPivot(const Vec3& p);
 		void Strafe(float dx, float dy);
@@ -38,12 +36,10 @@ namespace PathTrace
 		float fov;
 
 		bool isMoving;
-
-	private:
 		void UpdateCamera();
+	private:
+
 		Vec3 worldUp;
-		float pitch;
 		float radius;
-		float yaw;
 	};
 }

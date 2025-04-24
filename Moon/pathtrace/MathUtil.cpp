@@ -418,6 +418,21 @@ namespace PathTrace {
 	{
 		return Vec3(std::pow(a.x, b.x), std::pow(a.y, b.y), std::pow(a.z, b.z));
 	}
+	Vec3 RoateDir(const Vec3& d, const Vec3& axis, float rad)
+	{
+		Vec3 n = Vec3::Dot(d, axis) * axis;
+		Vec3 x = d - n;
+		float len = Vec3::Length(x);
+		Vec3 nx = Vec3::Normalize(x);
+		Vec3 ny = Vec3::Cross(axis, nx);
+		return n + len * (cos(rad) * nx + sin(rad) * ny);
+	}
+	Vec3 RoatePoint(const Vec3& p, const Vec3& axis, const Vec3& pivot, float rad)
+	{
+		Vec3 d = p - pivot;
+		Vec3 dir = RoateDir(d, axis, rad);
+		return pivot + dir;
+	}
 	uvec4 seed;
 	void InitRNG(Vec2 p, int frame)
 	{

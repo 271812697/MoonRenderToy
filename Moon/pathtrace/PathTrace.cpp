@@ -149,14 +149,16 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 
+		CORE_INFO("{0},{1}", x, y);
+
 		if (mouseMiddle) {
 			scene->camera->Strafe((_x - x) * 0.1, (_y - y) * 0.1);
 			scene->dirty = true;
 		}
 		else if (mouseRight)
 		{
-			CORE_INFO("{0},{1}", (_x - x) * 0.1, (_y - y) * 0.1);
-			scene->camera->OffsetOrientationPlace((_x - x) * 0.1, (_y - y) * 0.1);
+
+			scene->camera->OffsetRotateByScreen((_x - x) * 0.5, (y - _y) * 0.5);
 			scene->dirty = true;
 		}
 		//x = _x;
@@ -178,6 +180,7 @@ namespace PathTrace {
 	{
 		this->x = x;
 		this->y = y;
+		scene->camera->UpdateCamera();
 		mouseRight = true;
 	}
 
