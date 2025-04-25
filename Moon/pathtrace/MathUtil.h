@@ -108,6 +108,8 @@ namespace PathTrace {
 	};
 	Vec3 operator*(float b, const Vec3& v);
 	Vec3 pow(const Vec3& a, const Vec3& b);
+	Vec3 RoateDir(const Vec3& d, const Vec3& axis, float rad);
+	Vec3 RoatePoint(const Vec3& p, const Vec3& axis, const Vec3& pivot, float rad);
 	struct Ray
 	{
 		Vec3 origin;

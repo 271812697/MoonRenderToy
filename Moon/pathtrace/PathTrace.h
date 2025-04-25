@@ -24,10 +24,12 @@ namespace PathTrace {
 	Scene* GetScene();
 	Renderer* GetRenderer();
 	void GetSceneFiles();
+	void Update();
 
 	RenderOptions& GetRenderOptions();
 	void GetEnvMaps();
 	void Resize(int width, int height);
+	void SwitchScene(std::string sceneName);
 	void LoadScene(std::string sceneName);
 
 	void TraceScene();
@@ -42,13 +44,16 @@ namespace PathTrace {
 		static CameraController& Instance();
 		void mouseMove(int _x, int _y);
 		void mouseLeftPress(int x, int y);
-		void mouseMiddlePress();
-		void mouseRightPress();
-		void mouseMiddleRelease();
-		void mouseRightRelease();
+		void mouseMiddlePress(int x, int y);
+		void mouseRightPress(int x, int y);
+		void mouseMiddleRelease(int x, int y);
+		void mouseRightRelease(int x, int y);
 		void wheelMouseWheel(float delta);
 	private:
-		int x, y;
+		//for rotate
+		int rx, ry;
+		//for translate
+		int tx, ty;
 		bool mouseMiddle = false;
 
 		bool mouseRight = false;

@@ -805,6 +805,7 @@ namespace PathTrace
 
 	void Renderer::Update(float secondsElapsed)
 	{
+		
 
 		if (!scene->dirty && scene->renderOptions.maxSpp != -1 && sampleCounter >= scene->renderOptions.maxSpp)
 			return;

@@ -28,5 +28,9 @@
     </qresource>
     <qresource prefix="/widgets">
         <file>icons/pqOpen.svg</file>
+        <file>icons/pqGroupFiles.svg</file>
+        <file>icons/pqReset.svg</file>
+        <file>icons/pqAdvanced.svg</file>
+        <file>icons/pqPlus.svg</file>
     </qresource>
 </RCC>

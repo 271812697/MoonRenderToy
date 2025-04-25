@@ -1,5 +1,6 @@
 #include "pqLoadDataReaction.h"
 #include "pqFileDialog.h"
+#include <QtWidgets/QFileDialog>
 #include <QDebug>
 #include <QInputDialog>
 #include <QMap>
@@ -12,6 +13,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "core/log.h"
+#include "pathtrace/PathTrace.h"
 
 //-----------------------------------------------------------------------------
 pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
@@ -24,6 +27,7 @@ pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
 
 void pqLoadDataReaction::onTriggered()
 {
+	/*
 	QWidget* mainwidget = nullptr;
 	Q_FOREACH(QWidget * widget, QApplication::topLevelWidgets())
 	{
@@ -42,6 +46,17 @@ void pqLoadDataReaction::onTriggered()
 	if (fileDialog.exec() == QDialog::Accepted) {
 
 	}
+	*/
+
+	QString fileName = QFileDialog::getOpenFileName(nullptr,
+		tr("Open Flow Scene"),
+		QDir::homePath(),
+		tr("Flow Scene Files (*.scene;*.gltf)"));
+
+	if (!QFileInfo::exists(fileName))
+		return;
+	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
+	PathTrace::SwitchScene(fileName.toStdString());
 
 }
 

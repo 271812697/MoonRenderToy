@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QtCore/QVariant>
 #include <QtGui/QIcon>
 #include <QtWidgets/QApplication>
@@ -148,7 +147,7 @@ public:
 		GroupFiles->setObjectName(QString::fromUtf8("GroupFiles"));
 		GroupFiles->setCheckable(true);
 		QIcon icon;
-		icon.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqGroupFiles.svg"), QSize(), QIcon::Normal, QIcon::Off);
+		icon.addFile(QString::fromUtf8(":/widgets/icons/pqGroupFiles.svg"), QSize(), QIcon::Normal, QIcon::Off);
 		GroupFiles->setIcon(icon);
 
 		hboxLayout->addWidget(GroupFiles);
@@ -392,12 +391,12 @@ public:
 		QWidget::setTabOrder(CreateFolder, Favorites);
 		QWidget::setTabOrder(Favorites, Files);
 
-		//retranslateUi(pqFileDialog);
+		retranslateUi(pqFileDialog);
 
-		//OK->setDefault(true);
+		OK->setDefault(true);
 
 
-		//QMetaObject::connectSlotsByName(pqFileDialog);
+		QMetaObject::connectSlotsByName(pqFileDialog);
 	} // setupUi
 
 	void retranslateUi(QWidget* pqFileDialog)

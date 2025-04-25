@@ -267,8 +267,12 @@ namespace PathTrace
 			}
 		}
 		if (instanceId != -1) {
-			CORE_INFO("Hit {0} pos ({1},{2})", meshInstances[instanceId].name, x, y);
+
+			Vec3 p = (vert0 * bary.x + vert1 * bary.y + vert2 * bary.z).xyz();
+			camera->setPivot(p);
+			CORE_INFO("Hit {0} pos ({1},{2},{3})", meshInstances[instanceId].name, p.x, p.y, p.z);
 		}
+
 
 		return instanceId;
 	}

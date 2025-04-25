@@ -21,15 +21,17 @@ namespace PathTrace {
 	bool objectPropChanged = false;
 	bool showTransform = false;
 	bool space_down = false;
+	bool switchScene = false;
+	std::string switchSceneName = "";
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
 
-	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
@@ -41,6 +43,13 @@ namespace PathTrace {
 	}
 	RenderOptions& GetRenderOptions() {
 		return renderOptions;
+	}
+	void Update() {
+		if (switchScene) {
+			switchScene = false;
+			LoadScene(switchSceneName);
+			InitRenderer();
+		}
 	}
 	void GetSceneFiles()
 	{
@@ -73,6 +82,10 @@ namespace PathTrace {
 		}
 	}
 
+	void SwitchScene(std::string sceneName) {
+		switchScene = true;
+		switchSceneName = sceneName;
+	}
 	void LoadScene(std::string sceneName)
 	{
 		delete scene;
@@ -136,17 +149,20 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 
+		
+
 		if (mouseMiddle) {
-			scene->camera->Strafe((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->camera->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
 			scene->dirty = true;
 		}
 		else if (mouseRight)
 		{
-			scene->camera->OffsetOrientation((_x - x) * 0.1, (_y - y) * 0.1);
+
+			scene->camera->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
 			scene->dirty = true;
 		}
-		x = _x;
-		y = _y;
+		//x = _x;
+		//y = _y;
 	}
 
 	void CameraController::mouseLeftPress(int x, int y)
@@ -155,22 +171,28 @@ namespace PathTrace {
 		scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y);;
 	}
 
-	void CameraController::mouseMiddlePress()
+	void CameraController::mouseMiddlePress(int x, int y)
 	{
+		this->tx = x;
+		this->ty = y;
+		scene->camera->UpdateCamera();
 		mouseMiddle = true;
 	}
 
-	void CameraController::mouseRightPress()
+	void CameraController::mouseRightPress(int x, int y)
 	{
+		this->rx = x;
+		this->ry = y;
+		scene->camera->UpdateCamera();
 		mouseRight = true;
 	}
 
-	void CameraController::mouseMiddleRelease()
+	void CameraController::mouseMiddleRelease(int x, int y)
 	{
 		mouseMiddle = false;
 	}
 
-	void CameraController::mouseRightRelease()
+	void CameraController::mouseRightRelease(int x, int y)
 	{
 		mouseRight = false;
 	}

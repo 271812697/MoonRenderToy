@@ -247,6 +247,7 @@ namespace MOON {
 	{
 		TEST::TestInstance::Instance().flush();
 		TEST::TestInstance::Instance().execute();
+		PathTrace::Update();
 		PathTrace::GetRenderer()->Update(0.016);
 		PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
@@ -302,12 +303,12 @@ namespace MOON {
 
 		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_down(Viewer::MouseButton::Middle);
-			PathTrace::CameraController::Instance().mouseMiddlePress();
+			PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
 		}
 
 		else if (mb == Qt::MouseButton::RightButton)
 		{
-			PathTrace::CameraController::Instance().mouseRightPress();
+			PathTrace::CameraController::Instance().mouseRightPress(x, y);
 			viewer.mouse_down(Viewer::MouseButton::Right);
 		}
 
@@ -319,13 +320,26 @@ namespace MOON {
 		auto pos = event->localPos();
 		//cursorX = pos.x() * 1.5;
 		//cursorY = pos.y() * 1.5;
-
-		PathTrace::CameraController::Instance().mouseMove(pos.x(), pos.y());
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto x = event->x();
+		auto y = event->y();
+#else
+		auto x = e2->position().x();
+		auto y = e2->position().y();
+#endif
+		PathTrace::CameraController::Instance().mouseMove(x, y);
 		viewer.mouse_move(pos.x() * 1.5, pos.y() * 1.5);
 	}
 
 	void ViewerWindow::mouseReleaseEvent(QMouseEvent* event)
 	{
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto x = event->x();
+		auto y = event->y();
+#else
+		auto x = e2->position().x();
+		auto y = e2->position().y();
+#endif
 		if (blockMouseMessage) {
 			return;
 		}
@@ -334,13 +348,13 @@ namespace MOON {
 			viewer.mouse_up(Viewer::MouseButton::Left);
 		else if (mb == Qt::MouseButton::MiddleButton) {
 			viewer.mouse_up(Viewer::MouseButton::Middle);
-			PathTrace::CameraController::Instance().mouseMiddleRelease();
+			PathTrace::CameraController::Instance().mouseMiddleRelease(x, y);
 		}
 
 		else if (mb == Qt::MouseButton::RightButton)
 		{
 			viewer.mouse_up(Viewer::MouseButton::Right);
-			PathTrace::CameraController::Instance().mouseRightRelease();
+			PathTrace::CameraController::Instance().mouseRightRelease(x, y);
 		}
 
 	}

@@ -16,13 +16,9 @@
 #include <QShowEvent>
 #include <QTabWidget>
 #include <QtDebug>
-
 #include <string>
 
-
-
 #include "uipqFileDialog.h"
-
 #include <QtGlobal>
 
 namespace
@@ -35,9 +31,6 @@ namespace
 			return filter.split(";;", Qt::SkipEmptyParts);
 		}
 
-		// check if '\n' is being used as separator.
-		// (not sure why, but the old code was doing it, and if some applications
-		// are relying on it, I don't want to break them right now).
 		return filter.split('\n', Qt::SkipEmptyParts);
 	}
 
@@ -260,7 +253,7 @@ void pqFileDialog::addImplementation(unsigned int location)
 	impl.Ui.CreateFolder->setToolTip(
 		tr("Create New Folder (%1)").arg(impl.Ui.CreateFolder->shortcut().toString()));
 
-	impl.Ui.ShowDetail->setIcon(QIcon(":/pqWidgets/Icons/pqAdvanced.svg"));
+	impl.Ui.ShowDetail->setIcon(QIcon(":/widgets/icons/pqAdvanced.svg"));
 
 	//impl.Ui.Files->setModel(&impl.FileFilter);
 	impl.Ui.Files->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -280,10 +273,10 @@ void pqFileDialog::addImplementation(unsigned int location)
 	QObject::connect(shortcutDel, &QShortcut::activated, this,
 		&pqFileDialog::onRemoveSelectedDirectoriesFromFavorites);
 
-	impl.Ui.AddCurrentDirectoryToFavorites->setIcon(QIcon(":/QtWidgets/Icons/pqPlus.svg"));
+	impl.Ui.AddCurrentDirectoryToFavorites->setIcon(QIcon(":/widgets/icons/pqPlus.svg"));
 	QObject::connect(impl.Ui.AddCurrentDirectoryToFavorites, SIGNAL(clicked()), this,
 		SLOT(onAddCurrentDirectoryToFavorites()));
-	impl.Ui.ResetFavortiesToSystemDefault->setIcon(QIcon(":/pqWidgets/Icons/pqReset.svg"));
+	impl.Ui.ResetFavortiesToSystemDefault->setIcon(QIcon(":/widgets/icons/pqReset.svg"));
 	QObject::connect(impl.Ui.ResetFavortiesToSystemDefault, SIGNAL(clicked()), this,
 		SLOT(onResetFavoritesToSystemDefault()));
 
