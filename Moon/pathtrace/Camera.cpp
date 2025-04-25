@@ -149,24 +149,28 @@ namespace PathTrace
 	{
 		pivot = p;
 		position = pivot - radius * forward;
+		UpdateCamera();
 	}
 
 	void Camera::Strafe(float dx, float dy)
 	{
-		Vec3 translation = right * -dx + up * dy;
-		pivot = pivot + translation;
-		position = pivot - radius * forward;
+		Vec3 translation = lastright * -dx + lastup * dy;
+		pivot = lastpivot + translation;
+		position = pivot - radius * lastforward;
+		std::cout << "Strafe:" << dx << "," << dy << std::endl;
 	}
 
 	void Camera::SetRadius(float dr)
 	{
 		radius += dr;
 		position = pivot - radius * forward;
+		UpdateCamera();
 	}
 
 	void Camera::SetFov(float val)
 	{
 		fov = Math::Radians(val);
+		UpdateCamera();
 	}
 
 	void Camera::UpdateCamera()
@@ -175,6 +179,7 @@ namespace PathTrace
 		lastup = up;
 		lastright = right;
 		lastforward = forward;
+		lastpivot = pivot;
 	}
 
 	void Camera::ComputeViewProjectionMatrix(float* view, float* projection, float ratio)

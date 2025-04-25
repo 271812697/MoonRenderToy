@@ -26,12 +26,12 @@ namespace PathTrace {
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
 
-	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
@@ -149,16 +149,16 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 
-		CORE_INFO("{0},{1}", x, y);
+		
 
 		if (mouseMiddle) {
-			scene->camera->Strafe((_x - x) * 0.1, (_y - y) * 0.1);
+			scene->camera->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
 			scene->dirty = true;
 		}
 		else if (mouseRight)
 		{
 
-			scene->camera->OffsetRotateByScreen((_x - x) * 0.5, (y - _y) * 0.5);
+			scene->camera->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
 			scene->dirty = true;
 		}
 		//x = _x;
@@ -173,13 +173,16 @@ namespace PathTrace {
 
 	void CameraController::mouseMiddlePress(int x, int y)
 	{
+		this->tx = x;
+		this->ty = y;
+		scene->camera->UpdateCamera();
 		mouseMiddle = true;
 	}
 
 	void CameraController::mouseRightPress(int x, int y)
 	{
-		this->x = x;
-		this->y = y;
+		this->rx = x;
+		this->ry = y;
 		scene->camera->UpdateCamera();
 		mouseRight = true;
 	}

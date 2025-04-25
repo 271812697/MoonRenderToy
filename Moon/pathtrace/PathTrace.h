@@ -50,7 +50,10 @@ namespace PathTrace {
 		void mouseRightRelease(int x, int y);
 		void wheelMouseWheel(float delta);
 	private:
-		int x, y;
+		//for rotate
+		int rx, ry;
+		//for translate
+		int tx, ty;
 		bool mouseMiddle = false;
 
 		bool mouseRight = false;

@@ -25,11 +25,13 @@ namespace PathTrace
 		Vec3 up;
 		Vec3 right;
 		Vec3 forward;
+		Vec3 pivot;
 		Vec3 lastposition;
 		Vec3 lastup;
 		Vec3 lastright;
 		Vec3 lastforward;
-		Vec3 pivot;
+		Vec3 lastpivot;
+		
 
 		float focalDist;
 		float aperture;
