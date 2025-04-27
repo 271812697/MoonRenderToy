@@ -157,7 +157,6 @@ namespace PathTrace
 		Vec3 translation = lastright * -dx + lastup * dy;
 		pivot = lastpivot + translation;
 		position = pivot - radius * lastforward;
-		std::cout << "Strafe:" << dx << "," << dy << std::endl;
 	}
 
 	void Camera::SetRadius(float dr)
@@ -171,6 +170,9 @@ namespace PathTrace
 	{
 		fov = Math::Radians(val);
 		UpdateCamera();
+	}
+	Vec3 Camera::GetEye() {
+		return position;
 	}
 
 	void Camera::UpdateCamera()

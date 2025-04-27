@@ -199,8 +199,17 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-		scene->camera->SetRadius(delta * 0.025);
+		scene->camera->SetRadius(delta * 0.0025);
 		GetScene()->dirty = true;
+	}
+	void CameraController::GetCameraPosition(float eye[3]) {
+		Vec3 p = scene->camera->GetEye();
+		eye[0] = p.x;
+		eye[1] = p.y;
+		eye[2] = p.z;
+	}
+	void CameraController::GetViewProject(float view[16], float proj[16]) {
+		scene->camera->ComputeViewProjectionMatrix(view,proj,1.0f* renderOptions.windowResolution.x/ renderOptions.windowResolution.y);
 	}
 
 }

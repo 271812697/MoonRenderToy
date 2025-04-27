@@ -1,1 +1,0 @@
-https://www.cgtrader.com/free-3d-models/car/racing-car/bike1
