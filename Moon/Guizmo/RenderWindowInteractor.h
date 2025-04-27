@@ -1,6 +1,7 @@
 #pragma once
 #include "GizmoObject.h"
 #include<algorithm>
+class QEvent;
 namespace MOON {
 
 	class  ExecuteCommand;
@@ -8,6 +9,8 @@ namespace MOON {
 	{
 	public:
 		static RenderWindowInteractor* New();
+		static RenderWindowInteractor* Instance();
+		void ReceiveEvent(QEvent* e);
 		virtual void Initialize();
 		void Terminate();
 		void ReInitialize()

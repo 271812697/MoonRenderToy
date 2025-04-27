@@ -49,6 +49,8 @@ namespace PathTrace {
 		void mouseMiddleRelease(int x, int y);
 		void mouseRightRelease(int x, int y);
 		void wheelMouseWheel(float delta);
+		void GetCameraPosition(float eye[3]);
+		void GetViewProject(float view[16], float proj[16]);
 	private:
 		//for rotate
 		int rx, ry;

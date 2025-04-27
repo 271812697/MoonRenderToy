@@ -42,8 +42,8 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         glm_static
         std_image
         assimp
-        LLGL_OpenGL
         tinygltf
+        core
 )
 target_include_directories(${TARGET_NAME} PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR} 
@@ -69,4 +69,10 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/OpenImageDenoise.dll DE
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
+set(PROJECT_ENGINE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Engine\\")
+file(TO_CMAKE_PATH "${PROJECT_ENGINE_PATH}" PROJECT_ENGINE_PATH_CMAKE)
+target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_ENGINE_PATH="${PROJECT_ENGINE_PATH_CMAKE}")
+set(PROJECT_EDITOR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Editor\\")
+file(TO_CMAKE_PATH "${PROJECT_EDITOR_PATH}" PROJECT_EDITOR_PATH_CMAKE)
+target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_EDITOR_PATH="${PROJECT_EDITOR_PATH_CMAKE}")
 
