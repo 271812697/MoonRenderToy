@@ -35,12 +35,12 @@ void Core::SceneSystem::SceneManager::Update()
 void Core::SceneSystem::SceneManager::LoadAndPlayDelayed(const std::string& p_path, bool p_absolute)
 {
 	m_delayedLoadCall = [this, p_path, p_absolute]
-	{
-		std::string previousSourcePath = GetCurrentSceneSourcePath();
-		LoadScene(p_path, p_absolute);
-		StoreCurrentSceneSourcePath(previousSourcePath);
-		GetCurrentScene()->Play();
-	};
+		{
+			std::string previousSourcePath = GetCurrentSceneSourcePath();
+			LoadScene(p_path, p_absolute);
+			StoreCurrentSceneSourcePath(previousSourcePath);
+			GetCurrentScene()->Play();
+		};
 }
 
 void Core::SceneSystem::SceneManager::LoadEmptyScene()
@@ -73,14 +73,14 @@ void Core::SceneSystem::SceneManager::LoadEmptyLightedScene()
 	camera.transform.SetLocalPosition({ 0.0f, 3.0f, 8.0f });
 	camera.transform.SetLocalRotation(Maths::FQuaternion({ 20.0f, 180.0f, 0.0f }));
 
-    auto& cube=m_currentScene->CreateActor("Cube");
-    //m_context.editorResources->GetModel("Arrow_Translate");
-   
-    auto model=Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().GetResource(":Models/Cube.fbx"); 
-    auto material= Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().GetResource(":Materials\\Default.mat");
-    cube.AddComponent<ECS::Components::CModelRenderer>().SetModel(model);
-    if(material)
-    cube.AddComponent<ECS::Components::CMaterialRenderer>().FillWithMaterial(*material);
+	auto& cube = m_currentScene->CreateActor("Cube");
+	//m_context.editorResources->GetModel("Arrow_Translate");
+
+	auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().GetResource(":Models/Cube.fbx");
+	auto material = Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().GetResource(":Materials\\Default.mat");
+	cube.AddComponent<ECS::Components::CModelRenderer>().SetModel(model);
+	if (material)
+		cube.AddComponent<ECS::Components::CMaterialRenderer>().FillWithMaterial(*material);
 }
 
 bool Core::SceneSystem::SceneManager::LoadScene(const std::string& p_path, bool p_absolute)

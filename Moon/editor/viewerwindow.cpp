@@ -102,7 +102,7 @@ namespace MOON {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
-		editorContext = new ::Editor::Core::Context("","");
+		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadEmptyLightedScene();
 		editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
 	}
@@ -124,24 +124,27 @@ namespace MOON {
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		//PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();
-		
+
 		Maths::FVector3 p;
 		Maths::FMatrix4 view, proj;
-		
+
 		PathTrace::CameraController::Instance().GetCameraPosition(&p.x);
-		PathTrace::CameraController::Instance().GetViewProject(view.data,proj.data);
-		auto& engineUBO = editorContext->engineUBO;	
-		size_t offset = sizeof(Maths::FMatrix4); 
+		PathTrace::CameraController::Instance().GetViewProject(view.data, proj.data);
+		auto& engineUBO = editorContext->engineUBO;
+		size_t offset = sizeof(Maths::FMatrix4);
 		engineUBO->SetSubData(view, std::ref(offset));
 		engineUBO->SetSubData(proj, std::ref(offset));
 		engineUBO->SetSubData(p, std::ref(offset));
 
 		view = Maths::FMatrix4::Transpose(view);
 		proj = Maths::FMatrix4::Transpose(proj);
-		editorContext->shapeDrawer->SetViewProjection(proj*view);
-		editorRender->RenderGrid(p, {1,0,0});
+		editorContext->shapeDrawer->SetViewProjection(proj * view);
+		editorContext->lightSSBO->Bind(0);
+		editorRender->UpdateLights(*editorContext->sceneManager.GetCurrentScene());
+		editorRender->RenderGrid(p, { 1,0,0 });
 		editorRender->RenderCameras();
 		editorRender->RenderScene(p);
+		editorContext->lightSSBO->Unbind();
 
 	}
 

@@ -70,7 +70,6 @@ layout(location = 0) in _vtx {
 };
 
 layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 bloom;
 layout(location = 0) uniform float ibl_exposure;
 
 // sampler binding points (texture units) 17-19 are reserved for PBR IBL
@@ -823,7 +822,8 @@ vec3 EvaluateAL(const Pixel px, const vec3 L) {
     float HoL = max(dot(H, L), 0.0);
 
     if (model_x == 1) {  // standard model
-        Fr = EvalSpecularLobe(px, L, H, NoV, NoL, NoH, HoL) * px.Ec;  // compensate energy
+        //Fr = EvalSpecularLobe(px, L, H, NoV, NoL, NoH, HoL) * px.Ec;  // compensate energy
+        Fr = EvalSpecularLobe(px, L, H, NoV, NoL, NoH, HoL) ;  // compensate energy
         Fd = EvalDiffuseLobe(px, NoV, NoL, HoL);
         Lo = (Fd + Fr) * NoL;
     }
@@ -907,6 +907,7 @@ void InitPixel(inout Pixel px, const vec3 camera_pos) {
         px.aniso_T = normalize(px.TBN * px.aniso_T);
         px.aniso_B = normalize(cross(px._normal, px.aniso_T));  // use geometric normal instead of normal map
         px.Ec = 1.0 + px.F0 * (1.0 / px.DFG.y - 1.0);  // energy compensation factor >= 1.0
+        //px.Ec = vec3(1.0);
     }
 
     // refraction model, for isotropic dielectrics only
@@ -1122,31 +1123,17 @@ void main() {
     //vec3 Lo=albedo.rgb;
     vec3 Le = vec3(0.0);  // emission
 
-    Lo += EvaluateIBL(px) * min(max(ibl_exposure, 0.5),1.0);
+  
 
     for(int i=0;i<ssbo_Lights.length();i++){
         //DIRECTIONAL
         if(ssbo_Lights[i][3][0]==1.0){
          Lo += EvaluateADL(px, -ssbo_Lights[i][1].rgb, 1.0) * UnPack(ssbo_Lights[i][2][0]) * ssbo_Lights[i][3][3];
         }
-        //POINT
-        if(ssbo_Lights[i][3][0]==0.0){
-        float visibility = 1.0;
-        visibility -= EvalOcclusion(px, shadow_map1[uint(ssbo_Lights[i][2][2])], ssbo_Lights[i][0].rgb, 0.001);
-        vec3 pc = EvaluateAPL(px, ssbo_Lights[i][0].rgb, ssbo_Lights[i][2][1],ssbo_Lights[i][1][3], ssbo_Lights[i][2][3], visibility);
-        Lo += pc * UnPack(ssbo_Lights[i][2][0]) * ssbo_Lights[i][3][3];
-        }
-        //SPOT
-        if(ssbo_Lights[i][3][0]==2.0){
 
-        vec3 sc = EvaluateASL(px,ssbo_Lights[i][0].rgb,-normalize(ssbo_Lights[i][1].rgb),
-        ssbo_Lights[i][2][1], cos(radians(ssbo_Lights[i][3][1])),
-        cos(radians(ssbo_Lights[i][3][1] + ssbo_Lights[i][3][2])));
-        Lo += 3.5*sc * UnPack(ssbo_Lights[i][2][0]) * ssbo_Lights[i][3][3];
-        }
 
     }
-    bloom = vec4(0.0,0.0,0.0,1.0);
+    //Lo=vec3(1.0,0.0,0.0);
     color = vec4(Lo + Le, 1.0);
  
 }

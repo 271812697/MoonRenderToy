@@ -34,7 +34,7 @@ void main()
 #version 430 core
 
 layout(location = 0) out vec4 FRAGMENT_COLOR;
-layout(location = 1) out vec4 bloom;
+
 
 in VS_OUT
 {
@@ -62,7 +62,6 @@ void main()
 {
     const vec4 diffuse = texture(u_DiffuseMap, u_TextureOffset + vec2(mod(fs_in.TexCoords.x * u_TextureTiling.x, 1), mod(fs_in.TexCoords.y * u_TextureTiling.y, 1))) * u_Diffuse;
     FRAGMENT_COLOR = vec4(Lambert(fs_in.FragPos, fs_in.Normal) * diffuse.rgb, diffuse.a);
-    FRAGMENT_COLOR.xyz=pow(FRAGMENT_COLOR.xyz,vec3(2.2));
-    bloom = vec4(0.0);
+    
     
 }
