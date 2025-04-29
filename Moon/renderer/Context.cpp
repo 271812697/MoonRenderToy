@@ -10,14 +10,16 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	projectName(p_projectName),
 	projectFilePath(p_projectPath + p_projectName + ".project"),
 	engineAssetsPath(PROJECT_ENGINE_PATH),
+	projectAssetsPath(engineAssetsPath + "/"),
 	//engineAssetsPath( "\\"),
-	projectAssetsPath(p_projectPath + "Assets\\"),
+	//projectAssetsPath(p_projectPath + "Assets"),
 	projectScriptsPath(p_projectPath + "Scripts\\"),
 	editorAssetsPath(PROJECT_EDITOR_PATH),
 	sceneManager(projectAssetsPath),
 	projectSettings(projectFilePath)
 {
 	;
+
 	if (!IsProjectSettingsIntegrityVerified())
 	{
 		ResetProjectSettings();
@@ -55,7 +57,7 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	ServiceLocator::Provide<Context>(*this);
 	ServiceLocator::Provide<Physics::Core::PhysicsEngine>(*physicsEngine);
 	ServiceLocator::Provide<ModelManager>(modelManager);
-	
+
 	ServiceLocator::Provide<TextureManager>(textureManager);
 	ServiceLocator::Provide<ShaderManager>(shaderManager);
 	ServiceLocator::Provide<MaterialManager>(materialManager);
@@ -69,19 +71,19 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	scriptInterpreter = std::make_unique<::Core::Scripting::ScriptInterpreter>(projectScriptsPath);
 
 	engineUBO = std::make_unique<Rendering::Buffers::UniformBuffer>
-	(
-		/* UBO Data Layout */
-		sizeof(Maths::FMatrix4) +
-		sizeof(Maths::FMatrix4) +
-		sizeof(Maths::FMatrix4) +
-		sizeof(Maths::FVector3) +
-		sizeof(float) +
-		sizeof(Maths::FMatrix4),
-		0, 0,	Rendering::Buffers::EAccessSpecifier::STREAM_DRAW
-	);
+		(
+			/* UBO Data Layout */
+			sizeof(Maths::FMatrix4) +
+			sizeof(Maths::FMatrix4) +
+			sizeof(Maths::FMatrix4) +
+			sizeof(Maths::FVector3) +
+			sizeof(float) +
+			sizeof(Maths::FMatrix4),
+			0, 0, Rendering::Buffers::EAccessSpecifier::STREAM_DRAW
+		);
 
-	lightSSBO			= std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW);
-	simulatedLightSSBO	= std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW); // Used in Asset View
+	lightSSBO = std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW);
+	simulatedLightSSBO = std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW); // Used in Asset View
 
 	std::vector<Maths::FMatrix4> simulatedLights;
 

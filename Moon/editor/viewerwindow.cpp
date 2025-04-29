@@ -103,7 +103,8 @@ namespace MOON {
 		}
 		initFlag = true;
 		editorContext = new ::Editor::Core::Context("", "");
-		editorContext->sceneManager.LoadEmptyLightedScene();
+		//editorContext->sceneManager.LoadEmptyLightedScene();
+		editorContext->sceneManager.LoadScene("demo.scene");
 		editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
 	}
 
