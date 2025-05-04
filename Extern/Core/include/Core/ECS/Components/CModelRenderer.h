@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -42,12 +47,12 @@ namespace Core::ECS::Components
 		* Defines the model to use
 		* @param p_model
 		*/
-		void SetModel(Rendering::Resources::Model* p_model);
+		void SetModel(::Rendering::Resources::Model* p_model);
 
 		/**
 		* Returns the current model
 		*/
-		Rendering::Resources::Model* GetModel() const;
+		::Rendering::Resources::Model* GetModel() const;
 
 		/**
 		* Sets a bounding mode
@@ -63,13 +68,13 @@ namespace Core::ECS::Components
 		/**
 		* Returns the custom bounding sphere
 		*/
-		const Rendering::Geometry::BoundingSphere& GetCustomBoundingSphere() const;
+		const ::Rendering::Geometry::BoundingSphere& GetCustomBoundingSphere() const;
 
 		/**
 		* Sets the custom bounding sphere
 		* @param p_boundingSphere
 		*/
-		void SetCustomBoundingSphere(const Rendering::Geometry::BoundingSphere& p_boundingSphere);
+		void SetCustomBoundingSphere(const ::Rendering::Geometry::BoundingSphere& p_boundingSphere);
 
 		/**
 		* Serialize the component
@@ -92,9 +97,9 @@ namespace Core::ECS::Components
 		//virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
 
 	private:
-		Rendering::Resources::Model* m_model = nullptr;
-		//Tools::Eventing::Event<> m_modelChangedEvent;
-		Rendering::Geometry::BoundingSphere m_customBoundingSphere = { {}, 1.0f };
+		::Rendering::Resources::Model* m_model = nullptr;
+
+		::Rendering::Geometry::BoundingSphere m_customBoundingSphere = { {}, 1.0f };
 		EFrustumBehaviour m_frustumBehaviour = EFrustumBehaviour::CULL_MODEL;
 	};
 }

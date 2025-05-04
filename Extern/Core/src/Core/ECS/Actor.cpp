@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <algorithm>
 
@@ -17,6 +21,7 @@
 #include "Core/ECS/Components/CSpotLight.h"
 #include "Core/ECS/Components/CAmbientBoxLight.h"
 #include "Core/ECS/Components/CAmbientSphereLight.h"
+#include "Core/ECS/Components/CPostProcessStack.h"
 
 Tools::Eventing::Event<Core::ECS::Actor&> Core::ECS::Actor::DestroyedEvent;
 Tools::Eventing::Event<Core::ECS::Actor&> Core::ECS::Actor::CreatedEvent;
@@ -142,6 +147,22 @@ void Core::ECS::Actor::DetachFromParent()
 	m_parentID = 0;
 
 	transform.RemoveParent();
+}
+
+bool Core::ECS::Actor::IsDescendantOf(const Actor* p_actor) const
+{
+	const Actor* currentParentActor = m_parent;
+
+	while (currentParentActor != nullptr)
+	{
+		if (currentParentActor == p_actor)
+		{
+			return true;
+		}
+		currentParentActor = currentParentActor->GetParent();
+	}
+
+	return false;
 }
 
 bool Core::ECS::Actor::HasParent() const
@@ -443,6 +464,7 @@ void Core::ECS::Actor::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XM
 				else if (componentType == typeid(Components::CSpotLight).name())			component = &AddComponent<Core::ECS::Components::CSpotLight>();
 				else if (componentType == typeid(Components::CAmbientBoxLight).name())		component = &AddComponent<Core::ECS::Components::CAmbientBoxLight>();
 				else if (componentType == typeid(Components::CAmbientSphereLight).name())	component = &AddComponent<Core::ECS::Components::CAmbientSphereLight>();
+				else if (componentType == typeid(Components::CPostProcessStack).name())		component = &AddComponent<Core::ECS::Components::CPostProcessStack>();
 
 				if (component)
 					component->OnDeserialize(p_doc, currentComponent->FirstChildElement("data"));

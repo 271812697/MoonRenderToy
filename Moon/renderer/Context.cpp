@@ -1,30 +1,72 @@
 #include <filesystem>
 #include <Rendering/Entities/Light.h>
 #include <Core/Global/ServiceLocator.h>
+#include <Tools/Utils/SystemCalls.h>
+#include <Debug/Assertion.h>
+#include <Core/Scripting/ScriptEngine.h>
+
 #include "Context.h"
+
 using namespace Core::Global;
 using namespace Core::ResourceManagement;
+
+constexpr std::array<std::pair<int, int>, 13> kResolutions
+{
+	std::make_pair(640, 360), // nHD
+	std::make_pair(854, 480), // FWVGA
+	std::make_pair(960, 540), // qHD
+	std::make_pair(1024, 576), // WSVGA
+	std::make_pair(1280, 720), // HD
+	std::make_pair(1366, 768), // FWXGA
+	std::make_pair(1600, 900), // HD+
+	std::make_pair(1920, 1080), // Full HD
+	std::make_pair(2560, 1440), // QHD
+	std::make_pair(3200, 1800), // QHD+
+	std::make_pair(3840, 2160), // 4K UHD
+	std::make_pair(5120, 2880), // 5K
+	std::make_pair(7680, 4320), // 8K UHD
+};
+
+std::array<int, 4> FindBestFitWindowSizeAndPosition(std::array<int, 4> p_workAreaSize)
+{
+	// Extract work area dimensions
+	int workAreaX = p_workAreaSize[0];
+	int workAreaY = p_workAreaSize[1];
+	int workAreaWidth = p_workAreaSize[2];
+	int workAreaHeight = p_workAreaSize[3];
+
+	// Iterate over available resolutions
+	for (auto it = kResolutions.rbegin(); it != kResolutions.rend(); ++it)
+	{
+		int width = it->first;
+		int height = it->second;
+
+		// Check if resolution fits within work area
+		if (width <= workAreaWidth && height <= workAreaHeight)
+		{
+			// Center the resolution within the work area
+			int posX = workAreaX + workAreaWidth / 2 - width / 2;
+			int posY = workAreaY + workAreaHeight / 2 - height / 2;
+
+			return { posX, posY, width, height };
+		}
+	}
+
+	assert(false, "No resolution found to fit the work area");
+	return {};
+}
 
 Editor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
 	projectPath(p_projectPath),
 	projectName(p_projectName),
-	projectFilePath(p_projectPath + p_projectName + ".project"),
+	projectFilePath(p_projectPath + p_projectName + ".ovproject"),
 	engineAssetsPath(PROJECT_ENGINE_PATH),
-	projectAssetsPath(engineAssetsPath + "/"),
-	//engineAssetsPath( "\\"),
-	//projectAssetsPath(p_projectPath + "Assets"),
+	projectAssetsPath(p_projectPath + "Assets\\"),
 	projectScriptsPath(p_projectPath + "Scripts\\"),
 	editorAssetsPath(PROJECT_EDITOR_PATH),
 	sceneManager(projectAssetsPath),
 	projectSettings(projectFilePath)
 {
-	;
-
-	if (!IsProjectSettingsIntegrityVerified())
-	{
-		ResetProjectSettings();
-		projectSettings.Rewrite();
-	}
 
 	ModelManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 	TextureManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
@@ -33,19 +75,19 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	SoundManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 
 
-	/* Graphics context creation */
-	driver = std::make_unique<Rendering::Context::Driver>(Rendering::Settings::DriverSettings{ false });
-	renderer = std::make_unique<::Core::ECS::Renderer>(*driver);
-	renderer->SetCapability(Rendering::Settings::ERenderingCapability::MULTISAMPLE, true);
-	shapeDrawer = std::make_unique<Rendering::Core::ShapeDrawer>(*renderer);
 
-	std::filesystem::create_directories(std::string(getenv("APPDATA")) + "\\erloadTech\\Editor\\");
+
+	/* Graphics context creation */
+	driver = std::make_unique<Rendering::Context::Driver>(Rendering::Settings::DriverSettings{ true });
+	//textureRegistry = std::make_unique<Editor::Utils::TextureRegistry>();
+
+	std::filesystem::create_directories(Tools::Utils::SystemCalls::GetPathToAppdata() + "\\erloadTech\\Editor\\");
+
 
 
 
 	/* Audio */
-	audioEngine = std::make_unique<Audio::Core::AudioEngine>(projectAssetsPath);
-	audioPlayer = std::make_unique<Audio::Core::AudioPlayer>(*audioEngine);
+	//audioEngine = std::make_unique<Audio::Core::AudioEngine>();
 
 	/* Editor resources */
 	editorResources = std::make_unique<Editor::Core::EditorResources>(editorAssetsPath);
@@ -53,11 +95,13 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	/* Physics engine */
 	physicsEngine = std::make_unique<Physics::Core::PhysicsEngine>(Physics::Settings::PhysicsSettings{ {0.0f, -9.81f, 0.0f } });
 
+	/* Scripting */
+	scriptEngine = std::make_unique<::Core::Scripting::ScriptEngine>();
+	scriptEngine->SetScriptRootFolder(projectScriptsPath);
+
 	/* Service Locator providing */
-	ServiceLocator::Provide<Context>(*this);
 	ServiceLocator::Provide<Physics::Core::PhysicsEngine>(*physicsEngine);
 	ServiceLocator::Provide<ModelManager>(modelManager);
-
 	ServiceLocator::Provide<TextureManager>(textureManager);
 	ServiceLocator::Provide<ShaderManager>(shaderManager);
 	ServiceLocator::Provide<MaterialManager>(materialManager);
@@ -65,46 +109,9 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 
 	ServiceLocator::Provide<::Core::SceneSystem::SceneManager>(sceneManager);
 	ServiceLocator::Provide<Audio::Core::AudioEngine>(*audioEngine);
-	ServiceLocator::Provide<Audio::Core::AudioPlayer>(*audioPlayer);
+	ServiceLocator::Provide<::Core::Scripting::ScriptEngine>(*scriptEngine);
+	ServiceLocator::Provide<::Editor::Core::Context>(*this);
 
-	/* Scripting */
-	scriptInterpreter = std::make_unique<::Core::Scripting::ScriptInterpreter>(projectScriptsPath);
-
-	engineUBO = std::make_unique<Rendering::Buffers::UniformBuffer>
-		(
-			/* UBO Data Layout */
-			sizeof(Maths::FMatrix4) +
-			sizeof(Maths::FMatrix4) +
-			sizeof(Maths::FMatrix4) +
-			sizeof(Maths::FVector3) +
-			sizeof(float) +
-			sizeof(Maths::FMatrix4),
-			0, 0, Rendering::Buffers::EAccessSpecifier::STREAM_DRAW
-		);
-
-	lightSSBO = std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW);
-	simulatedLightSSBO = std::make_unique<Rendering::Buffers::ShaderStorageBuffer>(Rendering::Buffers::EAccessSpecifier::STREAM_DRAW); // Used in Asset View
-
-	std::vector<Maths::FMatrix4> simulatedLights;
-
-	Maths::FTransform simulatedLightTransform;
-	simulatedLightTransform.SetLocalRotation(Maths::FQuaternion({ 45.f, 180.f, 10.f }));
-
-	Rendering::Entities::Light simulatedDirectionalLight(simulatedLightTransform, Rendering::Entities::Light::Type::DIRECTIONAL);
-	simulatedDirectionalLight.color = { 1.f, 1.f, 1.f };
-	simulatedDirectionalLight.intensity = 1.f;
-
-	Rendering::Entities::Light simulatedAmbientLight(simulatedLightTransform, Rendering::Entities::Light::Type::AMBIENT_SPHERE);
-	simulatedAmbientLight.color = { 0.07f, 0.07f, 0.07f };
-	simulatedAmbientLight.intensity = 1.f;
-	simulatedAmbientLight.constant = 1000.0f;
-
-	simulatedLights.push_back(simulatedDirectionalLight.GenerateMatrix());
-	simulatedLights.push_back(simulatedAmbientLight.GenerateMatrix());
-
-	simulatedLightSSBO->SendBlocks<Maths::FMatrix4>(simulatedLights.data(), simulatedLights.size() * sizeof(Maths::FMatrix4));
-
-	ApplyProjectSettings();
 }
 
 Editor::Core::Context::~Context()
@@ -118,39 +125,16 @@ Editor::Core::Context::~Context()
 
 void Editor::Core::Context::ResetProjectSettings()
 {
-	projectSettings.RemoveAll();
-	projectSettings.Add<float>("gravity", -9.81f);
-	projectSettings.Add<int>("x_resolution", 1280);
-	projectSettings.Add<int>("y_resolution", 720);
-	projectSettings.Add<bool>("fullscreen", false);
-	projectSettings.Add<std::string>("executable_name", "Game");
-	projectSettings.Add<std::string>("start_scene", "Scene.scene");
-	projectSettings.Add<bool>("vsync", true);
-	projectSettings.Add<bool>("multisampling", true);
-	projectSettings.Add<int>("samples", 4);
-	projectSettings.Add<int>("opengl_major", 4);
-	projectSettings.Add<int>("opengl_minor", 3);
-	projectSettings.Add<bool>("dev_build", true);
+
 }
 
 bool Editor::Core::Context::IsProjectSettingsIntegrityVerified()
 {
-	return
-		projectSettings.IsKeyExisting("gravity") &&
-		projectSettings.IsKeyExisting("x_resolution") &&
-		projectSettings.IsKeyExisting("y_resolution") &&
-		projectSettings.IsKeyExisting("fullscreen") &&
-		projectSettings.IsKeyExisting("executable_name") &&
-		projectSettings.IsKeyExisting("start_scene") &&
-		projectSettings.IsKeyExisting("vsync") &&
-		projectSettings.IsKeyExisting("multisampling") &&
-		projectSettings.IsKeyExisting("samples") &&
-		projectSettings.IsKeyExisting("opengl_major") &&
-		projectSettings.IsKeyExisting("opengl_minor") &&
-		projectSettings.IsKeyExisting("dev_build");
+
+	return false;
 }
 
 void Editor::Core::Context::ApplyProjectSettings()
 {
-	physicsEngine->SetGravity({ 0.0f, projectSettings.Get<float>("gravity"), 0.0f });
+
 }

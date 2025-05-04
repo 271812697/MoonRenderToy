@@ -200,7 +200,7 @@ namespace asset {
 		else if constexpr (std::is_same_v<T, mat4>) { glProgramUniformMatrix4fv(id, location, 1, GL_FALSE, &val[0][0]); }
 
 		else {
-			static_assert(const_false<T>, "Unspecified template uniform type T ...");
+			//static_assert(const_false<T>, "Unspecified template uniform type T ...");
 		}
 	}
 

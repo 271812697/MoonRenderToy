@@ -1,67 +1,112 @@
-
-
-#include "Audio/Core/AudioEngine.h"
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <algorithm>
+#include <format>
+#include <ranges>
 
-#include <irrklang/irrKlang.h>
+#include <soloud.h>
+#include <soloud_wav.h>
 
-Audio::Core::AudioEngine::AudioEngine(const std::string & p_workingDirectory) : m_workingDirectory(p_workingDirectory)
+#include <Audio/Core/AudioEngine.h>
+#include <Debug/Assertion.h>
+#include <Debug/Logger.h>
+
+Audio::Core::AudioEngine::AudioEngine()
 {
-	m_irrklangEngine = irrklang::createIrrKlangDevice();
+	m_backend = std::make_unique<SoLoud::Soloud>();
 
-	using AudioSourceReceiver	= void(AudioEngine::*)(Audio::Entities::AudioSource&);
+	// If initialization failed
+	if (m_backend->init() != SoLoud::SOLOUD_ERRORS::SO_NO_ERROR)
+	{
+		OVLOG_ERROR("Failed to initialize the audio engine. Playback requests will be ignored.");
+		m_backend.reset();
+		return;
+	}
+
+	using AudioSourceReceiver = void(AudioEngine::*)(Audio::Entities::AudioSource&);
 	using AudioListenerReceiver = void(AudioEngine::*)(Audio::Entities::AudioListener&);
 
-	Entities::AudioSource::CreatedEvent		+= std::bind(static_cast<AudioSourceReceiver>(&AudioEngine::Consider), this, std::placeholders::_1);
-	Entities::AudioSource::DestroyedEvent	+= std::bind(static_cast<AudioSourceReceiver>(&AudioEngine::Unconsider), this, std::placeholders::_1);
-	Entities::AudioListener::CreatedEvent	+= std::bind(static_cast<AudioListenerReceiver>(&AudioEngine::Consider), this, std::placeholders::_1);
-	Entities::AudioListener::DestroyedEvent	+= std::bind(static_cast<AudioListenerReceiver>(&AudioEngine::Unconsider), this, std::placeholders::_1);
+	Entities::AudioSource::CreatedEvent += std::bind(static_cast<AudioSourceReceiver>(&AudioEngine::Consider), this, std::placeholders::_1);
+	Entities::AudioSource::DestroyedEvent += std::bind(static_cast<AudioSourceReceiver>(&AudioEngine::Unconsider), this, std::placeholders::_1);
+	Entities::AudioListener::CreatedEvent += std::bind(static_cast<AudioListenerReceiver>(&AudioEngine::Consider), this, std::placeholders::_1);
+	Entities::AudioListener::DestroyedEvent += std::bind(static_cast<AudioListenerReceiver>(&AudioEngine::Unconsider), this, std::placeholders::_1);
 }
 
 Audio::Core::AudioEngine::~AudioEngine()
 {
-	m_irrklangEngine->drop();
+	if (IsValid())
+	{
+		m_backend->deinit();
+	}
+}
+
+bool Audio::Core::AudioEngine::IsValid() const
+{
+	return m_backend.operator bool();
 }
 
 void Audio::Core::AudioEngine::Update()
 {
-	/* Update tracked sounds */
-	std::for_each(m_audioSources.begin(), m_audioSources.end(), std::mem_fn(&Entities::AudioSource::UpdateTrackedSoundPosition));
+	if (!IsValid())
+	{
+		return;
+	}
 
-	/* Defines the listener position using the last listener created (If any) */
-	std::optional<std::pair<Maths::FVector3, Maths::FVector3>> listener = GetListenerInformation();
+	for (const auto& source : m_audioSources)
+	{
+		source.get().Update();
+	}
+
+	// Defines the listener position using the last listener created (If any)
+	const auto listener = FindMainListener();
+
 	if (listener.has_value())
 	{
-		m_irrklangEngine->setListenerPosition
-		(
-			reinterpret_cast<const irrklang::vec3df&>(listener.value().first),
-			reinterpret_cast<const irrklang::vec3df&>(listener.value().second)
-		);
+		const auto& transform = listener->GetTransform();
+		const auto& pos = transform.GetWorldPosition();
+		const auto at = transform.GetWorldForward() * -1.0f;
+		m_backend->set3dListenerPosition(pos.x, pos.y, pos.z);
+		m_backend->set3dListenerAt(at.x, at.y, at.z);
 	}
 	else
 	{
-		m_irrklangEngine->setListenerPosition({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f });
+		m_backend->set3dListenerPosition(0.0f, 0.0f, 0.0f);
+		m_backend->set3dListenerAt(0.0f, 0.0f, -1.0f);
 	}
+
+	m_backend->update3dAudio();
 }
 
 void Audio::Core::AudioEngine::Suspend()
 {
-	std::for_each(m_audioSources.begin(), m_audioSources.end(), [this](std::reference_wrapper<Entities::AudioSource> p_audioSource)
+	for (auto& audioSourceRef : m_audioSources)
 	{
-		if (p_audioSource.get().IsTrackingSound() && !p_audioSource.get().GetTrackedSound()->GetTrack()->getIsPaused())
+		auto& source = audioSourceRef.get();
+		if (source.HasSound() && !source.IsPaused())
 		{
-			m_suspendedAudioSources.push_back(p_audioSource);
-			p_audioSource.get().Pause();
+			m_suspendedAudioSources.push_back(audioSourceRef);
+			source.Pause();
 		}
-	});
+	}
 
 	m_suspended = true;
 }
 
 void Audio::Core::AudioEngine::Unsuspend()
 {
-	std::for_each(m_suspendedAudioSources.begin(), m_suspendedAudioSources.end(), std::mem_fn(&Entities::AudioSource::Resume));
+	for (auto& audioSourceRef : m_audioSources)
+	{
+		auto& source = audioSourceRef.get();
+		if (source.HasSound() && source.IsPaused())
+		{
+			source.Resume();
+		}
+	}
+
 	m_suspendedAudioSources.clear();
 	m_suspended = false;
 }
@@ -71,50 +116,92 @@ bool Audio::Core::AudioEngine::IsSuspended() const
 	return m_suspended;
 }
 
-const std::string& Audio::Core::AudioEngine::GetWorkingDirectory() const
+std::shared_ptr<Audio::Data::SoundInstance> Audio::Core::AudioEngine::Play2D(const Resources::Sound& p_sound, float p_pan, std::optional<float> p_volume, bool p_startPaused)
 {
-	return m_workingDirectory;
-}
-
-irrklang::ISoundEngine * Audio::Core::AudioEngine::GetIrrklangEngine() const
-{
-	return m_irrklangEngine;
-}
-
-std::optional<std::pair<Maths::FVector3, Maths::FVector3>> Audio::Core::AudioEngine::GetListenerInformation(bool p_considerDisabled) const
-{
-	for (auto listener : m_audioListeners)
+	if (!IsValid())
 	{
-		if (listener.get().IsEnabled() || p_considerDisabled)
+		OVLOG_WARNING(std::format("Unable to play {}. Audio engine is not valid", p_sound.path));
+		return {};
+	}
+
+	const auto handle = m_backend->play(
+		*p_sound.audioData,
+		p_volume.value_or(-1.0f),
+		p_pan,
+		p_startPaused
+	);
+
+	return std::make_shared<Data::SoundInstance>(
+		*m_backend,
+		handle,
+		false
+	);
+}
+
+std::shared_ptr<Audio::Data::SoundInstance> Audio::Core::AudioEngine::Play3D(
+	const Resources::Sound& p_sound,
+	const Maths::FVector3& p_position,
+	const Maths::FVector3& p_velocity,
+	std::optional<float> p_volume,
+	bool p_startPaused
+)
+{
+	if (!IsValid())
+	{
+		OVLOG_WARNING(std::format("Unable to play {}. Audio engine is not valid", p_sound.path));
+		return {};
+	}
+
+	const auto handle = m_backend->play3d(
+		*p_sound.audioData,
+		p_position.x, p_position.y, p_position.z,
+		p_velocity.x, p_velocity.y, p_velocity.z,
+		p_volume.value_or(-1.0f),
+		p_startPaused
+	);
+
+	return std::make_shared<Data::SoundInstance>(
+		*m_backend,
+		handle,
+		true
+	);
+}
+
+Tools::Utils::OptRef<Audio::Entities::AudioListener> Audio::Core::AudioEngine::FindMainListener(bool p_includeDisabled) const
+{
+	for (auto& listener : m_audioListeners | std::views::reverse)
+	{
+		if (p_includeDisabled || listener.get().IsEnabled())
 		{
-			auto& transform = m_audioListeners.back().get().GetTransform();
-			return
-			{{
-				transform.GetWorldPosition(),
-				transform.GetWorldForward() * -1.0f
-			}};
+			return listener.get();
 		}
 	}
 
-	return {};
+	return std::nullopt;
 }
 
-void Audio::Core::AudioEngine::Consider(Audio::Entities::AudioSource & p_audioSource)
+SoLoud::Soloud& Audio::Core::AudioEngine::GetBackend() const
+{
+	ASSERT(IsValid(), "Audio engine is not valid");
+	return *m_backend;
+}
+
+void Audio::Core::AudioEngine::Consider(Audio::Entities::AudioSource& p_audioSource)
 {
 	m_audioSources.push_back(std::ref(p_audioSource));
 }
 
-void Audio::Core::AudioEngine::Consider(Audio::Entities::AudioListener & p_audioListener)
+void Audio::Core::AudioEngine::Consider(Audio::Entities::AudioListener& p_audioListener)
 {
 	m_audioListeners.push_back(std::ref(p_audioListener));
 }
 
-void Audio::Core::AudioEngine::Unconsider(Audio::Entities::AudioSource & p_audioSource)
+void Audio::Core::AudioEngine::Unconsider(Audio::Entities::AudioSource& p_audioSource)
 {
 	auto found = std::find_if(m_audioSources.begin(), m_audioSources.end(), [&p_audioSource](std::reference_wrapper<Entities::AudioSource> element)
-	{
-		return std::addressof(p_audioSource) == std::addressof(element.get());
-	});
+		{
+			return std::addressof(p_audioSource) == std::addressof(element.get());
+		});
 
 	if (found != m_audioSources.end())
 		m_audioSources.erase(found);
@@ -122,21 +209,21 @@ void Audio::Core::AudioEngine::Unconsider(Audio::Entities::AudioSource & p_audio
 	if (m_suspended)
 	{
 		auto found = std::find_if(m_suspendedAudioSources.begin(), m_suspendedAudioSources.end(), [&p_audioSource](std::reference_wrapper<Entities::AudioSource> element)
-		{
-			return std::addressof(p_audioSource) == std::addressof(element.get());
-		});
+			{
+				return std::addressof(p_audioSource) == std::addressof(element.get());
+			});
 
 		if (found != m_suspendedAudioSources.end())
 			m_suspendedAudioSources.erase(found);
 	}
 }
 
-void Audio::Core::AudioEngine::Unconsider(Audio::Entities::AudioListener & p_audioListener)
+void Audio::Core::AudioEngine::Unconsider(Audio::Entities::AudioListener& p_audioListener)
 {
 	auto found = std::find_if(m_audioListeners.begin(), m_audioListeners.end(), [&p_audioListener](std::reference_wrapper<Entities::AudioListener> element)
-	{
-		return std::addressof(p_audioListener) == std::addressof(element.get());
-	});
+		{
+			return std::addressof(p_audioListener) == std::addressof(element.get());
+		});
 
 	if (found != m_audioListeners.end())
 		m_audioListeners.erase(found);

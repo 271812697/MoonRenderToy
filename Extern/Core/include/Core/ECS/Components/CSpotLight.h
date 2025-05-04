@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -44,7 +48,6 @@ namespace Core::ECS::Components
 		* Returns the light cutoff
 		*/
 		float GetCutoff() const;
-        float GetRange()const;
 
 		/**
 		* Returns the light outercutoff
@@ -56,8 +59,6 @@ namespace Core::ECS::Components
 		* @param p_constant
 		*/
 		void SetConstant(float p_constant);
-        void SetRange(float p_range);
-
 
 		/**
 		* Defines the light linear

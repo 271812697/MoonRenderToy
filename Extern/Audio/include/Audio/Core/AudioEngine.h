@@ -1,18 +1,28 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include <vector>
 #include <optional>
+#include <vector>
 
+#include <Audio/Data/SoundHandle.h>
+#include <Audio/Entities/AudioSource.h>
+#include <Audio/Entities/AudioListener.h>
 
-#include "Audio/Entities/AudioSource.h"
-#include "Audio/Entities/AudioListener.h"
+namespace SoLoud
+{
+	class Soloud;
+}
 
 namespace Audio::Core
 {
 	/**
-	* Handle the creation of the Audio context
-	* Will take care of the consideration of AudioSources and AudioListeners
+	* AudioEngine is the main class of the audio system.
+	* It's responsible for initializing the audio backend and managing the audio sources and listeners.
 	*/
 	class AudioEngine
 	{
@@ -20,12 +30,17 @@ namespace Audio::Core
 		/**
 		* Constructor of the AudioEngine
 		*/
-		AudioEngine(const std::string& p_workingDirectory);
+		AudioEngine();
 
 		/**
 		* Destructor of the AudioEngine
 		*/
 		~AudioEngine();
+
+		/**
+		* Returns true if the AudioEngine is valid (properly initialized and available)
+		*/
+		bool IsValid() const;
 
 		/**
 		* Update AudioSources and AudioListeners
@@ -48,21 +63,45 @@ namespace Audio::Core
 		bool IsSuspended() const;
 
 		/**
-		* Returns the working directory
+		* Play a 2D sound in and return a SoundInstance if successful
+		* @param p_sound
+		* @param p_pan
+		* @param p_volume
+		* @param p_startPaused
 		*/
-		const std::string& GetWorkingDirectory() const;
+		std::shared_ptr<Audio::Data::SoundInstance> Play2D(
+			const Resources::Sound& p_sound,
+			float p_pan,
+			std::optional<float> p_volume = std::nullopt,
+			bool p_startPaused = false
+		);
 
 		/**
-		* Returns the IrrKlang engine
+		* Play a 3D (spatial) sound and return a SoundInstance if successful
+		* @param p_sound
+		* @param p_position
+		* @param p_velocity
+		* @param p_volume
+		* @param p_startPaused
 		*/
-		irrklang::ISoundEngine* GetIrrklangEngine() const;
+		std::shared_ptr<Audio::Data::SoundInstance> Play3D(
+			const Resources::Sound& p_sound,
+			const Maths::FVector3& p_position,
+			const Maths::FVector3& p_velocity,
+			std::optional<float> p_volume = std::nullopt,
+			bool p_startPaused = false
+		);
 
 		/**
-		* Returns the current listener informations :
-		* Format: std::tuple<Active, Position, Direction>
-		* @parma p_considerDisabled
+		* Returns the main listener
+		* @param p_includeDisabled
 		*/
-		std::optional<std::pair<Maths::FVector3, Maths::FVector3>> GetListenerInformation(bool p_considerDisabled = false) const;
+		Tools::Utils::OptRef<Audio::Entities::AudioListener> FindMainListener(bool p_includeDisabled = false) const;
+
+		/**
+		* Returns a reference to the backend engine
+		*/
+		SoLoud::Soloud& GetBackend() const;
 
 	private:
 		void Consider(Entities::AudioSource& p_audioSource);
@@ -72,13 +111,12 @@ namespace Audio::Core
 		void Unconsider(Entities::AudioListener& p_audioListener);
 
 	private:
-		const std::string m_workingDirectory;
 		bool m_suspended = false;
 
 		std::vector<std::reference_wrapper<Entities::AudioSource>> m_audioSources;
 		std::vector<std::reference_wrapper<Entities::AudioSource>> m_suspendedAudioSources;
 		std::vector<std::reference_wrapper<Entities::AudioListener>> m_audioListeners;
-		
-		irrklang::ISoundEngine* m_irrklangEngine = nullptr;
+
+		std::unique_ptr<SoLoud::Soloud> m_backend;
 	};
 }

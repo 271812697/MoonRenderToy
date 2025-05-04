@@ -1,3 +1,9 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>

@@ -1,34 +1,43 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
+#include <array>
 
-#include <algorithm>
+#include <Debug/Logger.h>
+#include <Rendering/Resources/Mesh.h>
 
-#include "Rendering/Resources/Mesh.h"
-
-Rendering::Resources::Mesh::Mesh(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices, uint32_t p_materialIndex) :
+Rendering::Resources::Mesh::Mesh(
+	std::span<const Geometry::Vertex> p_vertices,
+	std::span<const uint32_t> p_indices,
+	uint32_t p_materialIndex
+) :
 	m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
 	m_indicesCount(static_cast<uint32_t>(p_indices.size())),
 	m_materialIndex(p_materialIndex)
 {
-	CreateBuffers(p_vertices, p_indices);
+	Upload(p_vertices, p_indices);
 	ComputeBoundingSphere(p_vertices);
 }
 
-void Rendering::Resources::Mesh::Bind()
+void Rendering::Resources::Mesh::Bind() const
 {
 	m_vertexArray.Bind();
 }
 
-void Rendering::Resources::Mesh::Unbind()
+void Rendering::Resources::Mesh::Unbind() const
 {
 	m_vertexArray.Unbind();
 }
 
-uint32_t Rendering::Resources::Mesh::GetVertexCount()
+uint32_t Rendering::Resources::Mesh::GetVertexCount() const
 {
 	return m_vertexCount;
 }
 
-uint32_t Rendering::Resources::Mesh::GetIndexCount()
+uint32_t Rendering::Resources::Mesh::GetIndexCount() const
 {
 	return m_indicesCount;
 }
@@ -43,47 +52,36 @@ const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundi
 	return m_boundingSphere;
 }
 
-void Rendering::Resources::Mesh::CreateBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
+void Rendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices)
 {
-	std::vector<float> vertexData;
-
-	std::vector<unsigned int> rawIndices;
-
-	for (const auto& vertex : p_vertices)
+	if (m_vertexBuffer.Allocate(p_vertices.size_bytes()))
 	{
-		vertexData.push_back(vertex.position[0]);
-		vertexData.push_back(vertex.position[1]);
-		vertexData.push_back(vertex.position[2]);
+		m_vertexBuffer.Upload(p_vertices.data());
 
-		vertexData.push_back(vertex.texCoords[0]);
-		vertexData.push_back(vertex.texCoords[1]);
+		if (m_indexBuffer.Allocate(p_indices.size_bytes()))
+		{
+			m_indexBuffer.Upload(p_indices.data());
 
-		vertexData.push_back(vertex.normals[0]);
-		vertexData.push_back(vertex.normals[1]);
-		vertexData.push_back(vertex.normals[2]);
-
-		vertexData.push_back(vertex.tangent[0]);
-		vertexData.push_back(vertex.tangent[1]);
-		vertexData.push_back(vertex.tangent[2]);
-
-		vertexData.push_back(vertex.bitangent[0]);
-		vertexData.push_back(vertex.bitangent[1]);
-		vertexData.push_back(vertex.bitangent[2]);
+			m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+				{ Settings::EDataType::FLOAT, 3 }, // position
+				{ Settings::EDataType::FLOAT, 2 }, // texCoords
+				{ Settings::EDataType::FLOAT, 3 }, // normal
+				{ Settings::EDataType::FLOAT, 3 }, // tangent
+				{ Settings::EDataType::FLOAT, 3 }  // bitangent
+			}), m_vertexBuffer, m_indexBuffer);
+		}
+		else
+		{
+			OVLOG_WARNING("Empty index buffer!");
+		}
 	}
-
-	m_vertexBuffer	= std::make_unique<Buffers::VertexBuffer<float>>(vertexData);
-	m_indexBuffer	= std::make_unique<Buffers::IndexBuffer>(const_cast<uint32_t*>(p_indices.data()), p_indices.size());
-
-	uint64_t vertexSize = sizeof(Geometry::Vertex);
-
-	m_vertexArray.BindAttribute(0, *m_vertexBuffer, Buffers::EType::FLOAT, 3, vertexSize, 0);
-	m_vertexArray.BindAttribute(1, *m_vertexBuffer,	Buffers::EType::FLOAT, 2, vertexSize, sizeof(float) * 3);
-	m_vertexArray.BindAttribute(2, *m_vertexBuffer,	Buffers::EType::FLOAT, 3, vertexSize, sizeof(float) * 5);
-	m_vertexArray.BindAttribute(3, *m_vertexBuffer,	Buffers::EType::FLOAT, 3, vertexSize, sizeof(float) * 8);
-	m_vertexArray.BindAttribute(4, *m_vertexBuffer,	Buffers::EType::FLOAT, 3, vertexSize, sizeof(float) * 11);
+	else
+	{
+		OVLOG_WARNING("Empty vertex buffer!");
+	}
 }
 
-void Rendering::Resources::Mesh::ComputeBoundingSphere(const std::vector<Geometry::Vertex>& p_vertices)
+void Rendering::Resources::Mesh::ComputeBoundingSphere(std::span<const Geometry::Vertex> p_vertices)
 {
 	m_boundingSphere.position = Maths::FVector3::Zero;
 	m_boundingSphere.radius = 0.0f;

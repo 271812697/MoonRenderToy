@@ -1,12 +1,19 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
+
 
 #include "Core/ECS/Actor.h"
 
 #include "Core/ECS/Components/CAmbientBoxLight.h"
 
-Core::ECS::Components::CAmbientBoxLight::CAmbientBoxLight(ECS::Actor & p_owner) :
+Core::ECS::Components::CAmbientBoxLight::CAmbientBoxLight(ECS::Actor& p_owner) :
 	CLight(p_owner)
 {
-	m_data.type = static_cast<float>(Rendering::Entities::Light::Type::AMBIENT_BOX);
+	m_data.type = ::Rendering::Settings::ELightType::AMBIENT_BOX;
 
 	m_data.intensity = 0.1f;
 	m_data.constant = 1.0f;
@@ -31,7 +38,7 @@ void Core::ECS::Components::CAmbientBoxLight::SetSize(const Maths::FVector3& p_s
 	m_data.quadratic = p_size.z;
 }
 
-void Core::ECS::Components::CAmbientBoxLight::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CAmbientBoxLight::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -40,7 +47,7 @@ void Core::ECS::Components::CAmbientBoxLight::OnSerialize(tinyxml2::XMLDocument 
 	Serializer::SerializeVec3(p_doc, p_node, "size", { m_data.constant, m_data.linear, m_data.quadratic });
 }
 
-void Core::ECS::Components::CAmbientBoxLight::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CAmbientBoxLight::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 

@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -6,8 +11,9 @@
 #include <Maths/FMatrix4.h>
 #include <Maths/FTransform.h>
 
-
 #include "Rendering/Geometry/BoundingSphere.h"
+#include "Rendering/Resources/Model.h"
+#include <Rendering/Settings/ECullingOptions.h>
 
 namespace Rendering::Data
 {
@@ -55,6 +61,28 @@ namespace Rendering::Data
 		* @param p_transform
 		*/
 		bool BoundingSphereInFrustum(const Rendering::Geometry::BoundingSphere& p_boundingSphere, const Maths::FTransform& p_transform) const;
+
+		/**
+		* Returns true if the 
+		* @param p_mesh
+		* @param p_transform
+		*/
+		bool IsMeshInFrustum(const Rendering::Resources::Mesh& p_mesh, const Maths::FTransform& p_transform) const;
+
+		/**
+		* Returns the list of meshes from a model that should be rendered
+		* @param p_model
+		* @param p_modelBoundingSphere
+		* @param p_modelTransform
+		* @param p_frustum
+		* @param p_cullingOptions
+		*/
+		std::vector<Rendering::Resources::Mesh*> GetMeshesInFrustum(
+			const Rendering::Resources::Model& p_model,
+			const Rendering::Geometry::BoundingSphere& p_modelBoundingSphere,
+			const Maths::FTransform& p_modelTransform,
+			Rendering::Settings::ECullingOptions p_cullingOptions
+		) const;
 
 		/**
 		* Returns the near plane

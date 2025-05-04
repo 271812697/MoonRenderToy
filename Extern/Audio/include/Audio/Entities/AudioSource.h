@@ -1,41 +1,42 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
 #include <memory>
+#include <optional>
 
-#include <irrklang/ik_ISoundEngine.h>
-#include <irrklang/ik_ISoundStopEventReceiver.h>
-
-#include "../../tools/Event.h"
+#include <Audio/Data/SoundHandle.h>
+#include <Audio/Data/SoundInstance.h>
+#include <Audio/Resources/Sound.h>
 #include <Maths/FVector3.h>
 #include <Maths/FTransform.h>
+#include <Tools/Eventing/Event.h>
+#include <Tools/Utils/OptRef.h>
+#include <Tools/Utils/ReferenceOrValue.h>
 
-#include "Audio/Tracking/SoundTracker.h"
-#include "Audio/Resources/Sound.h"
-
-namespace Audio::Core { class AudioPlayer; }
+namespace Audio::Core { class AudioEngine; }
 
 namespace Audio::Entities
 {
 	/**
-	* Wrap Irrklang ISound
+	* An audio source is an entity that can play a sound in a 3D space.
 	*/
 	class AudioSource
 	{
 	public:
 		/**
 		* AudioSource constructor (Internal transform management)
-		* @param p_audioPlayer
-		*/
-		AudioSource(Core::AudioPlayer& p_audioPlayer);
-
-		/**
-		* AudioSource constructor (External transform management)
-		* @param p_audioPlayer
+		* @param p_engine
 		* @param p_transform
 		*/
-		AudioSource(Core::AudioPlayer& p_audioPlayer, Maths::FTransform& p_transform);
+		AudioSource(
+			Core::AudioEngine& p_engine,
+			Tools::Utils::OptRef<Maths::FTransform> p_transform = std::nullopt
+		);
 
 		/**
 		* AudioSource destructor
@@ -43,9 +44,9 @@ namespace Audio::Entities
 		~AudioSource();
 
 		/**
-		* Apply the AudioSource position to the tracked sound
+		* Returns the AudioSource transform
 		*/
-		void UpdateTrackedSoundPosition();
+		const Maths::FTransform& GetTransform();
 
 		/**
 		* Apply every AudioSource settings to the currently tracked sound
@@ -53,14 +54,24 @@ namespace Audio::Entities
 		void ApplySourceSettingsToTrackedSound();
 
 		/**
-		* Returns true if a sound is currently being tracked
+		* Returns true if the audio source has a sound instance
 		*/
-		bool IsTrackingSound() const;
+		bool HasSound() const;
+
+		/**
+		* Returns true if the audio source is currently playing
+		*/
+		bool IsPlaying() const;
+
+		/**
+		* Retrurns true if the audio source is currently paused
+		*/
+		bool IsPaused() const;
 
 		/**
 		* Returns the currently tracked sound if any, or nullptr
 		*/
-		Tracking::SoundTracker* GetTrackedSound() const;
+		std::weak_ptr<Data::SoundInstance> GetSoundInstance() const;
 
 		/**
 		* Defines the audio source volume
@@ -119,11 +130,6 @@ namespace Audio::Entities
 		float GetPitch() const;
 
 		/**
-		* Returns true if the audio source sound has finished
-		*/
-		bool IsFinished() const;
-
-		/**
 		* Returns true if the audio source is spatialized
 		*/
 		bool IsSpatial() const;
@@ -155,32 +161,25 @@ namespace Audio::Entities
 		void Stop();
 
 		/**
-		* Stop the audio source and destroy the tracked sound
+		* Update the audio source
 		*/
-		void StopAndDestroyTrackedSound();
-
-	private:
-		void Setup();
+		void Update();
 
 	public:
 		static Tools::Eventing::Event<AudioSource&> CreatedEvent;
 		static Tools::Eventing::Event<AudioSource&> DestroyedEvent;
 
 	private:
-		Core::AudioPlayer& m_audioPlayer;
+		Core::AudioEngine& m_engine;
+		Tools::Utils::ReferenceOrValue<Maths::FTransform> m_transform;
+		std::shared_ptr<Data::SoundInstance> m_instance;
 
-		std::unique_ptr<Tracking::SoundTracker> m_trackedSound;
-
-		/* AudioSource settings */
-		float	m_volume				= 1.0f;
-		float	m_pan					= 0.0f;
-		bool	m_looped				= false;
-		float	m_pitch					= 1.0f;
-		bool	m_spatial				= false;
-		float	m_attenuationThreshold	= 1.0f;
-
-		/* Transform stuff */
-		Maths::FTransform* const		m_transform;
-		const bool						m_internalTransform;
+		// Sound settings
+		bool m_spatial = false;
+		float m_volume = 1.0f;
+		float m_pan = 0.0f;
+		bool m_looped = false;
+		float m_pitch = 1.0f;
+		float m_attenuationThreshold = 1.0f;
 	};
 }

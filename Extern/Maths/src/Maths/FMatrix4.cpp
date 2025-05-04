@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <cstring>
 #include <stdexcept>
@@ -8,14 +13,19 @@
 #include "Maths/FVector3.h"
 #include "Maths/FQuaternion.h"
 
-const Maths::FMatrix4 Maths::FMatrix4::Identity = FMatrix4(1.f, 0.f, 0.f, 0.f,
-															   0.f, 1.f, 0.f, 0.f,
-															   0.f, 0.f, 1.f, 0.f,
-															   0.f, 0.f, 0.f, 1.f);
+constexpr float kPI = 3.14159265359f;
+constexpr float kEpsilon = 0.00001f;
+
+const Maths::FMatrix4 Maths::FMatrix4::Identity{
+	1.f, 0.f, 0.f, 0.f,
+	0.f, 1.f, 0.f, 0.f,
+	0.f, 0.f, 1.f, 0.f,
+	0.f, 0.f, 0.f, 1.f
+};
 
 Maths::FMatrix4::FMatrix4()
 {
-	memcpy(this->data, Identity.data, 16 * sizeof(float));
+	memcpy(this->data, Identity.data, 16 * sizeof(float)); // TODO: memcpy is not great (consider std::array)
 }
 
 Maths::FMatrix4::FMatrix4(float p_element1, float p_element2, float p_element3, float p_element4, float p_element5, float p_element6, float p_element7, float p_element8, float p_element9, float p_element10, float p_element11, float p_element12, float p_element13, float p_element14, float p_element15, float p_element16)
@@ -158,6 +168,7 @@ Maths::FMatrix4 Maths::FMatrix4::Add(const FMatrix4& p_left, const FMatrix4& p_r
 		result.data[i] += p_right.data[i];
 	return result;
 }
+
 Maths::FMatrix4 Maths::FMatrix4::Subtract(const FMatrix4& p_left, float p_scalar)
 {
 	FMatrix4 result(p_left);
@@ -306,7 +317,7 @@ Maths::FMatrix4 Maths::FMatrix4::Inverse(const FMatrix4& p_matrix)
 		p_matrix.data[3], p_matrix.data[7], p_matrix.data[11]);
 
 	const float det = p_matrix.data[0] * cof0 - p_matrix.data[4] * cof1 + p_matrix.data[8] * cof2 - p_matrix.data[12] * cof3;
-	if (fabs(det) <= EPSILON)
+	if (fabs(det) <= kEpsilon)
 		return Identity;
 	const float cof4 = GetMinor(p_matrix.data[4], p_matrix.data[8], p_matrix.data[12], p_matrix.data[6], p_matrix.data[10], p_matrix.data[14],
 		p_matrix.data[7], p_matrix.data[11], p_matrix.data[15]);
@@ -423,6 +434,7 @@ Maths::FMatrix4 Maths::FMatrix4::RotateYXZ(const FMatrix4& p_matrix, float p_rot
 {
 	return p_matrix * RotationYXZ(p_rotation);
 }
+
 Maths::FMatrix4 Maths::FMatrix4::Scaling(const FVector3& p_scale)
 {
 	return FMatrix4(p_scale.x, 0, 0, 0,
@@ -448,7 +460,7 @@ Maths::FMatrix4 Maths::FMatrix4::Rotate(const FMatrix4& p_matrix, const FQuatern
 
 Maths::FMatrix4 Maths::FMatrix4::CreatePerspective(const float p_fov, const float p_aspectRatio, const float p_zNear, const float p_zFar)
 {
-	const float tangent = tanf(p_fov / 2.0f * PI / 180.0f);
+	const float tangent = tanf(p_fov / 2.0f * kPI / 180.0f);
 	const float height = p_zNear * tangent;
 	const float width = height * p_aspectRatio;
 

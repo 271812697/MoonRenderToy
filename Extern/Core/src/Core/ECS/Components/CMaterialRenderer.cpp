@@ -1,5 +1,12 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
-#include"../../tools/PathParser.h"
+
+
+#include <Tools/Utils/PathParser.h>
 
 #include "Core/ECS/Actor.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
@@ -7,9 +14,12 @@
 #include "Core/ResourceManagement/MaterialManager.h"
 #include "Core/Global/ServiceLocator.h"
 
-Core::ECS::Components::CMaterialRenderer::CMaterialRenderer(ECS::Actor & p_owner) : AComponent(p_owner)
+Core::ECS::Components::CMaterialRenderer::CMaterialRenderer(ECS::Actor& p_owner) : AComponent(p_owner)
 {
 	m_materials.fill(nullptr);
+
+
+
 	UpdateMaterialList();
 }
 
@@ -18,7 +28,7 @@ std::string Core::ECS::Components::CMaterialRenderer::GetName()
 	return "Material Renderer";
 }
 
-void Core::ECS::Components::CMaterialRenderer::FillWithMaterial(Core::Resources::Material & p_material)
+void Core::ECS::Components::CMaterialRenderer::FillWithMaterial(Core::Resources::Material& p_material)
 {
 	for (uint8_t i = 0; i < m_materials.size(); ++i)
 		m_materials[i] = &p_material;
@@ -55,7 +65,7 @@ void Core::ECS::Components::CMaterialRenderer::RemoveAllMaterials()
 		m_materials[i] = nullptr;
 }
 
-const Maths::FMatrix4 & Core::ECS::Components::CMaterialRenderer::GetUserMatrix() const
+const Maths::FMatrix4& Core::ECS::Components::CMaterialRenderer::GetUserMatrix() const
 {
 	return m_userMatrix;
 }
@@ -65,13 +75,13 @@ const Core::ECS::Components::CMaterialRenderer::MaterialList& Core::ECS::Compone
 	return m_materials;
 }
 
-void Core::ECS::Components::CMaterialRenderer::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CMaterialRenderer::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	tinyxml2::XMLNode* materialsNode = p_doc.NewElement("materials");
 	p_node->InsertEndChild(materialsNode);
 
 	auto modelRenderer = owner.GetComponent<CModelRenderer>();
-	uint8_t elementsToSerialize = modelRenderer->GetModel() ? (uint8_t)std::min(modelRenderer->GetModel()->GetMaterialNames().size(), (size_t)MAX_MATERIAL_COUNT) : 0;
+	uint8_t elementsToSerialize = modelRenderer->GetModel() ? (uint8_t)std::min(modelRenderer->GetModel()->GetMaterialNames().size(), (size_t)kMaxMaterialCount) : 0;
 
 	for (uint8_t i = 0; i < elementsToSerialize; ++i)
 	{
@@ -79,7 +89,7 @@ void Core::ECS::Components::CMaterialRenderer::OnSerialize(tinyxml2::XMLDocument
 	}
 }
 
-void Core::ECS::Components::CMaterialRenderer::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CMaterialRenderer::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	tinyxml2::XMLNode* materialsRoot = p_node->FirstChildElement("materials");
 	if (materialsRoot)
@@ -116,10 +126,9 @@ void Core::ECS::Components::CMaterialRenderer::UpdateMaterialList()
 			m_materialNames[materialIndex++] = materialName;
 		}
 
-		for (uint8_t i = materialIndex; i < MAX_MATERIAL_COUNT; ++i)
+		for (uint8_t i = materialIndex; i < kMaxMaterialCount; ++i)
 			m_materialNames[i] = "";
 	}
-
 
 }
 

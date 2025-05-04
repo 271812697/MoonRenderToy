@@ -19,12 +19,12 @@
 
 
 #include "renderer/Context.h"
-#include "renderer/EditorRenderer.h"
-
+#include "renderer/SceneView.h"
 
 
 ::Editor::Core::Context* editorContext;
-::Editor::Core::EditorRenderer* editorRender;
+::Editor::Panels::SceneView* sceneView;
+
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -59,6 +59,7 @@ namespace MOON {
 				boxWidget->SetEnabled(1);
 			}
 		}
+		this->installEventFilter(parent);
 	}
 
 	ViewerWindow::~ViewerWindow()
@@ -103,9 +104,10 @@ namespace MOON {
 		}
 		initFlag = true;
 		editorContext = new ::Editor::Core::Context("", "");
-		//editorContext->sceneManager.LoadEmptyLightedScene();
-		editorContext->sceneManager.LoadScene("demo.scene");
-		editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
+
+		editorContext->sceneManager.LoadDefaultScene();
+		sceneView = new ::Editor::Panels::SceneView("SceneView");
+		//editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -123,29 +125,16 @@ namespace MOON {
 		//PathTrace::GetRenderer()->Update(0.016);
 		//PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		//PathTrace::GetRenderer()->Present();
+		PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();
-
+		sceneView->Render();
 		Maths::FVector3 p;
 		Maths::FMatrix4 view, proj;
 
 		PathTrace::CameraController::Instance().GetCameraPosition(&p.x);
 		PathTrace::CameraController::Instance().GetViewProject(view.data, proj.data);
-		auto& engineUBO = editorContext->engineUBO;
-		size_t offset = sizeof(Maths::FMatrix4);
-		engineUBO->SetSubData(view, std::ref(offset));
-		engineUBO->SetSubData(proj, std::ref(offset));
-		engineUBO->SetSubData(p, std::ref(offset));
 
-		view = Maths::FMatrix4::Transpose(view);
-		proj = Maths::FMatrix4::Transpose(proj);
-		editorContext->shapeDrawer->SetViewProjection(proj * view);
-		editorContext->lightSSBO->Bind(0);
-		editorRender->UpdateLights(*editorContext->sceneManager.GetCurrentScene());
-		editorRender->RenderGrid(p, { 1,0,0 });
-		editorRender->RenderCameras();
-		editorRender->RenderScene(p);
-		editorContext->lightSSBO->Unbind();
+
 
 	}
 

@@ -575,6 +575,7 @@ namespace TEST {
 			case ShaderStage::FRAGMENT: return "fragment";
 			case ShaderStage::COMPUTE:  return "compute";
 			}
+			return  "none";
 			};
 
 		{ // scope for the temporary string storage
@@ -614,7 +615,7 @@ namespace TEST {
 
 		CString infoLog(length);
 		glGetProgramInfoLog(program, length, nullptr, infoLog.data());
-		CORE_ERROR("Link error in \"{0}\":\n\"{1}\"",name,infoLog.c_str());
+		CORE_ERROR("Link error in \"{0}\":\n\"{1}\"", name, infoLog.c_str());
 	}
 
 

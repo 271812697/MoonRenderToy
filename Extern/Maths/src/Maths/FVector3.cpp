@@ -1,6 +1,6 @@
 /**
-* @project: Overload
-* @author: Overload Tech.
+* @project: erload
+* @author: erload Tech.
 * @licence: MIT
 */
 
@@ -26,7 +26,7 @@ Maths::FVector3::FVector3(const FVector3& p_toCopy) : x(p_toCopy.x), y(p_toCopy.
 
 Maths::FVector3 Maths::FVector3::operator-() const
 {
-	return operator*(-1);
+	return operator*(-1.0f);
 }
 
 Maths::FVector3 Maths::FVector3::operator=(const FVector3& p_other)
@@ -60,6 +60,11 @@ Maths::FVector3& Maths::FVector3::operator-=(const FVector3& p_other)
 	return *this;
 }
 
+Maths::FVector3 Maths::FVector3::operator*(const Maths::FVector3& p_other) const
+{
+	return Multiply(*this, p_other);
+}
+
 Maths::FVector3 Maths::FVector3::operator*(float p_scalar) const
 {
 	return Multiply(*this, p_scalar);
@@ -68,6 +73,12 @@ Maths::FVector3 Maths::FVector3::operator*(float p_scalar) const
 Maths::FVector3& Maths::FVector3::operator*=(float p_scalar)
 {
 	*this = Multiply(*this, p_scalar);
+	return *this;
+}
+
+Maths::FVector3& Maths::FVector3::operator*=(const Maths::FVector3& p_other)
+{
+	*this = Multiply(*this, p_other);
 	return *this;
 }
 
@@ -122,6 +133,16 @@ Maths::FVector3 Maths::FVector3::Multiply(const FVector3& p_target, float p_scal
 		p_target.x * p_scalar,
 		p_target.y * p_scalar,
 		p_target.z * p_scalar
+	);
+}
+
+Maths::FVector3 Maths::FVector3::Multiply(const FVector3& p_left, const FVector3& p_right)
+{
+	return FVector3
+	(
+		p_left.x * p_right.x,
+		p_left.y * p_right.y,
+		p_left.z * p_right.z
 	);
 }
 

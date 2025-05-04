@@ -1,9 +1,16 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 #pragma once
 
-#include "Maths/FVector3.h"
-#include "Maths/FTransform.h"
 
-#include "Audio/Entities/AudioSource.h"
+#include <Audio/Entities/AudioSource.h>
+
+#include <Maths/FTransform.h>
+#include <Maths/FVector3.h>
 
 namespace Audio::Entities
 {
@@ -15,15 +22,10 @@ namespace Audio::Entities
 	{
 	public:
 		/**
-		* AudioListener constructor (Internal transform management)
-		*/
-		AudioListener();
-
-		/**
-		* AudioListener constructor (External transform management)
+		* AudioListener constructor
 		* @param p_transform
 		*/
-		AudioListener(Maths::FTransform& p_transform);
+		AudioListener(Tools::Utils::OptRef<Maths::FTransform> p_transform = std::nullopt);
 
 		/**
 		* AudioListener destructor
@@ -47,13 +49,8 @@ namespace Audio::Entities
 		bool IsEnabled() const;
 
 	private:
-		void Setup();
-
-	private:
-		/* Transform stuff */
-		Maths::FTransform* const		m_transform;
-		const bool						m_internalTransform;
-		bool							m_enabled = true;
+		Tools::Utils::ReferenceOrValue<Maths::FTransform> m_transform;
+		bool m_enabled = true;
 
 	public:
 		static Tools::Eventing::Event<AudioListener&>	CreatedEvent;

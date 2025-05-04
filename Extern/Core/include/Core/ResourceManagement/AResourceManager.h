@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -28,7 +33,7 @@ namespace Core::ResourceManagement
 		void UnloadResource(const std::string& p_path);
 
 		/**
-		* Move a resource to the new given id (pathReloadResource
+		* Move a resource to the new given id (path)
 		* @param p_previousPath
 		* @param p_newPath
 		*/
@@ -73,7 +78,6 @@ namespace Core::ResourceManagement
 		* @param p_path
 		* @param p_tryToLoadIfNotFound
 		*/
-
 		T* GetResource(const std::string& p_path, bool p_tryToLoadIfNotFound = true);
 
 		/**
