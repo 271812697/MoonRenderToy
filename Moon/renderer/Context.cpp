@@ -60,10 +60,10 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	projectPath(p_projectPath),
 	projectName(p_projectName),
 	projectFilePath(p_projectPath + p_projectName + ".ovproject"),
-	engineAssetsPath(PROJECT_ENGINE_PATH),
+	engineAssetsPath(std::string(PROJECT_ENGINE_PATH) + std::string("\\")),
 	projectAssetsPath(p_projectPath + "Assets\\"),
 	projectScriptsPath(p_projectPath + "Scripts\\"),
-	editorAssetsPath(PROJECT_EDITOR_PATH),
+	editorAssetsPath(PROJECT_EDITOR_PATH + std::string("\\")),
 	sceneManager(projectAssetsPath),
 	projectSettings(projectFilePath)
 {
