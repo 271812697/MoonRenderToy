@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include "Core/Global/ServiceLocator.h"
 

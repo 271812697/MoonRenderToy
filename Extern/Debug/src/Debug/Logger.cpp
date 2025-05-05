@@ -1,7 +1,7 @@
 
 
 #include "Debug/Logger.h"
-#include "../../tools/Date.h"
+#include <Tools/Time/Date.h>
 
 Tools::Eventing::Event<const Debug::LogData&> Debug::Logger::LogEvent;
 

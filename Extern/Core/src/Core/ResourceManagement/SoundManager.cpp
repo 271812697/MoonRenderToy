@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include "Core/ResourceManagement/SoundManager.h"
 

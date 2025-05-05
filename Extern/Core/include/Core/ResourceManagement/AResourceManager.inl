@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -129,11 +133,11 @@ namespace Core::ResourceManagement
 
 		if (p_path[0] == ':') // The path is an engine path
 		{
-			result = __ENGINE_ASSETS_PATH + "/"+std::string(p_path.data() + 1, p_path.data() + p_path.size());
+			result = __ENGINE_ASSETS_PATH + std::string(p_path.data() + 1, p_path.data() + p_path.size());
 		}
 		else // The path is a project path
 		{
-			result = __PROJECT_ASSETS_PATH + +"/"+p_path;
+			result = __PROJECT_ASSETS_PATH + p_path;
 		}
 
 		return result;

@@ -1,15 +1,19 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include <vector>
 #include <memory>
 
-#include "Rendering/Buffers/VertexArray.h"
-#include "Rendering/Buffers/IndexBuffer.h"
-#include "Rendering/Resources/IMesh.h"
-#include "Rendering/Geometry/Vertex.h"
-#include "Rendering/Geometry/BoundingSphere.h"
+#include <Rendering/HAL/IndexBuffer.h>
+#include <Rendering/HAL/VertexArray.h>
+#include <Rendering/HAL/VertexBuffer.h>
+#include <Rendering/Geometry/Vertex.h>
+#include <Rendering/Geometry/BoundingSphere.h>
+#include <Rendering/Resources/IMesh.h>
 
 namespace Rendering::Resources
 {
@@ -25,27 +29,31 @@ namespace Rendering::Resources
 		* @param p_indices
 		* @param p_materialIndex
 		*/
-		Mesh(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices, uint32_t p_materialIndex);
+		Mesh(
+			std::span<const Geometry::Vertex> p_vertices,
+			std::span<const uint32_t> p_indices,
+			uint32_t p_materialIndex = 0
+		);
 
 		/**
 		* Bind the mesh (Actually bind its VAO)
 		*/
-		virtual void Bind() override;
+		virtual void Bind() const override;
 
 		/**
 		* Unbind the mesh (Actually unbind its VAO)
 		*/
-		virtual void Unbind() override;
+		virtual void Unbind() const override;
 
 		/**
 		* Returns the number of vertices
 		*/
-		virtual uint32_t GetVertexCount() override;
+		virtual uint32_t GetVertexCount() const override;
 
 		/**
 		* Returns the number of indices
 		*/
-		virtual uint32_t GetIndexCount() override;
+		virtual uint32_t GetIndexCount() const override;
 
 		/**
 		* Returns the material index of the mesh
@@ -58,17 +66,17 @@ namespace Rendering::Resources
 		const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const;
 
 	private:
-		void CreateBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
-		void ComputeBoundingSphere(const std::vector<Geometry::Vertex>& p_vertices);
+		void Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices);
+		void ComputeBoundingSphere(std::span<const Geometry::Vertex> p_vertices);
 
 	private:
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
 		const uint32_t m_materialIndex;
 
-		Buffers::VertexArray							m_vertexArray;
-		std::unique_ptr<Buffers::VertexBuffer<float>>	m_vertexBuffer;
-		std::unique_ptr<Buffers::IndexBuffer>			m_indexBuffer;
+		HAL::VertexArray m_vertexArray;
+		HAL::VertexBuffer m_vertexBuffer;
+		HAL::IndexBuffer m_indexBuffer;
 
 		Geometry::BoundingSphere m_boundingSphere;
 	};

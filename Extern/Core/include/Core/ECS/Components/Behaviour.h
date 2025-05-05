@@ -1,10 +1,14 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include <sol.hpp>
-
-#include "Core/ECS/Components/CPhysicalObject.h"
+#include <Core/ECS/Components/CPhysicalObject.h>
+#include <Tools/Utils/OptRef.h>
+#include <Core/Scripting/ScriptEngine.h>
 
 namespace Core::ECS { class Actor; }
 
@@ -34,31 +38,20 @@ namespace Core::ECS::Components
 		virtual std::string GetName() override;
 
 		/**
-		* Register the behaviour to lua
-		* Returns true on success
-		* @param p_luaState
-		* @param p_rootFolder
+		* Sets the script associated with this behaviour
+		* @param p_script
 		*/
-		bool RegisterToLuaContext(sol::state& p_luaState, const std::string& p_scriptFolder);
+		void SetScript(std::unique_ptr<Scripting::Script>&& p_script);
 
 		/**
-		* Register the behaviour to lua
-		* Returns true on success
+		* Returns the script context of this behaviour
 		*/
-		void UnregisterFromLuaContext();
+		Tools::Utils::OptRef<Scripting::Script> GetScript();
 
 		/**
-		* Call a lua function for this behaviour
-		* @param p_functionName
-		* @param p_args
+		* Removes the script associated with this behaviour
 		*/
-		template<typename... Args>
-		void LuaCall(const std::string& p_functionName, Args&&... p_args);
-
-		/**
-		* Return the lua table attached to this behaviour
-		*/
-		sol::table& GetTable();
+		void RemoveScript();
 
 		/**
 		* Called when the scene start right before OnStart
@@ -146,14 +139,14 @@ namespace Core::ECS::Components
 		* @param p_doc
 		* @param p_node
 		*/
-		virtual void OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node) override;
+		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 
 		/**
 		* Deserialize the behaviour
 		* @param p_doc
 		* @param p_node
 		*/
-		virtual void OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node) override;
+		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 
 		/**
 		* Defines how the behaviour should be drawn in the inspector
@@ -162,14 +155,9 @@ namespace Core::ECS::Components
 		//virtual void OnInspector(UI::Internal::WidgetContainer & p_root) override;
 
 	public:
-		static Tools::Eventing::Event<Behaviour*> CreatedEvent;
-		static Tools::Eventing::Event<Behaviour*> DestroyedEvent;
-
 		const std::string name;
 
 	private:
-		sol::table m_object = sol::nil;
+		std::unique_ptr<Scripting::Script> m_script;
 	};
 }
-
-#include "Core/ECS/Components/Behaviour.inl"

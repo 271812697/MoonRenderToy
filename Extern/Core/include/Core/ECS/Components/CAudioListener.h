@@ -1,9 +1,14 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
 #include "AComponent.h"
 
-#include"../../tools/Event.h"
+#include <Tools/Eventing/Event.h>
 
 #include <Audio/Entities/AudioListener.h>
 

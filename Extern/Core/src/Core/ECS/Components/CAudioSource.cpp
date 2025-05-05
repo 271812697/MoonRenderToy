@@ -1,14 +1,20 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
-#include <Audio/Core/AudioPlayer.h>
+#include <Audio/Core/AudioEngine.h>
 
-#include "Core/ECS/Components/CAudioSource.h"
-#include "Core/ECS/Actor.h"
-#include "Core/Global/ServiceLocator.h"
-#include "Core/SceneSystem/SceneManager.h"
+#include <Core/ECS/Components/CAudioSource.h>
+#include <Core/ECS/Actor.h>
+#include <Core/Global/ServiceLocator.h>
+#include <Core/SceneSystem/SceneManager.h>
+
 
 Core::ECS::Components::CAudioSource::CAudioSource(ECS::Actor& p_owner) :
 	AComponent(p_owner),
-	m_audioSource(Core::Global::ServiceLocator::Get<Audio::Core::AudioPlayer>(), owner.transform.GetFTransform())
+	m_audioSource(Core::Global::ServiceLocator::Get<Audio::Core::AudioEngine>(), owner.transform.GetFTransform())
 {
 }
 
@@ -87,9 +93,9 @@ float Core::ECS::Components::CAudioSource::GetPitch() const
 	return m_audioSource.GetPitch();
 }
 
-bool Core::ECS::Components::CAudioSource::IsFinished() const
+bool Core::ECS::Components::CAudioSource::IsPlaying() const
 {
-	return m_audioSource.IsFinished();
+	return m_audioSource.IsPlaying();
 }
 
 bool Core::ECS::Components::CAudioSource::IsSpatial() const

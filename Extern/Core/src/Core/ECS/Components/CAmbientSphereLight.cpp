@@ -1,16 +1,22 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 
 
 #include "Core/ECS/Actor.h"
 
 #include "Core/ECS/Components/CAmbientSphereLight.h"
 
-Core::ECS::Components::CAmbientSphereLight::CAmbientSphereLight(ECS::Actor & p_owner) :
+Core::ECS::Components::CAmbientSphereLight::CAmbientSphereLight(ECS::Actor& p_owner) :
 	CLight(p_owner)
 {
-    m_data.intensity = 0.1f;
+	m_data.intensity = 0.1f;
 	m_data.constant = 1.0f;
 
-	m_data.type = static_cast<float>(Rendering::Entities::Light::Type::AMBIENT_SPHERE);
+	m_data.type = ::Rendering::Settings::ELightType::AMBIENT_SPHERE;
 }
 
 std::string Core::ECS::Components::CAmbientSphereLight::GetName()
@@ -28,7 +34,7 @@ void Core::ECS::Components::CAmbientSphereLight::SetRadius(float p_radius)
 	m_data.constant = p_radius;
 }
 
-void Core::ECS::Components::CAmbientSphereLight::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CAmbientSphereLight::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -37,7 +43,7 @@ void Core::ECS::Components::CAmbientSphereLight::OnSerialize(tinyxml2::XMLDocume
 	Serializer::SerializeFloat(p_doc, p_node, "radius", m_data.constant);
 }
 
-void Core::ECS::Components::CAmbientSphereLight::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CAmbientSphereLight::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -45,4 +51,5 @@ void Core::ECS::Components::CAmbientSphereLight::OnDeserialize(tinyxml2::XMLDocu
 
 	Serializer::DeserializeFloat(p_doc, p_node, "radius", m_data.constant);
 }
+
 

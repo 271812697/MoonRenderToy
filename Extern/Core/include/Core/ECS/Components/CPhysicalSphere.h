@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -55,6 +60,6 @@ namespace Core::ECS::Components
 		* Defines how the component should be drawn in the inspector
 		* @param p_root
 		*/
-		//virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
+		///virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
 	};
 }

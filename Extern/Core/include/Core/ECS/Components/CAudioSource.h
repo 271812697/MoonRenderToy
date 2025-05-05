@@ -1,9 +1,13 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
 #include <Audio/Entities/AudioSource.h>
-#include"../../tools/Event.h"
+#include <Tools/Eventing/Event.h>
 
 #include "Core/ECS/Components/AComponent.h"
 
@@ -106,9 +110,9 @@ namespace Core::ECS::Components
 		float GetPitch() const;
 
 		/**
-		* Returns true if the audio source sound has finished
+		* Returns true if the audio source is currently playing
 		*/
-		bool IsFinished() const;
+		bool IsPlaying() const;
 
 		/**
 		* Returns true if the audio source is spatialized
@@ -158,7 +162,7 @@ namespace Core::ECS::Components
 		* Defines how the component should be drawn in the inspector
 		* @param p_root
 		*/
-		//virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
+		///virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
 
 	private:
 		virtual void OnEnable() override;

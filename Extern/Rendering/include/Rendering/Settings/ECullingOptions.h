@@ -1,11 +1,19 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
+
+#include <cstdint>
+
 namespace Rendering::Settings
 {
 	/**
 	* Represents some culling options
 	*/
-	enum class ECullingOptions
+	enum class ECullingOptions : uint8_t
 	{
 		NONE				= 0x0,
 		FRUSTUM_PER_MODEL	= 0x1,

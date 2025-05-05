@@ -1,8 +1,13 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
 #include <array>
+
 
 
 #include <Rendering/Resources/Mesh.h>
@@ -10,7 +15,7 @@
 #include "Core/Resources/Material.h"
 #include "Core/ECS/Components/AComponent.h"
 
-#define MAX_MATERIAL_COUNT 255
+constexpr uint8_t kMaxMaterialCount = 0xFF;
 
 namespace Core::ECS { class Actor; }
 
@@ -22,8 +27,8 @@ namespace Core::ECS::Components
 	class CMaterialRenderer : public AComponent
 	{
 	public:
-		using MaterialList = std::array<Core::Resources::Material*, MAX_MATERIAL_COUNT>;
-		//using MaterialField = std::array<std::array<UI::Widgets::AWidget*, 3>, MAX_MATERIAL_COUNT>;
+		using MaterialList = std::array<Core::Resources::Material*, kMaxMaterialCount>;
+
 
 		/**
 		* Constructor
@@ -124,8 +129,8 @@ namespace Core::ECS::Components
 
 	private:
 		MaterialList m_materials;
-		//MaterialField m_materialFields;
-		std::array<std::string, MAX_MATERIAL_COUNT> m_materialNames;
+
+		std::array<std::string, kMaxMaterialCount> m_materialNames;
 		Maths::FMatrix4 m_userMatrix;
 	};
 }

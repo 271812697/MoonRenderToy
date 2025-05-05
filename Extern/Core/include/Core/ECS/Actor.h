@@ -1,12 +1,15 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
 #include <unordered_map>
 #include <memory>
 
-
-#include"../../tools/Event.h"
+#include <Tools/Eventing/Event.h>
 
 #include "Core/ECS/Components/AComponent.h"
 #include "Core/ECS/Components/CTransform.h"
@@ -96,6 +99,12 @@ namespace Core::ECS
 		* Detach from the parent
 		*/
 		void DetachFromParent();
+
+		/**
+		* Returns true if this actor transform is descendant of the actor
+		* @param p_actor
+		*/
+		bool IsDescendantOf(const Actor* p_actor) const;
 
 		/**
 		* Returns true if the actor has a parent
@@ -255,7 +264,7 @@ namespace Core::ECS
 		* Try to get the given component (Returns nullptr on failure)
 		*/
 		template<typename T>
-		T* GetComponent();
+		T* GetComponent() const;
 
 		/**
 		* Returns a reference to the vector of components

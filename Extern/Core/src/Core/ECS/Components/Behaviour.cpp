@@ -1,20 +1,26 @@
-#include <Debug/Logger.h>
-#include "Core/ECS/Actor.h"
-#include "Core/ECS/Components/Behaviour.h"
-#include "Core/Scripting/LuaBinder.h"
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
-Tools::Eventing::Event<Core::ECS::Components::Behaviour*> Core::ECS::Components::Behaviour::CreatedEvent;
-Tools::Eventing::Event<Core::ECS::Components::Behaviour*> Core::ECS::Components::Behaviour::DestroyedEvent;
+
+#include <Debug/Logger.h>
+
+#include <Core/ECS/Actor.h>
+#include <Core/ECS/Components/Behaviour.h>
+#include <Core/Global/ServiceLocator.h>
+#include <Core/Scripting/ScriptEngine.h>
 
 Core::ECS::Components::Behaviour::Behaviour(ECS::Actor& p_owner, const std::string& p_name) :
 	name(p_name), AComponent(p_owner)
 {
-	CreatedEvent.Invoke(this);
+	OVSERVICE(Scripting::ScriptEngine).AddBehaviour(*this);
 }
 
 Core::ECS::Components::Behaviour::~Behaviour()
 {
-	DestroyedEvent.Invoke(this);
+	OVSERVICE(Scripting::ScriptEngine).RemoveBehaviour(*this);
 }
 
 std::string Core::ECS::Components::Behaviour::GetName()
@@ -22,125 +28,101 @@ std::string Core::ECS::Components::Behaviour::GetName()
 	return "Behaviour";
 }
 
-bool Core::ECS::Components::Behaviour::RegisterToLuaContext(sol::state& p_luaState, const std::string& p_scriptFolder)
+void Core::ECS::Components::Behaviour::SetScript(std::unique_ptr<Scripting::Script>&& p_scriptContext)
 {
-	using namespace Core::Scripting;
-
-	auto result = p_luaState.safe_script_file(p_scriptFolder + name + ".lua", &sol::script_pass_on_error);
-
-	if (!result.valid())
-	{
-		sol::error err = result;
-		OVLOG_ERROR(err.what());
-		return false;
-	}
-	else
-	{
-		if (result.return_count() == 1 && result[0].is<sol::table>())
-		{
-			m_object = result[0];
-			m_object["owner"] = &owner;
-			return true;
-		}
-		else
-		{
-			OVLOG_ERROR("'" + name + ".lua' missing return expression");
-			return false;
-		}
-	}
+	m_script = std::move(p_scriptContext);
 }
 
-void Core::ECS::Components::Behaviour::UnregisterFromLuaContext()
+Tools::Utils::OptRef<Core::Scripting::Script> Core::ECS::Components::Behaviour::GetScript()
 {
-	m_object = sol::nil;
+	if (m_script)
+	{
+		return { *m_script };
+	}
+
+	return std::nullopt;
 }
 
-sol::table& Core::ECS::Components::Behaviour::GetTable()
+void Core::ECS::Components::Behaviour::RemoveScript()
 {
-	return m_object;
+	m_script.reset();
 }
 
 void Core::ECS::Components::Behaviour::OnAwake()
 {
-	LuaCall("OnAwake");
+	OVSERVICE(Scripting::ScriptEngine).OnAwake(*this);
 }
 
 void Core::ECS::Components::Behaviour::OnStart()
 {
-	LuaCall("OnStart");
+	OVSERVICE(Scripting::ScriptEngine).OnStart(*this);
 }
 
 void Core::ECS::Components::Behaviour::OnEnable()
 {
-	LuaCall("OnEnable");
+	OVSERVICE(Scripting::ScriptEngine).OnEnable(*this);
 }
 
 void Core::ECS::Components::Behaviour::OnDisable()
 {
-	LuaCall("OnDisable");
+	OVSERVICE(Scripting::ScriptEngine).OnDisable(*this);
 }
 
 void Core::ECS::Components::Behaviour::OnDestroy()
 {
-	LuaCall("OnEnd"); // Retro-compatibility
-	LuaCall("OnDestroy");
+	OVSERVICE(Scripting::ScriptEngine).OnDestroy(*this);
 }
 
 void Core::ECS::Components::Behaviour::OnUpdate(float p_deltaTime)
 {
-	LuaCall("OnUpdate", p_deltaTime);
+	OVSERVICE(Scripting::ScriptEngine).OnUpdate(*this, p_deltaTime);
 }
 
 void Core::ECS::Components::Behaviour::OnFixedUpdate(float p_deltaTime)
 {
-	LuaCall("OnFixedUpdate", p_deltaTime);
+	OVSERVICE(Scripting::ScriptEngine).OnFixedUpdate(*this, p_deltaTime);
 }
 
 void Core::ECS::Components::Behaviour::OnLateUpdate(float p_deltaTime)
 {
-	LuaCall("OnLateUpdate", p_deltaTime);
+	OVSERVICE(Scripting::ScriptEngine).OnLateUpdate(*this, p_deltaTime);
 }
 
 void Core::ECS::Components::Behaviour::OnCollisionEnter(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnCollisionStart", p_otherObject); // Retro-compatibility
-	LuaCall("OnCollisionEnter", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnCollisionEnter(*this, p_otherObject);
 }
 
 void Core::ECS::Components::Behaviour::OnCollisionStay(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnCollisionStay", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnCollisionStay(*this, p_otherObject);
 }
 
 void Core::ECS::Components::Behaviour::OnCollisionExit(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnCollisionStop", p_otherObject); // Retro-compatibility
-	LuaCall("OnCollisionExit", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnCollisionExit(*this, p_otherObject);
 }
 
 void Core::ECS::Components::Behaviour::OnTriggerEnter(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnTriggerStart", p_otherObject); // Retro-compatibility
-	LuaCall("OnTriggerEnter", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnTriggerEnter(*this, p_otherObject);
 }
 
 void Core::ECS::Components::Behaviour::OnTriggerStay(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnTriggerStay", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnTriggerStay(*this, p_otherObject);
 }
 
 void Core::ECS::Components::Behaviour::OnTriggerExit(Components::CPhysicalObject& p_otherObject)
 {
-	LuaCall("OnTriggerStop", p_otherObject); // Retro-compatibility
-	LuaCall("OnTriggerExit", p_otherObject);
+	OVSERVICE(Scripting::ScriptEngine).OnTriggerExit(*this, p_otherObject);
 }
 
-void Core::ECS::Components::Behaviour::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::Behaviour::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 }
 
-void Core::ECS::Components::Behaviour::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::Behaviour::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 }
-
 

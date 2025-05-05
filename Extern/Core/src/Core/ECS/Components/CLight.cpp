@@ -1,15 +1,22 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
+
 
 #include "Core/ECS/Actor.h"
 
 #include "Core/ECS/Components/CLight.h"
 
-Core::ECS::Components::CLight::CLight(ECS::Actor & p_owner) :
+Core::ECS::Components::CLight::CLight(ECS::Actor& p_owner) :
 	AComponent(p_owner),
-	m_data(p_owner.transform.GetFTransform(), {})
+	m_data{ p_owner.transform.GetFTransform() }
 {
 }
 
-const Rendering::Entities::Light& Core::ECS::Components::CLight::GetData() const
+::Rendering::Entities::Light& Core::ECS::Components::CLight::GetData()
 {
 	return m_data;
 }
@@ -34,7 +41,7 @@ void Core::ECS::Components::CLight::SetIntensity(float p_intensity)
 	m_data.intensity = p_intensity;
 }
 
-void Core::ECS::Components::CLight::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CLight::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -42,7 +49,7 @@ void Core::ECS::Components::CLight::OnSerialize(tinyxml2::XMLDocument & p_doc, t
 	Serializer::SerializeFloat(p_doc, p_node, "intensity", m_data.intensity);
 }
 
-void Core::ECS::Components::CLight::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CLight::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 

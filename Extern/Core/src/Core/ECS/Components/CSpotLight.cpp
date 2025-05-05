@@ -1,13 +1,19 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 
 
 #include "Core/ECS/Actor.h"
 
 #include "Core/ECS/Components/CSpotLight.h"
 
-Core::ECS::Components::CSpotLight::CSpotLight(ECS::Actor & p_owner) :
+Core::ECS::Components::CSpotLight::CSpotLight(ECS::Actor& p_owner) :
 	CLight(p_owner)
 {
-	m_data.type = static_cast<float>(Rendering::Entities::Light::Type::SPOT);
+	m_data.type = ::Rendering::Settings::ELightType::SPOT;
 }
 
 std::string Core::ECS::Components::CSpotLight::GetName()
@@ -35,11 +41,6 @@ float Core::ECS::Components::CSpotLight::GetCutoff() const
 	return m_data.cutoff;
 }
 
-float Core::ECS::Components::CSpotLight::GetRange() const
-{
-    return m_data.range;
-}
-
 float Core::ECS::Components::CSpotLight::GetOuterCutoff() const
 {
 	return m_data.outerCutoff;
@@ -48,11 +49,6 @@ float Core::ECS::Components::CSpotLight::GetOuterCutoff() const
 void Core::ECS::Components::CSpotLight::SetConstant(float p_constant)
 {
 	m_data.constant = p_constant;
-}
-
-void Core::ECS::Components::CSpotLight::SetRange(float p_range)
-{
-    m_data.range = p_range;
 }
 
 void Core::ECS::Components::CSpotLight::SetLinear(float p_linear)
@@ -75,7 +71,7 @@ void Core::ECS::Components::CSpotLight::SetOuterCutoff(float p_outerCutoff)
 	m_data.outerCutoff = p_outerCutoff;
 }
 
-void Core::ECS::Components::CSpotLight::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CSpotLight::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -86,10 +82,9 @@ void Core::ECS::Components::CSpotLight::OnSerialize(tinyxml2::XMLDocument & p_do
 	Serializer::SerializeFloat(p_doc, p_node, "quadratic", m_data.quadratic);
 	Serializer::SerializeFloat(p_doc, p_node, "cutoff", m_data.cutoff);
 	Serializer::SerializeFloat(p_doc, p_node, "outercutoff", m_data.outerCutoff);
-    Serializer::SerializeFloat(p_doc, p_node, "range", m_data.range);
 }
 
-void Core::ECS::Components::CSpotLight::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CSpotLight::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -100,6 +95,4 @@ void Core::ECS::Components::CSpotLight::OnDeserialize(tinyxml2::XMLDocument & p_
 	Serializer::DeserializeFloat(p_doc, p_node, "quadratic", m_data.quadratic);
 	Serializer::DeserializeFloat(p_doc, p_node, "cutoff", m_data.cutoff);
 	Serializer::DeserializeFloat(p_doc, p_node, "outercutoff", m_data.outerCutoff);
-    Serializer::DeserializeFloat(p_doc, p_node, "range", m_data.range);
 }
-

@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include "Core/ResourceManagement/MaterialManager.h"
 
@@ -22,5 +26,6 @@ void Core::ResourceManagement::MaterialManager::DestroyResource(Core::Resources:
 
 void Core::ResourceManagement::MaterialManager::ReloadResource(Core::Resources::Material* p_resource, const std::string& p_path)
 {
-	Core::Resources::Loaders::MaterialLoader::Reload(*p_resource, p_path);
+	std::string realPath = GetRealPath(p_path);
+	Core::Resources::Loaders::MaterialLoader::Reload(*p_resource, realPath);
 }

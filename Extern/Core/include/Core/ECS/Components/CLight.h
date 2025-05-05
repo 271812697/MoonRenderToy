@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -25,7 +29,7 @@ namespace Core::ECS::Components
 		/**
 		* Returns light data
 		*/
-		const Rendering::Entities::Light& GetData() const;
+		::Rendering::Entities::Light& GetData();
 
 		/**
 		* Returns light color
@@ -70,6 +74,6 @@ namespace Core::ECS::Components
 		//virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
 
 	protected:
-		Rendering::Entities::Light m_data;
+		::Rendering::Entities::Light m_data;
 	};
 }

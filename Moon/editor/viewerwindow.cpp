@@ -19,12 +19,12 @@
 
 
 #include "renderer/Context.h"
-#include "renderer/EditorRenderer.h"
+#include "renderer/SceneView.h"
 
 
+::Editor::Core::Context* editorContext = nullptr;
+::Editor::Panels::SceneView* sceneView = nullptr;
 
-::Editor::Core::Context* editorContext;
-::Editor::Core::EditorRenderer* editorRender;
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -59,6 +59,7 @@ namespace MOON {
 				boxWidget->SetEnabled(1);
 			}
 		}
+		this->installEventFilter(parent);
 	}
 
 	ViewerWindow::~ViewerWindow()
@@ -102,9 +103,11 @@ namespace MOON {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
-		editorContext = new ::Editor::Core::Context("","");
-		editorContext->sceneManager.LoadEmptyLightedScene();
-		editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
+		editorContext = new ::Editor::Core::Context("", "");
+
+		editorContext->sceneManager.LoadDefaultScene();
+		sceneView = new ::Editor::Panels::SceneView("SceneView");
+
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -122,32 +125,21 @@ namespace MOON {
 		//PathTrace::GetRenderer()->Update(0.016);
 		//PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		//PathTrace::GetRenderer()->Present();
+		PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();
-		
-		Maths::FVector3 p;
-		Maths::FMatrix4 view, proj;
-		
-		PathTrace::CameraController::Instance().GetCameraPosition(&p.x);
-		PathTrace::CameraController::Instance().GetViewProject(view.data,proj.data);
-		auto& engineUBO = editorContext->engineUBO;	
-		size_t offset = sizeof(Maths::FMatrix4); 
-		engineUBO->SetSubData(view, std::ref(offset));
-		engineUBO->SetSubData(proj, std::ref(offset));
-		engineUBO->SetSubData(p, std::ref(offset));
+		sceneView->Render();
 
-		view = Maths::FMatrix4::Transpose(view);
-		proj = Maths::FMatrix4::Transpose(proj);
-		editorContext->shapeDrawer->SetViewProjection(proj*view);
-		editorRender->RenderGrid(p, {1,0,0});
-		editorRender->RenderCameras();
-		editorRender->RenderScene(p);
+
+
+
 
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
 		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
+		if (sceneView != nullptr)
+			sceneView->ReceiveEvent(evt);
 		return QOpenGLWidget::event(evt);
 	}
 

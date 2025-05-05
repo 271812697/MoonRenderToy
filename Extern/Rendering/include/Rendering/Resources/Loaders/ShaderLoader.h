@@ -1,8 +1,14 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include "Rendering/Resources/Shader.h"
+#include <functional>
+
+#include <Rendering/Resources/Shader.h>
 
 namespace Rendering::Resources::Loaders
 {
@@ -13,41 +19,62 @@ namespace Rendering::Resources::Loaders
 	{
 	public:
 		/**
+		* Logging settings for the ShaderLoader
+		*/
+		struct LoggingSettings
+		{
+			bool summary : 1;
+			bool linkingErrors : 1;
+			bool linkingSuccess : 1;
+			bool compilationErrors : 1;
+			bool compilationSuccess : 1;
+		};
+
+		using FilePathParserCallback = std::function<std::string(const std::string&)>;
+
+		/**
 		* Disabled constructor
 		*/
 		ShaderLoader() = delete;
 
 		/**
-		* Create a shader
-		* @param p_filePath
+		* Returns the current logging settings
 		*/
-		static Shader* Create(const std::string& p_filePath);
+		static LoggingSettings GetLoggingSettings();
 
 		/**
-		* Create a shader from source
+		* Sets logging settings for the ShaderLoader
+		* @param p_settings
+		*/
+		static void SetLoggingSettings(LoggingSettings p_settings);
+
+		/**
+		* Creates a shader from a file
+		* @param p_filePath
+		* @param p_pathParser
+		*/
+		static Shader* Create(const std::string& p_filePath, FilePathParserCallback p_pathParser = nullptr);
+
+		/**
+		* Creates a shader from vertex and fragment source code
 		* @param p_vertexShader
 		* @param p_fragmentShader
+		* @note Doesn't support parsing (no include, no features)
 		*/
 		static Shader* CreateFromSource(const std::string& p_vertexShader, const std::string& p_fragmentShader);
 
 		/**
-		* Recompile a shader
+		* Recompiles a shader
 		* @param p_shader
 		* @param p_filePath
+		* @param p_pathParser
 		*/
-		static void	Recompile(Shader& p_shader, const std::string& p_filePath);
+		static void	Recompile(Shader& p_shader, const std::string& p_filePath, FilePathParserCallback p_pathParser = nullptr);
 
 		/**
-		* Destroy a shader
+		* Destroys a shader
 		* @param p_shader
 		*/
 		static bool Destroy(Shader*& p_shader);
-
-	private:
-		static std::tuple<std::string, std::string,std::string> ParseShader(const std::string& p_filePath);
-		static uint32_t CreateProgram(const std::string& p_vertexShader, const std::string& p_fragmentShader,const std::string& p_geomeoryShader);
-		static uint32_t CompileShader(uint32_t p_type, const std::string& p_source);
-
-		static std::string __FILE_TRACE;
 	};
 }

@@ -1,8 +1,12 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include "Rendering/LowRenderer/Camera.h"
+#include "Rendering/Entities/Camera.h"
 #include "AComponent.h"
 
 namespace Core::ECS { class Actor; }
@@ -37,11 +41,11 @@ namespace Core::ECS::Components
 		*/
 		void SetFov(float p_value);
 
-        /**
-        * Sets the size of the camera to the given value
-        * @param p_value
-        */
-        void SetSize(float p_value);
+		/**
+		* Sets the size of the camera to the given value
+		* @param p_value
+		*/
+		void SetSize(float p_value);
 
 		/**
 		* Sets the near of the camera to the given value
@@ -73,21 +77,21 @@ namespace Core::ECS::Components
 		*/
 		void SetFrustumLightCulling(bool p_enable);
 
-        /**
-        * Defines the projection mode the camera should adopt
-        * @param p_projectionMode
-        */
-        void SetProjectionMode(Rendering::Settings::EProjectionMode p_projectionMode);
+		/**
+		* Defines the projection mode the camera should adopt
+		* @param p_projectionMode
+		*/
+		void SetProjectionMode(::Rendering::Settings::EProjectionMode p_projectionMode);
 
 		/**
 		* Returns the fov of the camera
 		*/
 		float GetFov() const;
 
-        /**
-        * Returns the size of the camera
-        */
-        float GetSize() const;
+		/**
+		* Returns the size of the camera
+		*/
+		float GetSize() const;
 
 		/**
 		* Returns the near of the camera
@@ -114,15 +118,15 @@ namespace Core::ECS::Components
 		*/
 		bool HasFrustumLightCulling() const;
 
-        /**
-        * Returns the current projection mode
-        */
-        Rendering::Settings::EProjectionMode GetProjectionMode() const;
+		/**
+		* Returns the current projection mode
+		*/
+		::Rendering::Settings::EProjectionMode GetProjectionMode() const;
 
 		/**
 		* Returns the Rendering camera instance attached to this component
 		*/
-		Rendering::LowRenderer::Camera& GetCamera();
+		::Rendering::Entities::Camera& GetCamera();
 
 		/**
 		* Serialize the component
@@ -145,6 +149,6 @@ namespace Core::ECS::Components
 		//virtual void OnInspector(UI::Internal::WidgetContainer& p_root) override;
 
 	private:
-		Rendering::LowRenderer::Camera m_camera;
+		::Rendering::Entities::Camera m_camera;
 	};
 }

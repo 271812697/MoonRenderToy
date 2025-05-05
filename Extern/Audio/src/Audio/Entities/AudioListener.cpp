@@ -1,22 +1,18 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
-
-#include "Audio/Entities/AudioListener.h"
+#include <Audio/Entities/AudioListener.h>
 
 Tools::Eventing::Event<Audio::Entities::AudioListener&>	Audio::Entities::AudioListener::CreatedEvent;
 Tools::Eventing::Event<Audio::Entities::AudioListener&>	Audio::Entities::AudioListener::DestroyedEvent;
 
-Audio::Entities::AudioListener::AudioListener() :
-	m_transform(new Maths::FTransform()),
-	m_internalTransform(true)
+Audio::Entities::AudioListener::AudioListener(Tools::Utils::OptRef<Maths::FTransform> p_transform) :
+	m_transform(p_transform)
 {
-	Setup();
-}
-
-Audio::Entities::AudioListener::AudioListener(Maths::FTransform& p_transform) :
-	m_transform(&p_transform),
-	m_internalTransform(false)
-{
-	Setup();
+	CreatedEvent.Invoke(*this);
 }
 
 Audio::Entities::AudioListener::~AudioListener()
@@ -26,7 +22,7 @@ Audio::Entities::AudioListener::~AudioListener()
 
 Maths::FTransform& Audio::Entities::AudioListener::GetTransform()
 {
-	return *m_transform;
+	return m_transform;
 }
 
 void Audio::Entities::AudioListener::SetEnabled(bool p_enable)
@@ -37,9 +33,4 @@ void Audio::Entities::AudioListener::SetEnabled(bool p_enable)
 bool Audio::Entities::AudioListener::IsEnabled() const
 {
 	return m_enabled;
-}
-
-void Audio::Entities::AudioListener::Setup()
-{
-	CreatedEvent.Invoke(*this);
 }

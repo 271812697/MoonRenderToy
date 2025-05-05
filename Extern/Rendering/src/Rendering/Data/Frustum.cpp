@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <cmath>
 #include <algorithm>
@@ -259,6 +264,37 @@ bool Rendering::Data::Frustum::BoundingSphereInFrustum(const Rendering::Geometry
 	Maths::FVector3 worldCenter = position + sphereOffset;
 
 	return SphereInFrustum(worldCenter.x, worldCenter.y, worldCenter.z, scaledRadius);
+}
+
+bool Rendering::Data::Frustum::IsMeshInFrustum(const Rendering::Resources::Mesh& p_mesh, const Maths::FTransform& p_transform) const
+{
+	return BoundingSphereInFrustum(p_mesh.GetBoundingSphere(), p_transform);
+}
+
+std::vector<Rendering::Resources::Mesh*> Rendering::Data::Frustum::GetMeshesInFrustum(const Rendering::Resources::Model& p_model, const Rendering::Geometry::BoundingSphere& p_modelBoundingSphere, const Maths::FTransform& p_modelTransform, Rendering::Settings::ECullingOptions p_cullingOptions) const
+{
+	const bool frustumPerModel = Rendering::Settings::IsFlagSet(Settings::ECullingOptions::FRUSTUM_PER_MODEL, p_cullingOptions);
+
+	if (!frustumPerModel || BoundingSphereInFrustum(p_modelBoundingSphere, p_modelTransform))
+	{
+		std::vector<Rendering::Resources::Mesh*> result;
+
+		const bool frustumPerMesh = Rendering::Settings::IsFlagSet(Settings::ECullingOptions::FRUSTUM_PER_MESH, p_cullingOptions);
+		const auto& meshes = p_model.GetMeshes();
+
+		for (auto mesh : meshes)
+		{
+			// Do not check if the mesh is in frustum if the model has only one mesh, because model and mesh bounding sphere are equals
+			if (meshes.size() == 1 || !frustumPerMesh || IsMeshInFrustum(*mesh, p_modelTransform))
+			{
+				result.push_back(mesh);
+			}
+		}
+
+		return result;
+	}
+
+	return {};
 }
 
 std::array<float, 4> Rendering::Data::Frustum::GetNearPlane() const

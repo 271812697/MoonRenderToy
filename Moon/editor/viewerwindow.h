@@ -34,7 +34,7 @@ namespace MOON {
 	public:
 		Viewer viewer;
 	private:
-		
+
 		bool blockMouseMessage = false;
 		RenderWindowInteractor* windowInteractor = nullptr;
 		BoxWidget2* boxWidget = nullptr;

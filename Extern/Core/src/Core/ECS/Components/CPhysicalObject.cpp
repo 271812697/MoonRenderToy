@@ -1,3 +1,9 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 
 #include <Debug/Logger.h>
 
@@ -6,17 +12,17 @@
 #include "Core/ECS/Components/CPhysicalObject.h"
 #include "Core/ECS/Actor.h"
 
-Core::ECS::Components::CPhysicalObject::CPhysicalObject(ECS::Actor & p_owner) : 
+Core::ECS::Components::CPhysicalObject::CPhysicalObject(ECS::Actor& p_owner) :
 	AComponent(p_owner)
 {
 }
 
-void Core::ECS::Components::CPhysicalObject::AddForce(const Maths::FVector3 & p_force)
+void Core::ECS::Components::CPhysicalObject::AddForce(const Maths::FVector3& p_force)
 {
 	m_physicalObject->AddForce(p_force);
 }
 
-void Core::ECS::Components::CPhysicalObject::AddImpulse(const Maths::FVector3 & p_impulse)
+void Core::ECS::Components::CPhysicalObject::AddImpulse(const Maths::FVector3& p_impulse)
 {
 	m_physicalObject->AddImpulse(p_impulse);
 }
@@ -101,22 +107,22 @@ void Core::ECS::Components::CPhysicalObject::SetFriction(float p_friction)
 	m_physicalObject->SetFriction(p_friction);
 }
 
-void Core::ECS::Components::CPhysicalObject::SetLinearVelocity(const Maths::FVector3 & p_linearVelocity)
+void Core::ECS::Components::CPhysicalObject::SetLinearVelocity(const Maths::FVector3& p_linearVelocity)
 {
 	m_physicalObject->SetLinearVelocity(p_linearVelocity);
 }
 
-void Core::ECS::Components::CPhysicalObject::SetAngularVelocity(const Maths::FVector3 & p_angularVelocity)
+void Core::ECS::Components::CPhysicalObject::SetAngularVelocity(const Maths::FVector3& p_angularVelocity)
 {
 	m_physicalObject->SetAngularVelocity(p_angularVelocity);
 }
 
-void Core::ECS::Components::CPhysicalObject::SetLinearFactor(const Maths::FVector3 & p_linearFactor)
+void Core::ECS::Components::CPhysicalObject::SetLinearFactor(const Maths::FVector3& p_linearFactor)
 {
 	m_physicalObject->SetLinearFactor(p_linearFactor);
 }
 
-void Core::ECS::Components::CPhysicalObject::SetAngularFactor(const Maths::FVector3 & p_angularFactor)
+void Core::ECS::Components::CPhysicalObject::SetAngularFactor(const Maths::FVector3& p_angularFactor)
 {
 	m_physicalObject->SetAngularFactor(p_angularFactor);
 }
@@ -136,7 +142,7 @@ void Core::ECS::Components::CPhysicalObject::SetActivationState(Physics::Entitie
 	m_physicalObject->SetActivationState(p_state);
 }
 
-void Core::ECS::Components::CPhysicalObject::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPhysicalObject::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	Helpers::Serializer::SerializeBoolean(p_doc, p_node, "is_trigger", IsTrigger());
 	Helpers::Serializer::SerializeBoolean(p_doc, p_node, "is_kinematic", IsKinematic());
@@ -148,7 +154,7 @@ void Core::ECS::Components::CPhysicalObject::OnSerialize(tinyxml2::XMLDocument &
 	Helpers::Serializer::SerializeInt(p_doc, p_node, "collision_mode", static_cast<int>(GetCollisionDetectionMode()));
 }
 
-void Core::ECS::Components::CPhysicalObject::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPhysicalObject::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	SetTrigger(Helpers::Serializer::DeserializeBoolean(p_doc, p_node, "is_trigger"));
 	SetKinematic(Helpers::Serializer::DeserializeBoolean(p_doc, p_node, "is_kinematic"));
@@ -170,49 +176,49 @@ void Core::ECS::Components::CPhysicalObject::BindListener()
 {
 	/* Collision Events */
 	m_physicalObject->CollisionStartEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		CollisionEnterEvent.Invoke(otherObject);
-		owner.OnCollisionEnter(otherObject);
-	};
+			CollisionEnterEvent.Invoke(otherObject);
+			owner.OnCollisionEnter(otherObject);
+		};
 	m_physicalObject->CollisionStayEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		CollisionStayEvent.Invoke(otherObject);
-		owner.OnCollisionStay(otherObject);
-	};
+			CollisionStayEvent.Invoke(otherObject);
+			owner.OnCollisionStay(otherObject);
+		};
 	m_physicalObject->CollisionStopEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		CollisionExitEvent.Invoke(otherObject);
-		owner.OnCollisionExit(otherObject);
-	};
+			CollisionExitEvent.Invoke(otherObject);
+			owner.OnCollisionExit(otherObject);
+		};
 
 	/* Trigger Events */
 	m_physicalObject->TriggerStartEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		TriggerEnterEvent.Invoke(otherObject);
-		owner.OnTriggerEnter(otherObject);
-	};
+			TriggerEnterEvent.Invoke(otherObject);
+			owner.OnTriggerEnter(otherObject);
+		};
 	m_physicalObject->TriggerStayEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		TriggerStayEvent.Invoke(otherObject);
-		owner.OnTriggerStay(otherObject);
-	};
+			TriggerStayEvent.Invoke(otherObject);
+			owner.OnTriggerStay(otherObject);
+		};
 	m_physicalObject->TriggerStopEvent += [this](Physics::Entities::PhysicalObject& otherPhysicalObject)
-	{
-		auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
+		{
+			auto& otherObject = otherPhysicalObject.GetUserData<std::reference_wrapper<CPhysicalObject>>().get();
 
-		TriggerExitEvent.Invoke(otherObject);
-		owner.OnTriggerExit(otherObject);
-	};
+			TriggerExitEvent.Invoke(otherObject);
+			owner.OnTriggerExit(otherObject);
+		};
 }
 
 void Core::ECS::Components::CPhysicalObject::OnEnable()

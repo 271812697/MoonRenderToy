@@ -1,9 +1,15 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 #include "Core/ECS/Components/CTransform.h"
 
 Core::ECS::Components::CTransform::CTransform(ECS::Actor& p_owner, Maths::FVector3 p_localPosition, Maths::FQuaternion p_localRotation, Maths::FVector3 p_localScale) :
-AComponent(p_owner)
+	AComponent(p_owner)
 {
-	m_transform.GenerateMatrices(p_localPosition, p_localRotation, p_localScale);
+	m_transform.GenerateMatricesLocal(p_localPosition, p_localRotation, p_localScale);
 }
 
 std::string Core::ECS::Components::CTransform::GetName()
@@ -56,62 +62,62 @@ void Core::ECS::Components::CTransform::SetWorldScale(Maths::FVector3 p_newScale
 	m_transform.SetWorldScale(p_newScale);
 }
 
-void Core::ECS::Components::CTransform::TranslateLocal(const Maths::FVector3 & p_translation)
+void Core::ECS::Components::CTransform::TranslateLocal(const Maths::FVector3& p_translation)
 {
 	m_transform.TranslateLocal(p_translation);
 }
 
-void Core::ECS::Components::CTransform::RotateLocal(const Maths::FQuaternion & p_rotation)
+void Core::ECS::Components::CTransform::RotateLocal(const Maths::FQuaternion& p_rotation)
 {
 	m_transform.RotateLocal(p_rotation);
 }
 
-void Core::ECS::Components::CTransform::ScaleLocal(const Maths::FVector3 & p_scale)
+void Core::ECS::Components::CTransform::ScaleLocal(const Maths::FVector3& p_scale)
 {
 	m_transform.ScaleLocal(p_scale);
 }
 
-const Maths::FVector3 & Core::ECS::Components::CTransform::GetLocalPosition() const
+const Maths::FVector3& Core::ECS::Components::CTransform::GetLocalPosition() const
 {
 	return m_transform.GetLocalPosition();
 }
 
-const Maths::FQuaternion & Core::ECS::Components::CTransform::GetLocalRotation() const
+const Maths::FQuaternion& Core::ECS::Components::CTransform::GetLocalRotation() const
 {
 	return m_transform.GetLocalRotation();
 }
 
-const Maths::FVector3 & Core::ECS::Components::CTransform::GetLocalScale() const
+const Maths::FVector3& Core::ECS::Components::CTransform::GetLocalScale() const
 {
 	return m_transform.GetLocalScale();
 }
 
-const Maths::FVector3 & Core::ECS::Components::CTransform::GetWorldPosition() const
+const Maths::FVector3& Core::ECS::Components::CTransform::GetWorldPosition() const
 {
 	return m_transform.GetWorldPosition();
 }
 
-const Maths::FQuaternion & Core::ECS::Components::CTransform::GetWorldRotation() const
+const Maths::FQuaternion& Core::ECS::Components::CTransform::GetWorldRotation() const
 {
 	return m_transform.GetWorldRotation();
 }
 
-const Maths::FVector3 & Core::ECS::Components::CTransform::GetWorldScale() const
+const Maths::FVector3& Core::ECS::Components::CTransform::GetWorldScale() const
 {
 	return m_transform.GetWorldScale();
 }
 
-const Maths::FMatrix4 & Core::ECS::Components::CTransform::GetLocalMatrix() const
+const Maths::FMatrix4& Core::ECS::Components::CTransform::GetLocalMatrix() const
 {
 	return m_transform.GetLocalMatrix();
 }
 
-const Maths::FMatrix4 & Core::ECS::Components::CTransform::GetWorldMatrix() const
+const Maths::FMatrix4& Core::ECS::Components::CTransform::GetWorldMatrix() const
 {
 	return m_transform.GetWorldMatrix();
 }
 
-Maths::FTransform & Core::ECS::Components::CTransform::GetFTransform()
+Maths::FTransform& Core::ECS::Components::CTransform::GetFTransform()
 {
 	return m_transform;
 }
@@ -153,9 +159,9 @@ void Core::ECS::Components::CTransform::OnSerialize(tinyxml2::XMLDocument& p_doc
 	Core::Helpers::Serializer::SerializeVec3(p_doc, p_node, "scale", GetLocalScale());
 }
 
-void Core::ECS::Components::CTransform::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CTransform::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
-	m_transform.GenerateMatrices
+	m_transform.GenerateMatricesLocal
 	(
 		Core::Helpers::Serializer::DeserializeVec3(p_doc, p_node, "position"),
 		Core::Helpers::Serializer::DeserializeQuat(p_doc, p_node, "rotation"),

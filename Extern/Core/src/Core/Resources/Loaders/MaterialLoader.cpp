@@ -1,6 +1,12 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
+#include <Core/Resources/Loaders/MaterialLoader.h>
 
-#include "Core/Resources/Loaders/MaterialLoader.h"
+#include <Debug/Logger.h>
 
 Core::Resources::Material * Core::Resources::Loaders::MaterialLoader::Create(const std::string & p_path)
 {
@@ -29,8 +35,8 @@ void Core::Resources::Loaders::MaterialLoader::Reload(Material& p_material, cons
 	if (!doc.Error())
 	{
 		tinyxml2::XMLNode* root = doc.FirstChild();
-
 		p_material.OnDeserialize(doc, root);
+		OVLOG_INFO("[MATERIAL] \"" + p_path + "\" Reloaded");
 	}
 }
 

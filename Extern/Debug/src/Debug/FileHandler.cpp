@@ -2,7 +2,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS // Enable getenv
 
-#include "../../tools/Date.h"
+#include <Tools/Time/Date.h>
 
 #include "Debug/FileHandler.h"
 
@@ -10,11 +10,11 @@
 #include <iostream>
 
 std::string const Debug::FileHandler::__DEFAULT_HEADER;
-std::string const Debug::FileHandler::__INFO_HEADER		= "[INFO] ";
-std::string const Debug::FileHandler::__WARNING_HEADER	= "[WARNING] ";
-std::string const Debug::FileHandler::__ERROR_HEADER		= "[ERROR] ";
-std::string Debug::FileHandler::__APP_LAUNCH_DATE			= Tools::Time::Date::GetDateAsString();
-std::string const Debug::FileHandler::__LOG_EXTENSION		= ".ovlog";
+std::string const Debug::FileHandler::__INFO_HEADER = "[INFO] ";
+std::string const Debug::FileHandler::__WARNING_HEADER = "[WARNING] ";
+std::string const Debug::FileHandler::__ERROR_HEADER = "[ERROR] ";
+std::string Debug::FileHandler::__APP_LAUNCH_DATE = Tools::Time::Date::GetDateAsString();
+std::string const Debug::FileHandler::__LOG_EXTENSION = ".ovlog";
 
 std::ofstream Debug::FileHandler::OUTPUT_FILE;
 std::string Debug::FileHandler::LOG_FILE_PATH = std::string(getenv("APPDATA")) + std::string("\\OverloadTech\\OvEditor\\Log\\") + __APP_LAUNCH_DATE + __LOG_EXTENSION;

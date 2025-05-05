@@ -63,7 +63,7 @@ namespace TEST {
 			struct StencilFunc {
 				unsigned int func = GL_ALWAYS;
 				int ref = 0;
-				unsigned int mask = ~unsigned int(0);
+				unsigned int mask = 0xFFFFFFFF;
 				bool operator != (StencilFunc const& rhs) const noexcept {
 					return func != rhs.func || ref != rhs.ref || mask != rhs.mask;
 				}
@@ -79,7 +79,7 @@ namespace TEST {
 			struct {
 				StencilFunc func;
 				StencilOp op;
-				unsigned int stencilMask = ~unsigned int(0);
+				unsigned int stencilMask = 0xFFFFFFFF;
 			} front, back;
 		} stencil;
 

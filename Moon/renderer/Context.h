@@ -1,32 +1,28 @@
-
 #pragma once
+#include <Tools/Filesystem/IniFile.h>
 
-#include"tools/IniFile.h"
-
-#include <Rendering/Buffers/UniformBuffer.h>
-#include <Rendering/Buffers/ShaderStorageBuffer.h>
-#include <Rendering/Core/ShapeDrawer.h>
+#include <Rendering/HAL/UniformBuffer.h>
+#include <Rendering/HAL/ShaderStorageBuffer.h>
 
 #include <Physics/Core/PhysicsEngine.h>
 
+#include <Audio/Core/AudioEngine.h>
 
 
 
-
-#include <Core/ECS/Renderer.h>
 #include <Core/ResourceManagement/ModelManager.h>
 #include <Core/ResourceManagement/TextureManager.h>
 #include <Core/ResourceManagement/ShaderManager.h>
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ResourceManagement/SoundManager.h>
 #include <Core/SceneSystem/SceneManager.h>
-#include <Core/Scripting/ScriptInterpreter.h>
+#include <Core/Scripting/ScriptEngine.h>
 
 
 #include <Audio/Core/AudioEngine.h>
-#include <Audio/Core/AudioPlayer.h>
 
 #include "EditorResources.h"
+//#include <Editor/Utils/TextureRegistry.h>
 
 namespace Editor::Core
 {
@@ -74,28 +70,22 @@ namespace Editor::Core
 		const std::string editorAssetsPath;
 
 
-		std::unique_ptr<Rendering::Context::Driver>			    driver;
-		std::unique_ptr<::Core::ECS::Renderer>					renderer;
-		std::unique_ptr<Rendering::Core::ShapeDrawer>			shapeDrawer;
+		std::unique_ptr<::Rendering::Context::Driver> driver;
 
-		std::unique_ptr<Physics::Core::PhysicsEngine>			physicsEngine;
-		std::unique_ptr<Audio::Core::AudioEngine>				audioEngine;
-		std::unique_ptr<Audio::Core::AudioPlayer>				audioPlayer;
-		std::unique_ptr<::Editor::Core::EditorResources>		editorResources;
+		std::unique_ptr<Physics::Core::PhysicsEngine> physicsEngine;
+		std::unique_ptr<Audio::Core::AudioEngine> audioEngine;
+		std::unique_ptr<::Editor::Core::EditorResources> editorResources;
 
-		std::unique_ptr<::Core::Scripting::ScriptInterpreter>	scriptInterpreter;
-		std::unique_ptr<Rendering::Buffers::UniformBuffer>	    engineUBO;
+		std::unique_ptr<::Core::Scripting::ScriptEngine> scriptEngine;
 
-		std::unique_ptr<Rendering::Buffers::ShaderStorageBuffer>	lightSSBO;
-		std::unique_ptr<Rendering::Buffers::ShaderStorageBuffer>	simulatedLightSSBO;
-		
 		::Core::SceneSystem::SceneManager sceneManager;
 
-		::Core::ResourceManagement::ModelManager	modelManager;
-		::Core::ResourceManagement::TextureManager	textureManager;
-		::Core::ResourceManagement::ShaderManager	shaderManager;
-		::Core::ResourceManagement::MaterialManager	materialManager;
-		::Core::ResourceManagement::SoundManager	soundManager;
+		::Core::ResourceManagement::ModelManager modelManager;
+		::Core::ResourceManagement::TextureManager textureManager;
+		::Core::ResourceManagement::ShaderManager shaderManager;
+		::Core::ResourceManagement::MaterialManager materialManager;
+		::Core::ResourceManagement::SoundManager soundManager;
+
 
 
 		Tools::Filesystem::IniFile projectSettings;

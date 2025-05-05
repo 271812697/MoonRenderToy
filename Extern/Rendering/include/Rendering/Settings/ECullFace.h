@@ -1,18 +1,22 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-
+#include <cstdint>
 
 namespace Rendering::Settings
 {
 	/**
-	* OpenGL cullface enum wrapper
+	* Enumeration of cullable face
 	*/
-	enum class ECullFace
+	enum class ECullFace : uint8_t
 	{
-		FRONT			= 0x0404,
-		BACK			= 0x0405,
-		FRONT_AND_BACK	= 0x0408
+		FRONT,
+		BACK,
+		FRONT_AND_BACK
 	};
 }

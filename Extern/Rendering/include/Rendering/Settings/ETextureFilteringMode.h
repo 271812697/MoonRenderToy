@@ -1,14 +1,23 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 #pragma once
+
 namespace Rendering::Settings
 {
-
-	enum class ETextureFilteringMode
+	/**
+	* Enumeration of texture filtering modes
+	*/
+	enum class ETextureFilteringMode : uint8_t
 	{
-		NEAREST					= 0x2600,
-		LINEAR					= 0x2601,
-		NEAREST_MIPMAP_NEAREST	= 0x2700,
-		LINEAR_MIPMAP_LINEAR	= 0x2703,
-		LINEAR_MIPMAP_NEAREST	= 0x2701,
-		NEAREST_MIPMAP_LINEAR	= 0x2702
+		NEAREST,
+		LINEAR,
+		NEAREST_MIPMAP_NEAREST,
+		LINEAR_MIPMAP_LINEAR,
+		LINEAR_MIPMAP_NEAREST,
+		NEAREST_MIPMAP_LINEAR
 	};
 }

@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <Physics/Entities/PhysicalSphere.h>
 
@@ -7,7 +12,7 @@
 
 using namespace Physics::Entities;
 
-Core::ECS::Components::CPhysicalSphere::CPhysicalSphere(ECS::Actor & p_owner) :
+Core::ECS::Components::CPhysicalSphere::CPhysicalSphere(ECS::Actor& p_owner) :
 	CPhysicalObject(p_owner)
 {
 	m_physicalObject = std::make_unique<PhysicalSphere>(p_owner.transform.GetFTransform());
@@ -33,14 +38,14 @@ float Core::ECS::Components::CPhysicalSphere::GetRadius() const
 	return GetPhysicalObjectAs<PhysicalSphere>().GetRadius();
 }
 
-void Core::ECS::Components::CPhysicalSphere::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPhysicalSphere::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	CPhysicalObject::OnSerialize(p_doc, p_node);
 
 	Helpers::Serializer::SerializeFloat(p_doc, p_node, "radius", GetRadius());
 }
 
-void Core::ECS::Components::CPhysicalSphere::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPhysicalSphere::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	CPhysicalObject::OnDeserialize(p_doc, p_node);
 

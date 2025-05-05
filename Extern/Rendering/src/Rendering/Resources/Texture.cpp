@@ -1,21 +1,25 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
-#include<glad/glad.h>
+#include <Debug/Assertion.h>
+#include <Rendering/Resources/Texture.h>
 
-#include "Rendering/Resources/Texture.h"
-
-void Rendering::Resources::Texture::Bind(uint32_t p_slot) const
+Rendering::HAL::Texture& Rendering::Resources::Texture::GetTexture()
 {
-	glActiveTexture(GL_TEXTURE0 + p_slot);
-	glBindTexture(GL_TEXTURE_2D, id);
+	ASSERT(m_texture != nullptr, "Trying to access a null Texture");
+	return *m_texture;
 }
 
-void Rendering::Resources::Texture::Unbind() const
+Rendering::Resources::Texture::Texture(const std::string p_path, std::unique_ptr<HAL::Texture>&& p_texture) : path(p_path)
 {
-	glBindTexture(GL_TEXTURE_2D, 0);
+	SetTexture(std::move(p_texture));
 }
 
-Rendering::Resources::Texture::Texture(const std::string p_path, uint32_t p_id, uint32_t p_width, uint32_t p_height, uint32_t p_bpp, Settings::ETextureFilteringMode p_firstFilter, Settings::ETextureFilteringMode p_secondFilter, bool p_generateMipmap) : path(p_path),
-	id(p_id), width(p_width), height(p_height), bitsPerPixel(p_bpp), firstFilter(p_firstFilter), secondFilter(p_secondFilter), isMimapped(p_generateMipmap)
+void Rendering::Resources::Texture::SetTexture(std::unique_ptr<HAL::Texture>&& p_texture)
 {
-
+	ASSERT(p_texture != nullptr, "Cannot assign an invalid texture!");
+	m_texture = std::move(p_texture);
 }

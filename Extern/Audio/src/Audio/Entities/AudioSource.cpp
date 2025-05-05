@@ -1,112 +1,121 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
+#include <soloud.h>
+#include <soloud_wav.h>
 
-#include <irrklang/ik_vec3d.h>
-
-#include "Audio/Core/AudioPlayer.h"
-#include "Audio/Entities/AudioSource.h"
+#include <Audio/Core/AudioEngine.h>
+#include <Audio/Entities/AudioSource.h>
+#include <Debug/Assertion.h>
 
 Tools::Eventing::Event<Audio::Entities::AudioSource&> Audio::Entities::AudioSource::CreatedEvent;
 Tools::Eventing::Event<Audio::Entities::AudioSource&> Audio::Entities::AudioSource::DestroyedEvent;
 
-Audio::Entities::AudioSource::AudioSource(Core::AudioPlayer& p_audioPlayer) :
-	m_audioPlayer(p_audioPlayer),
-	m_transform(new Maths::FTransform()),
-	m_internalTransform(true)
-{
-	Setup();
-}
-
-Audio::Entities::AudioSource::AudioSource(Core::AudioPlayer& p_audioPlayer, Maths::FTransform& p_transform) :
-	m_audioPlayer(p_audioPlayer),
-	m_transform(&p_transform),
-	m_internalTransform(false)
-{
-	Setup();
-}
-
-void Audio::Entities::AudioSource::Setup()
+Audio::Entities::AudioSource::AudioSource(Core::AudioEngine& p_engine, Tools::Utils::OptRef<Maths::FTransform> p_transform) :
+	m_engine(p_engine),
+	m_transform(p_transform)
 {
 	CreatedEvent.Invoke(*this);
 }
 
 Audio::Entities::AudioSource::~AudioSource()
 {
+	Stop();
 	DestroyedEvent.Invoke(*this);
-
-	StopAndDestroyTrackedSound();
-
-	if (m_internalTransform)
-		delete m_transform;
 }
 
-void Audio::Entities::AudioSource::UpdateTrackedSoundPosition()
+const Maths::FTransform& Audio::Entities::AudioSource::GetTransform()
 {
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setPosition(reinterpret_cast<const irrklang::vec3df&>(m_transform->GetWorldPosition())); // FVector3 and vec3df have the same data layout
+	return m_transform;
 }
 
 void Audio::Entities::AudioSource::ApplySourceSettingsToTrackedSound()
 {
-	m_trackedSound->GetTrack()->setVolume(m_volume);
-	m_trackedSound->GetTrack()->setPan(m_pan);
-	m_trackedSound->GetTrack()->setIsLooped(m_looped);
-	m_trackedSound->GetTrack()->setPlaybackSpeed(m_pitch);
-	m_trackedSound->GetTrack()->setMinDistance(m_attenuationThreshold);
+	m_instance->SetVolume(m_volume);
+	m_instance->SetPan(m_pan);
+	m_instance->SetLooped(m_looped);
+	m_instance->SetPitch(m_pitch);
+	m_instance->SetAttenuationThreshold(m_attenuationThreshold);
+}
+
+bool Audio::Entities::AudioSource::HasSound() const
+{
+	return m_instance && m_instance->IsValid();
+}
+
+bool Audio::Entities::AudioSource::IsPlaying() const
+{
+	return HasSound() && !IsPaused();
 }
 
 void Audio::Entities::AudioSource::SetSpatial(bool p_value)
 {
 	m_spatial = p_value;
+	// TODO: Cannot currently change the spatialization mode of a sound instance
 }
 
 void Audio::Entities::AudioSource::SetAttenuationThreshold(float p_distance)
 {
 	m_attenuationThreshold = p_distance;
 
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setMinDistance(p_distance);
-}
-
-Audio::Tracking::SoundTracker* Audio::Entities::AudioSource::GetTrackedSound() const
-{
-	return m_trackedSound.get();
+	if (HasSound())
+	{
+		m_instance->SetAttenuationThreshold(m_attenuationThreshold);
+	}
 }
 
 void Audio::Entities::AudioSource::SetVolume(float p_volume)
 {
 	m_volume = p_volume;
 
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setVolume(p_volume);
+	if (HasSound())
+	{
+		m_instance->SetVolume(m_volume);
+	}
 }
 
 void Audio::Entities::AudioSource::SetPan(float p_pan)
 {
 	m_pan = p_pan;
 
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setPan(p_pan * -1.0f);
+	if (HasSound())
+	{
+		m_instance->SetPan(m_pan);
+	}
 }
 
 void Audio::Entities::AudioSource::SetLooped(bool p_looped)
 {
 	m_looped = p_looped;
 
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setIsLooped(p_looped);
+	if (HasSound())
+	{
+		m_instance->SetLooped(p_looped);
+	}
 }
 
 void Audio::Entities::AudioSource::SetPitch(float p_pitch)
 {
 	m_pitch = p_pitch;
 
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setPlaybackSpeed(p_pitch < 0.01f ? 0.01f : p_pitch);
+	if (HasSound())
+	{
+		m_instance->SetPitch(p_pitch);
+	}
 }
 
-bool Audio::Entities::AudioSource::IsTrackingSound() const
+bool Audio::Entities::AudioSource::IsPaused() const
 {
-	return m_trackedSound.operator bool();
+	ASSERT(HasSound(), "Cannot check if the sound is paused if no sound is currently being tracked");
+	return m_instance->IsPaused();
+}
+
+std::weak_ptr<Audio::Data::SoundInstance> Audio::Entities::AudioSource::GetSoundInstance() const
+{
+	return m_instance;
 }
 
 bool Audio::Entities::AudioSource::IsSpatial() const
@@ -139,59 +148,77 @@ float Audio::Entities::AudioSource::GetPitch() const
 	return m_pitch;
 }
 
-bool Audio::Entities::AudioSource::IsFinished() const
-{
-	if (IsTrackingSound())
-		return m_trackedSound->GetTrack()->isFinished();
-	else
-		return true;
-}
-
 void Audio::Entities::AudioSource::Play(const Resources::Sound& p_sound)
 {
-	/* Stops and destroy the previous sound (If any) */
-	StopAndDestroyTrackedSound();
-	
-	/* Play the sound and store a tracker to the sound into memory */
-	if (m_spatial)
-		m_trackedSound = m_audioPlayer.PlaySpatialSound(p_sound, false, m_looped, m_transform->GetWorldPosition(), true);
-	else
-		m_trackedSound = m_audioPlayer.PlaySound(p_sound, false, m_looped, true);
+	Stop();
 
-	/* If the sound tracker is non-null, apply AudioSource settings to the sound (Not every settings because some are already set with AudioPlayer::PlaySound method) */
-	if (IsTrackingSound())
+	if (m_spatial)
 	{
-		m_trackedSound->GetTrack()->setVolume(m_volume);
-		m_trackedSound->GetTrack()->setPan(m_pan);
-		m_trackedSound->GetTrack()->setPlaybackSpeed(m_pitch);
-		m_trackedSound->GetTrack()->setMinDistance(m_attenuationThreshold);
-		m_trackedSound->GetTrack()->setIsPaused(false);
+		m_instance = m_engine.Play3D(
+			p_sound,
+			m_transform->GetWorldPosition(),
+			Maths::FVector3::Zero, // TODO: Add support for non-zero velocity
+			m_volume,
+			true
+		);
+
+		if (m_instance)
+		{
+			m_instance->SetAttenuationThreshold(m_attenuationThreshold);
+			m_instance->SetAttenuationModel(
+				Settings::EAttenuationModel::EXPONENTIAL_DISTANCE // TODO: Expose attenuation model
+			);
+
+			// Potentially expensive? But necessary so that the settings set above are applied.
+			// Otherwise some spatialized sounds may play without attenuation until the next update.
+			// This isn't ideal, but I couldn't find a better way to do it (no `update3dAudio` for a single sound instance).
+			m_engine.GetBackend().update3dAudio();
+		}
+	}
+	else
+	{
+		m_instance = m_engine.Play2D(p_sound, m_pan, m_volume, true);
+	}
+
+	if (m_instance)
+	{
+		m_instance->SetLooped(m_looped);
+		m_instance->SetPitch(m_pitch);
+		m_instance->Play();
 	}
 }
 
 void Audio::Entities::AudioSource::Resume()
 {
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setIsPaused(false);
+	if (HasSound())
+	{
+		m_instance->Play();
+	}
 }
 
 void Audio::Entities::AudioSource::Pause()
 {
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->setIsPaused(true);
+	if (HasSound())
+	{
+		m_instance->Pause();
+	}
 }
 
 void Audio::Entities::AudioSource::Stop()
 {
-	if (IsTrackingSound())
-		m_trackedSound->GetTrack()->stop();
+	if (HasSound())
+	{
+		m_instance->Stop();
+	}
 }
 
-void Audio::Entities::AudioSource::StopAndDestroyTrackedSound()
+void Audio::Entities::AudioSource::Update()
 {
-	if (IsTrackingSound())
+	if (HasSound() && m_instance->IsSpatial())
 	{
-		m_trackedSound->GetTrack()->stop();
-		m_trackedSound->GetTrack()->drop();
+		m_instance->SetSpatialParameters(
+			m_transform->GetWorldPosition(),
+			Maths::FVector3::Zero // TODO: Add support for non-zero velocity
+		);
 	}
 }

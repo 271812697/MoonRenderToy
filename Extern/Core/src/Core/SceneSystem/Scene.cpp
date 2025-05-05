@@ -1,9 +1,17 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <algorithm>
 #include <string>
 
-#include "Core/SceneSystem/Scene.h"
+#include <tracy/Tracy.hpp>
+
+#include <Core/ECS/Components/CAmbientSphereLight.h>
+#include <Core/ECS/Components/CDirectionalLight.h>
+#include <Core/SceneSystem/Scene.h>
 
 Core::SceneSystem::Scene::Scene()
 {
@@ -18,6 +26,25 @@ Core::SceneSystem::Scene::~Scene()
 	});
 
 	m_actors.clear();
+}
+
+void Core::SceneSystem::Scene::AddDefaultCamera()
+{
+	auto& camera = CreateActor("Main Camera");
+	camera.AddComponent<ECS::Components::CCamera>();
+	camera.transform.SetLocalPosition({ 0.0f, 3.0f, 8.0f });
+	camera.transform.SetLocalRotation(Maths::FQuaternion({ 20.0f, 180.0f, 0.0f }));
+}
+
+void Core::SceneSystem::Scene::AddDefaultLights()
+{
+	auto& directionalLight = CreateActor("Directional Light");
+	directionalLight.AddComponent<ECS::Components::CDirectionalLight>().SetIntensity(0.75f);
+	directionalLight.transform.SetLocalPosition({ 0.0f, 10.0f, 0.0f });
+	directionalLight.transform.SetLocalRotation(Maths::FQuaternion({ 120.0f, -40.0f, 0.0f }));
+
+	auto& ambientLight = CreateActor("Ambient Light");
+	ambientLight.AddComponent<ECS::Components::CAmbientSphereLight>().SetRadius(10000.0f);
 }
 
 void Core::SceneSystem::Scene::Play()
@@ -39,18 +66,21 @@ bool Core::SceneSystem::Scene::IsPlaying() const
 
 void Core::SceneSystem::Scene::Update(float p_deltaTime)
 {
+	ZoneScoped;
 	auto actors = m_actors;
 	std::for_each(actors.begin(), actors.end(), std::bind(std::mem_fn(&ECS::Actor::OnUpdate), std::placeholders::_1, p_deltaTime));
 }
 
 void Core::SceneSystem::Scene::FixedUpdate(float p_deltaTime)
 {
+	ZoneScoped;
 	auto actors = m_actors;
 	std::for_each(actors.begin(), actors.end(), std::bind(std::mem_fn(&ECS::Actor::OnFixedUpdate), std::placeholders::_1, p_deltaTime));
 }
 
 void Core::SceneSystem::Scene::LateUpdate(float p_deltaTime)
 {
+	ZoneScoped;
 	auto actors = m_actors;
 	std::for_each(actors.begin(), actors.end(), std::bind(std::mem_fn(&ECS::Actor::OnLateUpdate), std::placeholders::_1, p_deltaTime));
 }
@@ -111,7 +141,7 @@ void Core::SceneSystem::Scene::CollectGarbages()
 	}), m_actors.end());
 }
 
-Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByName(const std::string& p_name)
+Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByName(const std::string& p_name) const
 {
 	auto result = std::find_if(m_actors.begin(), m_actors.end(), [p_name](Core::ECS::Actor* element)
 	{ 
@@ -124,7 +154,7 @@ Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByName(const std::string& p
 		return nullptr;
 }
 
-Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByTag(const std::string & p_tag)
+Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByTag(const std::string & p_tag) const
 {
 	auto result = std::find_if(m_actors.begin(), m_actors.end(), [p_tag](Core::ECS::Actor* element)
 	{
@@ -137,7 +167,7 @@ Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByTag(const std::string & p
 		return nullptr;
 }
 
-Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByID(int64_t p_id)
+Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByID(int64_t p_id) const
 {
 	auto result = std::find_if(m_actors.begin(), m_actors.end(), [p_id](Core::ECS::Actor* element)
 	{
@@ -150,7 +180,7 @@ Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByID(int64_t p_id)
 		return nullptr;
 }
 
-std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::FindActorsByName(const std::string & p_name)
+std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::FindActorsByName(const std::string & p_name) const
 {
 	std::vector<std::reference_wrapper<Core::ECS::Actor>> actors;
 
@@ -163,7 +193,7 @@ std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::
 	return actors;
 }
 
-std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::FindActorsByTag(const std::string & p_tag)
+std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::FindActorsByTag(const std::string & p_tag) const
 {
 	std::vector<std::reference_wrapper<Core::ECS::Actor>> actors;
 
@@ -176,6 +206,19 @@ std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::
 	return actors;
 }
 
+Core::ECS::Components::CCamera* Core::SceneSystem::Scene::FindMainCamera() const
+{
+	for (Core::ECS::Components::CCamera* camera : m_fastAccessComponents.cameras)
+	{
+		if (camera->owner.IsActive())
+		{
+			return camera;
+		}
+	}
+
+	return nullptr;
+}
+
 void Core::SceneSystem::Scene::OnComponentAdded(ECS::Components::AComponent& p_compononent)
 {
 	if (auto result = dynamic_cast<ECS::Components::CModelRenderer*>(&p_compononent))
@@ -186,6 +229,9 @@ void Core::SceneSystem::Scene::OnComponentAdded(ECS::Components::AComponent& p_c
 
 	if (auto result = dynamic_cast<ECS::Components::CLight*>(&p_compononent))
 		m_fastAccessComponents.lights.push_back(result);
+
+	if (auto result = dynamic_cast<ECS::Components::CPostProcessStack*>(&p_compononent))
+		m_fastAccessComponents.postProcessStacks.push_back(result);
 }
 
 void Core::SceneSystem::Scene::OnComponentRemoved(ECS::Components::AComponent& p_compononent)
@@ -198,6 +244,9 @@ void Core::SceneSystem::Scene::OnComponentRemoved(ECS::Components::AComponent& p
 
 	if (auto result = dynamic_cast<ECS::Components::CLight*>(&p_compononent))
 		m_fastAccessComponents.lights.erase(std::remove(m_fastAccessComponents.lights.begin(), m_fastAccessComponents.lights.end(), result), m_fastAccessComponents.lights.end());
+
+	if (auto result = dynamic_cast<ECS::Components::CPostProcessStack*>(&p_compononent))
+		m_fastAccessComponents.postProcessStacks.erase(std::remove(m_fastAccessComponents.postProcessStacks.begin(), m_fastAccessComponents.postProcessStacks.end(), result), m_fastAccessComponents.postProcessStacks.end());
 }
 
 std::vector<Core::ECS::Actor*>& Core::SceneSystem::Scene::GetActors()

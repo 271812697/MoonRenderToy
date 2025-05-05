@@ -1,4 +1,8 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
@@ -44,9 +48,9 @@ namespace Core::SceneSystem
 		void LoadEmptyScene();
 
 		/**
-		* Load an empty lighted scene in memory
+		* Load a default scene in memory
 		*/
-		void LoadEmptyLightedScene();
+		void LoadDefaultScene();
 
 		/**
 		* Load specific scene in memory
@@ -74,7 +78,7 @@ namespace Core::SceneSystem
 		/*
 		* Return current loaded scene
 		*/
-		Scene* GetCurrentScene();
+		Scene* GetCurrentScene() const;
 
 		/**
 		* Return the current scene source path
@@ -104,7 +108,7 @@ namespace Core::SceneSystem
 
 	private:
 		const std::string m_sceneRootFolder;
-		Scene* m_currentScene = nullptr;
+		std::unique_ptr<Scene> m_currentScene = nullptr;
 
 		bool m_currentSceneLoadedFromPath = false;
 		std::string m_currentSceneSourcePath = "";

@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include <utility>
 #include <stdexcept>
@@ -8,6 +13,10 @@ const Maths::FVector4 Maths::FVector4::One(1.0f, 1.0f, 1.0f, 1.0f);
 const Maths::FVector4 Maths::FVector4::Zero(0.0f, 0.0f, 0.0f, 0.0f);
 
 Maths::FVector4::FVector4(float p_x, float p_y, float p_z, float p_w) : x(p_x), y(p_y), z(p_z), w(p_w)
+{
+}
+
+Maths::FVector4::FVector4(const Maths::FVector3& p_vector, float p_w) : x(p_vector.x), y(p_vector.y), z(p_vector.z), w(p_w)
 {
 }
 

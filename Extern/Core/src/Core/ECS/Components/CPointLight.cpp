@@ -1,3 +1,10 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
+
 
 #include "Core/ECS/Actor.h"
 
@@ -6,7 +13,7 @@
 Core::ECS::Components::CPointLight::CPointLight(ECS::Actor& p_owner) :
 	CLight(p_owner)
 {
-	m_data.type = static_cast<float>(Rendering::Entities::Light::Type::POINT);
+	m_data.type = ::Rendering::Settings::ELightType::POINT;
 }
 
 std::string Core::ECS::Components::CPointLight::GetName()
@@ -17,11 +24,6 @@ std::string Core::ECS::Components::CPointLight::GetName()
 float Core::ECS::Components::CPointLight::GetConstant() const
 {
 	return m_data.constant;
-}
-
-float Core::ECS::Components::CPointLight::GetRange() const
-{
-    return m_data.range;
 }
 
 float Core::ECS::Components::CPointLight::GetLinear() const
@@ -39,11 +41,6 @@ void Core::ECS::Components::CPointLight::SetConstant(float p_constant)
 	m_data.constant = p_constant;
 }
 
-void Core::ECS::Components::CPointLight::SetRange(float p_range)
-{
-    m_data.range = p_range;
-}
-
 void Core::ECS::Components::CPointLight::SetLinear(float p_linear)
 {
 	m_data.linear = p_linear;
@@ -54,7 +51,7 @@ void Core::ECS::Components::CPointLight::SetQuadratic(float p_quadratic)
 	m_data.quadratic = p_quadratic;
 }
 
-void Core::ECS::Components::CPointLight::OnSerialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPointLight::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -63,11 +60,9 @@ void Core::ECS::Components::CPointLight::OnSerialize(tinyxml2::XMLDocument & p_d
 	Serializer::SerializeFloat(p_doc, p_node, "constant", m_data.constant);
 	Serializer::SerializeFloat(p_doc, p_node, "linear", m_data.linear);
 	Serializer::SerializeFloat(p_doc, p_node, "quadratic", m_data.quadratic);
-    Serializer::SerializeFloat(p_doc, p_node, "range", m_data.range);
-    Serializer::SerializeFloat(p_doc, p_node, "shadowindex", m_data.shadowindex);
 }
 
-void Core::ECS::Components::CPointLight::OnDeserialize(tinyxml2::XMLDocument & p_doc, tinyxml2::XMLNode * p_node)
+void Core::ECS::Components::CPointLight::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 {
 	using namespace Core::Helpers;
 
@@ -76,8 +71,5 @@ void Core::ECS::Components::CPointLight::OnDeserialize(tinyxml2::XMLDocument & p
 	Serializer::DeserializeFloat(p_doc, p_node, "constant", m_data.constant);
 	Serializer::DeserializeFloat(p_doc, p_node, "linear", m_data.linear);
 	Serializer::DeserializeFloat(p_doc, p_node, "quadratic", m_data.quadratic);
-    Serializer::DeserializeFloat(p_doc, p_node, "range", m_data.range);
-    Serializer::DeserializeFloat(p_doc, p_node, "shadowindex", m_data.shadowindex);
 }
-
 

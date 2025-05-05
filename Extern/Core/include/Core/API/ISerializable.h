@@ -1,11 +1,18 @@
-
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include"../../tools/tinyxml2.h"
+#include <Core/Helpers/Serializer.h>
 
-
-#include "Core/Helpers/Serializer.h"
+namespace tinyxml2
+{
+	class XMLDocument;
+	class XMLNode;
+}
 
 namespace Core::API
 {

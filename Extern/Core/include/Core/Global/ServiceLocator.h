@@ -1,6 +1,16 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
+
 #pragma once
+
 #include <any>
 #include <unordered_map>
+
+
+
 #define OVSERVICE(Type) ::Core::Global::ServiceLocator::Get<Type>()
 
 namespace Core::Global
@@ -20,7 +30,7 @@ namespace Core::Global
 		{
 			__SERVICES[typeid(T).hash_code()] = std::any(&p_service);
 		}
-		
+
 		/**
 		* Returns a service of the given type (Make sure that your provided the service before calling this method)
 		*/

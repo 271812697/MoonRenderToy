@@ -1,3 +1,8 @@
+/**
+* @project: erload
+* @author: erload Tech.
+* @licence: MIT
+*/
 
 #include "Core/ECS/Components/CAudioListener.h"
 #include "Core/ECS/Actor.h"
