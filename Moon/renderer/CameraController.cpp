@@ -11,7 +11,7 @@
 #include <Core/ECS/Components/CPhysicalCapsule.h>
 #include <Core/ECS/Components/CPhysicalSphere.h>
 #include "CameraController.h"
-
+#include <QMouseEvent>
 
 
 ::Editor::Core::CameraController::CameraController(
@@ -148,6 +148,114 @@ void Editor::Core::CameraController::LockTargetActor(::Core::ECS::Actor& p_actor
 void Editor::Core::CameraController::UnlockTargetActor()
 {
 	m_lockedActor = std::nullopt;
+}
+
+void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
+{
+	if (e == nullptr)
+		return;
+
+	const QEvent::Type t = e->type();
+	if (t == QEvent::MouseButtonRelease) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		switch (e2->button())
+		{
+		case Qt::LeftButton:
+			m_leftMousePressed = false;
+			m_firstMouse = true;
+			break;
+
+		case Qt::MiddleButton:
+			m_middleMousePressed = false;
+			m_firstMouse = true;
+			break;
+
+		case Qt::RightButton:
+			m_rightMousePressed = false;
+			m_firstMouse = true;
+			break;
+
+		default:
+			break;
+		}
+	}
+	else if (t == QEvent::MouseButtonPress)
+	{
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		switch (e2->button())
+		{
+		case Qt::LeftButton:
+			m_leftMousePressed = true;
+
+			break;
+
+		case Qt::MiddleButton:
+			m_middleMousePressed = true;
+			break;
+		case Qt::RightButton:
+			m_rightMousePressed = true;
+			break;
+
+		default:
+			break;
+		}
+	}
+	else if (t == QEvent::MouseMove) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto xPos = e2->x();
+		auto yPos = e2->y();
+#else
+		auto x = e2->position().x();
+		auto y = e2->position().y();
+#endif
+
+		if (m_rightMousePressed || m_middleMousePressed || m_leftMousePressed) {
+			bool wasFirstMouse = m_firstMouse;
+
+			if (m_firstMouse)
+			{
+				m_lastMousePosX = xPos;
+				m_lastMousePosY = yPos;
+				m_firstMouse = false;
+			}
+
+			Maths::FVector2 mouseOffset
+			{
+				static_cast<float>(xPos - m_lastMousePosX),
+				static_cast<float>(m_lastMousePosY - yPos)
+			};
+
+			m_lastMousePosX = xPos;
+			m_lastMousePosY = yPos;
+			if (m_rightMousePressed)
+			{
+				HandleCameraFPSMouse(mouseOffset, wasFirstMouse);
+			}
+			else
+			{
+				if (m_middleMousePressed)
+				{
+					HandleCameraPanning(mouseOffset, wasFirstMouse);
+				}
+
+			}
+		}
+
+	}
+	else if (t == QEvent::Wheel) {
+		constexpr float kUnitsPerScroll = 1.0f;
+		QWheelEvent* e2 = static_cast<QWheelEvent*>(e);
+		const auto verticalScroll = 0.002 * static_cast<float>(
+			e2->angleDelta().y()
+			);
+
+		m_camera.SetPosition(
+			m_camera.GetPosition() +
+			m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll
+		);
+	}
+
 }
 
 std::optional<std::reference_wrapper<Core::ECS::Actor>> Editor::Core::CameraController::GetTargetActor() const

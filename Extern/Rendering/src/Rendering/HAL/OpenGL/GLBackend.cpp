@@ -226,7 +226,7 @@ namespace Rendering::HAL
 			glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 		}
 
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glCullFace(GL_BACK);
 
 		return RetrieveOpenGLPipelineState();

@@ -22,8 +22,8 @@
 #include "renderer/SceneView.h"
 
 
-::Editor::Core::Context* editorContext;
-::Editor::Panels::SceneView* sceneView;
+::Editor::Core::Context* editorContext = nullptr;
+::Editor::Panels::SceneView* sceneView = nullptr;
 
 namespace MOON {
 	static float viewW;
@@ -107,7 +107,7 @@ namespace MOON {
 
 		editorContext->sceneManager.LoadDefaultScene();
 		sceneView = new ::Editor::Panels::SceneView("SceneView");
-		//editorRender = new ::Editor::Core::EditorRenderer(*editorContext);
+
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -128,11 +128,8 @@ namespace MOON {
 		PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();
 		sceneView->Render();
-		Maths::FVector3 p;
-		Maths::FMatrix4 view, proj;
 
-		PathTrace::CameraController::Instance().GetCameraPosition(&p.x);
-		PathTrace::CameraController::Instance().GetViewProject(view.data, proj.data);
+
 
 
 
@@ -141,6 +138,8 @@ namespace MOON {
 	bool ViewerWindow::event(QEvent* evt)
 	{
 		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
+		if (sceneView != nullptr)
+			sceneView->ReceiveEvent(evt);
 		return QOpenGLWidget::event(evt);
 	}
 

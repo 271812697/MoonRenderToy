@@ -86,7 +86,7 @@ void Editor::Panels::AView::DrawFrame()
 
 std::pair<uint16_t, uint16_t> Editor::Panels::AView::GetSafeSize() const
 {
-	return { 400,400 };
+	return { mWidth,mHeight };
 }
 
 const Core::Rendering::SceneRenderer& Editor::Panels::AView::GetRenderer() const

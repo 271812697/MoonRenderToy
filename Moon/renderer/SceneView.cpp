@@ -4,6 +4,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
 #include "SceneView.h"
+#include <QMouseEvent>
 namespace Editor::Panels
 {
 	Editor::Panels::SceneView::SceneView
@@ -53,6 +54,23 @@ namespace Editor::Panels
 	::Core::SceneSystem::Scene* Editor::Panels::SceneView::GetScene()
 	{
 		return m_sceneManager.GetCurrentScene();
+	}
+
+	void SceneView::ReceiveEvent(QEvent* e)
+	{
+
+		if (e == nullptr)
+			return;
+
+		const QEvent::Type t = e->type();
+		if (t == QEvent::Resize) {
+			QResizeEvent* ev = static_cast<QResizeEvent*>(e);
+			mWidth = ev->size().width();
+			mHeight = ev->size().height();
+		}
+		m_cameraController.ReceiveEvent(e);
+
+
 	}
 
 	::Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::CreateSceneDescriptor()

@@ -84,5 +84,8 @@ namespace Editor::Panels
 
 		::Rendering::HAL::Framebuffer m_framebuffer;
 		std::unique_ptr<::Core::Rendering::SceneRenderer> m_renderer;
+		int mWidth = 1;
+		int mHeight = 1;
+
 	};
 }

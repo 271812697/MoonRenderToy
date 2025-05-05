@@ -14,6 +14,7 @@
 
 #include "AView.h"
 
+class QEvent;
 namespace Editor::Core
 {
 	/**
@@ -93,6 +94,7 @@ namespace Editor::Core
 		* Removes any locked actor
 		*/
 		void UnlockTargetActor();
+		void ReceiveEvent(QEvent* e);
 
 	private:
 		std::optional<std::reference_wrapper<::Core::ECS::Actor>> GetTargetActor() const;

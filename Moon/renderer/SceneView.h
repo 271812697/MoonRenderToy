@@ -4,7 +4,7 @@
 #include "AViewControllable.h"
 #include "GizmoBehaviour.h"
 
-
+class QEvent;
 namespace Core::SceneSystem
 {
 	class SceneManager;
@@ -39,6 +39,7 @@ namespace Editor::Panels
 		*/
 		virtual ::Core::SceneSystem::Scene* GetScene();
 
+		void ReceiveEvent(QEvent* e);
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 

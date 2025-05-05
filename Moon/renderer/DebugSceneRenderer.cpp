@@ -126,7 +126,7 @@ protected:
 
 		auto& sceneDescriptor = m_renderer.GetDescriptor<Core::Rendering::SceneRenderer::SceneDescriptor>();
 
-		m_lightMaterial.SetProperty("u_Scale", 1.0f * 0.1f);
+		m_lightMaterial.SetProperty("u_Scale", 1.0f * 0.035f);
 
 		for (auto light : sceneDescriptor.scene.GetFastAccessComponents().lights)
 		{
