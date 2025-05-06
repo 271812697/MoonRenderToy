@@ -73,13 +73,17 @@ namespace Editor::Panels
 		* Returns the renderer used by this view
 		*/
 		const ::Core::Rendering::SceneRenderer& GetRenderer() const;
-
+		::Core::ECS::Actor& GetSelectedActor();
+		void SelectActor(::Core::ECS::Actor& actor);
+		void UnselectActor();
+		bool IsSelectActor();
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor();
 
+
 	protected:
 
-
+		::Core::ECS::Actor* mTargetActor = nullptr;
 		Maths::FVector3 m_gridColor = Maths::FVector3{ 0.176f, 0.176f, 0.176f };
 
 		::Rendering::HAL::Framebuffer m_framebuffer;

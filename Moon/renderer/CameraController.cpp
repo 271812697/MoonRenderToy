@@ -23,6 +23,13 @@
 	m_camera(p_camera)
 {
 	m_camera.SetFov(60.0f);
+	mKeyState[KEYW] = Up;
+	mKeyState[KEYA] = Up;
+	mKeyState[KEYS] = Up;
+	mKeyState[KEYD] = Up;
+	mKeyState[ALTA] = Up;
+	mKeyState[KEYQ] = Up;
+	mKeyState[KEYE] = Up;
 }
 
 float GetActorFocusDist(Core::ECS::Actor& p_actor)
@@ -156,6 +163,58 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 		return;
 
 	const QEvent::Type t = e->type();
+	if (t == QEvent::KeyPress) {
+		QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
+		Qt::Key key = static_cast<Qt::Key>(e2->key());
+		if (key == Qt::Key_W) {
+			mKeyState[KEYW] = Down;
+		}
+		else if (key == Qt::Key_A) {
+			mKeyState[KEYA] = Down;
+		}
+		else if (key == Qt::Key_S) {
+			mKeyState[KEYS] = Down;
+		}
+		else if (key == Qt::Key_D) {
+			mKeyState[KEYD] = Down;
+		}
+		else if (key == Qt::Key_Alt) {
+			mKeyState[ALTA] = Down;
+		}
+		else if (key == Qt::Key_Q) {
+			mKeyState[KEYQ] = Down;
+		}
+		else if (key == Qt::Key_E) {
+			mKeyState[KEYE] = Down;
+		}
+	}
+	else if (t == QEvent::KeyRelease) {
+		QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
+		Qt::Key key = static_cast<Qt::Key>(e2->key());
+		if (key == Qt::Key_W) {
+			mKeyState[KEYW] = Up;
+		}
+		else if (key == Qt::Key_A) {
+			mKeyState[KEYA] = Up;
+		}
+		else if (key == Qt::Key_S) {
+			mKeyState[KEYS] = Up;
+		}
+		else if (key == Qt::Key_D) {
+			mKeyState[KEYD] = Up;
+		}
+		else if (key == Qt::Key_Alt) {
+			mKeyState[ALTA] = Up;
+		}
+		else if (key == Qt::Key_Q) {
+			mKeyState[KEYQ] = Up;
+		}
+		else if (key == Qt::Key_E) {
+			mKeyState[KEYE] = Up;
+		}
+	}
+
+
 	if (t == QEvent::MouseButtonRelease) {
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
 		switch (e2->button())
@@ -236,7 +295,14 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 			{
 				if (m_middleMousePressed)
 				{
-					HandleCameraPanning(mouseOffset, wasFirstMouse);
+					if (mKeyState[ALTA] == Down && m_view.IsSelectActor()) {
+						auto& target = m_view.GetSelectedActor();
+						HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
+					}
+					else {
+						HandleCameraPanning(mouseOffset, wasFirstMouse);
+					}
+
 				}
 
 			}
@@ -255,7 +321,7 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 			m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll
 		);
 	}
-
+	HandleCameraFPSKeyboard(0.016, e);
 }
 
 std::optional<std::reference_wrapper<Core::ECS::Actor>> Editor::Core::CameraController::GetTargetActor() const
@@ -353,8 +419,33 @@ void Editor::Core::CameraController::HandleCameraFPSMouse(const Maths::FVector2&
 	m_camera.SetRotation(Maths::FQuaternion(m_ypr));
 }
 
-void Editor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime)
+void Editor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime, QEvent* e)
 {
+
+
+	if (m_rightMousePressed)
+	{
+		m_targetSpeed = Maths::FVector3(0.f, 0.f, 0.f);
+
+		float velocity = m_cameraMoveSpeed * p_deltaTime * 0.1f;
+
+		if (mKeyState[KEYW] == Down)
+			m_targetSpeed += m_camera.transform->GetWorldForward() * velocity;
+		if (mKeyState[KEYS] == Down)
+			m_targetSpeed += m_camera.transform->GetWorldForward() * -velocity;
+		if (mKeyState[KEYA] == Down)
+			m_targetSpeed += m_camera.transform->GetWorldRight() * velocity;
+		if (mKeyState[KEYD] == Down)
+			m_targetSpeed += m_camera.transform->GetWorldRight() * -velocity;
+		if (mKeyState[KEYE] == Down)
+			m_targetSpeed += {0.0f, velocity, 0.0f};
+		if (mKeyState[KEYQ] == Down)
+			m_targetSpeed += {0.0f, -velocity, 0.0f};
+
+		m_currentMovementSpeed = Maths::FVector3::Lerp(m_currentMovementSpeed, m_targetSpeed, 10.0f * p_deltaTime);
+		m_camera.SetPosition(m_camera.GetPosition() + m_currentMovementSpeed);
+
+	}
 
 }
 

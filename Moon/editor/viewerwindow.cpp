@@ -42,24 +42,13 @@ namespace MOON {
 		QOpenGLWidget(parent)
 	{
 
-		if (viewer_instance == nullptr) {
-			viewer_instance = this;
-			//设置可以捕获鼠标移动消息
-			this->setMouseTracking(true);
-			this->grabKeyboard();
-			//反锯齿
-			QSurfaceFormat format;
-			format.setSamples(4);
-			this->setFormat(format);
-			if (windowInteractor == nullptr) {
-				windowInteractor = RenderWindowInteractor::New();
-				windowInteractor->Enable();
-				boxWidget = BoxWidget2::New();
-				boxWidget->SetInteractor(windowInteractor);
-				boxWidget->SetEnabled(1);
-			}
-		}
-		this->installEventFilter(parent);
+		//设置可以捕获鼠标移动消息
+		this->setMouseTracking(true);
+		this->grabKeyboard();
+		//反锯齿
+		QSurfaceFormat format;
+		format.setSamples(4);
+		this->setFormat(format);
 	}
 
 	ViewerWindow::~ViewerWindow()
@@ -78,31 +67,17 @@ namespace MOON {
 		TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
 			std::cout << "say hello" << std::endl;
 			});
-
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.append_mesh();
-		viewer.init();
-		//viewer.post_resize(800, 900);
-		grid_render = new GridRenderer();
-		guizmoRender = new Guizmo();
-		//viewer.core().background_color = Eigen::Vector4f(1.0, 0.0, 0.0, 1.0);
-
 		//开启计时器
 		this->startTimer(16);
 
 
-		PathTrace::GetSceneFiles();
-		PathTrace::GetEnvMaps();
-		PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
-		if (!PathTrace::InitRenderer()) {
-			std::cout << "error" << std::endl;
-		}
-		initFlag = true;
+		//PathTrace::GetSceneFiles();
+		//PathTrace::GetEnvMaps();
+		//PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
+		//if (!PathTrace::InitRenderer()) {
+			//std::cout << "error" << std::endl;
+		//}
+		//initFlag = true;
 		editorContext = new ::Editor::Core::Context("", "");
 
 		editorContext->sceneManager.LoadDefaultScene();
@@ -115,8 +90,6 @@ namespace MOON {
 		this->update();
 	}
 
-
-
 	void ViewerWindow::paintGL()
 	{
 		//TEST::TestInstance::Instance().flush();
@@ -125,14 +98,9 @@ namespace MOON {
 		//PathTrace::GetRenderer()->Update(0.016);
 		//PathTrace::GetRenderer()->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		PathTrace::GetRenderer()->Present();
+		//PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();
 		sceneView->Render();
-
-
-
-
-
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
@@ -141,6 +109,7 @@ namespace MOON {
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
 		return QOpenGLWidget::event(evt);
+
 	}
 
 	void ViewerWindow::leaveEvent(QEvent* event)
@@ -177,20 +146,19 @@ namespace MOON {
 #endif
 		Qt::MouseButton mb = e->button();
 		if (mb == Qt::MouseButton::LeftButton) {
-			viewer.mouse_down(Viewer::MouseButton::Left);
 
-			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
+
+			//PathTrace::CameraController::Instance().mouseLeftPress(x, y);
 		}
 
 		else if (mb == Qt::MouseButton::MiddleButton) {
-			viewer.mouse_down(Viewer::MouseButton::Middle);
-			PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
+			//PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
 		}
 
 		else if (mb == Qt::MouseButton::RightButton)
 		{
-			PathTrace::CameraController::Instance().mouseRightPress(x, y);
-			viewer.mouse_down(Viewer::MouseButton::Right);
+			//PathTrace::CameraController::Instance().mouseRightPress(x, y);
+
 		}
 
 	}
@@ -208,55 +176,27 @@ namespace MOON {
 		auto x = e2->position().x();
 		auto y = e2->position().y();
 #endif
-		PathTrace::CameraController::Instance().mouseMove(x, y);
-		viewer.mouse_move(pos.x() * 1.5, pos.y() * 1.5);
+		//PathTrace::CameraController::Instance().mouseMove(x, y);
+		//viewer.mouse_move(pos.x() * 1.5, pos.y() * 1.5);
 	}
 
 	void ViewerWindow::mouseReleaseEvent(QMouseEvent* event)
 	{
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto x = event->x();
-		auto y = event->y();
-#else
-		auto x = e2->position().x();
-		auto y = e2->position().y();
-#endif
-		if (blockMouseMessage) {
-			return;
-		}
-		Qt::MouseButton mb = event->button();
-		if (mb == Qt::MouseButton::LeftButton)
-			viewer.mouse_up(Viewer::MouseButton::Left);
-		else if (mb == Qt::MouseButton::MiddleButton) {
-			viewer.mouse_up(Viewer::MouseButton::Middle);
-			PathTrace::CameraController::Instance().mouseMiddleRelease(x, y);
-		}
 
-		else if (mb == Qt::MouseButton::RightButton)
-		{
-			viewer.mouse_up(Viewer::MouseButton::Right);
-			PathTrace::CameraController::Instance().mouseRightRelease(x, y);
-		}
 
 	}
 
 	void ViewerWindow::wheelEvent(QWheelEvent* event)
 	{
-		viewer.mouse_scroll(event->angleDelta().y());
-		PathTrace::CameraController::Instance().wheelMouseWheel(event->angleDelta().y());
+		//PathTrace::CameraController::Instance().wheelMouseWheel(event->angleDelta().y());
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{
-		blockMouseMessage = true;
-		if (event->key() == Qt::Key::Key_Space) {
 
-		}
 	}
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
-		if (event->key() == Qt::Key::Key_Space) {
-			blockMouseMessage = false;
-		}
+
 	}
 
 	void ViewerWindow::viewnode(const std::shared_ptr<NodeData>& node) {

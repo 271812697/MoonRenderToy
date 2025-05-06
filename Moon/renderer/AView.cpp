@@ -102,3 +102,23 @@ Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::AView::CreateSce
 		*scene
 	};
 }
+
+::Core::ECS::Actor& Editor::Panels::AView::GetSelectedActor()
+{
+	return *mTargetActor;
+}
+
+void Editor::Panels::AView::SelectActor(::Core::ECS::Actor& actor)
+{
+	mTargetActor = &actor;
+}
+
+void Editor::Panels::AView::UnselectActor()
+{
+	mTargetActor = nullptr;
+}
+
+bool Editor::Panels::AView::IsSelectActor()
+{
+	return mTargetActor != nullptr;
+}
