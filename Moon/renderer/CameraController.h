@@ -103,11 +103,29 @@ namespace Editor::Core
 		void HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 
 		void HandleCameraZoom();
-		void HandleCameraFPSKeyboard(float p_deltaTime);
+		void HandleCameraFPSKeyboard(float p_deltaTime, QEvent* e);
 		void HandleMousePressed();
 		void HandleMouseReleased();
 
 	private:
+		enum KeyState
+		{
+			Down = 0,
+			Up
+		};
+		enum KeyBoard :uint8_t
+		{
+			KEYW = 0,
+			KEYA,
+			KEYS,
+			KEYD,
+			KEYQ,
+			KEYE,
+			KEYF,
+			ALTA
+		};
+		std::unordered_map<KeyBoard, KeyState>mKeyState;
+
 
 		::Editor::Panels::AView& m_view;
 		::Rendering::Entities::Camera& m_camera;

@@ -46,16 +46,14 @@ namespace Editor::Panels
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
-		::Core::ECS::Actor& GetSelectedActor();
-		void SelectActor(::Core::ECS::Actor& actor);
-		void UnselectActor();
+
 
 	private:
 		::Core::SceneSystem::SceneManager& m_sceneManager;
 		Editor::Core::GizmoBehaviour m_gizmoOperations;
 		Editor::Core::EGizmoOperation m_currentOperation = Editor::Core::EGizmoOperation::TRANSLATE;
 		::Core::Resources::Material m_fallbackMaterial;
-		::Core::ECS::Actor* mTargetActor = nullptr;
+
 
 		Tools::Utils::OptRef<::Core::ECS::Actor> m_highlightedActor;
 		std::optional<Editor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;

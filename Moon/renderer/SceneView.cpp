@@ -221,17 +221,5 @@ namespace Editor::Panels
 
 
 	}
-	::Core::ECS::Actor& SceneView::GetSelectedActor()
-	{
-		return *mTargetActor;
 
-	}
-	void SceneView::SelectActor(::Core::ECS::Actor& actor)
-	{
-		mTargetActor = &actor;
-	}
-	void SceneView::UnselectActor()
-	{
-		mTargetActor = nullptr;
-	}
 }
