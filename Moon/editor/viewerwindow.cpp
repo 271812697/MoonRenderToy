@@ -97,6 +97,7 @@ namespace MOON {
 		//PathTrace::Update();
 		//PathTrace::GetRenderer()->Update(0.016);
 		//PathTrace::GetRenderer()->Render();
+		sceneView->Update(0.016);
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		//PathTrace::GetRenderer()->Present();
 		//PathTrace::TraceScene();

@@ -98,6 +98,29 @@ float GetActorFocusDist(Core::ECS::Actor& p_actor)
 
 void Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 {
+	if (!m_cameraDestinations.empty())
+	{
+		m_currentMovementSpeed = 0.0f;
+
+		while (m_cameraDestinations.size() != 1)
+			m_cameraDestinations.pop();
+
+		auto& [destPos, destRotation] = m_cameraDestinations.front();
+
+		float t = m_focusLerpCoefficient * p_deltaTime;
+
+		if (Maths::FVector3::Distance(m_camera.GetPosition(), destPos) <= 0.03f)
+		{
+			m_camera.SetPosition(destPos);
+			m_camera.SetRotation(destRotation);
+			m_cameraDestinations.pop();
+		}
+		else
+		{
+			m_camera.SetPosition(Maths::FVector3::Lerp(m_camera.GetPosition(), destPos, t));
+			m_camera.SetRotation(Maths::FQuaternion::Lerp(m_camera.GetRotation(), destRotation, t));
+		}
+	}
 
 }
 
@@ -186,6 +209,29 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 		}
 		else if (key == Qt::Key_E) {
 			mKeyState[KEYE] = Down;
+			std::cout << "Press E" << std::endl;
+		}
+		else if (key == Qt::Key_F || key == Qt::Key_Right || key == Qt::Key_Left || key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_PageUp || key == Qt::Key_PageDown) {
+			if (m_view.IsSelectActor()) {
+				auto& target = m_view.GetSelectedActor();
+				auto targetPos = target.transform.GetWorldPosition();
+				float dist = GetActorFocusDist(target);
+				MoveToTarget(target);
+				auto focusObjectFromAngle = [this, &targetPos, &dist](const Maths::FVector3& offset)
+					{
+						auto camPos = targetPos + offset * dist;
+						auto direction = Maths::FVector3::Normalize(targetPos - camPos);
+						m_camera.SetRotation(Maths::FQuaternion::LookAt(direction, abs(direction.y) == 1.0f ? Maths::FVector3::Right : Maths::FVector3::Up));
+						m_cameraDestinations.push({ camPos, m_camera.GetRotation() });
+					};
+				if (key == Qt::Key_Up)			focusObjectFromAngle(Maths::FVector3::Up);
+				if (key == Qt::Key_Down)		focusObjectFromAngle(-Maths::FVector3::Up);
+				if (key == Qt::Key_Right)		focusObjectFromAngle(Maths::FVector3::Right);
+				if (key == Qt::Key_Left)		focusObjectFromAngle(-Maths::FVector3::Right);
+				if (key == Qt::Key_PageUp)	    focusObjectFromAngle(Maths::FVector3::Forward);
+				if (key == Qt::Key_PageDown)	focusObjectFromAngle(-Maths::FVector3::Forward);
+
+			}
 		}
 	}
 	else if (t == QEvent::KeyRelease) {
@@ -208,9 +254,10 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 		}
 		else if (key == Qt::Key_Q) {
 			mKeyState[KEYQ] = Up;
+
 		}
 		else if (key == Qt::Key_E) {
-			mKeyState[KEYE] = Up;
+			mKeyState[KEYE] = Up; std::cout << "Release E" << std::endl;
 		}
 	}
 
