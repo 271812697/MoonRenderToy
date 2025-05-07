@@ -24,9 +24,14 @@ namespace PathTrace
 	}
 	Mesh::~Mesh() {
 		delete bvh;
-		glDeleteBuffers(1, &vao);
-		glDeleteBuffers(1, &vbop);
-		glDeleteBuffers(1, &vbon);
+		if (hasVAO) {
+
+			glDeleteVertexArrays(1, &vao);
+			//glDeleteBuffers(1, &vao);
+			glDeleteBuffers(1, &vbop);
+			glDeleteBuffers(1, &vbon);
+		}
+
 
 	}
 	bool Mesh::LoadFromFile(const std::string& filename)
@@ -115,6 +120,7 @@ namespace PathTrace
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 		glBindVertexArray(0);
+		hasVAO = true;
 
 
 	}

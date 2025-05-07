@@ -23,6 +23,7 @@ namespace PathTrace
 		unsigned int vao;
 		unsigned int vbop;
 		unsigned int vbon;
+		bool hasVAO = false;
 
 		RadeonRays::Bvh* bvh;
 		std::string name;
