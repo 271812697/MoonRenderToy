@@ -46,11 +46,12 @@ namespace MOON {
 		auto hierarchypanel = new Hierarchypanel(hori_splitter_);
 
 		auto middlePanel = new QWidget(hori_splitter_);
-		auto middlePanelLatout=new QHBoxLayout(middlePanel);
+		auto middlePanelLatout = new QHBoxLayout(middlePanel);
 		vert_splitter_ = new QSplitter(middlePanel);
 		middlePanelLatout->addWidget(vert_splitter_);
-		
-		
+		vert_splitter_->setFocusPolicy(Qt::StrongFocus);
+
+
 		auto right_panel_ = new QPushButton(hori_splitter_);
 		sizePolicy2.setHeightForWidth(right_panel_->sizePolicy().hasHeightForWidth());
 		//right_panel_ = new RightPanel(hori_splitter_);
@@ -61,6 +62,7 @@ namespace MOON {
 		hori_splitter_->addWidget(middlePanel);
 		hori_splitter_->addWidget(right_panel_);
 		auto up_panel_ = new UpPanel(vert_splitter_);
+
 		auto down_panel_ = new DownPanel(vert_splitter_);
 		//up_panel_->setFrameShape(QFrame::Box);
 		vert_splitter_->setOrientation(Qt::Vertical);
@@ -68,8 +70,8 @@ namespace MOON {
 		vert_splitter_->addWidget(down_panel_);
 		buildMenu();
 
-		middlePanel->installEventFilter(up_panel_);
-		middlePanel->installEventFilter(down_panel_);
+		//middlePanel->installEventFilter(up_panel_);
+		//middlePanel->installEventFilter(down_panel_);
 
 	}
 	void Editor::buildMenu()

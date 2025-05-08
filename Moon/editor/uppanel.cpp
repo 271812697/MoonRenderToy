@@ -16,12 +16,12 @@ namespace MOON {
 
 		QVBoxLayout* layout = new QVBoxLayout(this);
 		layout->addWidget(preview_window_);
-		setFocusPolicy(Qt::StrongFocus);  // 允许通过点击或Tab键获取焦点
-		setFocus();                      // 主动获取焦点（可选）
-
+		// default to strong focus
+		this->setFocusPolicy(Qt::StrongFocus);
+		this->setMouseTracking(true);
 	}
 	void UpPanel::keyPressEvent(QKeyEvent* event) {
-		std::cout << "555" << std::endl;
+
 	}
 
 }

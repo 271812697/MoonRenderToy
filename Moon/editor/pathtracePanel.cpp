@@ -25,7 +25,7 @@ namespace MOON {
 
 		//设置可以捕获鼠标移动消息
 		this->setMouseTracking(true);
-		this->grabKeyboard();
+		//this->grabKeyboard();
 		//反锯齿
 		QSurfaceFormat format;
 		format.setSamples(4);
@@ -36,7 +36,7 @@ namespace MOON {
 
 	PathTracePanel::~PathTracePanel()
 	{
-		
+
 	}
 
 	void PathTracePanel::initializeGL()
@@ -46,7 +46,7 @@ namespace MOON {
 		OpenGLProcAddressHelper::ctx = context();
 		//CUSTOM_GL_API::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
-	
+
 		//开启计时器
 		this->startTimer(16);
 
@@ -144,7 +144,7 @@ namespace MOON {
 		auto y = e2->position().y();
 #endif
 		PathTrace::CameraController::Instance().mouseMove(x, y);
-		
+
 	}
 
 	void  PathTracePanel::mouseReleaseEvent(QMouseEvent* e)
@@ -156,12 +156,12 @@ namespace MOON {
 		}
 
 		else if (mb == Qt::MouseButton::MiddleButton) {
-			PathTrace::CameraController::Instance().mouseMiddleRelease(0,0);
+			PathTrace::CameraController::Instance().mouseMiddleRelease(0, 0);
 		}
 
 		else if (mb == Qt::MouseButton::RightButton)
 		{
-			PathTrace::CameraController::Instance().mouseRightRelease(0,0);
+			PathTrace::CameraController::Instance().mouseRightRelease(0, 0);
 
 		}
 

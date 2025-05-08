@@ -22,29 +22,30 @@ namespace MOON {
 			return (void*)ctx->getProcAddress(name);
 		}
 	};
-	ViewerWindow* viewer_instance = nullptr;
 	ViewerWindow::ViewerWindow(QWidget* parent) :
 		QOpenGLWidget(parent)
 	{
-
 		//设置可以捕获鼠标移动消息
+		// default to strong focus
+		this->setFocusPolicy(Qt::StrongFocus);
+		this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 		this->setMouseTracking(true);
-		this->grabKeyboard();
+		//this->grabKeyboard();
 		//反锯齿
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
-		setFocusPolicy(Qt::StrongFocus);  // 允许通过点击或Tab键获取焦点
-		setFocus();                      // 主动获取焦点（可选）
 	}
 
 	ViewerWindow::~ViewerWindow()
 	{
-	
+
 	}
 
 	void ViewerWindow::initializeGL()
 	{
+
+		QOpenGLWidget::initializeGL();
 		// opengl funcs
 		bool flag = initializeOpenGLFunctions();
 		OpenGLProcAddressHelper::ctx = context();
@@ -82,7 +83,6 @@ namespace MOON {
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
 		return QOpenGLWidget::event(evt);
-
 	}
 
 	void ViewerWindow::leaveEvent(QEvent* event)
@@ -111,7 +111,7 @@ namespace MOON {
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{
-		std::cout << "tt" << std::endl;
+
 	}
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
