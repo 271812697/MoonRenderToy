@@ -105,8 +105,8 @@ QWidget* ReadMeshModel::embeddedWidget()
 		}
 		if (!_show) {
 			_show = new QPushButton();
-			connect(_show, &QPushButton::pressed, this, &ReadMeshModel::onShow);
-			connect(this, &ReadMeshModel::viewnode, MOON::viewer_instance, &MOON::ViewerWindow::viewnode);
+			//connect(_show, &QPushButton::pressed, this, &ReadMeshModel::onShow);
+			//connect(this, &ReadMeshModel::viewnode, MOON::viewer_instance, &MOON::ViewerWindow::viewnode);
 			layout->addWidget(_show);
 
 		}

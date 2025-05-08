@@ -8,6 +8,6 @@ namespace MOON {
 	public:
 		explicit UpPanel(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-
+		void keyPressEvent(QKeyEvent* event) override;
 	};
 }

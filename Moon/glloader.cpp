@@ -3,9 +3,14 @@
 
 bool CustomLoadGL(void* load)
 {
-	if (!gladLoadGLLoader((GLADloadproc)load)) {
-		return false;
+	static bool initFlag = false;
+	if (!initFlag) {
+		initFlag = true;
+		if (!gladLoadGLLoader((GLADloadproc)load)) {
+			return false;
+		}
 	}
+
 	return true;
 }
 

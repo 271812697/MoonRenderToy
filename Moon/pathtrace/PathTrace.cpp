@@ -26,12 +26,12 @@ namespace PathTrace {
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
 
-	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
