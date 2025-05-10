@@ -69,10 +69,6 @@ namespace MOON {
 		vert_splitter_->addWidget(up_panel_);
 		vert_splitter_->addWidget(down_panel_);
 		buildMenu();
-
-		//middlePanel->installEventFilter(up_panel_);
-		//middlePanel->installEventFilter(down_panel_);
-
 	}
 	void Editor::buildMenu()
 	{

@@ -1,10 +1,11 @@
 #pragma once
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QPushButton>
-#include <QListWidget>
 
+#include <QWidget>
+
+class QPushButton;
+class QVBoxLayout;
 namespace MOON {
+	class TreeViewPanel;
 	class Hierarchypanel : public QWidget
 	{
 	public:
@@ -17,6 +18,6 @@ namespace MOON {
 		QPushButton* rename = nullptr;
 		QPushButton* import_ = nullptr;
 
-		QListWidget* name_list = nullptr;
+		TreeViewPanel* name_list = nullptr;
 	};
 }

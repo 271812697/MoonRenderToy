@@ -1,5 +1,10 @@
 #pragma once
 #include "hierarchypanel.h"
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QListWidget>
+#include "treeViewpanel.h"
+
 namespace MOON {
 
 	Hierarchypanel::Hierarchypanel(QWidget* parent) : QWidget(parent)
@@ -27,8 +32,9 @@ namespace MOON {
 		rename = new QPushButton("Name", buttons_widget);
 		import_ = new QPushButton("Import", buttons_widget);
 
-		name_list = new QListWidget(ui);
-		name_list->setDragDropMode(QAbstractItemView::InternalMove);
+
+		name_list = new TreeViewPanel(ui);
+		//name_list->setDragDropMode(QAbstractItemView::InternalMove);
 
 		buttons_widget->setContentsMargins(0, 0, 0, 0);
 		buttons_layout->setContentsMargins(0, 0, 0, 0);
@@ -40,7 +46,13 @@ namespace MOON {
 		ui_layout->addWidget(buttons_widget);
 		ui_layout->addWidget(name_list);
 
+		//name_list->show();
+
 		up_panel_layout->addWidget(ui);
+
+
+
+
 
 
 	}
