@@ -7,6 +7,8 @@
 #define __glad_h_
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
+#include "treeViewpanel.h"
+#include "Core/Global/ServiceLocator.h"
 
 
 ::Editor::Core::Context* editorContext = nullptr;
@@ -60,6 +62,7 @@ namespace MOON {
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
 		sceneView = new ::Editor::Panels::SceneView("SceneView");
+		OVSERVICE(TreeViewPanel).initModel();
 
 	}
 

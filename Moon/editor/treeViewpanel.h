@@ -5,5 +5,6 @@ namespace MOON {
 	{
 	public:
 		TreeViewPanel(QWidget* parent);
+		void initModel();
 	};
 }

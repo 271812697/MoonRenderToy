@@ -1,5 +1,8 @@
 #pragma once
 #include "treeViewpanel.h"
+#include "Core/Global/ServiceLocator.h"
+#include "Core/SceneSystem/SceneManager.h"
+#include "renderer/Context.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
 #include <string>
@@ -16,21 +19,15 @@ namespace MOON {
 	class TreeViewModel : public QAbstractItemModel {
 	public:
 		TreeViewModel(QObject* parent) :QAbstractItemModel(parent) {
-			root.val = "root";
-			root.childs.push_back(TreeNode("a1", &root));
-			root.childs.push_back(TreeNode("a2", &root));
-			root.childs.push_back(TreeNode("a3", &root));
-			root.childs.push_back(TreeNode("a4", &root));
-			root.childs.push_back(TreeNode("a5", &root));
-			root.childs[0].childs.push_back(TreeNode("b1", &root.childs[0]));
-			root.childs[0].childs.push_back(TreeNode("b2", &root.childs[0]));
-			root.childs[0].childs.push_back(TreeNode("b3", &root.childs[0]));
-			root.childs[0].childs.push_back(TreeNode("b4", &root.childs[0]));
-			root.childs[0].childs[0].childs.push_back(TreeNode("c1", &root.childs[0].childs[0]));
-			root.childs[0].childs[0].childs.push_back(TreeNode("c2", &root.childs[0].childs[0]));
-			root.childs[0].childs[0].childs.push_back(TreeNode("c3", &root.childs[0].childs[0]));
-			root.childs[0].childs[0].childs.push_back(TreeNode("c4", &root.childs[0].childs[0]));
+			auto& sceneManager = ::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().sceneManager;
+			auto scene = sceneManager.GetCurrentScene();
+			auto& actors = scene->GetActors();
 
+			root.val = "root";
+			for (auto& item : actors) {
+
+				root.childs.push_back(TreeNode(item->GetName(), &root));
+			}
 		}
 
 		int columnCount(const QModelIndex&) const override;
@@ -146,15 +143,13 @@ namespace MOON {
 	}
 	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent)
 	{
-		static QFileSystemModel model;
-		model.setRootPath("");
+		COPROVITE(TreeViewPanel, *this);
 
+	}
+	void TreeViewPanel::initModel()
+	{
 		TreeViewModel* treemodel = new TreeViewModel(this);
 		//setModel(&model);
 		setModel(treemodel);
-		//model.setOption(QFileSystemModel::DontUseCustomDirectoryIcons);
-		//const QModelIndex rootIndex = model.index(QDir::cleanPath("."));
-		//if (rootIndex.isValid())
-			//setRootIndex(rootIndex);
 	}
 }
