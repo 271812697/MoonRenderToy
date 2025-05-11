@@ -113,6 +113,12 @@ void Editor::Panels::AView::SelectActor(::Core::ECS::Actor& actor)
 	mTargetActor = &actor;
 }
 
+void Editor::Panels::AView::Resize(int width, int height)
+{
+	mWidth = width;
+	mHeight = height;
+}
+
 void Editor::Panels::AView::UnselectActor()
 {
 	mTargetActor = nullptr;

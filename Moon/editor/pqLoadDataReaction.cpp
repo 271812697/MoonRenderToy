@@ -46,7 +46,9 @@ void pqLoadDataReaction::onTriggered()
 	if (fileDialog.exec() == QDialog::Accepted) {
 
 	}
+
 	*/
+
 
 	QString fileName = QFileDialog::getOpenFileName(nullptr,
 		tr("Open Flow Scene"),
@@ -57,6 +59,9 @@ void pqLoadDataReaction::onTriggered()
 		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 	PathTrace::SwitchScene(fileName.toStdString());
+
+
+
 
 }
 

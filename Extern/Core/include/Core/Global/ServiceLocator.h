@@ -12,7 +12,7 @@
 
 
 #define OVSERVICE(Type) ::Core::Global::ServiceLocator::Get<Type>()
-
+#define COPROVITE(Type,T) ::Core::Global::ServiceLocator::Provide<Type>(T)
 namespace Core::Global
 {
 	/**

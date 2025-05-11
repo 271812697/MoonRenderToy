@@ -7,6 +7,8 @@
 #define __glad_h_
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
+#include "treeViewpanel.h"
+#include "Core/Global/ServiceLocator.h"
 
 
 ::Editor::Core::Context* editorContext = nullptr;
@@ -60,6 +62,7 @@ namespace MOON {
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
 		sceneView = new ::Editor::Panels::SceneView("SceneView");
+		OVSERVICE(TreeViewPanel).initModel();
 
 	}
 
@@ -73,7 +76,6 @@ namespace MOON {
 
 		sceneView->Update(0.016);
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-
 		sceneView->Render();
 	}
 
@@ -91,6 +93,11 @@ namespace MOON {
 
 	void ViewerWindow::resizeEvent(QResizeEvent* event)
 	{
+		QOpenGLWidget::resizeEvent(event);
+		viewW = event->size().width();
+		viewH = event->size().height();
+		if (sceneView != nullptr)
+			sceneView->Resize(viewW, viewH);
 		QOpenGLWidget::resizeEvent(event);
 	}
 
