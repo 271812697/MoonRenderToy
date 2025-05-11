@@ -30,13 +30,14 @@ namespace MOON {
 		auto hierarchypanel = new Hierarchypanel(hori_splitter_);
 
 		auto middlePanel = new QWidget(hori_splitter_);
-		QSizePolicy sizePolicy8(QSizePolicy::Expanding, QSizePolicy::Expanding);
-		sizePolicy8.setHorizontalStretch(120);
-		sizePolicy8.setVerticalStretch(1);
-		sizePolicy8.setHeightForWidth(middlePanel->sizePolicy().hasHeightForWidth());
-		middlePanel->setSizePolicy(sizePolicy8);
+		QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+		sizePolicy.setHorizontalStretch(120);
+		sizePolicy.setVerticalStretch(1);
+		sizePolicy.setHeightForWidth(middlePanel->sizePolicy().hasHeightForWidth());
+		middlePanel->setSizePolicy(sizePolicy);
 		auto middlePanelLatout = new QVBoxLayout(middlePanel);
 		middlePanelLatout->setContentsMargins(0, 0, 0, 0);
+
 		vert_splitter_ = new QSplitter(middlePanel);
 		middlePanelLatout->addWidget(vert_splitter_);
 		auto up_panel_ = new UpPanel(vert_splitter_);

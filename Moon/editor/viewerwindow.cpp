@@ -76,7 +76,6 @@ namespace MOON {
 
 		sceneView->Update(0.016);
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-
 		sceneView->Render();
 	}
 
@@ -94,6 +93,11 @@ namespace MOON {
 
 	void ViewerWindow::resizeEvent(QResizeEvent* event)
 	{
+		QOpenGLWidget::resizeEvent(event);
+		viewW = event->size().width();
+		viewH = event->size().height();
+		if (sceneView != nullptr)
+			sceneView->Resize(viewW, viewH);
 		QOpenGLWidget::resizeEvent(event);
 	}
 

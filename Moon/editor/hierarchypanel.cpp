@@ -19,5 +19,9 @@ namespace MOON {
 		layout->addWidget(ui);
 		layout->setContentsMargins(0, 0, 0, 0);
 		ui_layout->setContentsMargins(0, 0, 0, 0);
+		QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+		sizePolicy.setHeightForWidth(this->sizePolicy().hasHeightForWidth());
+		this->setSizePolicy(sizePolicy);
 	}
 }

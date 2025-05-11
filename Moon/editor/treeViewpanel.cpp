@@ -3,6 +3,8 @@
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
+#include "pathtrace/PathTrace.h"
+#include "pathtrace/Scene.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
 #include <string>
@@ -19,14 +21,30 @@ namespace MOON {
 	class TreeViewModel : public QAbstractItemModel {
 	public:
 		TreeViewModel(QObject* parent) :QAbstractItemModel(parent) {
-			auto& sceneManager = ::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().sceneManager;
-			auto scene = sceneManager.GetCurrentScene();
-			auto& actors = scene->GetActors();
-
+			auto& actors = ::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().sceneManager.GetCurrentScene()->GetActors();
 			root.val = "root";
+			root.childs.push_back(TreeNode("scene", &root));
 			for (auto& item : actors) {
-
-				root.childs.push_back(TreeNode(item->GetName(), &root));
+				root.childs[0].childs.push_back(TreeNode(item->GetName(), &root.childs[0]));
+			}
+			root.childs.push_back(TreeNode("pathtrace", &root));
+			auto& meshR = PathTrace::GetScene()->meshInstancesRoots;
+			auto& meshT = PathTrace::GetScene()->meshInstancesTree;
+			auto& meshI = PathTrace::GetScene()->meshInstances;
+			for (auto& r : meshR) {
+				std::vector<int>stack0 = { r };
+				std::vector<TreeNode*>stack1 = { &root.childs[1] };
+				while (!stack0.empty())
+				{
+					int curI = stack0.back(); stack0.pop_back();
+					TreeNode* curP = stack1.back(); stack1.pop_back();
+					curP->childs.push_back(TreeNode(meshI[curI].name, curP));
+					TreeNode* nextP = &curP->childs.back();
+					for (int i = 0; i < meshT[curI].size(); i++) {
+						stack0.push_back(meshT[curI][i]);
+						stack1.push_back(nextP);
+					}
+				}
 			}
 		}
 

@@ -42,6 +42,7 @@ namespace PathTrace
 		void RebuildInstances();
 		void Save();
 
+
 		// Options
 		RenderOptions renderOptions;
 
@@ -59,6 +60,7 @@ namespace PathTrace
 		// Instances
 		std::vector<MeshInstance> meshInstances;
 		std::vector<std::vector<int>>meshInstancesTree;
+		std::vector<int>meshInstancesRoots;
 		// Lights
 		std::vector<Light> lights;
 		// Environment Map

@@ -75,6 +75,7 @@ namespace Editor::Panels
 		const ::Core::Rendering::SceneRenderer& GetRenderer() const;
 		::Core::ECS::Actor& GetSelectedActor();
 		void SelectActor(::Core::ECS::Actor& actor);
+		void Resize(int width, int height);
 		void UnselectActor();
 		bool IsSelectActor();
 	protected:

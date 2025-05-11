@@ -69,24 +69,15 @@ namespace MOON {
 
 	void  PathTracePanel::paintGL()
 	{
-		//TEST::TestInstance::Instance().flush();
-		//TEST::TestInstance::Instance().execute();
 		PathTrace::Update();
 		PathTrace::GetRenderer()->Update(0.016);
 		PathTrace::GetRenderer()->Render();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		PathTrace::GetRenderer()->Present();
-		//PathTrace::TraceScene();
-
 	}
 
-	//bool  PathTracePanel::event(QEvent* evt)
-	//{
 
-	//	return QOpenGLWidget::event(evt);
-
-	//}
 
 	void  PathTracePanel::leaveEvent(QEvent* event)
 	{
@@ -120,7 +111,7 @@ namespace MOON {
 		if (mb == Qt::MouseButton::LeftButton) {
 
 			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
-		}
+	}
 
 		else if (mb == Qt::MouseButton::MiddleButton) {
 			PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
@@ -132,7 +123,7 @@ namespace MOON {
 
 		}
 
-	}
+}
 
 	void  PathTracePanel::mouseMoveEvent(QMouseEvent* event)
 	{
@@ -179,4 +170,4 @@ namespace MOON {
 	{
 
 	}
-}
+	}

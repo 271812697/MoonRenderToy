@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 	QApplication::setFont(font);
 	MOON::Editor editor;
 	editor.setWindowTitle("Editor");
-	editor.resize(1440, 768);
+	editor.resize(1920, 1080);
 	editor.show();
 	int res = QApplication::exec();
 	MOON::Log::Shutdown();

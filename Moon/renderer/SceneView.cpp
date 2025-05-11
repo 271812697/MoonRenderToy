@@ -63,12 +63,7 @@ namespace Editor::Panels
 		if (e == nullptr)
 			return;
 		const QEvent::Type t = e->type();
-		if (t == QEvent::Resize) {
-			QResizeEvent* ev = static_cast<QResizeEvent*>(e);
 
-			mWidth = ev->size().width();
-			mHeight = ev->size().height();
-		}
 		m_cameraController.ReceiveEvent(e);
 		if (!m_cameraController.IsRightMousePressed()) {
 			if (t == QEvent::KeyPress) {
@@ -110,7 +105,6 @@ namespace Editor::Panels
 #endif
 
 			mouseY = GetSafeSize().second - mouseY - 1;
-			std::cout << mouseX << ":" << mouseY << std::endl;
 
 			auto& scene = *GetScene();
 

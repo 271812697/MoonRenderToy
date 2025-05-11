@@ -298,7 +298,6 @@ namespace PathTrace
 	// Loop through all the mesh Instances and build a Top Level BVH
 	void Scene::createTLAS()
 	{
-
 		for (int i = 0; i < meshInstances.size(); i++) {
 			Mat4 T = meshInstances[i].localform;
 			int id = meshInstances[i].parentID;
@@ -349,8 +348,6 @@ namespace PathTrace
 	//遍历meshes，每一个meshg构建BVH
 	void Scene::createBLAS()
 	{
-
-
 		for (int i = 0; i < meshes.size(); i++)
 		{
 			CORE_INFO("Building BVH for {0}\n", meshes[i]->name.c_str());
@@ -471,6 +468,10 @@ light
 		for (int i = 0; i < meshInstances.size(); i++) {
 			if (meshInstances[i].parentID != -1) {
 				meshInstancesTree[meshInstances[i].parentID].push_back(i);
+			}
+			else
+			{
+				meshInstancesRoots.push_back(i);
 			}
 		}
 		createTLAS();
