@@ -144,6 +144,13 @@ namespace MOON {
 	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent)
 	{
 		COPROVITE(TreeViewPanel, *this);
+		QSizePolicy sizePolicy8(QSizePolicy::Preferred, QSizePolicy::Expanding);
+		sizePolicy8.setHorizontalStretch(0);
+		sizePolicy8.setVerticalStretch(0);
+		sizePolicy8.setWidthForHeight(true);
+		sizePolicy8.setHeightForWidth(this->sizePolicy().hasHeightForWidth());
+		this->setSizePolicy(sizePolicy8);
+
 
 	}
 	void TreeViewPanel::initModel()
