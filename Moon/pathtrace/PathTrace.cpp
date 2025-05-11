@@ -6,6 +6,9 @@
 #include "Renderer.h"
 #include "core/log.h"
 #include "Trace.h"
+#include "renderer/Context.h"
+#include "editor/treeViewpanel.h"
+#include "Core/Global/ServiceLocator.h"
 #include <filesystem>
 namespace PathTrace {
 
@@ -49,6 +52,7 @@ namespace PathTrace {
 			switchScene = false;
 			LoadScene(switchSceneName);
 			InitRenderer();
+			OVSERVICE(MOON::TreeViewPanel).initModel();
 		}
 	}
 	void GetSceneFiles()

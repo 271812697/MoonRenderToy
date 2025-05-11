@@ -63,7 +63,7 @@ namespace MOON {
 		TreeNode root;
 
 	};
-
+	TreeViewModel* treemodel = nullptr;
 	int TreeViewModel::columnCount(const QModelIndex&) const
 	{
 		return 1;
@@ -173,8 +173,11 @@ namespace MOON {
 	}
 	void TreeViewPanel::initModel()
 	{
-		TreeViewModel* treemodel = new TreeViewModel(this);
-		//setModel(&model);
+		if (treemodel != nullptr) {
+			delete treemodel;
+		}
+		treemodel = new TreeViewModel(this);
+
 		setModel(treemodel);
 	}
 }

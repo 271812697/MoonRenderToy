@@ -27,7 +27,7 @@ pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
 
 void pqLoadDataReaction::onTriggered()
 {
-
+	/*
 	QWidget* mainwidget = nullptr;
 	Q_FOREACH(QWidget * widget, QApplication::topLevelWidgets())
 	{
@@ -47,7 +47,9 @@ void pqLoadDataReaction::onTriggered()
 
 	}
 
-	/*
+	*/
+
+
 	QString fileName = QFileDialog::getOpenFileName(nullptr,
 		tr("Open Flow Scene"),
 		QDir::homePath(),
@@ -57,7 +59,8 @@ void pqLoadDataReaction::onTriggered()
 		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 	PathTrace::SwitchScene(fileName.toStdString());
-	*/
+
+
 
 
 }
