@@ -423,6 +423,9 @@ namespace PathTrace {
 		Vec3 n = Vec3::Dot(d, axis) * axis;
 		Vec3 x = d - n;
 		float len = Vec3::Length(x);
+		if (len < FLT_EPSILON) {
+			return d;
+		}
 		Vec3 nx = Vec3::Normalize(x);
 		Vec3 ny = Vec3::Cross(axis, nx);
 		return n + len * (cos(rad) * nx + sin(rad) * ny);

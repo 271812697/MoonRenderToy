@@ -35,7 +35,7 @@ namespace PathTrace
 
 		void AddCamera(Vec3 eye, Vec3 lookat, float fov);
 		void AddEnvMap(const std::string& filename);
-		int IntersectionByScreen(float x, float y);
+		bool IntersectionByScreen(float x, float y,Vec3&p);
 		Vec3 PathTrace(Vec3 origin, Vec3 direction);
 
 		void ProcessScene();

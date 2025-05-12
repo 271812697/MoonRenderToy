@@ -51,6 +51,8 @@ namespace PathTrace {
 		void wheelMouseWheel(float delta);
 		void GetCameraPosition(float eye[3]);
 		void GetViewProject(float view[16], float proj[16]);
+		void MoveToPivot(float deltaTime);
+		void PustCameraDestination(float x,float y,float z);
 	private:
 		//for rotate
 		int rx, ry;

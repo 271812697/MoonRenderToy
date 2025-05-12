@@ -2,6 +2,7 @@
 #pragma once
 
 #include <float.h>
+#include <vector>
 #include"MathUtil.h"
 
 namespace PathTrace
@@ -14,6 +15,7 @@ namespace PathTrace
 		Camera& operator = (const Camera& other);
 
 		void OffsetRotateByScreen(float dx, float dy);
+
 		void setPivot(const Vec3& p);
 		void Strafe(float dx, float dy);
 		void Update();
@@ -21,6 +23,7 @@ namespace PathTrace
 		void ComputeViewProjectionMatrix(float* view, float* projection, float ratio);
 		void SetFov(float val);
 		Vec3 GetEye();
+		Vec3& GetPivoit();
 		//相机采用右手坐标系，up right forward表示的是左手坐标系
 		Vec3 position;
 		Vec3 up;
@@ -40,6 +43,7 @@ namespace PathTrace
 
 		bool isMoving;
 		void UpdateCamera();
+	
 	private:
 
 		Vec3 worldUp;

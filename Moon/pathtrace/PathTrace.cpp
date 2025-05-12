@@ -28,13 +28,14 @@ namespace PathTrace {
 	std::string switchSceneName = "";
 	float screenX[2] = { 0,0 };
 	float screenY[2] = { 0,0 };
+	std::vector<Vec3>cameraDestinations;
 
-	//std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	//std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	//std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
+	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
+	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
+	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
+	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
+	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
 
 	RenderOptions renderOptions;
 
@@ -54,6 +55,7 @@ namespace PathTrace {
 			InitRenderer();
 			OVSERVICE(MOON::TreeViewPanel).initModel();
 		}
+		PathTrace::CameraController::Instance().MoveToPivot(0.016);
 	}
 	void GetSceneFiles()
 	{
@@ -172,7 +174,10 @@ namespace PathTrace {
 	void CameraController::mouseLeftPress(int x, int y)
 	{
 
-		scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y);;
+		Vec3 p;
+		if (scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y,p)) {
+			cameraDestinations.push_back(p);
+		}
 	}
 
 	void CameraController::mouseMiddlePress(int x, int y)
@@ -214,6 +219,30 @@ namespace PathTrace {
 	}
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
 		scene->camera->ComputeViewProjectionMatrix(view, proj, 1.0f * renderOptions.windowResolution.x / renderOptions.windowResolution.y);
+	}
+	void CameraController::MoveToPivot(float deltaTime){
+		if (!cameraDestinations.empty()) {
+			while (cameraDestinations.size() != 1) {
+				cameraDestinations.pop_back();
+			}
+			float t = 5.0f * deltaTime;
+			auto& destion = cameraDestinations[0];
+			auto& piviot = scene->camera->GetPivoit();
+			if (Vec3::Length(destion - piviot) < 0.03f) {
+				scene->camera->setPivot(destion);
+				cameraDestinations.pop_back();
+				
+			}
+			else
+			{
+				scene->camera->setPivot(destion * t + (1 - t) * piviot);
+				
+			}
+			GetScene()->dirty = true;
+		}
+	}
+	void CameraController::PustCameraDestination(float x,float y,float z) {
+		cameraDestinations.push_back({x,y,z});
 	}
 
 }

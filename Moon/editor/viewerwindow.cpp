@@ -118,11 +118,8 @@ namespace MOON {
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{
-
 	}
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
 	}
-
-
 }
