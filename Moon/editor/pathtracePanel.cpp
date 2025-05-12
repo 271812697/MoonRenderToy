@@ -49,8 +49,6 @@ namespace MOON {
 
 		//¿ªÆô¼ÆÊ±Æ÷
 		this->startTimer(16);
-
-
 		PathTrace::GetSceneFiles();
 		PathTrace::GetEnvMaps();
 		PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
@@ -58,8 +56,6 @@ namespace MOON {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
-
-
 	}
 
 	void  PathTracePanel::timerEvent(QTimerEvent* e)

@@ -13,7 +13,7 @@
 namespace Core::ResourceManagement
 {
 	template<typename T>
-	inline T* AResourceManager<T>::LoadResource(const std::string & p_path)
+	inline T* AResourceManager<T>::LoadResource(const std::string& p_path)
 	{
 		if (auto resource = GetResource(p_path, false); resource)
 			return resource;
@@ -28,7 +28,7 @@ namespace Core::ResourceManagement
 	}
 
 	template<typename T>
-	inline void AResourceManager<T>::UnloadResource(const std::string & p_path)
+	inline void AResourceManager<T>::UnloadResource(const std::string& p_path)
 	{
 		if (auto resource = GetResource(p_path, false); resource)
 		{
@@ -38,7 +38,7 @@ namespace Core::ResourceManagement
 	}
 
 	template<typename T>
-	inline bool AResourceManager<T>::MoveResource(const std::string & p_previousPath, const std::string & p_newPath)
+	inline bool AResourceManager<T>::MoveResource(const std::string& p_previousPath, const std::string& p_newPath)
 	{
 		if (IsResourceRegistered(p_previousPath) && !IsResourceRegistered(p_newPath))
 		{
@@ -61,7 +61,7 @@ namespace Core::ResourceManagement
 	}
 
 	template<typename T>
-	inline bool AResourceManager<T>::IsResourceRegistered(const std::string & p_path)
+	inline bool AResourceManager<T>::IsResourceRegistered(const std::string& p_path)
 	{
 		return m_resources.find(p_path) != m_resources.end();
 	}
@@ -69,7 +69,7 @@ namespace Core::ResourceManagement
 	template<typename T>
 	inline void AResourceManager<T>::UnloadResources()
 	{
-		for (auto&[key, value] : m_resources)
+		for (auto& [key, value] : m_resources)
 			DestroyResource(value);
 
 		m_resources.clear();
@@ -87,7 +87,7 @@ namespace Core::ResourceManagement
 	}
 
 	template<typename T>
-	inline void AResourceManager<T>::UnregisterResource(const std::string & p_path)
+	inline void AResourceManager<T>::UnregisterResource(const std::string& p_path)
 	{
 		m_resources.erase(p_path);
 	}
@@ -108,16 +108,16 @@ namespace Core::ResourceManagement
 	}
 
 	template<typename T>
-	inline T* AResourceManager<T>::operator[](const std::string & p_path)
+	inline T* AResourceManager<T>::operator[](const std::string& p_path)
 	{
 		return GetResource(p_path);
 	}
 
 	template<typename T>
-	inline void AResourceManager<T>::ProvideAssetPaths(const std::string & p_projectAssetsPath, const std::string & p_engineAssetsPath)
+	inline void AResourceManager<T>::ProvideAssetPaths(const std::string& p_projectAssetsPath, const std::string& p_engineAssetsPath)
 	{
-		__PROJECT_ASSETS_PATH	= p_projectAssetsPath;
-		__ENGINE_ASSETS_PATH	= p_engineAssetsPath;
+		__PROJECT_ASSETS_PATH = p_projectAssetsPath;
+		__ENGINE_ASSETS_PATH = p_engineAssetsPath;
 	}
 
 	template<typename T>
@@ -134,6 +134,9 @@ namespace Core::ResourceManagement
 		if (p_path[0] == ':') // The path is an engine path
 		{
 			result = __ENGINE_ASSETS_PATH + std::string(p_path.data() + 1, p_path.data() + p_path.size());
+		}
+		else if (p_path[0] == '#') {
+			result = std::string(p_path.data() + 1, p_path.data() + p_path.size());
 		}
 		else // The path is a project path
 		{

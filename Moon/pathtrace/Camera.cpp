@@ -99,6 +99,7 @@ namespace PathTrace
 		position = eye;
 		pivot = lookat;
 		radius = Vec3::Distance(eye, lookat);
+		radius = std::max(radius, 0.05f);
 		worldUp = Vec3(0, 1, 0);
 		this->fov = Math::Radians(fov);
 		focalDist = 0.1f;
@@ -134,23 +135,21 @@ namespace PathTrace
 		if (len < FLT_EPSILON) {
 			return;
 		}
-
 		Vec3 rot = -Vec3::Normalize(-dy * lastright + dx * lastup);
 		position = RoatePoint(lastposition, rot, pivot, len / 500);
 		forward = Vec3::Normalize(pivot - position);
 		up = RoateDir(lastup, rot, len / 500);
 		right = RoateDir(lastright, rot, len / 500);
-		std::cout << Vec3::Length(forward) << ":" << Vec3::Length(up) << ":" << Vec3::Length(right) << std::endl;;
-
-
 	}
 
 	void Camera::setPivot(const Vec3& p)
 	{
+
 		pivot = p;
 		position = pivot - radius * forward;
 		UpdateCamera();
 	}
+
 
 	void Camera::Strafe(float dx, float dy)
 	{
@@ -162,6 +161,7 @@ namespace PathTrace
 	void Camera::SetRadius(float dr)
 	{
 		radius += dr;
+		radius = std::max(radius, 0.05f);
 		position = pivot - radius * forward;
 		UpdateCamera();
 	}
@@ -174,6 +174,9 @@ namespace PathTrace
 	Vec3 Camera::GetEye() {
 		return position;
 	}
+	Vec3& Camera::GetPivoit() {
+		return pivot;
+	}
 
 	void Camera::UpdateCamera()
 	{
@@ -183,6 +186,7 @@ namespace PathTrace
 		lastforward = forward;
 		lastpivot = pivot;
 	}
+
 
 	void Camera::ComputeViewProjectionMatrix(float* view, float* projection, float ratio)
 	{

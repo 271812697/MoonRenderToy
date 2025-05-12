@@ -370,12 +370,12 @@ namespace PathTrace
 	void Renderer::InitShaders()
 	{
 		//初始化shader
-		std::string pathTraceShaderSrcObj = loadShaderSource(shadersDirectory + "PathTrace.glsl");
-		std::string pathTraceShaderLowResSrcObj = loadShaderSource(shadersDirectory + "PathTraceLowRes.glsl");
-		std::string outputShaderSrcObj = loadShaderSource(shadersDirectory + "OutputShader.glsl");
-		std::string tonemapShaderSrcObj = loadShaderSource(shadersDirectory + "ToneMapShader.glsl");
-		std::string pbrShaderSrcObj = loadShaderSource(shadersDirectory + "pbr.glsl");
-		std::string lineShaderSrcObj = loadShaderSource(shadersDirectory + "line.glsl");
+		std::string pathTraceShaderSrcObj = loadShaderSource(shadersDirectory + "/PathTrace.glsl");
+		std::string pathTraceShaderLowResSrcObj = loadShaderSource(shadersDirectory + "/PathTraceLowRes.glsl");
+		std::string outputShaderSrcObj = loadShaderSource(shadersDirectory + "/OutputShader.glsl");
+		std::string tonemapShaderSrcObj = loadShaderSource(shadersDirectory + "/ToneMapShader.glsl");
+		std::string pbrShaderSrcObj = loadShaderSource(shadersDirectory + "/pbr.glsl");
+		std::string lineShaderSrcObj = loadShaderSource(shadersDirectory + "/line.glsl");
 		//分析renderOptions添加向源码中预定义宏
 		std::string pathtraceDefines = "";
 		std::string tonemapDefines = "";
@@ -805,7 +805,7 @@ namespace PathTrace
 
 	void Renderer::Update(float secondsElapsed)
 	{
-		
+
 
 		if (!scene->dirty && scene->renderOptions.maxSpp != -1 && sampleCounter >= scene->renderOptions.maxSpp)
 			return;

@@ -120,7 +120,7 @@ namespace PathTrace
 		dirty = true;
 	}
 
-	int Scene::IntersectionByScreen(float x, float y)
+	bool Scene::IntersectionByScreen(float x, float y,Vec3& p)
 	{
 
 
@@ -268,13 +268,12 @@ namespace PathTrace
 		}
 		if (instanceId != -1) {
 
-			Vec3 p = (vert0 * bary.x + vert1 * bary.y + vert2 * bary.z).xyz();
-			camera->setPivot(p);
+			Vec3 pos = (vert0 * bary.x + vert1 * bary.y + vert2 * bary.z).xyz();
+			p = pos;
 			CORE_INFO("Hit {0} pos ({1},{2},{3})", meshInstances[instanceId].name, p.x, p.y, p.z);
+			return true;
 		}
-
-
-		return instanceId;
+		return false;
 	}
 
 	Vec3 Scene::PathTrace(Vec3 origin, Vec3 direction)

@@ -9,6 +9,9 @@
 #include "renderer/SceneView.h"
 #include "treeViewpanel.h"
 #include "Core/Global/ServiceLocator.h"
+#include "pathtrace/Scene.h"
+#include "pathtrace/PathTrace.h"
+#include "Core/ECS/Components/CMaterialRenderer.h"
 
 
 ::Editor::Core::Context* editorContext = nullptr;
@@ -43,7 +46,31 @@ namespace MOON {
 	{
 
 	}
+	void ParsePathTraceScene(PathTrace::Scene* sce, ::Core::SceneSystem::Scene* scene) {
+		if (sce == nullptr || scene == nullptr) {
+			return;
+		}
+		static ::Core::Resources::Material m_cameraMaterial;
+		m_cameraMaterial.SetShader(::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().shaderManager[":Shaders\\Lambert.ovfx"]);
+		m_cameraMaterial.SetProperty("u_Diffuse", Maths::FVector4{ 0.0f, 0.3f, 0.7f, 1.0f });
+		m_cameraMaterial.SetProperty("u_DiffuseMap", static_cast<Rendering::Resources::Texture*>(nullptr));
+		auto& mesh = sce->meshes;
+		auto& instance = sce->meshInstances;
+		auto& material = sce->materials;
+		for (auto& mi : instance) {
+			auto& actor = scene->CreateActor();
+			actor.SetName(mi.name);
+			auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("#" + mesh[mi.meshID]->name);
+			actor.AddComponent<::Core::ECS::Components::CModelRenderer>().SetModel(m);
 
+			auto& materilaRener = actor.AddComponent<::Core::ECS::Components::CMaterialRenderer>();
+			materilaRener.SetMaterialAtIndex(0, m_cameraMaterial);
+			materilaRener.UpdateMaterialList();
+		}
+
+
+
+	}
 	void ViewerWindow::initializeGL()
 	{
 
@@ -61,6 +88,7 @@ namespace MOON {
 
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
+		ParsePathTraceScene(PathTrace::GetScene(), editorContext->sceneManager.GetCurrentScene());
 		sceneView = new ::Editor::Panels::SceneView("SceneView");
 		OVSERVICE(TreeViewPanel).initModel();
 
@@ -118,11 +146,8 @@ namespace MOON {
 	}
 	void ViewerWindow::keyPressEvent(QKeyEvent* event)
 	{
-
 	}
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
 	}
-
-
 }
