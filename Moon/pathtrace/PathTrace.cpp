@@ -30,12 +30,9 @@ namespace PathTrace {
 	float screenY[2] = { 0,0 };
 	std::vector<Vec3>cameraDestinations;
 
-	std::string shadersDir = "C:/Project/UseQt/Moon/pathtrace/shaders/";
-	std::string assetsDir = "C:/Project/UseQt/Resource/pathtrace/scenes/";
-	std::string envMapDir = "C:/Project/UseQt/Resource/pathtrace/scenes/HDR/";
-	//std::string shadersDir = "../../Moon/pathtrace/shaders/";
-	//std::string assetsDir = "../../Resource/pathtrace/scenes/";
-	//std::string envMapDir = "../../Resource/pathtrace/scenes/HDR/";
+	std::string shadersDir = PATH_TRACE_SHADER_PATH;
+	std::string assetsDir = PATH_TRACE_SCENE_PATH;
+	std::string envMapDir = PATH_TRACE_HDR_PATH;
 
 	RenderOptions renderOptions;
 
@@ -175,7 +172,7 @@ namespace PathTrace {
 	{
 
 		Vec3 p;
-		if (scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y,p)) {
+		if (scene->IntersectionByScreen(1.0 * x / renderOptions.windowResolution.x, 1.0 - 1.0 * y / renderOptions.windowResolution.y, p)) {
 			cameraDestinations.push_back(p);
 		}
 	}
@@ -220,7 +217,7 @@ namespace PathTrace {
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
 		scene->camera->ComputeViewProjectionMatrix(view, proj, 1.0f * renderOptions.windowResolution.x / renderOptions.windowResolution.y);
 	}
-	void CameraController::MoveToPivot(float deltaTime){
+	void CameraController::MoveToPivot(float deltaTime) {
 		if (!cameraDestinations.empty()) {
 			while (cameraDestinations.size() != 1) {
 				cameraDestinations.pop_back();
@@ -231,18 +228,18 @@ namespace PathTrace {
 			if (Vec3::Length(destion - piviot) < 0.03f) {
 				scene->camera->setPivot(destion);
 				cameraDestinations.pop_back();
-				
+
 			}
 			else
 			{
 				scene->camera->setPivot(destion * t + (1 - t) * piviot);
-				
+
 			}
 			GetScene()->dirty = true;
 		}
 	}
-	void CameraController::PustCameraDestination(float x,float y,float z) {
-		cameraDestinations.push_back({x,y,z});
+	void CameraController::PustCameraDestination(float x, float y, float z) {
+		cameraDestinations.push_back({ x,y,z });
 	}
 
 }
