@@ -212,10 +212,6 @@ namespace Rendering::HAL
 	template<>
 	std::optional<Data::PipelineState> GLBackend::Init(bool debug)
 	{
-		//if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-			//return -1;
-		//}
-
 
 		TracyGpuContext;
 

@@ -737,9 +737,7 @@ namespace PathTrace
 			return;
 
 		}
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		glEnable(GL_BLEND);
+
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(1.0);

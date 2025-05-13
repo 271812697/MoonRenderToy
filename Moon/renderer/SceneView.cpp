@@ -183,8 +183,8 @@ namespace Editor::Panels
 	{
 		auto descriptor = AViewControllable::CreateSceneDescriptor();
 		descriptor.fallbackMaterial = m_fallbackMaterial;
-
-		if (true)
+		//don't debug the scene camera
+		if (false)
 		{
 			auto& scene = *GetScene();
 
