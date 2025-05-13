@@ -1,3 +1,6 @@
+#include "editor/treeViewpanel.h"
+#include "editor/viewerwindow.h"
+#define __glad_h_
 #include "PathTrace.h"
 #include "LoadScene.h"
 #include "Scene.h"
@@ -7,7 +10,7 @@
 #include "core/log.h"
 #include "Trace.h"
 #include "renderer/Context.h"
-#include "editor/treeViewpanel.h"
+
 #include "Core/Global/ServiceLocator.h"
 #include <filesystem>
 namespace PathTrace {
@@ -50,7 +53,8 @@ namespace PathTrace {
 			switchScene = false;
 			LoadScene(switchSceneName);
 			InitRenderer();
-			OVSERVICE(MOON::TreeViewPanel).initModel();
+			OVSERVICE(MOON::ViewerWindow).switchScene();
+			//OVSERVICE(MOON::TreeViewPanel).initModel();
 		}
 		PathTrace::CameraController::Instance().MoveToPivot(0.016);
 	}

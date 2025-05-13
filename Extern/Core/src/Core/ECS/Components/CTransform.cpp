@@ -32,6 +32,28 @@ bool Core::ECS::Components::CTransform::HasParent() const
 	return m_transform.HasParent();
 }
 
+void Core::ECS::Components::CTransform::SetMatrix(float data[4][4])
+{
+	Maths::FMatrix4 mat;
+	int k = 0;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			mat.data[k++] = data[j][i];
+		}
+
+	}
+	m_transform.SetLocalMatrix(mat);
+}
+
+void Core::ECS::Components::CTransform::SetMatrix(float data[16])
+{
+	Maths::FMatrix4 mat;
+	for (int i = 0; i < 16; i++) {
+		mat.data[i] = data[i];
+	}
+	m_transform.SetLocalMatrix(mat);
+}
+
 void Core::ECS::Components::CTransform::SetLocalPosition(Maths::FVector3 p_newPosition)
 {
 	m_transform.SetLocalPosition(p_newPosition);

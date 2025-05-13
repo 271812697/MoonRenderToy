@@ -90,6 +90,8 @@ namespace Maths
 		*/
 		void UpdateWorldMatrix();
 
+		void SetLocalMatrix(const FMatrix4& mat);
+
 		/**
 		* Re-update local matrix to use parent transformations
 		*/
@@ -100,6 +102,7 @@ namespace Maths
 		* @param p_newPosition
 		*/
 		void SetLocalPosition(FVector3 p_newPosition);
+
 
 		/**
 		* Set the rotation of the transform in the local space
@@ -217,8 +220,8 @@ namespace Maths
 		/**
 		* Return the transform local right
 		*/
-		FVector3 GetLocalRight() const;		
-	
+		FVector3 GetLocalRight() const;
+
 	private:
 		void PreDecomposeWorldMatrix();
 		void PreDecomposeLocalMatrix();
@@ -234,8 +237,8 @@ namespace Maths
 		FMatrix4 m_localMatrix;
 		FMatrix4 m_worldMatrix;
 
-		FTransform*	m_parent;
-		
+		FTransform* m_parent;
+
 		Internal::TransformNotifier m_notifier;
 		Internal::TransformNotifier::NotificationHandlerID m_notificationHandlerID;
 	};

@@ -209,7 +209,7 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 		}
 		else if (key == Qt::Key_E) {
 			mKeyState[KEYE] = Down;
-			std::cout << "Press E" << std::endl;
+
 		}
 		else if (key == Qt::Key_F || key == Qt::Key_Right || key == Qt::Key_Left || key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_PageUp || key == Qt::Key_PageDown) {
 			if (m_view.IsSelectActor()) {
@@ -257,7 +257,7 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 
 		}
 		else if (key == Qt::Key_E) {
-			mKeyState[KEYE] = Up; std::cout << "Release E" << std::endl;
+
 		}
 	}
 

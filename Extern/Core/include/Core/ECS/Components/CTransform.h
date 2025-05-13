@@ -53,7 +53,8 @@ namespace Core::ECS::Components
 		* Check if the transform has a parent
 		*/
 		bool HasParent() const;
-
+		void SetMatrix(float data[4][4]);
+		void SetMatrix(float data[16]);
 		/**
 		* Set the position of the transform in the local space
 		* @param p_newPosition

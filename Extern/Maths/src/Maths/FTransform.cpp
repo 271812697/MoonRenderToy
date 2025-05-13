@@ -43,7 +43,7 @@ void Maths::FTransform::NotificationHandler(Internal::TransformNotifier::ENotifi
 		break;
 
 	case Internal::TransformNotifier::ENotification::TRANSFORM_DESTROYED:
-		/* 
+		/*
 		* RemoveParent() is not called here because it is unsafe to remove a notification handler
 		* while the parent is iterating on his notification handlers (Segfault otherwise)
 		*/
@@ -108,6 +108,12 @@ void Maths::FTransform::UpdateWorldMatrix()
 	PreDecomposeWorldMatrix();
 
 	m_notifier.NotifyChildren(Internal::TransformNotifier::ENotification::TRANSFORM_CHANGED);
+}
+
+void Maths::FTransform::SetLocalMatrix(const FMatrix4& mat)
+{
+	m_localMatrix = mat;
+	UpdateWorldMatrix();
 }
 
 void Maths::FTransform::UpdateLocalMatrix()
@@ -244,7 +250,7 @@ void Maths::FTransform::PreDecomposeWorldMatrix()
 	m_worldPosition.y = m_worldMatrix(1, 3);
 	m_worldPosition.z = m_worldMatrix(2, 3);
 
-	FVector3 columns[3] = 
+	FVector3 columns[3] =
 	{
 		{ m_worldMatrix(0, 0), m_worldMatrix(1, 0), m_worldMatrix(2, 0)},
 		{ m_worldMatrix(0, 1), m_worldMatrix(1, 1), m_worldMatrix(2, 1)},
