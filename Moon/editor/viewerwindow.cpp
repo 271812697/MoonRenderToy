@@ -33,7 +33,7 @@ namespace MOON {
 		//设置可以捕获鼠标移动消息
 		// default to strong focus
 		this->setFocusPolicy(Qt::StrongFocus);
-		this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
+		//this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 		this->setMouseTracking(true);
 		//this->grabKeyboard();
 		//反锯齿
@@ -88,8 +88,9 @@ namespace MOON {
 
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
-		ParsePathTraceScene(PathTrace::GetScene(), editorContext->sceneManager.GetCurrentScene());
 		sceneView = new ::Editor::Panels::SceneView("SceneView");
+		ParsePathTraceScene(PathTrace::GetScene(), editorContext->sceneManager.GetCurrentScene());
+		
 		OVSERVICE(TreeViewPanel).initModel();
 
 	}

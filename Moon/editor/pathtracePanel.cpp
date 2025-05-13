@@ -48,7 +48,7 @@ namespace MOON {
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 
 		//¿ªÆô¼ÆÊ±Æ÷
-		this->startTimer(16);
+		this->startTimer(32);
 		PathTrace::GetSceneFiles();
 		PathTrace::GetEnvMaps();
 		PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
