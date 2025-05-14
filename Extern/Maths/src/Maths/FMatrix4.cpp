@@ -107,6 +107,7 @@ Maths::FVector4 Maths::FMatrix4::operator*(const FVector4& p_vector) const
 	return Multiply(*this, p_vector);
 }
 
+
 Maths::FMatrix4 Maths::FMatrix4::operator*(const FMatrix4& p_other) const
 {
 	return Multiply(*this, p_other);
@@ -211,41 +212,41 @@ Maths::FVector4 Maths::FMatrix4::Multiply(const FMatrix4& p_matrix, const FVecto
 Maths::FMatrix4 Maths::FMatrix4::Multiply(const FMatrix4& p_left, const FMatrix4& p_right)
 {
 	return FMatrix4(
-					((p_left.data[0] * p_right.data[0]) + (p_left.data[1] * p_right.data[4]) + (p_left.data[
-					2] * p_right.data[8]) + (p_left.data[3] * p_right.data[12])),
-					((p_left.data[0] * p_right.data[1]) + (p_left.data[1] * p_right.data[5]) + (p_left.data[
-					2] * p_right.data[9]) + (p_left.data[3] * p_right.data[13])),
-					((p_left.data[0] * p_right.data[2]) + (p_left.data[1] * p_right.data[6]) + (p_left.data[
-					2] * p_right.data[10]) + (p_left.data[3] * p_right.data[14])),
-					((p_left.data[0] * p_right.data[3]) + (p_left.data[1] * p_right.data[7]) + (p_left.data[
-					2] * p_right.data[11]) + (p_left.data[3] * p_right.data[15])),
+		((p_left.data[0] * p_right.data[0]) + (p_left.data[1] * p_right.data[4]) + (p_left.data[
+			2] * p_right.data[8]) + (p_left.data[3] * p_right.data[12])),
+		((p_left.data[0] * p_right.data[1]) + (p_left.data[1] * p_right.data[5]) + (p_left.data[
+			2] * p_right.data[9]) + (p_left.data[3] * p_right.data[13])),
+		((p_left.data[0] * p_right.data[2]) + (p_left.data[1] * p_right.data[6]) + (p_left.data[
+			2] * p_right.data[10]) + (p_left.data[3] * p_right.data[14])),
+		((p_left.data[0] * p_right.data[3]) + (p_left.data[1] * p_right.data[7]) + (p_left.data[
+			2] * p_right.data[11]) + (p_left.data[3] * p_right.data[15])),
 
-					((p_left.data[4] * p_right.data[0]) + (p_left.data[5] * p_right.data[4]) + (p_left.data[
-					6] * p_right.data[8]) + (p_left.data[7] * p_right.data[12])),
-					((p_left.data[4] * p_right.data[1]) + (p_left.data[5] * p_right.data[5]) + (p_left.data[
-					6] * p_right.data[9]) + (p_left.data[7] * p_right.data[13])),
-					((p_left.data[4] * p_right.data[2]) + (p_left.data[5] * p_right.data[6]) + (p_left.data[
-					6] * p_right.data[10]) + (p_left.data[7] * p_right.data[14])),
-					((p_left.data[4] * p_right.data[3]) + (p_left.data[5] * p_right.data[7]) + (p_left.data[
-					6] * p_right.data[11]) + (p_left.data[7] * p_right.data[15])),
+		((p_left.data[4] * p_right.data[0]) + (p_left.data[5] * p_right.data[4]) + (p_left.data[
+			6] * p_right.data[8]) + (p_left.data[7] * p_right.data[12])),
+		((p_left.data[4] * p_right.data[1]) + (p_left.data[5] * p_right.data[5]) + (p_left.data[
+			6] * p_right.data[9]) + (p_left.data[7] * p_right.data[13])),
+		((p_left.data[4] * p_right.data[2]) + (p_left.data[5] * p_right.data[6]) + (p_left.data[
+			6] * p_right.data[10]) + (p_left.data[7] * p_right.data[14])),
+		((p_left.data[4] * p_right.data[3]) + (p_left.data[5] * p_right.data[7]) + (p_left.data[
+			6] * p_right.data[11]) + (p_left.data[7] * p_right.data[15])),
 
-					((p_left.data[8] * p_right.data[0]) + (p_left.data[9] * p_right.data[4]) + (p_left.data[
-					10] * p_right.data[8]) + (p_left.data[11] * p_right.data[12])),
-					((p_left.data[8] * p_right.data[1]) + (p_left.data[9] * p_right.data[5]) + (p_left.data[
-					10] * p_right.data[9]) + (p_left.data[11] * p_right.data[13])),
-					((p_left.data[8] * p_right.data[2]) + (p_left.data[9] * p_right.data[6]) + (p_left.data[
-					10] * p_right.data[10]) + (p_left.data[11] * p_right.data[14])),
-					((p_left.data[8] * p_right.data[3]) + (p_left.data[9] * p_right.data[7]) + (p_left.data[
-					10] * p_right.data[11]) + (p_left.data[11] * p_right.data[15])),
+		((p_left.data[8] * p_right.data[0]) + (p_left.data[9] * p_right.data[4]) + (p_left.data[
+			10] * p_right.data[8]) + (p_left.data[11] * p_right.data[12])),
+		((p_left.data[8] * p_right.data[1]) + (p_left.data[9] * p_right.data[5]) + (p_left.data[
+			10] * p_right.data[9]) + (p_left.data[11] * p_right.data[13])),
+		((p_left.data[8] * p_right.data[2]) + (p_left.data[9] * p_right.data[6]) + (p_left.data[
+			10] * p_right.data[10]) + (p_left.data[11] * p_right.data[14])),
+		((p_left.data[8] * p_right.data[3]) + (p_left.data[9] * p_right.data[7]) + (p_left.data[
+			10] * p_right.data[11]) + (p_left.data[11] * p_right.data[15])),
 
-					((p_left.data[12] * p_right.data[0]) + (p_left.data[13] * p_right.data[4]) + (p_left.
-					data[14] * p_right.data[8]) + (p_left.data[15] * p_right.data[12])),
-					((p_left.data[12] * p_right.data[1]) + (p_left.data[13] * p_right.data[5]) + (p_left.
-					data[14] * p_right.data[9]) + (p_left.data[15] * p_right.data[13])),
-					((p_left.data[12] * p_right.data[2]) + (p_left.data[13] * p_right.data[6]) + (p_left.
-					data[14] * p_right.data[10]) + (p_left.data[15] * p_right.data[14])),
-					((p_left.data[12] * p_right.data[3]) + (p_left.data[13] * p_right.data[7]) + (p_left.
-					data[14] * p_right.data[11]) + (p_left.data[15] * p_right.data[15])));
+		((p_left.data[12] * p_right.data[0]) + (p_left.data[13] * p_right.data[4]) + (p_left.
+			data[14] * p_right.data[8]) + (p_left.data[15] * p_right.data[12])),
+		((p_left.data[12] * p_right.data[1]) + (p_left.data[13] * p_right.data[5]) + (p_left.
+			data[14] * p_right.data[9]) + (p_left.data[15] * p_right.data[13])),
+		((p_left.data[12] * p_right.data[2]) + (p_left.data[13] * p_right.data[6]) + (p_left.
+			data[14] * p_right.data[10]) + (p_left.data[15] * p_right.data[14])),
+		((p_left.data[12] * p_right.data[3]) + (p_left.data[13] * p_right.data[7]) + (p_left.
+			data[14] * p_right.data[11]) + (p_left.data[15] * p_right.data[15])));
 }
 
 Maths::FMatrix4 Maths::FMatrix4::Divide(const FMatrix4& p_left, float p_scalar)
@@ -271,8 +272,8 @@ bool Maths::FMatrix4::IsIdentity(const FMatrix4& p_matrix)
 float Maths::FMatrix4::GetMinor(float p_minor0, float p_minor1, float p_minor2, float p_minor3, float p_minor4, float p_minor5, float p_minor6, float p_minor7, float p_minor8)
 {
 	return p_minor0 * (p_minor4 * p_minor8 - p_minor5 * p_minor7)
-		   - p_minor1 * (p_minor3 * p_minor8 - p_minor5 * p_minor6)
-		   + p_minor2 * (p_minor3 * p_minor7 - p_minor4 * p_minor6);
+		- p_minor1 * (p_minor3 * p_minor8 - p_minor5 * p_minor6)
+		+ p_minor2 * (p_minor3 * p_minor7 - p_minor4 * p_minor6);
 }
 
 float Maths::FMatrix4::Determinant(const FMatrix4& p_matrix)
@@ -372,14 +373,22 @@ Maths::FMatrix4 Maths::FMatrix4::Inverse(const FMatrix4& p_matrix)
 Maths::FMatrix4 Maths::FMatrix4::Translation(const FVector3& p_translation)
 {
 	return FMatrix4(1, 0, 0, p_translation.x,
-					0, 1, 0, p_translation.y,
-					0, 0, 1, p_translation.z,
-					0, 0, 0, 1);
+		0, 1, 0, p_translation.y,
+		0, 0, 1, p_translation.z,
+		0, 0, 0, 1);
 }
 
 Maths::FMatrix4 Maths::FMatrix4::Translate(const FMatrix4& p_matrix, const FVector3& p_translation)
 {
 	return p_matrix * Translation(p_translation);
+}
+
+Maths::FVector3 Maths::FMatrix4::MulPoint(const FMatrix4& p_matrix, const FVector3& p)
+{
+	FVector4 hp = { p.x,p.y,p.z,1.0f };
+	hp = p_matrix * hp;
+
+	return { hp.x / hp.w,hp.y / hp.w,hp.z / hp.w };
 }
 
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisX(float p_rotation)
@@ -398,9 +407,9 @@ Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisX(const FMatrix4& p_matrix, float p
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisY(float p_rotation)
 {
 	return FMatrix4(std::cos(p_rotation), 0, -std::sin(p_rotation), 0,
-					0, 1, 0, 0,
-					std::sin(p_rotation), 0, std::cos(p_rotation), 0,
-					0, 0, 0, 1);
+		0, 1, 0, 0,
+		std::sin(p_rotation), 0, std::cos(p_rotation), 0,
+		0, 0, 0, 1);
 }
 
 Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisY(const FMatrix4& p_matrix, float p_rotation)
@@ -411,9 +420,9 @@ Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisY(const FMatrix4& p_matrix, float p
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisZ(float p_rotation)
 {
 	return FMatrix4(std::cos(p_rotation), -std::sin(p_rotation), 0, 0,
-					  std::sin(p_rotation), std::cos(p_rotation), 0, 0,
-					  0, 0, 1, 0,
-					  0, 0, 0, 1);
+		std::sin(p_rotation), std::cos(p_rotation), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1);
 }
 
 Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisZ(const FMatrix4& p_matrix, float p_rotation)
@@ -438,9 +447,9 @@ Maths::FMatrix4 Maths::FMatrix4::RotateYXZ(const FMatrix4& p_matrix, float p_rot
 Maths::FMatrix4 Maths::FMatrix4::Scaling(const FVector3& p_scale)
 {
 	return FMatrix4(p_scale.x, 0, 0, 0,
-					0, p_scale.y, 0, 0,
-					0, 0, p_scale.z, 0,
-					0, 0, 0, 1);
+		0, p_scale.y, 0, 0,
+		0, 0, p_scale.z, 0,
+		0, 0, 0, 1);
 }
 
 Maths::FMatrix4 Maths::FMatrix4::Scale(const FMatrix4& p_matrix, const FVector3& p_scale)
@@ -469,23 +478,23 @@ Maths::FMatrix4 Maths::FMatrix4::CreatePerspective(const float p_fov, const floa
 
 Maths::FMatrix4 Maths::FMatrix4::CreateOrthographic(const float p_size, const float p_aspectRatio, const float p_zNear, const float p_zFar)
 {
-    auto ortho = Maths::FMatrix4::Identity;
+	auto ortho = Maths::FMatrix4::Identity;
 
-    const auto right = p_size * p_aspectRatio;
-    const auto left = -right;
+	const auto right = p_size * p_aspectRatio;
+	const auto left = -right;
 
-    const auto top = p_size;
-    const auto bottom = -top;
+	const auto top = p_size;
+	const auto bottom = -top;
 
-    ortho(0, 0) = 2.0f / (right - left);
-    ortho(1, 1) = 2.0f / (top - bottom);
-    ortho(2, 2) = -2.0f / (p_zFar - p_zNear);
-    ortho(0, 3) = -(right + left) / (right - left);
-    ortho(1, 3) = -(top + bottom) / (top - bottom);
-    ortho(2, 3) = -(p_zFar + p_zNear) / (p_zFar - p_zNear);
-    ortho(3, 3) = 1.0f;
+	ortho(0, 0) = 2.0f / (right - left);
+	ortho(1, 1) = 2.0f / (top - bottom);
+	ortho(2, 2) = -2.0f / (p_zFar - p_zNear);
+	ortho(0, 3) = -(right + left) / (right - left);
+	ortho(1, 3) = -(top + bottom) / (top - bottom);
+	ortho(2, 3) = -(p_zFar + p_zNear) / (p_zFar - p_zNear);
+	ortho(3, 3) = 1.0f;
 
-    return ortho;
+	return ortho;
 }
 
 Maths::FMatrix4 Maths::FMatrix4::CreateView(const float p_eyeX, const float p_eyeY, const float p_eyeZ, const float p_lookX, const float p_lookY, const float p_lookZ, const float p_upX, const float p_upY, const float p_upZ)
@@ -493,14 +502,18 @@ Maths::FMatrix4 Maths::FMatrix4::CreateView(const float p_eyeX, const float p_ey
 	const Maths::FVector3 eye(p_eyeX, p_eyeY, p_eyeZ);
 	const Maths::FVector3 look(p_lookX, p_lookY, p_lookZ);
 	const Maths::FVector3 up(p_upX, p_upY, p_upZ);
+	return CreateCameraView(eye, look, up);
+}
 
-	const Maths::FVector3 forward(eye - look);
-	FVector3::Normalize(forward);
+Maths::FMatrix4 Maths::FMatrix4::CreateCameraView(const FVector3& eye, const FVector3& look, const FVector3& up)
+{
+	Maths::FVector3 forward(eye - look);
+	forward = FVector3::Normalize(forward);
 
-	const Maths::FVector3 upXForward(Maths::FVector3::Cross(up, forward));
-	FVector3::Normalize(upXForward);
+	Maths::FVector3 upXForward(Maths::FVector3::Cross(up, forward));
+	upXForward = FVector3::Normalize(upXForward);
 
-	const Maths::FVector3 v(Maths::FVector3::Cross(forward, upXForward));
+	Maths::FVector3 v(Maths::FVector3::Cross(forward, upXForward));
 
 	Maths::FMatrix4 View;
 
@@ -508,7 +521,7 @@ Maths::FMatrix4 Maths::FMatrix4::CreateView(const float p_eyeX, const float p_ey
 	View.data[1] = upXForward.y;
 	View.data[2] = upXForward.z;
 	View.data[3] = -Maths::FVector3::Dot(eye, upXForward);
-	
+
 	View.data[4] = v.x;
 	View.data[5] = v.y;
 	View.data[6] = v.z;

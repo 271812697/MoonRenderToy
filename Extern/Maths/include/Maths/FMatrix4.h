@@ -43,10 +43,10 @@ namespace Maths
 		* @param p_element15 @param p_element16
 		*/
 		FMatrix4(float p_element1, float p_element2, float p_element3,
-				 float p_element4, float p_element5, float p_element6,
-				 float p_element7, float p_element8, float p_element9,
-			     float p_element10, float p_element11, float p_element12, 
-				 float p_element13, float p_element14, float p_element15, float p_element16);
+			float p_element4, float p_element5, float p_element6,
+			float p_element7, float p_element8, float p_element9,
+			float p_element10, float p_element11, float p_element12,
+			float p_element13, float p_element14, float p_element15, float p_element16);
 
 		/**
 		* Copy constructor
@@ -113,6 +113,7 @@ namespace Maths
 		* @param p_vector
 		*/
 		FVector4 operator*(const FVector4& p_vector) const;
+
 
 		/**
 		* Matrix Product
@@ -241,9 +242,9 @@ namespace Maths
 		* @param p_minor6 @param p_minor7
 		* @param p_minor8
 		*/
-		static float GetMinor(float p_minor0, float p_minor1, float p_minor2, 
-							  float p_minor3, float p_minor4, float p_minor5,
-							  float p_minor6, float p_minor7, float p_minor8);
+		static float GetMinor(float p_minor0, float p_minor1, float p_minor2,
+			float p_minor3, float p_minor4, float p_minor5,
+			float p_minor6, float p_minor7, float p_minor8);
 
 		/**
 		* Compute matrix determinant
@@ -275,7 +276,7 @@ namespace Maths
 		* @param p_translation
 		*/
 		static FMatrix4 Translate(const FMatrix4& p_matrix, const FVector3& p_translation);
-
+		static FVector3 MulPoint(const FMatrix4& p_matrix, const FVector3& p);
 		/**
 		* Return 3D rotation matrix on X axis
 		* @param p_rotation
@@ -363,14 +364,14 @@ namespace Maths
 		*/
 		static FMatrix4 CreatePerspective(const float p_fov, const float p_aspectRatio, const float p_zNear, const float p_zFar);
 
-        /**
-        * Returns an orthographic matrix
-        * @param p_size
-        * @param p_aspectRatio
-        * @param p_zNear
-        * @param p_zFar
-        */
-        static FMatrix4 CreateOrthographic(const float p_size, const float p_aspectRatio, const float p_zNear, const float p_zFar);
+		/**
+		* Returns an orthographic matrix
+		* @param p_size
+		* @param p_aspectRatio
+		* @param p_zNear
+		* @param p_zFar
+		*/
+		static FMatrix4 CreateOrthographic(const float p_size, const float p_aspectRatio, const float p_zNear, const float p_zFar);
 
 		/**
 		* Return view matrix
@@ -385,7 +386,7 @@ namespace Maths
 		* @param p_upZ
 		*/
 		static FMatrix4 CreateView(const float p_eyeX, const float p_eyeY, const float p_eyeZ, const float p_lookX, const float p_lookY, const float p_lookZ, const float p_upX, const float p_upY, const float p_upZ);
-		
+		static FMatrix4 CreateCameraView(const FVector3& eye, const FVector3& at, const FVector3& up);
 		/**
 		* Return frustum matrix
 		* @param p_left

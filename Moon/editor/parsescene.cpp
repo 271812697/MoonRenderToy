@@ -6,69 +6,76 @@
 #include "pathtrace/PathTrace.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "core/ECS/Components/CPointLight.h"
+#include "core/ECS/Components/CDirectionalLight.h"
+#include "core/ECS/Components/CAmbientSphereLight.h"
 #include "Core/Global/ServiceLocator.h"
 
 
 
 namespace MOON {
-	Maths::FVector3 GetSpherePosition(float a,float b,float radius) {
+	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
 
 		float elevation = a / 180.0 * 3.14159265;
 		float azimuth = b / 180.0 * 3.14159265;
-		return Maths::FVector3(cos(elevation)*sin(azimuth),sin(elevation),cos(elevation) * cos(azimuth))*radius;
+		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 	}
 
 
 	void addSphereLight(::Core::SceneSystem::Scene* scene) {
 
-		auto ambient=scene->FindActorByName("Ambient Light");
-		auto& ac1=scene->CreateActor("PointLight1");
-		auto& pointLight = ac1.AddComponent<::Core::ECS::Components::CPointLight>();
-		pointLight.SetIntensity(0.75);
-		pointLight.SetConstant(1.0);
+		auto ambient = scene->FindActorByName("Ambient Light");
+		auto& ac1 = scene->CreateActor("PointLight1");
+		auto& pointLight1 = ac1.AddComponent<::Core::ECS::Components::CPointLight>();
+		float kI = 0.50;
+		float kB = kI / 3.0;
+		float kC = kI / 3.5;
+
+		pointLight1.SetIntensity(kI);
+		pointLight1.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
-		pointLight.SetQuadratic(0.0);
+		pointLight1.SetQuadratic(0.0);
 
-		ac1.SetParent(*ambient);
-		ac1.transform.SetLocalPosition(GetSpherePosition(50,10,999));
+		//ac1.SetParent(*ambient);
+		//ac1.transform.SetLocalPosition(GetSpherePosition(50, 10, 999));
 
 		auto& ac2 = scene->CreateActor("PointLight2");
 		auto& pointLight2 = ac2.AddComponent<::Core::ECS::Components::CPointLight>();
-		pointLight2.SetIntensity(0.25);
+		pointLight2.SetIntensity(kB);
 		pointLight2.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
 		pointLight2.SetQuadratic(0.0);
 
-		ac2.SetParent(*ambient);
-		ac2.transform.SetLocalPosition(GetSpherePosition(-75, 10, 999));
+		//ac2.SetParent(*ambient);
+		//ac2.transform.SetLocalPosition(GetSpherePosition(-75, 10, 999));
 
 		auto& ac3 = scene->CreateActor("PointLight3");
 		auto& pointLight3 = ac3.AddComponent<::Core::ECS::Components::CPointLight>();
-		pointLight3.SetIntensity(0.214);
+		pointLight3.SetIntensity(kC);
 		pointLight3.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
 		pointLight3.SetQuadratic(0.0);
 
-		ac3.SetParent(*ambient);
-		ac3.transform.SetLocalPosition(GetSpherePosition(0, 110, 999));
-		
+		//ac3.SetParent(*ambient);
+		//ac3.transform.SetLocalPosition(GetSpherePosition(0, 110, 999));
+
 		auto& ac4 = scene->CreateActor("PointLight4");
 		auto& pointLight4 = ac4.AddComponent<::Core::ECS::Components::CPointLight>();
-		pointLight4.SetIntensity(0.214);
+
+		pointLight4.SetIntensity(kC);
 		pointLight4.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
 		pointLight4.SetQuadratic(0.0);
 
-		ac4.SetParent(*ambient);
-		ac4.transform.SetLocalPosition(GetSpherePosition(0, -110, 999));
+		//ac4.SetParent(*ambient);
+		//ac4.transform.SetLocalPosition(GetSpherePosition(0, -110, 999));
 
 		auto& ac5 = scene->CreateActor("HeadLight");
 		auto& pointLight5 = ac5.AddComponent<::Core::ECS::Components::CPointLight>();
-		pointLight5.SetIntensity(0.25);
+		pointLight5.SetIntensity(kB);
 		pointLight5.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
@@ -83,6 +90,8 @@ namespace MOON {
 			return;
 		}
 		scene->AddDefaultLights();
+		scene->FindActorByName("Directional Light")->GetComponent<::Core::ECS::Components::CDirectionalLight>()->SetIntensity(0.0f);
+		scene->FindActorByName("Ambient Light")->GetComponent<::Core::ECS::Components::CAmbientSphereLight>()->SetIntensity(0.0f);
 		addSphereLight(scene);
 		//addSphereLight(scene);
 		//addSphereLight(scene);
@@ -98,6 +107,7 @@ namespace MOON {
 			tempMat->SetShader(::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
 			auto& color = material[mi.materialID].baseColor;
 			tempMat->SetProperty("u_Diffuse", Maths::FVector4{ color.x,  color.y, color.z, 1.0f });
+			//tempMat->SetProperty("u_Diffuse", Maths::FVector4{ 1.0,  1.0, 1.0, 1.0f });
 			tempMat->SetBackfaceCulling(false);;
 			tempMat->SetCastShadows(false);
 			tempMat->SetReceiveShadows(false);
