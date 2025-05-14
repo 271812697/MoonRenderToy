@@ -21,8 +21,8 @@ void BindLuaMath(sol::state& p_luaState)
 	p_luaState.new_usertype<FVector2>("Vector2",
 		/* Constructors */
 		sol::constructors<
-			FVector2(),
-			FVector2(float, float)
+		FVector2(),
+		FVector2(float, float)
 		>(),
 
 		/* Operators */
@@ -52,8 +52,8 @@ void BindLuaMath(sol::state& p_luaState)
 	p_luaState.new_usertype<FVector3>("Vector3",
 		/* Constructors */
 		sol::constructors<
-			FVector3(),
-			FVector3(float, float, float)
+		FVector3(),
+		FVector3(float, float, float)
 		>(),
 
 		/* Operators */
@@ -95,8 +95,8 @@ void BindLuaMath(sol::state& p_luaState)
 	p_luaState.new_usertype<FVector4>("Vector4",
 		/* Constructors */
 		sol::constructors<
-			FVector4(),
-			FVector4(float, float, float, float)
+		FVector4(),
+		FVector4(float, float, float, float)
 		>(),
 
 		/* Operators */
@@ -122,14 +122,14 @@ void BindLuaMath(sol::state& p_luaState)
 		"Dot", &FVector4::Dot,
 		"Normalize", &FVector4::Normalize,
 		"Lerp", &FVector4::Lerp
-		);
+	);
 
 	p_luaState.new_usertype<FMatrix3>("Matrix3",
 		/* Constructors */
 		sol::constructors<
-			FMatrix3(),
-			FMatrix3(float),
-			FMatrix3(float, float, float, float, float, float, float, float, float)
+		FMatrix3(),
+		FMatrix3(float),
+		FMatrix3(float, float, float, float, float, float, float, float, float)
 		>(),
 
 		/* Operators */
@@ -172,8 +172,8 @@ void BindLuaMath(sol::state& p_luaState)
 	p_luaState.new_usertype<FMatrix4>("Matrix4",
 		/* Constructors */
 		sol::constructors<
-			FMatrix4(),
-			FMatrix4(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float)
+		FMatrix4(),
+		FMatrix4(float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float)
 		>(),
 
 		/* Operators */
@@ -216,6 +216,8 @@ void BindLuaMath(sol::state& p_luaState)
 		"Rotate", &FMatrix4::Rotate,
 		"Scaling", &FMatrix4::Scaling,
 		"Scale", &FMatrix4::Scale,
+		"CreateCameraView", &FMatrix4::CreateCameraView,
+		"MulPoint", &FMatrix4::MulPoint,
 		"GetRow", &FMatrix4::GetRow,
 		"GetColumn", &FMatrix4::GetColumn,
 		"CreatePerspective", &FMatrix4::CreatePerspective,
@@ -223,9 +225,10 @@ void BindLuaMath(sol::state& p_luaState)
 		"CreateFrustum", &FMatrix4::CreateFrustum,
 		"Get", [](FMatrix4& target, int row, int col) { return target(row, col); },
 		"Set", [](FMatrix4& target, int row, int col, float value) { target(row, col) = value; }
+
 	);
 
-	
+
 
 	p_luaState.new_usertype<FQuaternion>("Quaternion",
 		/* Constructors */

@@ -4,9 +4,17 @@
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
 #include "SceneView.h"
+#include "core/ECS/Components/CPhysicalSphere.h"
 #include <QMouseEvent>
 namespace Editor::Panels
 {
+	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
+
+		float elevation = a / 180.0 * 3.14159265;
+		float azimuth = b / 180.0 * 3.14159265;
+		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
+	}
+
 	Editor::Panels::SceneView::SceneView
 	(
 		const std::string& p_title
@@ -34,6 +42,33 @@ namespace Editor::Panels
 	void Editor::Panels::SceneView::Update(float p_deltaTime)
 	{
 		AViewControllable::Update(p_deltaTime);
+		auto headLight = GetScene()->FindActorByName("HeadLight");
+		headLight->transform.SetWorldPosition(m_camera.GetPosition());
+		if (IsSelectActor()) {
+			auto& ac = GetSelectedActor();
+			//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
+			float radius = Maths::FVector3::Length(ac.transform.GetWorldPosition() - m_camera.GetPosition()) * 3.5;
+			Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(ac.transform.GetWorldPosition() - m_camera.GetPosition());
+			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(m_camera.GetPosition(), ac.transform.GetWorldPosition(), { 0,1,0 });
+			view = Maths::FMatrix4::Inverse(view);
+
+			Maths::FMatrix4 mat = transMat * view;
+
+			auto p1 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(50, 10, radius));
+			auto p2 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(-75, 10, radius));
+			auto p3 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, 110, radius));
+			auto p4 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, -110, radius));
+			auto target = ac.transform.GetWorldPosition();
+			auto cp = m_camera.GetPosition();
+			//std::cout << Maths::FVector3::Length(p1 - cp) << ":" << Maths::FVector3::Length(p2) << ":" << Maths::FVector3::Length(p3) << ":" << Maths::FVector3::Length(p4) << std::endl;;
+			std::cout << Maths::FVector3::Length(p1 - target) << ":" << Maths::FVector3::Length(p2 - target) << ":" << Maths::FVector3::Length(p3 - target) << ":" << Maths::FVector3::Length(p4 - target) << std::endl;;
+			GetScene()->FindActorByName("PointLight1")->transform.SetWorldPosition(p1);
+			GetScene()->FindActorByName("PointLight2")->transform.SetWorldPosition(p2);
+			GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
+			GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
+		}
+
+
 	}
 
 	void Editor::Panels::SceneView::InitFrame()
@@ -81,6 +116,7 @@ namespace Editor::Panels
 			}
 
 		}
+
 
 		//handle pick
 		if (t == QEvent::MouseButtonRelease) {
@@ -177,6 +213,8 @@ namespace Editor::Panels
 				m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
 			}
 		}
+
+
 	}
 
 	::Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::CreateSceneDescriptor()

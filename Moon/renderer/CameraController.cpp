@@ -257,7 +257,7 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 
 		}
 		else if (key == Qt::Key_E) {
-
+			mKeyState[KEYE] = Up;
 		}
 	}
 
@@ -368,6 +368,7 @@ void Editor::Core::CameraController::ReceiveEvent(QEvent* e)
 			m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll
 		);
 	}
+
 	HandleCameraFPSKeyboard(0.016, e);
 }
 
