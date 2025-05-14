@@ -34,6 +34,9 @@ namespace Editor::Panels
 	void Editor::Panels::SceneView::Update(float p_deltaTime)
 	{
 		AViewControllable::Update(p_deltaTime);
+		auto headLight=GetScene()->FindActorByName("HeadLight");
+		headLight->transform.SetWorldPosition(m_camera.GetPosition());
+		
 	}
 
 	void Editor::Panels::SceneView::InitFrame()
@@ -82,6 +85,7 @@ namespace Editor::Panels
 
 		}
 
+		
 		//handle pick
 		if (t == QEvent::MouseButtonRelease) {
 			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
@@ -177,6 +181,8 @@ namespace Editor::Panels
 				m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
 			}
 		}
+		
+
 	}
 
 	::Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::CreateSceneDescriptor()
