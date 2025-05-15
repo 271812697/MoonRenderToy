@@ -143,6 +143,7 @@ namespace PathTrace {
 		delete scene;
 	}
 
+
 	CameraController::CameraController()
 	{
 	}

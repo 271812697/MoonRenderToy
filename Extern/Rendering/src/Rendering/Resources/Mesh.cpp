@@ -62,18 +62,18 @@ void Rendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vert
 		{
 			m_indexBuffer.Upload(p_indices.data());
 
-			m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
-				{ Settings::EDataType::FLOAT, 3 }, // position
-				{ Settings::EDataType::FLOAT, 2 }, // texCoords
-				{ Settings::EDataType::FLOAT, 3 }, // normal
-				{ Settings::EDataType::FLOAT, 3 }, // tangent
-				{ Settings::EDataType::FLOAT, 3 }  // bitangent
-			}), m_vertexBuffer, m_indexBuffer);
 		}
 		else
 		{
 			OVLOG_WARNING("Empty index buffer!");
 		}
+		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+			{ Settings::EDataType::FLOAT, 3 }, // position
+			{ Settings::EDataType::FLOAT, 2 }, // texCoords
+			{ Settings::EDataType::FLOAT, 3 }, // normal
+			{ Settings::EDataType::FLOAT, 3 }, // tangent
+			{ Settings::EDataType::FLOAT, 3 }  // bitangent
+			}), m_vertexBuffer, m_indexBuffer);
 	}
 	else
 	{

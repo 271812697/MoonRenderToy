@@ -46,6 +46,7 @@ namespace MOON {
 
 	ViewerWindow::~ViewerWindow()
 	{
+		delete editorContext;
 
 	}
 
@@ -85,6 +86,7 @@ namespace MOON {
 		if (mSwitchScene) {
 			mSwitchScene = false;
 			ParseScene::ParsePathTraceScene();
+			sceneView->UnselectActor();
 			OVSERVICE(TreeViewPanel).initModel();
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());

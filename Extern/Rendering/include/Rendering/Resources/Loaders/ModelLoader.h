@@ -45,6 +45,8 @@ namespace Rendering::Resources::Loaders
 		*/
 		static bool Destroy(Model*& p_modelInstance);
 
+		static Model* LoadFromMemory(const std::vector<float>& v, const std::vector<unsigned int>& i);
+
 	private:
 		static Parsers::AssimpParser __ASSIMP;
 	};

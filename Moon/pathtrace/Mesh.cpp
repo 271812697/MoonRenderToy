@@ -103,6 +103,22 @@ namespace PathTrace
 		glBindVertexArray(0);
 	}
 
+	std::vector<float> Mesh::PackData()
+	{
+		std::vector<float> res(verticesUVX.size() * 8);
+		for (int i = 0; i < verticesUVX.size(); i++) {
+			res[8 * i] = verticesUVX[i].x;
+			res[8 * i + 1] = verticesUVX[i].y;
+			res[8 * i + 2] = verticesUVX[i].z;
+			res[8 * i + 3] = normalsUVY[i].x;
+			res[8 * i + 4] = normalsUVY[i].y;
+			res[8 * i + 5] = normalsUVY[i].z;
+			res[8 * i + 6] = verticesUVX[i].w;
+			res[8 * i + 7] = normalsUVY[i].w;
+		}
+		return res;
+	}
+
 	void Mesh::GenVAO()
 	{
 

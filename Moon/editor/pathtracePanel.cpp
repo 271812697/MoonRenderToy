@@ -36,7 +36,7 @@ namespace MOON {
 
 	PathTracePanel::~PathTracePanel()
 	{
-
+		PathTrace::Ret();
 	}
 
 	void PathTracePanel::initializeGL()
@@ -107,7 +107,7 @@ namespace MOON {
 		if (mb == Qt::MouseButton::LeftButton) {
 
 			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
-	}
+		}
 
 		else if (mb == Qt::MouseButton::MiddleButton) {
 			PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
@@ -119,7 +119,7 @@ namespace MOON {
 
 		}
 
-}
+	}
 
 	void  PathTracePanel::mouseMoveEvent(QMouseEvent* event)
 	{
@@ -166,4 +166,4 @@ namespace MOON {
 	{
 
 	}
-	}
+}

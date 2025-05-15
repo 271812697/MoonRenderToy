@@ -93,14 +93,16 @@ namespace MOON {
 		scene->FindActorByName("Directional Light")->GetComponent<::Core::ECS::Components::CDirectionalLight>()->SetIntensity(0.0f);
 		scene->FindActorByName("Ambient Light")->GetComponent<::Core::ECS::Components::CAmbientSphereLight>()->SetIntensity(0.0f);
 		addSphereLight(scene);
-		//addSphereLight(scene);
-		//addSphereLight(scene);
 
-		//addSphereLight(scene);
 
 		auto& mesh = sce->meshes;
 		auto& instance = sce->meshInstances;
 		auto& material = sce->materials;
+		for (int i = 0; i < mesh.size(); i++) {
+			auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().LoadFromMemory(mesh[i]->PackData(), {});
+			std::string name = "Scene::Mesh" + std::to_string(i);
+			::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().RegisterResource(name, m);
+		}
 		for (auto& mi : instance) {
 			::Core::Resources::Material* tempMat = new ::Core::Resources::Material();
 			::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::MaterialManager>().RegisterResource(mi.name, tempMat);
@@ -113,7 +115,8 @@ namespace MOON {
 			tempMat->SetReceiveShadows(false);
 			auto& actor = scene->CreateActor();
 			actor.SetName(mi.name);
-			auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("#" + mesh[mi.meshID]->name);
+			auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("Scene::Mesh" + std::to_string(mi.meshID));
+			//auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("#" + mesh[mi.meshID]->name);
 			actor.AddComponent<::Core::ECS::Components::CModelRenderer>().SetModel(m);
 			actor.GetComponent<::Core::ECS::Components::CTransform>()->SetMatrix(mi.transform.data);
 			auto& materilaRener = actor.AddComponent<::Core::ECS::Components::CMaterialRenderer>();
