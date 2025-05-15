@@ -69,7 +69,9 @@ void Rendering::HAL::GLVertexArray::SetLayout(
 	ASSERT(!IsValid(), "Vertex array layout already set");
 
 	Bind();
-	p_indexBuffer.Bind();
+	if (p_indexBuffer.IsValid()) {
+		p_indexBuffer.Bind();
+	}
 	p_vertexBuffer.Bind();
 
 	uint32_t attributeIndex = 0;
@@ -100,7 +102,10 @@ void Rendering::HAL::GLVertexArray::SetLayout(
 	}
 
 	Unbind();
-	p_indexBuffer.Unbind();
+	if (p_indexBuffer.IsValid()) {
+		p_indexBuffer.Unbind();
+	}
+
 	p_vertexBuffer.Unbind();
 }
 

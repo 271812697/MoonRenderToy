@@ -16,7 +16,7 @@ namespace PathTrace
 		void BuildBVH();
 		bool LoadFromFile(const std::string& filename);
 		void Draw();
-
+		std::vector<float>PackData();
 		//存储法线顶点坐标 uv分开存
 		std::vector<Vec4> verticesUVX; // Vertex + texture Coord (u/s)
 		std::vector<Vec4> normalsUVY;  // Normal + texture Coord (v/t)

@@ -36,5 +36,6 @@ namespace Core::ResourceManagement
 		* @param p_path
 		*/
 		virtual void ReloadResource(::Rendering::Resources::Model* p_resource, const std::string& p_path) override;
+		::Rendering::Resources::Model* LoadFromMemory(const std::vector<float>& v, const std::vector<unsigned int>& i);
 	};
 }

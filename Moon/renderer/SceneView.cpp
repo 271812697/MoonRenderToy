@@ -49,7 +49,9 @@ namespace Editor::Panels
 			//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
 			float radius = Maths::FVector3::Length(ac.transform.GetWorldPosition() - m_camera.GetPosition()) * 3.5;
 			Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(ac.transform.GetWorldPosition() - m_camera.GetPosition());
-			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(m_camera.GetPosition(), ac.transform.GetWorldPosition(), { 0,1,0 });
+			Maths::FVector3 forward = Maths::FVector3::Normalize(m_camera.GetPosition() - ac.transform.GetWorldPosition());
+			Maths::FVector3 worldUp = Maths::FVector3::AngleBetween(forward, { 0,1,0 }) < FLT_EPSILON ? Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
+			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(m_camera.GetPosition(), ac.transform.GetWorldPosition(), worldUp);
 			view = Maths::FMatrix4::Inverse(view);
 
 			Maths::FMatrix4 mat = transMat * view;
