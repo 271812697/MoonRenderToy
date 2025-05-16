@@ -93,7 +93,7 @@ Maths::FVector3& Maths::FVector3::operator/=(float p_scalar)
 	return *this;
 }
 
-bool Maths::FVector3::operator==(const FVector3 & p_other)
+bool Maths::FVector3::operator==(const FVector3& p_other)
 {
 	return
 		this->x == p_other.x &&
@@ -101,7 +101,7 @@ bool Maths::FVector3::operator==(const FVector3 & p_other)
 		this->z == p_other.z;
 }
 
-bool Maths::FVector3::operator!=(const FVector3 & p_other)
+bool Maths::FVector3::operator!=(const FVector3& p_other)
 {
 	return !operator==(p_other);
 }
@@ -170,7 +170,7 @@ float Maths::FVector3::Dot(const FVector3& p_left, const FVector3& p_right)
 	return p_left.x * p_right.x + p_left.y * p_right.y + p_left.z * p_right.z;
 }
 
-float Maths::FVector3::Distance(const FVector3 & p_left, const FVector3 & p_right)
+float Maths::FVector3::Distance(const FVector3& p_left, const FVector3& p_right)
 {
 	return std::sqrt
 	(
@@ -180,7 +180,7 @@ float Maths::FVector3::Distance(const FVector3 & p_left, const FVector3 & p_righ
 	);
 }
 
-Maths::FVector3 Maths::FVector3::Cross(const FVector3 & p_left, const FVector3 & p_right)
+Maths::FVector3 Maths::FVector3::Cross(const FVector3& p_left, const FVector3& p_right)
 {
 	return FVector3
 	(
@@ -190,7 +190,7 @@ Maths::FVector3 Maths::FVector3::Cross(const FVector3 & p_left, const FVector3 &
 	);
 }
 
-Maths::FVector3 Maths::FVector3::Normalize(const FVector3 & p_target)
+Maths::FVector3 Maths::FVector3::Normalize(const FVector3& p_target)
 {
 	float length = Length(p_target);
 
@@ -223,6 +223,7 @@ float Maths::FVector3::AngleBetween(const FVector3& p_from, const FVector3& p_to
 	if (lengthProduct > 0.0f)
 	{
 		float fractionResult = Dot(p_from, p_to) / lengthProduct;
+
 
 		if (fractionResult >= -1.0f && fractionResult <= 1.0f)
 			return acosf(fractionResult);

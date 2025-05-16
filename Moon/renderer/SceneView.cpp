@@ -45,13 +45,17 @@ namespace Editor::Panels
 		auto headLight = GetScene()->FindActorByName("HeadLight");
 		headLight->transform.SetWorldPosition(m_camera.GetPosition());
 		if (IsSelectActor()) {
+
 			auto& ac = GetSelectedActor();
 			//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
-			float radius = Maths::FVector3::Length(ac.transform.GetWorldPosition() - m_camera.GetPosition()) * 3.5;
-			Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(ac.transform.GetWorldPosition() - m_camera.GetPosition());
-			Maths::FVector3 forward = Maths::FVector3::Normalize(m_camera.GetPosition() - ac.transform.GetWorldPosition());
-			Maths::FVector3 worldUp = Maths::FVector3::AngleBetween(forward, { 0,1,0 }) < FLT_EPSILON ? Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
-			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(m_camera.GetPosition(), ac.transform.GetWorldPosition(), worldUp);
+			auto target = ac.transform.GetWorldPosition();
+			auto cp = m_camera.GetPosition();
+			float radius = Maths::FVector3::Length(target - cp) * 3.5;
+			Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(target - cp);
+			Maths::FVector3 forward = Maths::FVector3::Normalize(cp - target);
+			float angle = Maths::FVector3::AngleBetween(forward, { 0,1,0 });
+			Maths::FVector3 worldUp = (angle < FLT_EPSILON || abs(angle - 3.14159274) < FLT_EPSILON) ? Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
+			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(cp, target, worldUp);
 			view = Maths::FMatrix4::Inverse(view);
 
 			Maths::FMatrix4 mat = transMat * view;
@@ -60,8 +64,6 @@ namespace Editor::Panels
 			auto p2 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(-75, 10, radius));
 			auto p3 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, 110, radius));
 			auto p4 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, -110, radius));
-			auto target = ac.transform.GetWorldPosition();
-			auto cp = m_camera.GetPosition();
 			//std::cout << Maths::FVector3::Length(p1 - cp) << ":" << Maths::FVector3::Length(p2) << ":" << Maths::FVector3::Length(p3) << ":" << Maths::FVector3::Length(p4) << std::endl;;
 			std::cout << Maths::FVector3::Length(p1 - target) << ":" << Maths::FVector3::Length(p2 - target) << ":" << Maths::FVector3::Length(p3 - target) << ":" << Maths::FVector3::Length(p4 - target) << std::endl;;
 			GetScene()->FindActorByName("PointLight1")->transform.SetWorldPosition(p1);
