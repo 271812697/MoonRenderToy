@@ -73,7 +73,8 @@ namespace Core::ECS::Components
 		/**
 		* Returns the tonemapping settings
 		*/
-		const Core::Rendering::PostProcess::TonemappingSettings& GetTonemappingSettings() const;
+		//const Core::Rendering::PostProcess::TonemappingSettings& GetTonemappingSettings() const;
+		Core::Rendering::PostProcess::TonemappingSettings& GetTonemappingSettings();
 
 		/**
 		* Returns the FXAA settings

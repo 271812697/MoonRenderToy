@@ -47,6 +47,7 @@ namespace Editor::Panels
 		* Render the view
 		*/
 		void Render();
+		void Present();
 
 		/**
 		* Draw the frame (m_renderer->Draw() if not overriden)

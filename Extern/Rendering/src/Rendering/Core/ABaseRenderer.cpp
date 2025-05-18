@@ -11,6 +11,7 @@
 #include <Rendering/Core/ABaseRenderer.h>
 #include <Rendering/HAL/TextureHandle.h>
 #include <Rendering/Resources/Loaders/TextureLoader.h>
+#include <Rendering/Resources/Loaders/ShaderLoader.h>
 
 std::atomic_bool Rendering::Core::ABaseRenderer::s_isDrawing{ false };
 
@@ -39,11 +40,45 @@ Rendering::Core::ABaseRenderer::ABaseRenderer(Context::Driver& p_driver) :
 	m_emptyTexture(Rendering::Resources::Loaders::TextureLoader::CreatePixel(255, 255, 255, 255)),
 	m_unitQuad(CreateUnitQuad())
 {
+
+	std::string v = R"(
+#version 450 core
+
+layout(location = 0) in vec2 geo_Pos;
+layout(location = 1) in vec2 geo_TexCoords;
+
+out vec2 TexCoords;
+
+void main()
+{
+    TexCoords = geo_TexCoords;
+    gl_Position = vec4(geo_Pos, 0.0, 1.0);
+}
+)";
+	std::string f = R"(
+#version 450 core
+
+in vec2 TexCoords;
+out vec4 FRAGMENT_COLOR;
+
+uniform sampler2D _InputTexture;
+
+void main()
+{
+    FRAGMENT_COLOR = texture(_InputTexture, TexCoords);
+}
+
+)";
+	m_presentShader = Rendering::Resources::Loaders::ShaderLoader::CreateFromSource(v, f);
+	m_presentMaterial.SetShader(m_presentShader);
+
+
 }
 
 Rendering::Core::ABaseRenderer::~ABaseRenderer()
 {
 	Rendering::Resources::Loaders::TextureLoader::Destroy(m_emptyTexture);
+	Rendering::Resources::Loaders::ShaderLoader::Destroy(m_presentShader);
 }
 
 void Rendering::Core::ABaseRenderer::BeginFrame(const Data::FrameDescriptor& p_frameDescriptor)
@@ -177,6 +212,28 @@ void Rendering::Core::ABaseRenderer::Blit(
 
 	DrawEntity(p_pso, blit);
 	p_dst.Unbind();
+}
+
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src)
+{
+	ZoneScoped;
+
+	ASSERT(m_unitQuad != nullptr, "Invalid unit quad mesh, cannot blit!");
+	const auto colorTex = p_src.GetAttachment<HAL::Texture>(Settings::EFramebufferAttachment::COLOR);
+	ASSERT(colorTex.has_value(), "Invalid color attachment");
+	m_presentMaterial.SetProperty("_InputTexture", &colorTex.value());
+	Rendering::Entities::Drawable blit;
+	blit.mesh = *m_unitQuad;
+	blit.material = m_presentMaterial;
+	blit.stateMask.depthWriting = false;
+	blit.stateMask.colorWriting = true;
+	blit.stateMask.blendable = false;
+	blit.stateMask.userInterface = false;
+	blit.stateMask.frontfaceCulling = false;
+	blit.stateMask.backfaceCulling = false;
+	blit.stateMask.depthTest = false;
+	auto pso = CreatePipelineState();
+	DrawEntity(pso, blit);
 }
 
 void Rendering::Core::ABaseRenderer::DrawEntity(

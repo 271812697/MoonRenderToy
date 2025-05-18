@@ -69,14 +69,21 @@ void Editor::Panels::AView::Render()
 		frameDescriptor.renderWidth = winWidth;
 		frameDescriptor.renderHeight = winHeight;
 		frameDescriptor.camera = camera;
-		//frameDescriptor.outputBuffer = m_framebuffer;
+		frameDescriptor.outputBuffer = m_framebuffer;
 
 		m_renderer->BeginFrame(frameDescriptor);
 		DrawFrame();
 		m_renderer->EndFrame();
 		FrameMarkEnd(name.c_str());
 		::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().driver->OnFrameCompleted();
+
+
 	}
+}
+
+void Editor::Panels::AView::Present()
+{
+	m_renderer->Present(m_framebuffer);
 }
 
 void Editor::Panels::AView::DrawFrame()

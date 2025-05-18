@@ -56,6 +56,10 @@ namespace Core::SceneSystem
 		void AddDefaultLights();
 
 		/**
+		* Add default post-process stack to the scene
+		*/
+		void AddDefaultPostProcessStack();
+		/**
 		* Play the scene
 		*/
 		void Play();

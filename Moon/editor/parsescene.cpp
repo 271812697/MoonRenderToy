@@ -8,6 +8,7 @@
 #include "core/ECS/Components/CPointLight.h"
 #include "core/ECS/Components/CDirectionalLight.h"
 #include "core/ECS/Components/CAmbientSphereLight.h"
+#include "core/ECS/Components/CPostProcessStack.h"
 #include "Core/Global/ServiceLocator.h"
 
 
@@ -90,6 +91,9 @@ namespace MOON {
 			return;
 		}
 		scene->AddDefaultLights();
+		scene->AddDefaultPostProcessStack();
+		auto& tonesettings = scene->FindActorByName("Post Process Stack")->GetComponent<::Core::ECS::Components::CPostProcessStack>()->GetTonemappingSettings();
+		tonesettings.gammaCorrection = false;
 		scene->FindActorByName("Directional Light")->GetComponent<::Core::ECS::Components::CDirectionalLight>()->SetIntensity(0.0f);
 		scene->FindActorByName("Ambient Light")->GetComponent<::Core::ECS::Components::CAmbientSphereLight>()->SetIntensity(0.0f);
 		addSphereLight(scene);
