@@ -3,6 +3,7 @@
 #include <QtWidgets/QApplication>
 #include <QMenuBar>
 #include <QSplitter>
+#include <QtWidgets/QDockWidget>
 #include "editor.h"
 #include "hierarchypanel.h"
 #include "downpanel.h"
@@ -19,40 +20,42 @@ namespace MOON {
 	}
 	void Editor::init_panels()
 	{
-		hori_splitter_ = new QSplitter(this);
+		//hori_splitter_ = new QSplitter(this);
+		//Middle Panel
 		auto centralwidget = new QWidget(this);
-
 		setCentralWidget(centralwidget);
 		auto centralwidget_layout = new QHBoxLayout(centralwidget);
-		centralwidget_layout->addWidget(hori_splitter_);
-		centralwidget_layout->setContentsMargins(0, 0, 0, 0);
-
-		auto hierarchypanel = new Hierarchypanel(hori_splitter_);
-
-		auto middlePanel = new QWidget(hori_splitter_);
+		auto middlePanel = new QWidget(centralwidget);
 		QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 		sizePolicy.setHorizontalStretch(120);
 		sizePolicy.setVerticalStretch(1);
 		sizePolicy.setHeightForWidth(middlePanel->sizePolicy().hasHeightForWidth());
 		middlePanel->setSizePolicy(sizePolicy);
+		centralwidget_layout->addWidget(middlePanel);
+		centralwidget_layout->setContentsMargins(0, 0, 0, 0);
 		auto middlePanelLatout = new QVBoxLayout(middlePanel);
 		middlePanelLatout->setContentsMargins(0, 0, 0, 0);
-
 		vert_splitter_ = new QSplitter(middlePanel);
 		middlePanelLatout->addWidget(vert_splitter_);
 		auto up_panel_ = new UpPanel(vert_splitter_);
-
 		auto down_panel_ = new DownPanel(vert_splitter_);
 		vert_splitter_->setOrientation(Qt::Vertical);
 		vert_splitter_->addWidget(up_panel_);
 		vert_splitter_->addWidget(down_panel_);
 		vert_splitter_->setContentsMargins(0, 0, 0, 0);
 
-		auto right_panel_ = new QPushButton(hori_splitter_);
-		hori_splitter_->setOrientation(Qt::Horizontal);
-		hori_splitter_->addWidget(hierarchypanel);
-		hori_splitter_->addWidget(middlePanel);
-		hori_splitter_->addWidget(right_panel_);
+		auto HierarchypanelDock = new QDockWidget(this);
+		HierarchypanelDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+		auto hierarchypanel = new Hierarchypanel(HierarchypanelDock);
+		HierarchypanelDock->setWidget(hierarchypanel);
+		this->addDockWidget(Qt::LeftDockWidgetArea, HierarchypanelDock);
+
+
+		//auto right_panel_ = new QPushButton(hori_splitter_);
+		//hori_splitter_->setOrientation(Qt::Horizontal);
+		//hori_splitter_->addWidget(hierarchypanel);
+		//hori_splitter_->addWidget(middlePanel);
+		//hori_splitter_->addWidget(right_panel_);
 
 		buildMenu();
 	}
