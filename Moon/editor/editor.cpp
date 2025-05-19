@@ -6,8 +6,7 @@
 #include <QtWidgets/QDockWidget>
 #include "editor.h"
 #include "hierarchypanel.h"
-#include "downpanel.h"
-#include "uppanel.h"
+#include "MulViewPanel.h"
 #include "pqLoadDataReaction.h"
 
 namespace MOON {
@@ -25,7 +24,7 @@ namespace MOON {
 		auto centralwidget = new QWidget(this);
 		setCentralWidget(centralwidget);
 		auto centralwidget_layout = new QHBoxLayout(centralwidget);
-		auto middlePanel = new QWidget(centralwidget);
+		auto middlePanel = new MulViewPanel(centralwidget);
 		QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 		sizePolicy.setHorizontalStretch(120);
 		sizePolicy.setVerticalStretch(1);
@@ -33,16 +32,7 @@ namespace MOON {
 		middlePanel->setSizePolicy(sizePolicy);
 		centralwidget_layout->addWidget(middlePanel);
 		centralwidget_layout->setContentsMargins(0, 0, 0, 0);
-		auto middlePanelLatout = new QVBoxLayout(middlePanel);
-		middlePanelLatout->setContentsMargins(0, 0, 0, 0);
-		vert_splitter_ = new QSplitter(middlePanel);
-		middlePanelLatout->addWidget(vert_splitter_);
-		auto up_panel_ = new UpPanel(vert_splitter_);
-		auto down_panel_ = new DownPanel(vert_splitter_);
-		vert_splitter_->setOrientation(Qt::Vertical);
-		vert_splitter_->addWidget(up_panel_);
-		vert_splitter_->addWidget(down_panel_);
-		vert_splitter_->setContentsMargins(0, 0, 0, 0);
+
 
 		auto HierarchypanelDock = new QDockWidget(this);
 		HierarchypanelDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);

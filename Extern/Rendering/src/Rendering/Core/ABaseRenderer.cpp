@@ -207,7 +207,8 @@ void Rendering::Core::ABaseRenderer::Blit(
 
 	if (Rendering::Settings::IsFlagSet(Rendering::Settings::EBlitFlags::UPDATE_VIEWPORT_SIZE, p_flags))
 	{
-		SetViewport(0, 0, srcWidth, srcHeight);
+		auto [dstWidth, dstHeight] = p_dst.GetSize();
+		SetViewport(0, 0, dstWidth, dstHeight);
 	}
 
 	DrawEntity(p_pso, blit);
