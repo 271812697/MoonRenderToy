@@ -36,5 +36,9 @@
         <file>icons/folder.png</file>
         <file>icons/view_type_grid.png</file>
         <file>icons/view_type_list.png</file>
+        <file>icons/file.png</file>
+        <file>icons/root.png</file>
+        <file>icons/folder_close.png</file>
+        <file>icons/folder_open.png</file>
     </qresource>
 </RCC>

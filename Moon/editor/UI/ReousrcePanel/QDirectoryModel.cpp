@@ -121,7 +121,7 @@ namespace MOON
 				QStandardItem* rootItem = new QStandardItem;
 				rootItem->setText(root.m_display.c_str());
 				rootItem->setIcon(m_iconMaps["root"]);
-				rootItem->setData(root.m_path.c_str(), Qt::UserRole);
+				rootItem->setData(std::filesystem::directory_entry(root.m_path).path().generic_string().c_str(), Qt::UserRole);
 
 				invisibleRootItem()->setChild(invisibleRootItem()->rowCount(), 0, rootItem);
 
@@ -161,7 +161,7 @@ namespace MOON
 				QStandardItem* childItem = new QStandardItem;
 				childItem->setText(dirName.c_str());
 				childItem->setIcon(m_iconMaps["filter"]);
-				childItem->setData(item.path().string().c_str(), Qt::UserRole);
+				childItem->setData(item.path().generic_string().c_str(), Qt::UserRole);
 
 				dirItems.emplace_back(childItem);
 
@@ -179,7 +179,7 @@ namespace MOON
 					QStandardItem* childItem = new QStandardItem;
 					childItem->setText(pureFileName.c_str());
 					childItem->setIcon(getFileIcon(item.path().string().c_str()));
-					childItem->setData(item.path().string().c_str(), Qt::UserRole);
+					childItem->setData(item.path().generic_string().c_str(), Qt::UserRole);
 
 					fileItems.emplace_back(childItem);
 				}
@@ -206,7 +206,10 @@ namespace MOON
 
 	void QDirectoryModel::OnExpandedFilter(const QModelIndex& pIndex)
 	{
-
+		if (m_treeView->isExpanded(pIndex))
+			itemFromIndex(pIndex)->setIcon(m_iconMaps["filterexpend"]);
+		else
+			itemFromIndex(pIndex)->setIcon(m_iconMaps["filter"]);
 	}
 
 	QString QDirectoryModel::getFileUnderMousePos(const QPoint& pos)

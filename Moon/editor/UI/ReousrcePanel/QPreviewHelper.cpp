@@ -60,7 +60,7 @@ namespace MOON
 		// include pre directory
 		if (includePreDir)
 		{
-			addItem((filePath + "../").c_str());
+			addItem((filePath + "/..").c_str());
 		}
 		std::filesystem::path p(filePath);
 
@@ -117,7 +117,7 @@ namespace MOON
 		if (p_directory.is_directory())
 		{
 			std::string folderName = displayText ? displayText : GetElementName(filePath);
-			item = new QStandardItem(QIcon(":/icon/Icon/root.png"), folderName.c_str());
+			item = new QStandardItem(QIcon(":/widgets/icons/root.png"), folderName.c_str());
 		}
 		else
 		{
@@ -127,7 +127,7 @@ namespace MOON
 
 		if (item)
 		{
-			item->setData(filePath, Qt::UserRole);
+			item->setData(p_directory.path().generic_string().c_str(), Qt::UserRole);
 			item->setSizeHint(QSize(m_itemWidth, m_itemHeight));
 			addToolTips(item, filePath);
 			results.emplace_back(item);
@@ -154,7 +154,7 @@ namespace MOON
 
 	QIcon QPreviewHelper::getFileIcon(const char* fullPath)
 	{
-		return QIcon(":/icon/Icon/file/file.png");
+		return QIcon(":/widgets/icons/file.png");
 	}
 
 	void QPreviewHelper::clear()
@@ -251,8 +251,16 @@ namespace MOON
 	void QPreviewHelper::onDoubleClicked(const QModelIndex& pIndex)
 	{
 		std::string resPath = m_listProxyModel ? m_listProxyModel->data(pIndex, Qt::UserRole).toString().toStdString().c_str() : m_listModel->data(pIndex, Qt::UserRole).toString().toStdString().c_str();
+		std::string path = "";// = std::filesystem::directory_entry(resPath).path().generic_string();//std::filesystem::directory_entry(resPath).path().generic_string();
+		if (resPath.ends_with("..")) {
+			path = std::filesystem::directory_entry(resPath).path().parent_path().parent_path().generic_string();
+		}
+		else
+		{
+			path = std::filesystem::directory_entry(resPath).path().generic_string();
+		}
 
-		emit doubleClickedRes(resPath.c_str());
+		emit doubleClickedRes(path.c_str());
 	}
 
 	// rename res

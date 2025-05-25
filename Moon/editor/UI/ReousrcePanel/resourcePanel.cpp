@@ -16,6 +16,7 @@
 #include <QtWidgets/QTreeView>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <filesystem>
 
 
 
@@ -182,9 +183,9 @@ namespace MOON {
 		internal = new ResPanel::ResPanelInternal();
 		internal->ui->setupUi(this);
 		internal->m_dirModel = new QDirectoryModel();
-		internal->m_dirModel->SetIcon("root", QIcon(":/icon/Icon/root.png"));
-		internal->m_dirModel->SetIcon("filter", QIcon(":/icon/Icon/folder_close.png"));
-		internal->m_dirModel->SetIcon("filterexpend", QIcon(":/icon/Icon/folder_open.png"));
+		internal->m_dirModel->SetIcon("root", QIcon(":/widgets/icons/root.png"));
+		internal->m_dirModel->SetIcon("filter", QIcon(":/widgets/icons/folder_close.png"));
+		internal->m_dirModel->SetIcon("filterexpend", QIcon(":/widgets/icons/folder_open.png"));
 		internal->ui->m_resDirView->setModel(internal->m_dirModel);
 		internal->ui->m_resDirView->setAttribute(Qt::WA_MacShowFocusRect, 0);
 		internal->m_dirModel->Clean();
@@ -255,6 +256,11 @@ namespace MOON {
 	}
 	void ResPanel::onDoubleClickedPreviewRes(const char* res)
 	{
+		std::filesystem::directory_entry p_directory(res);
+		if (p_directory.is_directory()) {
+
+			internal->m_dirModel->setCurrentSelect(res);
+		}
 	}
 	void ResPanel::showMenu(const QPoint& point)
 	{
