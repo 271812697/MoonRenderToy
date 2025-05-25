@@ -1,6 +1,10 @@
 set(TARGET_NAME Moon)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 if (${QT_VERSION_MAJOR} EQUAL 6)
   qt_add_resources(RESOURCES ./resource/resource.qrc)
 else()

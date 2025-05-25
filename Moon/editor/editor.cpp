@@ -7,6 +7,7 @@
 #include "editor.h"
 #include "hierarchypanel.h"
 #include "MulViewPanel.h"
+#include "UI/ReousrcePanel/resourcePanel.h"
 #include "pqLoadDataReaction.h"
 
 namespace MOON {
@@ -39,7 +40,8 @@ namespace MOON {
 		auto hierarchypanel = new Hierarchypanel(HierarchypanelDock);
 		HierarchypanelDock->setWidget(hierarchypanel);
 		this->addDockWidget(Qt::LeftDockWidgetArea, HierarchypanelDock);
-
+		auto resourcePanelDock = new ResPanel(this);
+		this->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
 
 		//auto right_panel_ = new QPushButton(hori_splitter_);
 		//hori_splitter_->setOrientation(Qt::Horizontal);
