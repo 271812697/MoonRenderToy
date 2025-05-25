@@ -32,5 +32,13 @@
         <file>icons/pqReset.svg</file>
         <file>icons/pqAdvanced.svg</file>
         <file>icons/pqPlus.svg</file>
+        <file>icons/delete.png</file>
+        <file>icons/folder.png</file>
+        <file>icons/view_type_grid.png</file>
+        <file>icons/view_type_list.png</file>
+        <file>icons/file.png</file>
+        <file>icons/root.png</file>
+        <file>icons/folder_close.png</file>
+        <file>icons/folder_open.png</file>
     </qresource>
 </RCC>

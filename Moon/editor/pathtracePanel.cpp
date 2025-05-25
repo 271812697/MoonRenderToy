@@ -85,7 +85,7 @@ namespace MOON {
 		QOpenGLWidget::resizeEvent(event);
 		viewW = event->size().width();
 		viewH = event->size().height();
-		if (initFlag) {
+		if (initFlag && viewH > 0 && viewH > 0) {
 			PathTrace::Resize(viewW, viewH);
 		}
 

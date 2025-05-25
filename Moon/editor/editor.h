@@ -16,7 +16,7 @@ namespace MOON {
 		void init_panels();
 		void buildMenu();
 		void retranslateUi();
-		QSplitter* hori_splitter_ = nullptr;
+		//QSplitter* hori_splitter_ = nullptr;
 		QSplitter* vert_splitter_ = nullptr;
 		QMenuBar* mMenubar;
 		QMenu* menu_File;

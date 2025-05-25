@@ -64,8 +64,6 @@ namespace Editor::Panels
 			auto p2 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(-75, 10, radius));
 			auto p3 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, 110, radius));
 			auto p4 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, -110, radius));
-			//std::cout << Maths::FVector3::Length(p1 - cp) << ":" << Maths::FVector3::Length(p2) << ":" << Maths::FVector3::Length(p3) << ":" << Maths::FVector3::Length(p4) << std::endl;;
-			std::cout << Maths::FVector3::Length(p1 - target) << ":" << Maths::FVector3::Length(p2 - target) << ":" << Maths::FVector3::Length(p3 - target) << ":" << Maths::FVector3::Length(p4 - target) << std::endl;;
 			GetScene()->FindActorByName("PointLight1")->transform.SetWorldPosition(p1);
 			GetScene()->FindActorByName("PointLight2")->transform.SetWorldPosition(p2);
 			GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);

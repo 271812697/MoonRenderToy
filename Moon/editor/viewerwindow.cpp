@@ -89,8 +89,10 @@ namespace MOON {
 			sceneView->UnselectActor();
 			OVSERVICE(TreeViewPanel).initModel();
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Render();
+		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+		sceneView->Present();
+
 	}
 
 	bool ViewerWindow::event(QEvent* evt)

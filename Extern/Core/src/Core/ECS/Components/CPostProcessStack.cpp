@@ -90,7 +90,15 @@ const Core::Rendering::PostProcess::AutoExposureSettings& Core::ECS::Components:
 	return m_settings.Get<Rendering::PostProcess::AutoExposureEffect, Rendering::PostProcess::AutoExposureSettings>();
 }
 
+/*
 const Core::Rendering::PostProcess::TonemappingSettings& Core::ECS::Components::CPostProcessStack::GetTonemappingSettings() const
+{
+	return m_settings.Get<Rendering::PostProcess::TonemappingEffect, Rendering::PostProcess::TonemappingSettings>();
+}
+*/
+
+
+Core::Rendering::PostProcess::TonemappingSettings& Core::ECS::Components::CPostProcessStack::GetTonemappingSettings()
 {
 	return m_settings.Get<Rendering::PostProcess::TonemappingEffect, Rendering::PostProcess::TonemappingSettings>();
 }

@@ -47,6 +47,12 @@ void Core::SceneSystem::Scene::AddDefaultLights()
 	ambientLight.AddComponent<ECS::Components::CAmbientSphereLight>().SetRadius(10000.0f);
 }
 
+void Core::SceneSystem::Scene::AddDefaultPostProcessStack()
+{
+	auto& postProcessStack = CreateActor("Post Process Stack");
+	postProcessStack.AddComponent<ECS::Components::CPostProcessStack>();
+}
+
 void Core::SceneSystem::Scene::Play()
 {
 	m_isPlaying = true;

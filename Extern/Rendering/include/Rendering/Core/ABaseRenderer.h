@@ -102,6 +102,7 @@ namespace Rendering::Core
 			Rendering::Data::Material& p_material,
 			Rendering::Settings::EBlitFlags p_flags = Rendering::Settings::EBlitFlags::DEFAULT
 		);
+		void Present(Rendering::HAL::Framebuffer& p_src);
 
 		/**
 		* Draw a drawable entity
@@ -116,10 +117,13 @@ namespace Rendering::Core
 	protected:
 		Data::FrameDescriptor m_frameDescriptor;
 		Context::Driver& m_driver;
-		Rendering::Resources::Texture* m_emptyTexture;
+		::Rendering::Resources::Texture* m_emptyTexture;
 		std::unique_ptr<Rendering::Resources::IMesh> m_unitQuad;
+
 		Rendering::Data::PipelineState m_basePipelineState;
 		bool m_isDrawing;
+		::Rendering::Resources::Shader* m_presentShader;
+		::Rendering::Data::Material m_presentMaterial;
 
 	private:
 		static std::atomic_bool s_isDrawing;
