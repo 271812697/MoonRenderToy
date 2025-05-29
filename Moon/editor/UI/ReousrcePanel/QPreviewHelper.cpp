@@ -274,7 +274,7 @@ namespace MOON
 			std::string folderName = GetElementName(preFilePathName);;
 			if (currentText != folderName)
 			{
-				std::string newPath = p_directory.path().parent_path().string() + currentText;
+				std::string newPath = p_directory.path().parent_path().string() + "/" + currentText;
 
 				std::filesystem::rename(preFilePathName, newPath);
 

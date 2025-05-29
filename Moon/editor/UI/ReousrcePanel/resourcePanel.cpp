@@ -2,6 +2,9 @@
 #include "QDirectoryModel.h"
 #include "QPreviewHelper.h"
 #include "QResListView.h"
+#include <QMenuBar>
+#include <QDesktopServices>
+#include <qurl.h>
 #include <QFileSystemWatcher>
 #include <QtCore/QVariant>
 #include <QtWidgets/QAction>
@@ -67,7 +70,7 @@ public:
 		m_actionDuplicateRes->setObjectName(QStringLiteral("m_actionDuplicateRes"));
 		m_actionCopyPath = new QAction(ResPanel);
 		m_actionCopyPath->setObjectName(QStringLiteral("m_actionCopyPath"));
-		dockWidgetContents = new QWidget();
+		dockWidgetContents = new QWidget(ResPanel);
 		dockWidgetContents->setObjectName(QStringLiteral("dockWidgetContents"));
 		verticalLayout_2 = new QVBoxLayout(dockWidgetContents);
 		verticalLayout_2->setObjectName(QStringLiteral("verticalLayout_2"));
@@ -165,6 +168,8 @@ namespace MOON {
 		}
 		~ResPanelInternal() {
 			delete ui;
+			delete m_dirModel;
+			delete m_previewHelper;
 		}
 		Ui_ResPanel* ui = nullptr;
 		std::string m_currentDir;
@@ -212,10 +217,7 @@ namespace MOON {
 	{
 		delete internal;
 	}
-	ResPanel* ResPanel::instance()
-	{
-		return nullptr;
-	}
+
 	void ResPanel::onOpenProject()
 	{
 		internal->m_dirModel->clear();
@@ -264,9 +266,46 @@ namespace MOON {
 	}
 	void ResPanel::showMenu(const QPoint& point)
 	{
+		QStandardItem* item = internal->m_previewHelper->itemAt(point);
+		if (internal->m_resMenu) {
+			delete internal->m_resMenu;
+		}
+		internal->m_resMenu = new QMenu("New");
+
+		// create res
+		QMenu* createResMenu = new QMenu("New");
+		createResMenu->addAction(internal->ui->m_actionNewFolder);
+		createResMenu->addSeparator();
+		internal->m_resMenu->addMenu(createResMenu);
+		if (item) {
+			internal->m_resMenu->addAction(internal->ui->m_actionDuplicateRes);
+			internal->m_resMenu->addAction(internal->ui->m_actionDeleteRes);
+			internal->m_resMenu->addAction(internal->ui->m_actionRenameRes);
+
+			internal->m_resMenu->addSeparator();
+			internal->m_resMenu->addAction(internal->ui->m_actionCopyPath);
+
+			internal->m_menuEditItem = item;
+		}
+		else
+		{
+
+		}
+
+		internal->m_resMenu->addSeparator();
+		internal->m_resMenu->addAction(internal->ui->m_actionShowInExplorer);
+		internal->m_resMenu->exec(QCursor::pos());
+
 	}
 	void ResPanel::showInExporer()
 	{
+		QString openDir = internal->m_currentDir.c_str();
+		if (!openDir.isEmpty())
+		{
+
+			QDesktopServices::openUrl(openDir);
+
+		}
 	}
 	void ResPanel::newFolder()
 	{
@@ -279,6 +318,8 @@ namespace MOON {
 	}
 	void ResPanel::onRenameRes()
 	{
+		if (internal->m_menuEditItem)
+			internal->m_previewHelper->editItem(internal->m_menuEditItem);
 	}
 	void ResPanel::onDeleteRes()
 	{

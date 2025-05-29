@@ -12,9 +12,6 @@ namespace MOON {
 		ResPanel(QWidget* parent = 0);
 		~ResPanel();
 
-		// instance
-		static ResPanel* instance();
-
 		// call when open project
 		void onOpenProject();
 
@@ -70,22 +67,12 @@ namespace MOON {
 		// file system changed (QFileSystemWatcher)
 		void onWatchFileChanged(const QString& file);
 		void onWatchFileDirChanged(const QString& dir);
-
-	private:
-		// get unique file name
-		//bool getUniqueNewResSavePath(Echo::String& outNewPath, const Echo::String& className, const Echo::String& currentDir);
-
-		// add import action to menu
-		//void addImporterActionToMenu(QMenu* menu, const Echo::String& className);
-
 	protected:
 		// re implement reiszeEvent function
 		virtual void resizeEvent(QResizeEvent* e);
-
 	private:
 		class ResPanelInternal;
 		ResPanelInternal* internal;
-
 	};
 }
 
