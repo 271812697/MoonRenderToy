@@ -1,3 +1,6 @@
+#include "Qtimgui/imguiwidgets/QtImGui.h"
+#include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/implot/implot.h"
 #include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
@@ -17,7 +20,8 @@
 
 ::Editor::Core::Context* editorContext = nullptr;
 ::Editor::Panels::SceneView* sceneView = nullptr;
-
+QtImGui::RenderRef imref = nullptr;
+ImPlotContext* ctx = nullptr;
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -71,6 +75,8 @@ namespace MOON {
 		ParseScene::ParsePathTraceScene();
 
 		OVSERVICE(TreeViewPanel).initModel();
+		imref=QtImGui::initialize(this,false);
+		ctx = ImPlot::CreateContext();
 
 	}
 
@@ -81,7 +87,8 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
-
+		QtImGui::newFrame(imref);
+		ImPlot::SetCurrentContext(ctx);
 		sceneView->Update(0.016);
 		if (mSwitchScene) {
 			mSwitchScene = false;
@@ -92,6 +99,13 @@ namespace MOON {
 		sceneView->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
+		ImGui::Text("Hello world!");
+
+		static float col[4] = { 1,1,1,1 };
+		ImGui::ColorEdit4("Color",col);
+		
+		ImGui::Render();
+		QtImGui::render(imref);
 
 	}
 
