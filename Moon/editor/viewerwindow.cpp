@@ -104,6 +104,19 @@ namespace MOON {
 		static float col[4] = { 1,1,1,1 };
 		ImGui::ColorEdit4("Color",col);
 		
+		bool show_implot_demo_window = true;
+		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
+		static float scale_min = 0.0f;
+		static float scale_max = 6.3f;
+		static ImPlotColormap map = ImPlotColormap_Viridis;
+		ImPlot::PushColormap(map);
+		ImPlot::ColormapScale("##HeadScale",scale_min,scale_max,ImVec2(60,225));
+		ImPlot::PopColormap();
+
+		ImDrawList* draw_list = ImGui::GetForegroundDrawList();
+		ImU32 col_a = ImGui::GetColorU32(IM_COL32(0,255,0,100));
+		ImU32 col_b = ImGui::GetColorU32(IM_COL32(255, 0, 0, 100));
+		draw_list->AddRectFilledMultiColor({ 0,0 }, { 500,500 }, col_a, col_b, col_b, col_a);
 		ImGui::Render();
 		QtImGui::render(imref);
 

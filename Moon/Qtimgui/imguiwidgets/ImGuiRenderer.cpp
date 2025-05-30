@@ -22,10 +22,13 @@ namespace QtImGui {
 namespace {
 
 // Keyboard mapping. Dear ImGui use those indices to peek into the io.KeysDown[] array.
-const QHash<int, ImGuiKey> keyMap = {
+const QHash<int, ImGuiKey> keyMap = 
+{
     { Qt::Key_Tab, ImGuiKey_Tab },
     { Qt::Key_Left, ImGuiKey_LeftArrow },
     { Qt::Key_Right, ImGuiKey_RightArrow },
+    { Qt::Key_Up, ImGuiKey_UpArrow },
+    { Qt::Key_Down, ImGuiKey_DownArrow },
     { Qt::Key_Up, ImGuiKey_UpArrow },
     { Qt::Key_Down, ImGuiKey_DownArrow },
     { Qt::Key_PageUp, ImGuiKey_PageUp },
@@ -44,8 +47,7 @@ const QHash<int, ImGuiKey> keyMap = {
     { Qt::Key_V, ImGuiKey_V },
     { Qt::Key_X, ImGuiKey_X },
     { Qt::Key_Y, ImGuiKey_Y },
-    { Qt::Key_Z, ImGuiKey_Z },
-    { Qt::MiddleButton, ImGuiMouseButton_Middle }
+    { Qt::Key_Z, ImGuiKey_Z }
 };
 
 #ifndef QT_NO_CURSOR
@@ -83,7 +85,8 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     
     // Setup keyboard mapping
     for (ImGuiKey key : keyMap.values()) {
-        io.KeyMap[key] = key;
+       // io.KeysData[key] = key;
+        //io.KeyMap[key] = key;
     }
     
      //io.RenderDrawListsFn = [](ImDrawData *drawData) {
@@ -223,7 +226,8 @@ bool ImGuiRenderer::createFontsTexture()
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
     unsigned char* pixels;
-    int width, height;
+    int width, height; 
+    io.FontDefault=io.Fonts->AddFontFromFileTTF("C:/Project/opengl/res/Data/Editor/Fonts/Ruda-Bold.ttf",20);
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
     // Upload texture to graphics system
@@ -236,9 +240,8 @@ bool ImGuiRenderer::createFontsTexture()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     // Store our identifier
-    io.Fonts->TexID = (void *)(size_t)g_FontTexture;
-
-    // Restore state
+    io.Fonts->TexID = g_FontTexture;
+    //
     glBindTexture(GL_TEXTURE_2D, last_texture);
 
     return true;
@@ -445,7 +448,8 @@ void ImGuiRenderer::onKeyPressRelease(QKeyEvent *event)
     const auto key_it = keyMap.constFind( event->key() );
     if (key_it != keyMap.constEnd()) { // Qt's key found in keyMap
         const int imgui_key = *(key_it);
-        io.KeysDown[imgui_key] = key_pressed;
+        io.AddKeyEvent(static_cast<ImGuiKey>(imgui_key),key_pressed);
+        //io.KeysDown[imgui_key] = key_pressed;
     }
 
     if (key_pressed) {
