@@ -43,6 +43,9 @@ namespace Editor::Panels
 	{
 		AViewControllable::Update(p_deltaTime);
 		auto headLight = GetScene()->FindActorByName("HeadLight");
+		if (!headLight) {
+			return;
+		}
 		headLight->transform.SetWorldPosition(m_camera.GetPosition());
 		if (IsSelectActor()) {
 
