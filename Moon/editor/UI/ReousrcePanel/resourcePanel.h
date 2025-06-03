@@ -24,7 +24,7 @@ namespace MOON {
 		void onSelectFile(const char* pathName);
 
 		// reselect current dir
-		void reslectCurrentDir();
+		void reselectCurrentDir();
 
 		// click res
 		void onClickedPreviewRes(const char* res);

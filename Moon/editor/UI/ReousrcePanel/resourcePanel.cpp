@@ -19,6 +19,7 @@
 #include <QtWidgets/QTreeView>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <QClipboard>
 #include <filesystem>
 
 
@@ -250,8 +251,14 @@ namespace MOON {
 	void ResPanel::onSelectFile(const char* pathName)
 	{
 	}
-	void ResPanel::reslectCurrentDir()
+	void ResPanel::reselectCurrentDir()
 	{
+		// refresh current dir
+		internal->m_dirModel->Clean();
+		internal->m_dirModel->Refresh();
+
+		if (!internal->m_currentDir.empty())
+			onSelectDir(internal->m_currentDir.c_str());
 	}
 	void ResPanel::onClickedPreviewRes(const char* res)
 	{
@@ -309,6 +316,17 @@ namespace MOON {
 	}
 	void ResPanel::newFolder()
 	{
+		std::string currentDir = internal->m_currentDir;
+		for (int i = 0; i < 65535; i++)
+		{
+			std::string newFolder = internal->m_currentDir + "/" + (i != 0 ? std::string("New Folder ") + std::to_string(i) : "New Folder") + "/";
+			if (!std::filesystem::is_directory(newFolder))
+			{
+				std::filesystem::create_directory(newFolder);
+				reselectCurrentDir();
+				return;
+			}
+		}
 	}
 	void ResPanel::onCreateRes()
 	{
@@ -323,21 +341,83 @@ namespace MOON {
 	}
 	void ResPanel::onDeleteRes()
 	{
+		if (internal->m_menuEditItem)
+		{
+			std::string path = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
+			std::filesystem::remove(path);
+			reselectCurrentDir();
+		}
 	}
 	void ResPanel::onDuplicateRes()
 	{
+		if (internal->m_menuEditItem)
+		{
+			std::string fullPathName = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
+			if (!std::filesystem::is_directory(fullPathName))
+			{
+				std::filesystem::directory_entry p_directory(fullPathName);
+
+				std::string path = p_directory.path().parent_path().string();
+				std::string fileName = p_directory.path().filename().string();
+				fileName = fileName.substr(0, fileName.rfind("."));
+				std::string fileExt = p_directory.path().extension().string();
+				for (int i = 0; i < 65535; i++)
+				{
+					std::string newPath = path + "/" + fileName + "Copy_" + std::to_string(i) + fileExt;// Echo::StringUtil::Format("%s%sCopy_%d%s", path.c_str(), fileName.c_str(), i, fileExt.c_str());
+					if (!std::filesystem::exists(newPath))
+					{
+						std::filesystem::copy(fullPathName, newPath);
+						//Echo::PathUtil::CopyFilePath(fullPathName, newPath, false);
+						break;
+					}
+				}
+			}
+			else
+			{
+				std::filesystem::directory_entry p_directory(fullPathName);
+
+				std::string parentpath = p_directory.path().parent_path().string();
+				std::string fileName = p_directory.path().filename().string();
+				for (int i = 0; i < 65535; i++)
+				{
+					std::string newDir = parentpath + "/" + fileName + "Copy_" + std::to_string(i);
+					if (!std::filesystem::exists(newDir))
+					{
+						std::filesystem::copy(fullPathName, newDir);
+						break;
+					}
+				}
+
+
+			}
+
+
+			reselectCurrentDir();
+		}
 	}
 	void ResPanel::onCopyResPath()
 	{
+		if (internal->m_menuEditItem)
+		{
+			std::string path = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
+			QClipboard* clipboard = QApplication::clipboard();
+			clipboard->setText(path.c_str());
+
+		}
 	}
 	void ResPanel::onRenamedRes(const QString src, const QString dest)
 	{
+		// refresh current dir
+		internal->m_dirModel->Clean();
+		internal->m_dirModel->Refresh();
 	}
 	void ResPanel::onSwitchResVeiwType()
 	{
 	}
 	void ResPanel::onSearchTextChanged()
 	{
+		std::string pattern = internal->ui->m_searchLineEdit->text().toStdString().c_str();
+		internal->m_previewHelper->setFilterPattern(pattern.c_str());
 	}
 	void ResPanel::onWatchFileChanged(const QString& file)
 	{

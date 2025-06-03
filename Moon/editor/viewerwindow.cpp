@@ -67,7 +67,7 @@ namespace MOON {
 			std::cout << "say hello" << std::endl;
 			});
 		//¿ªÆô¼ÆÊ±Æ÷
-		//this->startTimer(16);
+		this->startTimer(16);
 
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
@@ -105,15 +105,15 @@ namespace MOON {
 		bool show_implot_demo_window = true;
 		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
 		static float scale_min = 0.0f;
-		static float scale_max = 6.3f;	
+		static float scale_max = 6.3f;
 		static float val = 0.0f;
 		ImGui::SliderFloat("HeadVal", &val, scale_min, scale_max);
 		static ImPlotColormap map = ImPlotColormap_Cool;
 		ImPlot::PushColormap(map);
-		ImPlotCustom::ColormapScale("HeadMap",val, scale_min, scale_max, ImVec2(10, 150), ImVec2(90, 225));
+		ImPlotCustom::ColormapScale("HeadMap", val, scale_min, scale_max, ImVec2(10, 150), ImVec2(90, 225));
 		ImPlot::PopColormap();
 
-	
+
 		ImGui::Render();
 		QtImGui::render(imref);
 
@@ -121,7 +121,7 @@ namespace MOON {
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
-		std::cout << "process event" << std::endl;
+
 		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);

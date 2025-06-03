@@ -20,7 +20,7 @@ namespace MOON {
 		glayout->setContentsMargins(0, 0, 0, 0);
 		glayout->setSpacing(0);
 		glayout->addWidget(impl->tabWidget, 0, 0);
-		//impl->tabWidget->addTab(new DownPanel(this), "downpanel");
+		impl->tabWidget->addTab(new DownPanel(this), "downpanel");
 		impl->tabWidget->addTab(new UpPanel(this), "uppanel");
 
 	}
