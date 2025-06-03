@@ -1,6 +1,6 @@
 #include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
-#include "Qtimgui/implot/implot.h"
+#include "Qtimgui/implot/implotCustom.h"
 #include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
@@ -67,7 +67,7 @@ namespace MOON {
 			std::cout << "say hello" << std::endl;
 			});
 		//¿ªÆô¼ÆÊ±Æ÷
-		this->startTimer(16);
+		//this->startTimer(16);
 
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
@@ -101,22 +101,19 @@ namespace MOON {
 		sceneView->Present();
 		//ImGui::Text("Hello world!");
 
-		static float col[4] = { 1,1,1,1 };
-		ImGui::ColorEdit4("Color", col);
 
 		bool show_implot_demo_window = true;
 		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
 		static float scale_min = 0.0f;
-		static float scale_max = 6.3f;
-		static ImPlotColormap map = ImPlotColormap_Viridis;
+		static float scale_max = 6.3f;	
+		static float val = 0.0f;
+		ImGui::SliderFloat("HeadVal", &val, scale_min, scale_max);
+		static ImPlotColormap map = ImPlotColormap_Cool;
 		ImPlot::PushColormap(map);
-		ImPlot::ColormapScale("HeadScale", scale_min, scale_max, ImVec2(100, 225));
+		ImPlotCustom::ColormapScale("HeadMap",val, scale_min, scale_max, ImVec2(10, 150), ImVec2(90, 225));
 		ImPlot::PopColormap();
 
-		ImDrawList* draw_list = ImGui::GetForegroundDrawList();
-		ImU32 col_a = ImGui::GetColorU32(IM_COL32(0, 255, 0, 100));
-		ImU32 col_b = ImGui::GetColorU32(IM_COL32(255, 0, 0, 100));
-		draw_list->AddRectFilledMultiColor({ 250,250 }, { 500,500 }, col_a, col_b, col_b, col_a);
+	
 		ImGui::Render();
 		QtImGui::render(imref);
 
@@ -124,6 +121,7 @@ namespace MOON {
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
+		std::cout << "process event" << std::endl;
 		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
