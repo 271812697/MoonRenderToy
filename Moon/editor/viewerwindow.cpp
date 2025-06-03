@@ -1,3 +1,6 @@
+#include "Qtimgui/imguiwidgets/QtImGui.h"
+#include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/implot/implotCustom.h"
 #include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
@@ -17,7 +20,8 @@
 
 ::Editor::Core::Context* editorContext = nullptr;
 ::Editor::Panels::SceneView* sceneView = nullptr;
-
+QtImGui::RenderRef imref = nullptr;
+ImPlotContext* ctx = nullptr;
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -71,6 +75,8 @@ namespace MOON {
 		ParseScene::ParsePathTraceScene();
 
 		OVSERVICE(TreeViewPanel).initModel();
+		imref = QtImGui::initialize(this, false);
+		ctx = ImPlot::CreateContext();
 
 	}
 
@@ -81,7 +87,8 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
-
+		QtImGui::newFrame(imref);
+		ImPlot::SetCurrentContext(ctx);
 		sceneView->Update(0.016);
 		if (mSwitchScene) {
 			mSwitchScene = false;
@@ -92,11 +99,29 @@ namespace MOON {
 		sceneView->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
+		//ImGui::Text("Hello world!");
+
+
+		bool show_implot_demo_window = true;
+		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
+		static float scale_min = 0.0f;
+		static float scale_max = 6.3f;
+		static float val = 0.0f;
+		ImGui::SliderFloat("HeadVal", &val, scale_min, scale_max);
+		static ImPlotColormap map = ImPlotColormap_Cool;
+		ImPlot::PushColormap(map);
+		ImPlotCustom::ColormapScale("HeadMap", val, scale_min, scale_max, ImVec2(10, 150), ImVec2(90, 225));
+		ImPlot::PopColormap();
+
+
+		ImGui::Render();
+		QtImGui::render(imref);
 
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
+
 		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);

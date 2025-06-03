@@ -28,6 +28,9 @@ namespace MOON {
 				root.childs[0].childs.push_back(TreeNode(item->GetName(), &root.childs[0]));
 			}
 			root.childs.push_back(TreeNode("pathtrace", &root));
+			if (!PathTrace::GetScene()) {
+				return;
+			}
 			auto& meshR = PathTrace::GetScene()->meshInstancesRoots;
 			auto& meshT = PathTrace::GetScene()->meshInstancesTree;
 			auto& meshI = PathTrace::GetScene()->meshInstances;
