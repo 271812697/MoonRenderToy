@@ -104,9 +104,9 @@ namespace MOON {
 
 		bool show_implot_demo_window = true;
 		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
-		static float scale_min = 0.0f;
-		static float scale_max = 6.3f;
-		static float val = 0.0f;
+		static float scale_min = 1.0f;
+		static float scale_max = 16.3f;
+		static float val = 3.0f;
 		ImGui::SliderFloat("HeadVal", &val, scale_min, scale_max);
 		static ImPlotColormap map = ImPlotColormap_Cool;
 		ImPlot::PushColormap(map);

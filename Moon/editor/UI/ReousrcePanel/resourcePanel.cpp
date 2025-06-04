@@ -344,7 +344,13 @@ namespace MOON {
 		if (internal->m_menuEditItem)
 		{
 			std::string path = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
-			std::filesystem::remove(path);
+
+			if (std::filesystem::is_directory(path)) {
+				std::filesystem::remove_all(path); // 删除非空目录
+			}
+			else {
+				std::filesystem::remove(path);     // 删除文件
+			}
 			reselectCurrentDir();
 		}
 	}
