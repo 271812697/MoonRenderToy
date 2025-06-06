@@ -28,6 +28,7 @@ namespace MOON {
 		void wheelEvent(QWheelEvent* event) override;
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
+		void showImGui();
 		void switchScene();
 	private:
 		bool initFlag = false;

@@ -99,19 +99,10 @@ namespace MOON {
 		sceneView->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
-		//ImGui::Text("Hello world!");
+		showImGui();
 
 
-		bool show_implot_demo_window = true;
-		//ImPlot::ShowDemoWindow(&show_implot_demo_window);
-		static float scale_min = 0.0f;
-		static float scale_max = 6.3f;
-		static float val = 0.0f;
-		ImGui::SliderFloat("HeadVal", &val, scale_min, scale_max);
-		static ImPlotColormap map = ImPlotColormap_Cool;
-		ImPlot::PushColormap(map);
-		ImPlotCustom::ColormapScale("HeadMap", val, scale_min, scale_max, ImVec2(10, 150), ImVec2(90, 225));
-		ImPlot::PopColormap();
+
 
 
 		ImGui::Render();
@@ -162,6 +153,40 @@ namespace MOON {
 	}
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
+	}
+	void ViewerWindow::showImGui()
+	{
+		static std::chrono::steady_clock::time_point pretime = std::chrono::steady_clock::now();
+		static std::chrono::steady_clock::time_point curtime = std::chrono::steady_clock::now();
+	    curtime= std::chrono::steady_clock::now();
+		std::chrono::duration<double>delta = curtime - pretime;
+		pretime = curtime;
+		static std::vector<float>x;
+		static std::vector<float>y;
+		static float history = 10.0f;
+		static float t = 0.0f;
+		float detalTime = delta.count();
+		t += detalTime;
+		float fps = 1 / detalTime;
+		float ms = detalTime * 1000;
+		float xm = fmod(t,history);
+		if (!x.empty() && xm < x.back()) {
+			x.clear();
+			y.clear();
+		}
+		x.push_back(xm);
+		y.push_back(fps);
+		static ImPlotAxisFlags flags = ImPlotAxisFlags_None;
+		if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 150))) {
+			ImPlot::SetupAxes(nullptr, nullptr, flags, flags);
+			ImPlot::SetupAxisLimits(ImAxis_X1, 0, history, ImGuiCond_Always);
+			ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 80);
+			ImPlot::PlotLine("FPS", &x[0], &y[0],x.size(), 0, 0,  sizeof(float));
+			ImPlot::EndPlot();
+		}
+		ImGui::Text("%f ms,%f FPS",ms,fps);
+
+
 	}
 	void ViewerWindow::switchScene()
 	{

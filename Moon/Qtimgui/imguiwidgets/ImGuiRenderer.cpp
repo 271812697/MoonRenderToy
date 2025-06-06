@@ -240,6 +240,9 @@ namespace QtImGui {
 		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 		// Store our identifier
@@ -475,7 +478,7 @@ namespace QtImGui {
 		io.KeyAlt = event->modifiers() & Qt::AltModifier;
 		io.KeySuper = event->modifiers() & Qt::MetaModifier;
 #endif
-			}
+	}
 
 	void ImGuiRenderer::updateCursorShape(const ImGuiIO& io)
 	{
@@ -508,11 +511,11 @@ namespace QtImGui {
 			{
 				m_window->setCursorShape(Qt::CursorShape::ArrowCursor);
 			}
-			}
+		}
 #else
 		Q_UNUSED(io);
 #endif
-		}
+	}
 
 	void ImGuiRenderer::setCursorPos(const ImGuiIO& io)
 	{
@@ -523,7 +526,7 @@ namespace QtImGui {
 #ifndef QT_NO_CURSOR
 		if (io.WantSetMousePos) {
 			m_window->setCursorPos({ (int)io.MousePos.x, (int)io.MousePos.y });
-	}
+		}
 #else
 		Q_UNUSED(io);
 #endif
@@ -560,4 +563,4 @@ namespace QtImGui {
 		return instance;
 	}
 
-		} // namespace QtImGui
+} // namespace QtImGui
