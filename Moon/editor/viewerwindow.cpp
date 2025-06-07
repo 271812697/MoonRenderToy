@@ -20,8 +20,8 @@
 
 ::Editor::Core::Context* editorContext = nullptr;
 ::Editor::Panels::SceneView* sceneView = nullptr;
-QtImGui::RenderRef imref = nullptr;
-ImPlotContext* ctx = nullptr;
+static QtImGui::RenderRef imref = nullptr;
+static ImPlotContext* ctx = nullptr;
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -67,7 +67,7 @@ namespace MOON {
 			std::cout << "say hello" << std::endl;
 			});
 		//¿ªÆô¼ÆÊ±Æ÷
-		this->startTimer(16);
+		this->startTimer(10);
 
 		editorContext = new ::Editor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
@@ -89,7 +89,7 @@ namespace MOON {
 	{
 		QtImGui::newFrame(imref);
 		ImPlot::SetCurrentContext(ctx);
-		sceneView->Update(0.016);
+		sceneView->Update(0.01);
 		if (mSwitchScene) {
 			mSwitchScene = false;
 			ParseScene::ParsePathTraceScene();
@@ -100,14 +100,8 @@ namespace MOON {
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
 		showImGui();
-
-
-
-
-
 		ImGui::Render();
 		QtImGui::render(imref);
-
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
@@ -158,18 +152,18 @@ namespace MOON {
 	{
 		static std::chrono::steady_clock::time_point pretime = std::chrono::steady_clock::now();
 		static std::chrono::steady_clock::time_point curtime = std::chrono::steady_clock::now();
-	    curtime= std::chrono::steady_clock::now();
+		curtime = std::chrono::steady_clock::now();
 		std::chrono::duration<double>delta = curtime - pretime;
 		pretime = curtime;
 		static std::vector<float>x;
 		static std::vector<float>y;
-		static float history = 10.0f;
+		static float history = 2.0f;
 		static float t = 0.0f;
 		float detalTime = delta.count();
 		t += detalTime;
 		float fps = 1 / detalTime;
 		float ms = detalTime * 1000;
-		float xm = fmod(t,history);
+		float xm = fmod(t, history);
 		if (!x.empty() && xm < x.back()) {
 			x.clear();
 			y.clear();
@@ -177,14 +171,14 @@ namespace MOON {
 		x.push_back(xm);
 		y.push_back(fps);
 		static ImPlotAxisFlags flags = ImPlotAxisFlags_None;
-		if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 150))) {
+		if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 300))) {
 			ImPlot::SetupAxes(nullptr, nullptr, flags, flags);
 			ImPlot::SetupAxisLimits(ImAxis_X1, 0, history, ImGuiCond_Always);
-			ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 80);
-			ImPlot::PlotLine("FPS", &x[0], &y[0],x.size(), 0, 0,  sizeof(float));
+			ImPlot::SetupAxisLimits(ImAxis_Y1, 60, 140);
+			ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
 			ImPlot::EndPlot();
 		}
-		ImGui::Text("%f ms,%f FPS",ms,fps);
+		ImGui::Text("%f ms,%f FPS", ms, fps);
 
 
 	}
