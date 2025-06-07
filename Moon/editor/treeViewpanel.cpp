@@ -1,7 +1,7 @@
 #pragma once
 #include "treeViewpanel.h"
-#include "Core/Global/ServiceLocator.h"
-#include "Core/SceneSystem/SceneManager.h"
+#include "OvCore/Global/ServiceLocator.h"
+#include "OvCore/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
 #include "pathtrace/PathTrace.h"
 #include "pathtrace/Scene.h"
@@ -21,7 +21,7 @@ namespace MOON {
 	class TreeViewModel : public QAbstractItemModel {
 	public:
 		TreeViewModel(QObject* parent) :QAbstractItemModel(parent) {
-			auto& actors = ::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().sceneManager.GetCurrentScene()->GetActors();
+			auto& actors = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().sceneManager.GetCurrentScene()->GetActors();
 			root.val = "root";
 			root.childs.push_back(TreeNode("scene", &root));
 			for (auto& item : actors) {

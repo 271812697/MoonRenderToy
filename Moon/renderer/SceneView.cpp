@@ -1,262 +1,305 @@
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
+
+#include <OvCore/ECS/Components/CMaterialRenderer.h>
+
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 
-#include "Core/Global/ServiceLocator.h"
-#include "Core/SceneSystem/SceneManager.h"
+#include "OvCore/Global/ServiceLocator.h"
 #include "SceneView.h"
-#include "core/ECS/Components/CPhysicalSphere.h"
 #include <QMouseEvent>
-namespace Editor::Panels
+
+static OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
+
+	float elevation = a / 180.0 * 3.14159265;
+	float azimuth = b / 180.0 * 3.14159265;
+	return OvMaths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
+}
+
+
+namespace
 {
-	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
-
-		float elevation = a / 180.0 * 3.14159265;
-		float azimuth = b / 180.0 * 3.14159265;
-		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
-	}
-
-	Editor::Panels::SceneView::SceneView
-	(
-		const std::string& p_title
-	) : AViewControllable(p_title),
-		m_sceneManager(::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().sceneManager)
+	OvTools::Utils::OptRef<OvCore::ECS::Actor> GetActorFromPickingResult(
+		OvEditor::Rendering::PickingRenderPass::PickingResult p_result
+	)
 	{
-		m_renderer = std::make_unique<::Editor::Rendering::DebugSceneRenderer>(*::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().driver);
-
-		m_camera.SetFar(5000.0f);
-
-		m_fallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<::Editor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
-		m_fallbackMaterial.SetProperty("u_Diffuse", Maths::FVector4{ 1.f, 0.f, 1.f, 1.0f });
-		m_fallbackMaterial.SetProperty("u_DiffuseMap", static_cast<::Rendering::Resources::Texture*>(nullptr));
-
-
-		::Core::ECS::Actor::DestroyedEvent += [this](const ::Core::ECS::Actor& actor)
-			{
-				if (m_highlightedActor.has_value() && m_highlightedActor.value().GetID() == actor.GetID())
-				{
-					m_highlightedActor.reset();
-				}
-			};
-	}
-
-	void Editor::Panels::SceneView::Update(float p_deltaTime)
-	{
-		AViewControllable::Update(p_deltaTime);
-		auto headLight = GetScene()->FindActorByName("HeadLight");
-		if (!headLight) {
-			return;
-		}
-		headLight->transform.SetWorldPosition(m_camera.GetPosition());
-		if (IsSelectActor()) {
-
-			auto& ac = GetSelectedActor();
-			//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
-			auto target = ac.transform.GetWorldPosition();
-			auto cp = m_camera.GetPosition();
-			float radius = Maths::FVector3::Length(target - cp) * 3.5;
-			Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(target - cp);
-			Maths::FVector3 forward = Maths::FVector3::Normalize(cp - target);
-			float angle = Maths::FVector3::AngleBetween(forward, { 0,1,0 });
-			Maths::FVector3 worldUp = (angle < FLT_EPSILON || abs(angle - 3.14159274) < FLT_EPSILON) ? Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
-			Maths::FMatrix4 view = Maths::FMatrix4::CreateCameraView(cp, target, worldUp);
-			view = Maths::FMatrix4::Inverse(view);
-
-			Maths::FMatrix4 mat = transMat * view;
-
-			auto p1 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(50, 10, radius));
-			auto p2 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(-75, 10, radius));
-			auto p3 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, 110, radius));
-			auto p4 = Maths::FMatrix4::MulPoint(mat, GetSpherePosition(0, -110, radius));
-			GetScene()->FindActorByName("PointLight1")->transform.SetWorldPosition(p1);
-			GetScene()->FindActorByName("PointLight2")->transform.SetWorldPosition(p2);
-			GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
-			GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
-		}
-
-
-	}
-
-	void Editor::Panels::SceneView::InitFrame()
-	{
-		AViewControllable::InitFrame();
-
-		Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
-		if (mTargetActor != nullptr) {
-			selectedActor = GetSelectedActor();
-		}
-
-		m_renderer->AddDescriptor<Rendering::DebugSceneRenderer::DebugSceneDescriptor>({
-			m_currentOperation,
-			m_highlightedActor,
-			selectedActor,
-			m_highlightedGizmoDirection
-			});
-	}
-
-	::Core::SceneSystem::Scene* Editor::Panels::SceneView::GetScene()
-	{
-		return m_sceneManager.GetCurrentScene();
-	}
-
-	void SceneView::ReceiveEvent(QEvent* e)
-	{
-		if (e == nullptr)
-			return;
-		const QEvent::Type t = e->type();
-
-		m_cameraController.ReceiveEvent(e);
-		if (!m_cameraController.IsRightMousePressed()) {
-			if (t == QEvent::KeyPress) {
-				QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
-				Qt::Key key = static_cast<Qt::Key>(e2->key());
-				if (key == Qt::Key_W) {
-					m_currentOperation = Editor::Core::EGizmoOperation::TRANSLATE;
-				}
-				else if (key == Qt::Key_E) {
-					m_currentOperation = Editor::Core::EGizmoOperation::ROTATE;
-				}
-				else if (key == Qt::Key_R) {
-					m_currentOperation = Editor::Core::EGizmoOperation::SCALE;
-				}
-			}
-
-		}
-
-
-		//handle pick
-		if (t == QEvent::MouseButtonRelease) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-			if (e2->button() == Qt::LeftButton) {
-				m_gizmoOperations.StopPicking();
-			}
-		}
-		std::optional<
-			std::variant<Tools::Utils::OptRef<::Core::ECS::Actor>,
-			Editor::Core::GizmoBehaviour::EDirection>
-		>pickingResult = std::nullopt;
-		if (t == QEvent::MouseMove) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-			auto mouseX = e2->x();
-
-			auto mouseY = e2->y();
-#else
-			auto x = e2->localPos().x();
-			auto y = e2->localPos().y();
-#endif
-
-			mouseY = GetSafeSize().second - mouseY - 1;
-
-			auto& scene = *GetScene();
-
-			auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-
-			pickingResult = actorPickingFeature.ReadbackPickingResult(
-				scene,
-				static_cast<uint32_t>(mouseX),
-				static_cast<uint32_t>(mouseY)
-			);
-			m_highlightedActor = {};
-			m_highlightedGizmoDirection = {};
-
-			if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
-			{
-				if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
-				{
-					m_highlightedActor = *pval;
-				}
-				else if (const auto pval = std::get_if<::Editor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
-				{
-					m_highlightedGizmoDirection = *pval;
-				}
-			}
-			else
-			{
-				m_highlightedActor = {};
-				m_highlightedGizmoDirection = {};
-			}
-		}
-
-		if (t == QEvent::MouseButtonPress) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-			if (e2->button() == Qt::LeftButton && !m_cameraController.IsRightMousePressed()) {
-				if (m_highlightedGizmoDirection)
-				{
-					m_gizmoOperations.StartPicking(
-						GetSelectedActor(),
-						m_camera.GetPosition(),
-						m_currentOperation,
-						m_highlightedGizmoDirection.value());
-				}
-				else if (m_highlightedActor)
-				{
-					SelectActor(m_highlightedActor.value());
-				}
-				else
-				{
-					UnselectActor();
-				}
-			}
-		}
-
-
-		if (t == QEvent::MouseMove) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-			auto mouseX = e2->x();
-
-			auto mouseY = e2->y();
-#else
-			auto x = e2->localPos().x();
-			auto y = e2->localPos().y();
-#endif
-			if (m_gizmoOperations.IsPicking())
-			{
-				auto [winWidth, winHeight] = GetSafeSize();
-
-				m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mouseX), static_cast<float>(mouseY) });
-				m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
-			}
-		}
-
-
-	}
-
-	::Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::CreateSceneDescriptor()
-	{
-		auto descriptor = AViewControllable::CreateSceneDescriptor();
-		descriptor.fallbackMaterial = m_fallbackMaterial;
-		//don't debug the scene camera
-		if (false)
+		if (p_result)
 		{
-			auto& scene = *GetScene();
-
-			if (auto mainCameraComponent = scene.FindMainCamera())
+			if (const auto actor = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&p_result.value()))
 			{
-				auto& sceneCamera = mainCameraComponent->GetCamera();
-				m_camera.SetFrustumGeometryCulling(sceneCamera.HasFrustumGeometryCulling());
-				m_camera.SetFrustumLightCulling(sceneCamera.HasFrustumLightCulling());
-				descriptor.frustumerride = sceneCamera.GetFrustum();
+				return *actor;
 			}
 		}
-		return descriptor;
+
+		return std::nullopt;
 	}
+}
 
-	void Editor::Panels::SceneView::DrawFrame()
-	{
-		Editor::Panels::AViewControllable::DrawFrame();
-		HandleActorPicking();
+OvEditor::Panels::SceneView::SceneView
+(
+	const std::string& p_title)
+	: AViewControllable(p_title),
+	m_sceneManager(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().sceneManager)
+{
+	m_renderer = std::make_unique<OvEditor::Rendering::DebugSceneRenderer>(*OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver);
+
+	m_camera.SetFar(5000.0f);
+
+	m_fallbackMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
+	m_fallbackMaterial.SetProperty("u_Diffuse", OvMaths::FVector4{ 1.f, 0.f, 1.f, 1.0f });
+	m_fallbackMaterial.SetProperty("u_DiffuseMap", static_cast<OvRendering::Resources::Texture*>(nullptr));
+
+
+	OvCore::ECS::Actor::DestroyedEvent += [this](const OvCore::ECS::Actor& actor)
+		{
+			if (m_highlightedActor.has_value() && m_highlightedActor.value().GetID() == actor.GetID())
+			{
+				m_highlightedActor.reset();
+			}
+		};
+}
+
+void OvEditor::Panels::SceneView::Update(float p_deltaTime)
+{
+	AViewControllable::Update(p_deltaTime);
+
+	auto headLight = GetScene()->FindActorByName("HeadLight");
+	if (!headLight) {
+		return;
 	}
+	headLight->transform.SetWorldPosition(m_camera.GetPosition());
+	if (IsSelectActor()) {
 
-	bool IsResizing()
-	{
-		return false;
-	}
+		auto& ac = GetSelectedActor();
+		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
+		auto target = ac.transform.GetWorldPosition();
+		auto cp = m_camera.GetPosition();
+		float radius = OvMaths::FVector3::Length(target - cp) * 0.5;
+		OvMaths::FMatrix4 transMat = OvMaths::FMatrix4::Translation(target - cp);
+		OvMaths::FVector3 forward = OvMaths::FVector3::Normalize(cp - target);
+		float angle = OvMaths::FVector3::AngleBetween(forward, { 0,1,0 });
+		OvMaths::FVector3 worldUp = (angle < FLT_EPSILON || abs(angle - 3.14159274) < FLT_EPSILON) ? OvMaths::FVector3(1, 0, 0) : OvMaths::FVector3(0, 1, 0);
+		OvMaths::FMatrix4 view = OvMaths::FMatrix4::CreateCameraView(cp, target, worldUp);
+		view = OvMaths::FMatrix4::Inverse(view);
 
-	void Editor::Panels::SceneView::HandleActorPicking()
-	{
+		OvMaths::FMatrix4 mat = transMat * view;
 
-
+		auto p1 = OvMaths::FMatrix4::MulPoint(mat, GetSpherePosition(50, 10, radius));
+		auto p2 = OvMaths::FMatrix4::MulPoint(mat, GetSpherePosition(-75, 10, radius));
+		auto p3 = OvMaths::FMatrix4::MulPoint(mat, GetSpherePosition(0, 110, radius));
+		auto p4 = OvMaths::FMatrix4::MulPoint(mat, GetSpherePosition(0, -110, radius));
+		GetScene()->FindActorByName("PointLight1")->transform.SetWorldPosition(p1);
+		GetScene()->FindActorByName("PointLight2")->transform.SetWorldPosition(p2);
+		GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
+		GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
 	}
 
 }
+
+void OvEditor::Panels::SceneView::InitFrame()
+{
+	AViewControllable::InitFrame();
+
+	OvTools::Utils::OptRef<OvCore::ECS::Actor> selectedActor;
+
+	if (mTargetActor != nullptr) {
+		selectedActor = GetSelectedActor();
+	}
+
+	m_renderer->AddDescriptor<Rendering::DebugSceneRenderer::DebugSceneDescriptor>({
+		m_currentOperation,
+		m_highlightedActor,
+		selectedActor,
+		m_highlightedGizmoDirection
+		});
+}
+
+OvCore::SceneSystem::Scene* OvEditor::Panels::SceneView::GetScene()
+{
+	return m_sceneManager.GetCurrentScene();
+}
+
+void OvEditor::Panels::SceneView::SetGizmoOperation(OvEditor::Core::EGizmoOperation p_operation)
+{
+	m_currentOperation = p_operation;
+	//EDITOR_EVENT(EditorOperationChanged).Invoke(m_currentOperation);
+}
+
+OvEditor::Core::EGizmoOperation OvEditor::Panels::SceneView::GetGizmoOperation() const
+{
+	return m_currentOperation;
+}
+
+void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
+{
+	if (e == nullptr)
+		return;
+	const QEvent::Type t = e->type();
+
+	m_cameraController.ReceiveEvent(e);
+	if (!m_cameraController.IsRightMousePressed()) {
+		if (t == QEvent::KeyPress) {
+			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
+			Qt::Key key = static_cast<Qt::Key>(e2->key());
+			if (key == Qt::Key_W) {
+				m_currentOperation = OvEditor::Core::EGizmoOperation::TRANSLATE;
+			}
+			else if (key == Qt::Key_E) {
+				m_currentOperation = OvEditor::Core::EGizmoOperation::ROTATE;
+			}
+			else if (key == Qt::Key_R) {
+				m_currentOperation = OvEditor::Core::EGizmoOperation::SCALE;
+			}
+		}
+
+	}
+
+
+	//handle pick
+	if (t == QEvent::MouseButtonRelease) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		if (e2->button() == Qt::LeftButton) {
+			m_gizmoOperations.StopPicking();
+		}
+	}
+	std::optional<
+		std::variant<OvTools::Utils::OptRef<OvCore::ECS::Actor>,
+		OvEditor::Core::GizmoBehaviour::EDirection>
+	>pickingResult = std::nullopt;
+	if (t == QEvent::MouseMove) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto mouseX = e2->x();
+
+		auto mouseY = e2->y();
+#else
+		auto x = e2->localPos().x();
+		auto y = e2->localPos().y();
+#endif
+
+		mouseY = GetSafeSize().second - mouseY - 1;
+
+		auto& scene = *GetScene();
+
+		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+
+		pickingResult = actorPickingFeature.ReadbackPickingResult(
+			scene,
+			static_cast<uint32_t>(mouseX),
+			static_cast<uint32_t>(mouseY)
+		);
+		m_highlightedActor = {};
+		m_highlightedGizmoDirection = {};
+
+		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
+		{
+			if (const auto pval = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&pickingResult.value()))
+			{
+				m_highlightedActor = *pval;
+			}
+			else if (const auto pval = std::get_if<OvEditor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
+			{
+				m_highlightedGizmoDirection = *pval;
+			}
+		}
+		else
+		{
+			m_highlightedActor = {};
+			m_highlightedGizmoDirection = {};
+		}
+	}
+
+	if (t == QEvent::MouseButtonPress) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		if (e2->button() == Qt::LeftButton && !m_cameraController.IsRightMousePressed()) {
+			if (m_highlightedGizmoDirection)
+			{
+				m_gizmoOperations.StartPicking(
+					GetSelectedActor(),
+					m_camera.GetPosition(),
+					m_currentOperation,
+					m_highlightedGizmoDirection.value());
+			}
+			else if (m_highlightedActor)
+			{
+				SelectActor(m_highlightedActor.value());
+			}
+			else
+			{
+				UnselectActor();
+			}
+		}
+	}
+
+
+	if (t == QEvent::MouseMove) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+		auto mouseX = e2->x();
+
+		auto mouseY = e2->y();
+#else
+		auto x = e2->localPos().x();
+		auto y = e2->localPos().y();
+#endif
+		if (m_gizmoOperations.IsPicking())
+		{
+			auto [winWidth, winHeight] = GetSafeSize();
+
+			m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mouseX), static_cast<float>(mouseY) });
+			m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
+		}
+	}
+}
+
+OvCore::Rendering::SceneRenderer::SceneDescriptor OvEditor::Panels::SceneView::CreateSceneDescriptor()
+{
+	auto descriptor = AViewControllable::CreateSceneDescriptor();
+	descriptor.fallbackMaterial = m_fallbackMaterial;
+
+	if (false)
+	{
+		auto& scene = *GetScene();
+
+		if (auto mainCameraComponent = scene.FindMainCamera())
+		{
+			auto& sceneCamera = mainCameraComponent->GetCamera();
+			m_camera.SetFrustumGeometryCulling(sceneCamera.HasFrustumGeometryCulling());
+			m_camera.SetFrustumLightCulling(sceneCamera.HasFrustumLightCulling());
+			descriptor.frustumOverride = sceneCamera.GetFrustum();
+		}
+	}
+
+	return descriptor;
+}
+
+void OvEditor::Panels::SceneView::DrawFrame()
+{
+	auto& pickingPass = m_renderer->GetPass<OvEditor::Rendering::PickingRenderPass>("Picking");
+
+	// Enable picking pass only when the scene view is hovered, not picking, and not operating the camera
+	pickingPass.SetEnabled(
+
+		!m_gizmoOperations.IsPicking() &&
+		!m_cameraController.IsOperating()
+	);
+
+	OvEditor::Panels::AViewControllable::DrawFrame();
+	HandleActorPicking();
+}
+
+bool IsResizing()
+{
+	return false;
+}
+
+void OvEditor::Panels::SceneView::HandleActorPicking()
+{
+
+}
+
+

@@ -1,17 +1,19 @@
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include "AViewControllable.h"
 #include "GizmoBehaviour.h"
+#include "AViewControllable.h"
+#include "PickingRenderPass.h"
 
-class QEvent;
-namespace Core::SceneSystem
+
+namespace OvEditor::Panels
 {
-	class SceneManager;
-}
-namespace Editor::Panels
-{
-	class SceneView : public Editor::Panels::AViewControllable
+	class SceneView : public OvEditor::Panels::AViewControllable
 	{
 	public:
 		/**
@@ -37,25 +39,35 @@ namespace Editor::Panels
 		/**
 		* Returns the scene used by this view
 		*/
-		virtual ::Core::SceneSystem::Scene* GetScene();
+		virtual OvCore::SceneSystem::Scene* GetScene();
 
+		/**
+		* Set the gizmo operation
+		* @param p_operation
+		*/
+		void SetGizmoOperation(Core::EGizmoOperation p_operation);
+
+		/**
+		* Returns the current gizmo operation
+		*/
+		Core::EGizmoOperation GetGizmoOperation() const;
 		void ReceiveEvent(QEvent* e);
 	protected:
-		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
+		virtual OvCore::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
 
 
+
 	private:
-		::Core::SceneSystem::SceneManager& m_sceneManager;
-		Editor::Core::GizmoBehaviour m_gizmoOperations;
-		Editor::Core::EGizmoOperation m_currentOperation = Editor::Core::EGizmoOperation::TRANSLATE;
-		::Core::Resources::Material m_fallbackMaterial;
+		OvCore::SceneSystem::SceneManager& m_sceneManager;
+		OvEditor::Core::GizmoBehaviour m_gizmoOperations;
+		OvEditor::Core::EGizmoOperation m_currentOperation = OvEditor::Core::EGizmoOperation::TRANSLATE;
+		OvCore::Resources::Material m_fallbackMaterial;
 
-
-		Tools::Utils::OptRef<::Core::ECS::Actor> m_highlightedActor;
-		std::optional<Editor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
+		OvTools::Utils::OptRef<OvCore::ECS::Actor> m_highlightedActor;
+		std::optional<OvEditor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
 	};
 }

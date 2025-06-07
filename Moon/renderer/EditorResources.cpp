@@ -1,20 +1,28 @@
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
+
 #include <filesystem>
 
-#include <Core/Helpers/GUIDrawer.h>
-#include <Debug/Assertion.h>
+#include <OvCore/Helpers/GUIDrawer.h>
+#include <OvDebug/Assertion.h>
 #include "EditorResources.h"
-#include <Rendering/Settings/ETextureFilteringMode.h>
-#include <Tools/Utils/PathParser.h>
+#include <OvRendering/Settings/ETextureFilteringMode.h>
+#include <OvTools/Utils/PathParser.h>
 
 namespace
 {
-	template<Rendering::Settings::ETextureFilteringMode FilteringMode>
+	template<OvRendering::Settings::ETextureFilteringMode FilteringMode>
 	auto CreateTexture(const std::filesystem::path& p_path)
 	{
-		return Rendering::Resources::Loaders::TextureLoader::Create(
+		return OvRendering::Resources::Loaders::TextureLoader::Create(
 			p_path.string(),
 			FilteringMode,
 			FilteringMode,
+			OvRendering::Settings::ETextureWrapMode::REPEAT,
+			OvRendering::Settings::ETextureWrapMode::REPEAT,
 			false
 		);
 	}
@@ -22,20 +30,20 @@ namespace
 	auto CreateModel(const std::filesystem::path& p_path)
 	{
 		const auto modelParserFlags =
-			Rendering::Resources::Parsers::EModelParserFlags::TRIANGULATE |
-			Rendering::Resources::Parsers::EModelParserFlags::GEN_SMOOTH_NORMALS |
-			Rendering::Resources::Parsers::EModelParserFlags::OPTIMIZE_MESHES |
-			Rendering::Resources::Parsers::EModelParserFlags::FIND_INSTANCES |
-			Rendering::Resources::Parsers::EModelParserFlags::CALC_TANGENT_SPACE |
-			Rendering::Resources::Parsers::EModelParserFlags::JOIN_IDENTICAL_VERTICES |
-			Rendering::Resources::Parsers::EModelParserFlags::DEBONE |
-			Rendering::Resources::Parsers::EModelParserFlags::FIND_INVALID_DATA |
-			Rendering::Resources::Parsers::EModelParserFlags::IMPROVE_CACHE_LOCALITY |
-			Rendering::Resources::Parsers::EModelParserFlags::GEN_UV_COORDS |
-			Rendering::Resources::Parsers::EModelParserFlags::PRE_TRANSFORM_VERTICES |
-			Rendering::Resources::Parsers::EModelParserFlags::GLOBAL_SCALE;
+			OvRendering::Resources::Parsers::EModelParserFlags::TRIANGULATE |
+			OvRendering::Resources::Parsers::EModelParserFlags::GEN_SMOOTH_NORMALS |
+			OvRendering::Resources::Parsers::EModelParserFlags::OPTIMIZE_MESHES |
+			OvRendering::Resources::Parsers::EModelParserFlags::FIND_INSTANCES |
+			OvRendering::Resources::Parsers::EModelParserFlags::CALC_TANGENT_SPACE |
+			OvRendering::Resources::Parsers::EModelParserFlags::JOIN_IDENTICAL_VERTICES |
+			OvRendering::Resources::Parsers::EModelParserFlags::DEBONE |
+			OvRendering::Resources::Parsers::EModelParserFlags::FIND_INVALID_DATA |
+			OvRendering::Resources::Parsers::EModelParserFlags::IMPROVE_CACHE_LOCALITY |
+			OvRendering::Resources::Parsers::EModelParserFlags::GEN_UV_COORDS |
+			OvRendering::Resources::Parsers::EModelParserFlags::PRE_TRANSFORM_VERTICES |
+			OvRendering::Resources::Parsers::EModelParserFlags::GLOBAL_SCALE;
 
-		return Rendering::Resources::Loaders::ModelLoader::Create(
+		return OvRendering::Resources::Loaders::ModelLoader::Create(
 			p_path.string(),
 			modelParserFlags
 		);
@@ -43,7 +51,7 @@ namespace
 
 	auto CreateShader(const std::filesystem::path& p_path)
 	{
-		return Rendering::Resources::Loaders::ShaderLoader::Create(
+		return OvRendering::Resources::Loaders::ShaderLoader::Create(
 			p_path.string()
 		);
 	}
@@ -53,7 +61,7 @@ namespace
 	{
 		for (const auto& [id, resource] : p_resources)
 		{
-			ASSERT(resource != nullptr, "Failed to load resource with ID: " + id);
+			OVASSERT(resource != nullptr, "Failed to load resource with ID: " + id);
 		}
 	}
 
@@ -67,39 +75,42 @@ namespace
 	}
 }
 
-::Editor::Core::EditorResources::EditorResources(const std::string& p_editorAssetsPath)
+OvEditor::Core::EditorResources::EditorResources(const std::string& p_editorAssetsPath)
 {
-	using namespace ::Rendering::Resources::Loaders;
-	using ::Rendering::Settings::ETextureFilteringMode;
+	using namespace OvRendering::Resources::Loaders;
+	using enum OvRendering::Settings::ETextureFilteringMode;
 
 	const auto editorAssetsPath = std::filesystem::path{ p_editorAssetsPath };
 	const auto texturesFolder = editorAssetsPath / "Textures";
 	const auto modelsFolder = editorAssetsPath / "Models";
-	const auto shadersFolder = editorAssetsPath / "shaders";
+	const auto shadersFolder = editorAssetsPath / "Shaders";
 
 	m_textures = {
-		{"Play", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Play.png")},
-		{"Pause", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Pause.png")},
-		{"Stop", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Stop.png")},
-		{"Next", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Next.png")},
-		{"Refresh", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Refresh.png")},
-		{"File", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "File.png")},
-		{"Folder", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Folder.png")},
-		{"Texture", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Texture.png")},
-		{"Model", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Model.png")},
-		{"Shader", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Shader.png")},
-		{"Shader_Part", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Shader_Part.png")},
-		{"Material", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Material.png")},
-		{"Scene", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Scene.png")},
-		{"Sound", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Sound.png")},
-		{"Script", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Script.png")},
-		{"Font", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Font.png")},
-		{"Point_Light", CreateTexture<::Rendering::Settings::ETextureFilteringMode::NEAREST>(texturesFolder / "Point_Light.png")},
-		{"Spot_Light", CreateTexture<::Rendering::Settings::ETextureFilteringMode::NEAREST>(texturesFolder / "Spot_Light.png")},
-		{"Directional_Light", CreateTexture<::Rendering::Settings::ETextureFilteringMode::NEAREST>(texturesFolder / "Directional_Light.png")},
-		{"Ambient_Box_Light", CreateTexture<::Rendering::Settings::ETextureFilteringMode::NEAREST>(texturesFolder / "Ambient_Box_Light.png")},
-		{"Ambient_Sphere_Light", CreateTexture<::Rendering::Settings::ETextureFilteringMode::NEAREST>(texturesFolder / "Ambient_Sphere_Light.png")},
-		{"Empty_Texture", CreateTexture<::Rendering::Settings::ETextureFilteringMode::LINEAR>(texturesFolder / "Empty_Texture.png")}
+		{"Play", CreateTexture<LINEAR>(texturesFolder / "Play.png")},
+		{"Pause", CreateTexture<LINEAR>(texturesFolder / "Pause.png")},
+		{"Stop", CreateTexture<LINEAR>(texturesFolder / "Stop.png")},
+		{"Next", CreateTexture<LINEAR>(texturesFolder / "Next.png")},
+		{"Refresh", CreateTexture<LINEAR>(texturesFolder / "Refresh.png")},
+		{"Move", CreateTexture<LINEAR>(texturesFolder / "Move.png")},
+		{"Rotate", CreateTexture<LINEAR>(texturesFolder / "Rotate.png")},
+		{"Scale", CreateTexture<LINEAR>(texturesFolder / "Scale.png")},
+		{"File", CreateTexture<LINEAR>(texturesFolder / "File.png")},
+		{"Folder", CreateTexture<LINEAR>(texturesFolder / "Folder.png")},
+		{"Texture", CreateTexture<LINEAR>(texturesFolder / "Texture.png")},
+		{"Model", CreateTexture<LINEAR>(texturesFolder / "Model.png")},
+		{"Shader", CreateTexture<LINEAR>(texturesFolder / "Shader.png")},
+		{"Shader_Part", CreateTexture<LINEAR>(texturesFolder / "Shader_Part.png")},
+		{"Material", CreateTexture<LINEAR>(texturesFolder / "Material.png")},
+		{"Scene", CreateTexture<LINEAR>(texturesFolder / "Scene.png")},
+		{"Sound", CreateTexture<LINEAR>(texturesFolder / "Sound.png")},
+		{"Script", CreateTexture<LINEAR>(texturesFolder / "Script.png")},
+		{"Font", CreateTexture<LINEAR>(texturesFolder / "Font.png")},
+		{"Point_Light", CreateTexture<NEAREST>(texturesFolder / "Point_Light.png")},
+		{"Spot_Light", CreateTexture<NEAREST>(texturesFolder / "Spot_Light.png")},
+		{"Directional_Light", CreateTexture<NEAREST>(texturesFolder / "Directional_Light.png")},
+		{"Ambient_Box_Light", CreateTexture<NEAREST>(texturesFolder / "Ambient_Box_Light.png")},
+		{"Ambient_Sphere_Light", CreateTexture<NEAREST>(texturesFolder / "Ambient_Sphere_Light.png")},
+		{"Empty_Texture", CreateTexture<LINEAR>(texturesFolder / "Empty_Texture.png")}
 	};
 
 	m_models = {
@@ -120,6 +131,8 @@ namespace
 		{"Grid", CreateShader(shadersFolder / "Grid.ovfx")},
 		{"Gizmo", CreateShader(shadersFolder / "Gizmo.ovfx")},
 		{"Billboard", CreateShader(shadersFolder / "Billboard.ovfx")},
+		{"PickingFallback", CreateShader(shadersFolder / "PickingFallback.ovfx")},
+		{"OutlineFallback", CreateShader(shadersFolder / "OutlineFallback.ovfx")}
 	};
 
 	// Ensure that all resources have been loaded successfully
@@ -128,30 +141,30 @@ namespace
 	ValidateResources(m_shaders);
 
 	// Register the empty texture for the GUIDrawer to use it when a texture is missing
-	::Core::Helpers::GUIDrawer::ProvideEmptyTexture(*m_textures["Empty_Texture"]);
+	OvCore::Helpers::GUIDrawer::ProvideEmptyTexture(*m_textures["Empty_Texture"]);
 }
 
-::Editor::Core::EditorResources::~EditorResources()
+OvEditor::Core::EditorResources::~EditorResources()
 {
 	for (auto& [_, texture] : m_textures)
 	{
-		Rendering::Resources::Loaders::TextureLoader::Destroy(texture);
+		OvRendering::Resources::Loaders::TextureLoader::Destroy(texture);
 	}
 
 	for (auto& [_, mesh] : m_models)
 	{
-		Rendering::Resources::Loaders::ModelLoader::Destroy(mesh);
+		OvRendering::Resources::Loaders::ModelLoader::Destroy(mesh);
 	}
 
 	for (auto& [_, shader] : m_shaders)
 	{
-		Rendering::Resources::Loaders::ShaderLoader::Destroy(shader);
+		OvRendering::Resources::Loaders::ShaderLoader::Destroy(shader);
 	}
 }
 
-::Rendering::Resources::Texture* Editor::Core::EditorResources::GetFileIcon(const std::string& p_filename)
+OvRendering::Resources::Texture* OvEditor::Core::EditorResources::GetFileIcon(const std::string& p_filename)
 {
-	using namespace Tools::Utils;
+	using namespace OvTools::Utils;
 
 	const PathParser::EFileType fileType = PathParser::GetFileType(p_filename);
 
@@ -162,17 +175,17 @@ namespace
 	);
 }
 
-::Rendering::Resources::Texture* Editor::Core::EditorResources::GetTexture(const std::string& p_id)
+OvRendering::Resources::Texture* OvEditor::Core::EditorResources::GetTexture(const std::string& p_id)
 {
 	return TryGetResource(m_textures, p_id);
 }
 
-::Rendering::Resources::Model* Editor::Core::EditorResources::GetModel(const std::string& p_id)
+OvRendering::Resources::Model* OvEditor::Core::EditorResources::GetModel(const std::string& p_id)
 {
 	return TryGetResource(m_models, p_id);
 }
 
-::Rendering::Resources::Shader* Editor::Core::EditorResources::GetShader(const std::string& p_id)
+OvRendering::Resources::Shader* OvEditor::Core::EditorResources::GetShader(const std::string& p_id)
 {
 	return TryGetResource(m_shaders, p_id);
 }

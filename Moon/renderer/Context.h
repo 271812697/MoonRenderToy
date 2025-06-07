@@ -1,30 +1,29 @@
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
+
 #pragma once
-#include <Tools/Filesystem/IniFile.h>
 
-#include <Rendering/HAL/UniformBuffer.h>
-#include <Rendering/HAL/ShaderStorageBuffer.h>
+#include <filesystem>
 
-#include <Physics/Core/PhysicsEngine.h>
-
-#include <Audio/Core/AudioEngine.h>
-
-
-
-#include <Core/ResourceManagement/ModelManager.h>
-#include <Core/ResourceManagement/TextureManager.h>
-#include <Core/ResourceManagement/ShaderManager.h>
-#include <Core/ResourceManagement/MaterialManager.h>
-#include <Core/ResourceManagement/SoundManager.h>
-#include <Core/SceneSystem/SceneManager.h>
-#include <Core/Scripting/ScriptEngine.h>
-
-
-#include <Audio/Core/AudioEngine.h>
-
+#include <OvAudio/Core/AudioEngine.h>
+#include <OvCore/ResourceManagement/MaterialManager.h>
+#include <OvCore/ResourceManagement/ModelManager.h>
+#include <OvCore/ResourceManagement/ShaderManager.h>
+#include <OvCore/ResourceManagement/SoundManager.h>
+#include <OvCore/ResourceManagement/TextureManager.h>
+#include <OvCore/SceneSystem/SceneManager.h>
+#include <OvCore/Scripting/ScriptEngine.h>
 #include "EditorResources.h"
-//#include <Editor/Utils/TextureRegistry.h>
 
-namespace Editor::Core
+#include <OvPhysics/Core/PhysicsEngine.h>
+#include <OvRendering/HAL/UniformBuffer.h>
+#include <OvRendering/HAL/ShaderStorageBuffer.h>
+#include <OvTools/Filesystem/IniFile.h>
+
+namespace OvEditor::Core
 {
 	/**
 	* The Context handle the engine features setup
@@ -34,15 +33,14 @@ namespace Editor::Core
 	public:
 		/**
 		* Constructor
-		* @param p_projectPath
-		* @param p_projectName
+		* @param p_projectFolder (including the .ovproject file)
 		*/
 		Context(const std::string& p_projectPath, const std::string& p_projectName);
 
 		/**
 		* Destructor
 		*/
-		~Context();
+		virtual ~Context();
 
 		/**
 		* Reset project settings ini file
@@ -69,25 +67,23 @@ namespace Editor::Core
 		const std::string projectScriptsPath;
 		const std::string editorAssetsPath;
 
+		std::unique_ptr<OvRendering::Context::Driver> driver;
 
-		std::unique_ptr<::Rendering::Context::Driver> driver;
+		std::unique_ptr<OvPhysics::Core::PhysicsEngine> physicsEngine;
+		std::unique_ptr<OvAudio::Core::AudioEngine> audioEngine;
+		std::unique_ptr<OvEditor::Core::EditorResources> editorResources;
 
-		std::unique_ptr<Physics::Core::PhysicsEngine> physicsEngine;
-		std::unique_ptr<Audio::Core::AudioEngine> audioEngine;
-		std::unique_ptr<::Editor::Core::EditorResources> editorResources;
+		std::unique_ptr<OvCore::Scripting::ScriptEngine> scriptEngine;
 
-		std::unique_ptr<::Core::Scripting::ScriptEngine> scriptEngine;
+		OvCore::SceneSystem::SceneManager sceneManager;
 
-		::Core::SceneSystem::SceneManager sceneManager;
-
-		::Core::ResourceManagement::ModelManager modelManager;
-		::Core::ResourceManagement::TextureManager textureManager;
-		::Core::ResourceManagement::ShaderManager shaderManager;
-		::Core::ResourceManagement::MaterialManager materialManager;
-		::Core::ResourceManagement::SoundManager soundManager;
-
+		OvCore::ResourceManagement::ModelManager modelManager;
+		OvCore::ResourceManagement::TextureManager textureManager;
+		OvCore::ResourceManagement::ShaderManager shaderManager;
+		OvCore::ResourceManagement::MaterialManager materialManager;
+		OvCore::ResourceManagement::SoundManager soundManager;
 
 
-		Tools::Filesystem::IniFile projectSettings;
+		OvTools::Filesystem::IniFile projectSettings;
 	};
 }

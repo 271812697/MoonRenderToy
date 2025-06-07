@@ -11,15 +11,15 @@
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
 #include "treeViewpanel.h"
-#include "Core/Global/ServiceLocator.h"
+#include "OvCore/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
-#include "Core/ECS/Components/CMaterialRenderer.h"
+#include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "parsescene.h"
 
 
-::Editor::Core::Context* editorContext = nullptr;
-::Editor::Panels::SceneView* sceneView = nullptr;
+OvEditor::Core::Context* editorContext = nullptr;
+OvEditor::Panels::SceneView* sceneView = nullptr;
 static QtImGui::RenderRef imref = nullptr;
 static ImPlotContext* ctx = nullptr;
 namespace MOON {
@@ -69,9 +69,9 @@ namespace MOON {
 		//¿ªÆô¼ÆÊ±Æ÷
 		this->startTimer(10);
 
-		editorContext = new ::Editor::Core::Context("", "");
+		editorContext = new OvEditor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
-		sceneView = new ::Editor::Panels::SceneView("SceneView");
+		sceneView = new OvEditor::Panels::SceneView("SceneView");
 		ParseScene::ParsePathTraceScene();
 
 		OVSERVICE(TreeViewPanel).initModel();

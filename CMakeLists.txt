@@ -33,6 +33,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+option (TRACY_ENABLE "" ON)
+option (TRACY_ON_DEMAND "" ON)
 set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
 add_subdirectory(test)
 add_subdirectory(Extern)

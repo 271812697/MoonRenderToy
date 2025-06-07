@@ -1,48 +1,48 @@
 /**
-* @project: erload
-* @author: erload Tech.
+* @project: Overload
+* @author: Overload Tech.
 * @licence: MIT
 */
 
 #pragma once
 
-#include <Rendering/Entities/Camera.h>
-#include <Rendering/Features/DebugShapeRenderFeature.h>
+#include <OvRendering/Entities/Camera.h>
+#include <OvRendering/Features/DebugShapeRenderFeature.h>
 
-#include <Core/ECS/Actor.h>
-#include <Core/SceneSystem/SceneManager.h>
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/Resources/Material.h>
-#include <Core/ECS/Components/CAmbientBoxLight.h>
-#include <Core/ECS/Components/CAmbientSphereLight.h>
-#include <Core/Rendering/SceneRenderer.h>
+#include <OvCore/ECS/Actor.h>
+#include <OvCore/SceneSystem/SceneManager.h>
+#include <OvCore/ECS/Components/CModelRenderer.h>
+#include <OvCore/Resources/Material.h>
+#include <OvCore/ECS/Components/CAmbientBoxLight.h>
+#include <OvCore/ECS/Components/CAmbientSphereLight.h>
+#include <OvCore/Rendering/SceneRenderer.h>
 
 #include "Context.h"
 
-namespace Editor::Rendering
+namespace OvEditor::Rendering
 {
 	/**
 	* Draw a grid
 	*/
-	class GridRenderPass : public ::Rendering::Core::ARenderPass
+	class GridRenderPass : public OvRendering::Core::ARenderPass
 	{
 	public:
 		struct GridDescriptor
 		{
-			Maths::FVector3 gridColor;
-			Maths::FVector3 viewPosition;
+			OvMaths::FVector3 gridColor;
+			OvMaths::FVector3 viewPosition;
 		};
 
 		/**
 		* Constructor
 		* @param p_renderer
 		*/
-		GridRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		GridRenderPass(OvRendering::Core::CompositeRenderer& p_renderer);
 
 	protected:
-		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+		virtual void Draw(OvRendering::Data::PipelineState p_pso) override;
 
 	private:
-		::Core::Resources::Material m_gridMaterial;
+		OvCore::Resources::Material m_gridMaterial;
 	};
 }
