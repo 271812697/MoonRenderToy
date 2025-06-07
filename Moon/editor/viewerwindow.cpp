@@ -100,14 +100,8 @@ namespace MOON {
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
 		showImGui();
-
-
-
-
-
 		ImGui::Render();
 		QtImGui::render(imref);
-
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
