@@ -1,6 +1,7 @@
 #include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/implot/implotCustom.h"
+#include "Qtimgui/implot/imguizmo.h"
 #include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
@@ -99,6 +100,7 @@ namespace MOON {
 		sceneView->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		sceneView->Present();
+
 		showImGui();
 		ImGui::Render();
 		QtImGui::render(imref);
@@ -180,6 +182,11 @@ namespace MOON {
 		}
 		ImGui::Text("%f ms,%f FPS", ms, fps);
 
+		auto proj = sceneView->GetCamera()->GetProjectionMatrix();
+		auto view = sceneView->GetCamera()->GetViewMatrix();
+		view = view.TransposeMartix();
+		proj = proj.TransposeMartix();
+		ImGuizmo::DrawGizmo(view.data, proj.data, 10);
 
 	}
 	void ViewerWindow::switchScene()

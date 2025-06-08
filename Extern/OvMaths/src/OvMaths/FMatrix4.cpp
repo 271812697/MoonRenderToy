@@ -310,6 +310,11 @@ OvMaths::FMatrix4 OvMaths::FMatrix4::Transpose(const FMatrix4& p_matrix)
 	return TransposedMatrix;
 }
 
+OvMaths::FMatrix4 OvMaths::FMatrix4::TransposeMartix()
+{
+	return Transpose(*this);;
+}
+
 OvMaths::FMatrix4 OvMaths::FMatrix4::Inverse(const FMatrix4& p_matrix)
 {
 	const float determinant = Determinant(p_matrix);
