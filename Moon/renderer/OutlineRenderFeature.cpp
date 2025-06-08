@@ -25,7 +25,7 @@ OvEditor::Rendering::OutlineRenderFeature::OutlineRenderFeature(
 	OvRendering::Features::ARenderFeature(p_renderer, p_executionPolicy)
 {
 	/* Stencil Fill Material */
-	m_stencilFillMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
+	m_stencilFillMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetShader("OutlineFallback"));
 
 	/* Outline Material */
 	m_outlineMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetShader("OutlineFallback"));
