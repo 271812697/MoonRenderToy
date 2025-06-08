@@ -1,11 +1,16 @@
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
 
 #pragma once
 
-#include <Core/ResourceManagement/TextureManager.h>
-#include <Core/ResourceManagement/ModelManager.h>
-#include <Core/ResourceManagement/ShaderManager.h>
+#include <OvCore/ResourceManagement/TextureManager.h>
+#include <OvCore/ResourceManagement/ModelManager.h>
+#include <OvCore/ResourceManagement/ShaderManager.h>
 
-namespace Editor::Core
+namespace OvEditor::Core
 {
 	/**
 	* Handle the creation and storage of editor specific resources
@@ -28,29 +33,29 @@ namespace Editor::Core
 		* Returns the file icon identified by the given string or nullptr on fail
 		* @param p_filename
 		*/
-		::Rendering::Resources::Texture* GetFileIcon(const std::string& p_filename);
+		OvRendering::Resources::Texture* GetFileIcon(const std::string& p_filename);
 
 		/**
 		* Returns the texture identified by the given string or nullptr on fail
 		* @param p_id
 		*/
-		::Rendering::Resources::Texture* GetTexture(const std::string& p_id);
+		OvRendering::Resources::Texture* GetTexture(const std::string& p_id);
 
 		/**
 		* Returns the model identified by the given string or nullptr on fail
 		* @param p_id
 		*/
-		::Rendering::Resources::Model* GetModel(const std::string& p_id);
+		OvRendering::Resources::Model* GetModel(const std::string& p_id);
 
 		/**
 		* Returns the shader identified by the given string or nullptr on fail
 		* @param p_id
 		*/
-		::Rendering::Resources::Shader* GetShader(const std::string& p_id);
+		OvRendering::Resources::Shader* GetShader(const std::string& p_id);
 
 	private:
-		std::unordered_map<std::string, ::Rendering::Resources::Texture*> m_textures;
-		std::unordered_map<std::string, ::Rendering::Resources::Model*> m_models;
-		std::unordered_map<std::string, ::Rendering::Resources::Shader*> m_shaders;
+		std::unordered_map<std::string, OvRendering::Resources::Texture*> m_textures;
+		std::unordered_map<std::string, OvRendering::Resources::Model*> m_models;
+		std::unordered_map<std::string, OvRendering::Resources::Shader*> m_shaders;
 	};
 }

@@ -1,38 +1,41 @@
 /**
-* @project: erload
-* @author: erload Tech.
+* @project: Overload
+* @author: Overload Tech.
 * @licence: MIT
 */
 
 #pragma once
 
-#include <Rendering/Entities/Camera.h>
-#include <Rendering/Features/DebugShapeRenderFeature.h>
+#include <OvRendering/Entities/Camera.h>
+#include <OvRendering/Features/DebugShapeRenderFeature.h>
 
-#include <Core/ECS/Actor.h>
-#include <Core/SceneSystem/SceneManager.h>
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/Resources/Material.h>
-#include <Core/ECS/Components/CAmbientBoxLight.h>
-#include <Core/ECS/Components/CAmbientSphereLight.h>
-#include <Core/Rendering/SceneRenderer.h>
+#include <OvCore/ECS/Actor.h>
+#include <OvCore/SceneSystem/SceneManager.h>
+#include <OvCore/ECS/Components/CModelRenderer.h>
+#include <OvCore/Resources/Material.h>
+#include <OvCore/ECS/Components/CAmbientBoxLight.h>
+#include <OvCore/ECS/Components/CAmbientSphereLight.h>
+#include <OvCore/Rendering/SceneRenderer.h>
 
 #include "Context.h"
-#include "GizmoBehaviour.h"
 
-namespace Editor::Rendering
+namespace OvEditor::Rendering
 {
 	/**
 	* Draw a gizmo
 	*/
-	class GizmoRenderFeature : public ::Rendering::Features::ARenderFeature
+	class GizmoRenderFeature : public OvRendering::Features::ARenderFeature
 	{
 	public:
 		/**
 		* Constructor
 		* @param p_renderer
+		* @param p_executionPolicy
 		*/
-		GizmoRenderFeature(::Rendering::Core::CompositeRenderer& p_renderer);
+		GizmoRenderFeature(
+			OvRendering::Core::CompositeRenderer& p_renderer,
+			OvRendering::Features::EFeatureExecutionPolicy p_executionPolicy
+		);
 
 		/**
 		* Render a gizmo at position
@@ -43,15 +46,15 @@ namespace Editor::Rendering
 		* @param p_highlightedDirection
 		*/
 		void DrawGizmo(
-			const Maths::FVector3& p_position,
-			const Maths::FQuaternion& p_rotation,
-			Editor::Core::EGizmoOperation p_operation,
+			const OvMaths::FVector3& p_position,
+			const OvMaths::FQuaternion& p_rotation,
+			OvEditor::Core::EGizmoOperation p_operation,
 			bool p_pickable,
-			std::optional<Editor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
+			std::optional<OvEditor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
 		);
 
 	private:
-		::Core::Resources::Material m_gizmoArrowMaterial;
-		::Core::Resources::Material m_gizmoBallMaterial;
+		OvCore::Resources::Material m_gizmoArrowMaterial;
+		OvCore::Resources::Material m_gizmoBallMaterial;
 	};
 }

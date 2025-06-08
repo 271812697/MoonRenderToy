@@ -11,7 +11,7 @@
 #include "Trace.h"
 #include "renderer/Context.h"
 
-#include "Core/Global/ServiceLocator.h"
+#include "OvCore/Global/ServiceLocator.h"
 #include <filesystem>
 namespace PathTrace {
 

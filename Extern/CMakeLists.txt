@@ -8,7 +8,9 @@ if(NOT TARGET glad)
     file(GLOB_RECURSE glad_head CONFIGURE_DEPENDS  
     "${glad_SOURCE_DIR_}/*.h")
     add_library(glad STATIC ${glad_impl} ${glad_head})
+    target_include_directories(glad PUBLIC $<BUILD_INTERFACE:${glad_SOURCE_DIR_}/glad > )
     target_include_directories(glad PUBLIC $<BUILD_INTERFACE:${glad_SOURCE_DIR_}>)
+   
     set_target_properties(glad PROPERTIES FOLDER ${lib_folder}/glad)
 endif()
 if(NOT TARGET soloud)
@@ -77,7 +79,7 @@ if(NOT TARGET tinygltf)
 endif()
 
 if(NOT TARGET tools)   
-    set(tools_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/tools)
+    set(tools_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvTools)
     file(GLOB_RECURSE tools_impl CONFIGURE_DEPENDS  
     "${tools_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE tools_head CONFIGURE_DEPENDS  
@@ -105,12 +107,20 @@ if(NOT TARGET tracy)
     file(GLOB_RECURSE tracy_head CONFIGURE_DEPENDS  
     "${tracy_SOURCE_DIR_}/*.h" "${tracy_SOURCE_DIR_}/*.hpp")
     source_group(TREE "${tracy_SOURCE_DIR_}" FILES ${tracy_impl} ${tracy_head})
+    
+    
     add_library(tracy STATIC ${tracy_impl} ${tracy_head})
+    target_link_libraries(tracy PUBLIC dbghelp.lib)
+    target_compile_definitions(tracy PUBLIC 
+    TRACY_ENABLE
+    TRACY_ON_DEMAND
+    TRACY_MEMORY_ENABLE
+    )
     target_include_directories(tracy PUBLIC $<BUILD_INTERFACE:${tracy_SOURCE_DIR_}>)
     set_target_properties(tracy PROPERTIES FOLDER ${lib_folder}/tracy)
 endif()
 if(NOT TARGET math)
-    set(math_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Maths)
+    set(math_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvMaths)
     file(GLOB_RECURSE math_impl CONFIGURE_DEPENDS  
     "${math_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE math_head CONFIGURE_DEPENDS  
@@ -165,7 +175,7 @@ endif()
 
 
 if(NOT TARGET Debug)
-    set(Debug_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Debug)
+    set(Debug_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvDebug)
     file(GLOB_RECURSE Debug_impl CONFIGURE_DEPENDS  
     "${Debug_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE Debug_head CONFIGURE_DEPENDS  
@@ -178,7 +188,7 @@ if(NOT TARGET Debug)
 endif()
 
 if(NOT TARGET audio)
-    set(audio_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Audio)
+    set(audio_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvAudio)
     file(GLOB_RECURSE audio_impl CONFIGURE_DEPENDS  
     "${audio_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE audio_head CONFIGURE_DEPENDS  
@@ -198,7 +208,7 @@ if(NOT TARGET audio)
 endif()
 
 if(NOT TARGET physics)
-    set(physics_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Physics)
+    set(physics_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvPhysics)
     file(GLOB_RECURSE physics_impl CONFIGURE_DEPENDS  
     "${physics_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE physics_head CONFIGURE_DEPENDS  
@@ -219,7 +229,7 @@ if(NOT TARGET physics)
 endif()
 
 if(NOT TARGET rendering)
-    set(rendering_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Rendering)
+    set(rendering_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvRendering)
     file(GLOB_RECURSE rendering_impl CONFIGURE_DEPENDS  
     "${rendering_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE rendering_head CONFIGURE_DEPENDS  
@@ -239,7 +249,7 @@ if(NOT TARGET rendering)
     set_target_properties(rendering PROPERTIES FOLDER ${lib_folder}/rendering)
 endif()
 if(NOT TARGET core)
-    set(core_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Core)
+    set(core_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvCore)
     file(GLOB_RECURSE core_impl CONFIGURE_DEPENDS  
     "${core_SOURCE_DIR_}/*.cpp" "${core_SOURCE_DIR_}/*.inl")
     file(GLOB_RECURSE core_head CONFIGURE_DEPENDS  
@@ -261,6 +271,7 @@ if(NOT TARGET core)
     target_include_directories(core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sol/include>)
     set_target_properties(core PROPERTIES FOLDER ${lib_folder}/core)
     target_compile_options(core PRIVATE /bigobj )
-    target_compile_definitions(core PUBLIC LUA_SCRIPTING)
+    target_compile_definitions(core PUBLIC LUA_SCRIPTING
+    )
     #target_compile_options(core PRIVATE /bigobj )
 endif()

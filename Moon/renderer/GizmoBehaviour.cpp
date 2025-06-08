@@ -1,80 +1,82 @@
 /**
-* @project: erload
-* @author: erload Tech.
+* @project: Overload
+* @author: Overload Tech.
 * @licence: MIT
 */
 
 #include "GizmoBehaviour.h"
-
+//#include "OvEditor/Core/EditorActions.h"
+//#include "OvEditor/Settings/EditorSettings.h"
 
 float SnapValue(float p_value, float p_step)
 {
 	return p_value - std::fmod(p_value, p_step);
 }
 
-Maths::FVector3 SnapValue(Maths::FVector3 p_value, float p_step)
+OvMaths::FVector3 SnapValue(OvMaths::FVector3 p_value, float p_step)
 {
-	Maths::FVector3 result;
+	OvMaths::FVector3 result;
 	result.x = std::round(p_value.x / p_step) * p_step;
 	result.y = std::round(p_value.y / p_step) * p_step;
 	result.z = std::round(p_value.z / p_step) * p_step;
 	return result;
 }
 
-bool Editor::Core::GizmoBehaviour::IsSnappedBehaviourEnabled() const
+bool OvEditor::Core::GizmoBehaviour::IsSnappedBehaviourEnabled() const
 {
+
 	return false;
 }
 
-void Editor::Core::GizmoBehaviour::StartPicking(::Core::ECS::Actor& p_target, const Maths::FVector3& p_cameraPosition, EGizmoOperation p_operation, EDirection p_direction)
+void OvEditor::Core::GizmoBehaviour::StartPicking(OvCore::ECS::Actor& p_target, const OvMaths::FVector3& p_cameraPosition, EGizmoOperation p_operation, EDirection p_direction)
 {
 	m_target = &p_target;
 	m_firstMouse = true;
 	m_firstPick = true;
 	m_originalTransform = p_target.transform.GetFTransform();
-	m_distanceToActor = Maths::FVector3::Distance(p_cameraPosition, m_target->transform.GetWorldPosition());
+	m_distanceToActor = OvMaths::FVector3::Distance(p_cameraPosition, m_target->transform.GetWorldPosition());
 	m_currentOperation = p_operation;
 	m_direction = p_direction;
 }
 
-void Editor::Core::GizmoBehaviour::StopPicking()
+void OvEditor::Core::GizmoBehaviour::StopPicking()
 {
 	m_target = nullptr;
 }
 
-Maths::FVector3 Editor::Core::GizmoBehaviour::GetFakeDirection() const
+OvMaths::FVector3 OvEditor::Core::GizmoBehaviour::GetFakeDirection() const
 {
-	auto result = Maths::FVector3();
+	auto result = OvMaths::FVector3();
 
 	switch (m_direction)
 	{
-	case Editor::Core::GizmoBehaviour::EDirection::X:
-		result = Maths::FVector3::Right;
+	case OvEditor::Core::GizmoBehaviour::EDirection::X:
+		result = OvMaths::FVector3::Right;
 		break;
-	case Editor::Core::GizmoBehaviour::EDirection::Y:
-		result = Maths::FVector3::Up;
+	case OvEditor::Core::GizmoBehaviour::EDirection::Y:
+		result = OvMaths::FVector3::Up;
 		break;
-	case Editor::Core::GizmoBehaviour::EDirection::Z:
-		result = Maths::FVector3::Forward;
+	case OvEditor::Core::GizmoBehaviour::EDirection::Z:
+		result = OvMaths::FVector3::Forward;
 		break;
 	}
 
 	return result;
 }
 
-Maths::FVector3 Editor::Core::GizmoBehaviour::GetRealDirection(bool p_relative) const
+OvMaths::FVector3 OvEditor::Core::GizmoBehaviour::GetRealDirection(bool p_relative) const
 {
-	auto result = Maths::FVector3();
+	auto result = OvMaths::FVector3();
 
 	switch (m_direction)
 	{
-	case Editor::Core::GizmoBehaviour::EDirection::X:
+	case OvEditor::Core::GizmoBehaviour::EDirection::X:
 		result = p_relative ? m_originalTransform.GetWorldRight() : m_originalTransform.GetLocalRight();
 		break;
-	case Editor::Core::GizmoBehaviour::EDirection::Y:
+	case OvEditor::Core::GizmoBehaviour::EDirection::Y:
 		result = p_relative ? m_originalTransform.GetWorldUp() : m_originalTransform.GetLocalUp();
 		break;
-	case Editor::Core::GizmoBehaviour::EDirection::Z:
+	case OvEditor::Core::GizmoBehaviour::EDirection::Z:
 		result = p_relative ? m_originalTransform.GetWorldForward() : m_originalTransform.GetLocalForward();
 		break;
 	}
@@ -82,26 +84,26 @@ Maths::FVector3 Editor::Core::GizmoBehaviour::GetRealDirection(bool p_relative) 
 	return result;
 }
 
-Maths::FVector2 Editor::Core::GizmoBehaviour::GetScreenDirection(const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector2& p_viewSize) const
+OvMaths::FVector2 OvEditor::Core::GizmoBehaviour::GetScreenDirection(const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector2& p_viewSize) const
 {
 	auto start = m_originalTransform.GetWorldPosition();
 	auto end = m_originalTransform.GetWorldPosition() + GetRealDirection(true) * 0.01f;
 
-	auto start2D = Maths::FVector2();
+	auto start2D = OvMaths::FVector2();
 	{
-		auto clipSpacePos = p_projectionMatrix * (p_viewMatrix * Maths::FVector4{ start.x, start.y, start.z, 1.0f });
-		auto ndcSpacePos = Maths::FVector3{ clipSpacePos.x, clipSpacePos.y, clipSpacePos.z } / clipSpacePos.w;
-		auto windowSpacePos = ((Maths::FVector2{ ndcSpacePos.x, ndcSpacePos.y } + 1.0f) / 2.0f);
+		auto clipSpacePos = p_projectionMatrix * (p_viewMatrix * OvMaths::FVector4{ start.x, start.y, start.z, 1.0f });
+		auto ndcSpacePos = OvMaths::FVector3{ clipSpacePos.x, clipSpacePos.y, clipSpacePos.z } / clipSpacePos.w;
+		auto windowSpacePos = ((OvMaths::FVector2{ ndcSpacePos.x, ndcSpacePos.y } + 1.0f) / 2.0f);
 		windowSpacePos.x *= p_viewSize.x;
 		windowSpacePos.y *= p_viewSize.y;
 		start2D = windowSpacePos;
 	}
 
-	auto end2D = Maths::FVector2();
+	auto end2D = OvMaths::FVector2();
 	{
-		auto clipSpacePos = p_projectionMatrix * (p_viewMatrix * Maths::FVector4{ end.x, end.y, end.z, 1.0f });
-		auto ndcSpacePos = Maths::FVector3{ clipSpacePos.x, clipSpacePos.y, clipSpacePos.z } / clipSpacePos.w;
-		auto windowSpacePos = ((Maths::FVector2{ ndcSpacePos.x, ndcSpacePos.y } + 1.0f) / 2.0f);
+		auto clipSpacePos = p_projectionMatrix * (p_viewMatrix * OvMaths::FVector4{ end.x, end.y, end.z, 1.0f });
+		auto ndcSpacePos = OvMaths::FVector3{ clipSpacePos.x, clipSpacePos.y, clipSpacePos.z } / clipSpacePos.w;
+		auto windowSpacePos = ((OvMaths::FVector2{ ndcSpacePos.x, ndcSpacePos.y } + 1.0f) / 2.0f);
 		windowSpacePos.x *= p_viewSize.x;
 		windowSpacePos.y *= p_viewSize.y;
 		end2D = windowSpacePos;
@@ -111,31 +113,31 @@ Maths::FVector2 Editor::Core::GizmoBehaviour::GetScreenDirection(const Maths::FM
 
 	result.y *= -1; // Screen coordinates are reversed, so we inverse the Y
 
-	return Maths::FVector2::Normalize(result);
+	return OvMaths::FVector2::Normalize(result);
 }
 
-void Editor::Core::GizmoBehaviour::ApplyTranslation(const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector3& p_cameraPosition, const Maths::FVector2& p_viewSize)
+void OvEditor::Core::GizmoBehaviour::ApplyTranslation(const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector3& p_cameraPosition, const OvMaths::FVector2& p_viewSize)
 {
 	auto ray = GetMouseRay(m_currentMouse, p_viewMatrix, p_projectionMatrix, p_viewSize);
 
-	const Maths::FVector3 planeTangent = Maths::FVector3::Cross(GetRealDirection(true), m_target->transform.GetWorldPosition() - p_cameraPosition);
-	const Maths::FVector3 planeNormal = Maths::FVector3::Cross(GetRealDirection(true), planeTangent);
+	const OvMaths::FVector3 planeTangent = OvMaths::FVector3::Cross(GetRealDirection(true), m_target->transform.GetWorldPosition() - p_cameraPosition);
+	const OvMaths::FVector3 planeNormal = OvMaths::FVector3::Cross(GetRealDirection(true), planeTangent);
 
-	Maths::FVector3 direction = GetRealDirection(true);
+	OvMaths::FVector3 direction = GetRealDirection(true);
 
-	Maths::FVector3 planePoint = m_originalTransform.GetWorldPosition();
+	OvMaths::FVector3 planePoint = m_originalTransform.GetWorldPosition();
 
-	const float denom = Maths::FVector3::Dot(ray, planeNormal);
+	const float denom = OvMaths::FVector3::Dot(ray, planeNormal);
 
 	if (std::abs(denom) <= 0.001f)
 		return;
 
-	const float t = Maths::FVector3::Dot(planePoint - p_cameraPosition, planeNormal) / denom;
+	const float t = OvMaths::FVector3::Dot(planePoint - p_cameraPosition, planeNormal) / denom;
 
 	if (t <= 0.001f)
 		return;
 
-	Maths::FVector3 point = p_cameraPosition + ray * t;
+	OvMaths::FVector3 point = p_cameraPosition + ray * t;
 
 	if (m_firstPick)
 	{
@@ -150,47 +152,101 @@ void Editor::Core::GizmoBehaviour::ApplyTranslation(const Maths::FMatrix4& p_vie
 		translationVector = { 3,3,3 };
 	}
 
-	Maths::FVector3 projectedPoint = planePoint + direction * Maths::FVector3::Dot(translationVector, direction);
+	OvMaths::FVector3 projectedPoint = planePoint + direction * OvMaths::FVector3::Dot(translationVector, direction);
 
 	m_target->transform.SetWorldPosition(projectedPoint);
 }
 
-void Editor::Core::GizmoBehaviour::ApplyRotation(const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector2& p_viewSize) const
+void OvEditor::Core::GizmoBehaviour::ApplyRotation(const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector2& p_viewSize) const
 {
 	auto unitsPerPixel = 0.2f;
 	auto originRotation = m_originalTransform.GetWorldRotation();
 
 	auto screenDirection = GetScreenDirection(p_viewMatrix, p_projectionMatrix, p_viewSize);
-	screenDirection = Maths::FVector2(-screenDirection.y, screenDirection.x);
+	screenDirection = OvMaths::FVector2(-screenDirection.y, screenDirection.x);
 
 	auto totalDisplacement = m_currentMouse - m_originMouse;
-	auto rotationCoefficient = Maths::FVector2::Dot(totalDisplacement, screenDirection) * unitsPerPixel;
+	auto rotationCoefficient = OvMaths::FVector2::Dot(totalDisplacement, screenDirection) * unitsPerPixel;
 
 	if (IsSnappedBehaviourEnabled())
 	{
 		rotationCoefficient = 3.0f;
 	}
 
-	auto rotationToApply = Maths::FQuaternion(Maths::FVector3(GetFakeDirection() * rotationCoefficient));
+	auto rotationToApply = OvMaths::FQuaternion(OvMaths::FVector3(GetFakeDirection() * rotationCoefficient));
 	m_target->transform.SetWorldRotation(originRotation * rotationToApply);
 }
 
-void Editor::Core::GizmoBehaviour::ApplyScale(const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector2& p_viewSize) const
+void OvEditor::Core::GizmoBehaviour::ApplyScale(const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector3& p_cameraPosition, const OvMaths::FVector2& p_viewSize)
 {
-	auto unitsPerPixel = 0.01f;
-	auto originScale = m_originalTransform.GetWorldScale();
+	if (!m_target)
+		return;
 
-	auto screenDirection = GetScreenDirection(p_viewMatrix, p_projectionMatrix, p_viewSize);
+	const auto ray = GetMouseRay(m_currentMouse, p_viewMatrix, p_projectionMatrix, p_viewSize);
 
-	auto totalDisplacement = m_currentMouse - m_originMouse;
-	auto scaleCoefficient = Maths::FVector2::Dot(totalDisplacement, screenDirection) * unitsPerPixel;
+	const OvMaths::FVector3 gizmoAxisDirection = GetRealDirection(true);
+
+	OvMaths::FVector3 vectorToCamera = m_target->transform.GetWorldPosition() - p_cameraPosition;
+	if (OvMaths::FVector3::Dot(vectorToCamera, vectorToCamera) < 0.0001f)
+	{
+		vectorToCamera = m_originalTransform.GetWorldUp();
+		if (std::abs(OvMaths::FVector3::Dot(gizmoAxisDirection, vectorToCamera)) > 0.99f)
+		{
+			vectorToCamera = m_originalTransform.GetWorldRight();
+		}
+	}
+
+	const OvMaths::FVector3 planeTangent = OvMaths::FVector3::Cross(gizmoAxisDirection, vectorToCamera);
+
+	OvMaths::FVector3 tempPlaneNormal = OvMaths::FVector3::Cross(gizmoAxisDirection, planeTangent);
+	if (OvMaths::FVector3::Dot(tempPlaneNormal, tempPlaneNormal) < 0.0001f)
+	{
+		OvMaths::FVector3 nonCollinearVector = OvMaths::FVector3::Up;
+		if (std::abs(OvMaths::FVector3::Dot(gizmoAxisDirection, nonCollinearVector)) > 0.99f)
+		{
+			nonCollinearVector = OvMaths::FVector3::Right;
+		}
+		tempPlaneNormal = OvMaths::FVector3::Cross(gizmoAxisDirection, nonCollinearVector);
+	}
+	const OvMaths::FVector3 planeNormal = OvMaths::FVector3::Normalize(tempPlaneNormal);
+
+
+	const OvMaths::FVector3 planePoint = m_originalTransform.GetWorldPosition();
+
+	const float denom = OvMaths::FVector3::Dot(ray, planeNormal);
+
+	if (std::abs(denom) <= 0.001f)
+		return;
+
+	const float t = OvMaths::FVector3::Dot(planePoint - p_cameraPosition, planeNormal) / denom;
+
+	if (t <= 0.001f)
+		return;
+
+	const OvMaths::FVector3 pointOnPlane = p_cameraPosition + ray * t * 2.0f;
+
+	OvMaths::FVector3 displacementOnPlane;
+	if (m_firstPick)
+	{
+		m_initialOffset = m_originalTransform.GetWorldPosition() - pointOnPlane;
+		m_firstPick = false;
+		displacementOnPlane = OvMaths::FVector3::Zero;
+	}
+	else
+	{
+		displacementOnPlane = pointOnPlane - m_originalTransform.GetWorldPosition() + m_initialOffset;
+	}
+
+	float scaleDeltaCoefficient = OvMaths::FVector3::Dot(displacementOnPlane, gizmoAxisDirection);
 
 	if (IsSnappedBehaviourEnabled())
 	{
-		scaleCoefficient = 3.0f;
+		scaleDeltaCoefficient = 3.0f;
 	}
 
-	auto newScale = originScale + GetFakeDirection() * scaleCoefficient;
+	const auto originScale = m_originalTransform.GetWorldScale();
+
+	auto newScale = originScale + GetFakeDirection() * scaleDeltaCoefficient;
 
 	/* Prevent scale from being negative*/
 	newScale.x = std::max(newScale.x, 0.0001f);
@@ -200,7 +256,7 @@ void Editor::Core::GizmoBehaviour::ApplyScale(const Maths::FMatrix4& p_viewMatri
 	m_target->transform.SetWorldScale(newScale);
 }
 
-void Editor::Core::GizmoBehaviour::ApplyOperation(const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector3& p_cameraPosition, const Maths::FVector2& p_viewSize)
+void OvEditor::Core::GizmoBehaviour::ApplyOperation(const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector3& p_cameraPosition, const OvMaths::FVector2& p_viewSize)
 {
 	switch (m_currentOperation)
 	{
@@ -213,12 +269,12 @@ void Editor::Core::GizmoBehaviour::ApplyOperation(const Maths::FMatrix4& p_viewM
 		break;
 
 	case EGizmoOperation::SCALE:
-		ApplyScale(p_viewMatrix, p_projectionMatrix, p_viewSize);
+		ApplyScale(p_viewMatrix, p_projectionMatrix, p_cameraPosition, p_viewSize);
 		break;
 	}
 }
 
-void Editor::Core::GizmoBehaviour::SetCurrentMouse(const Maths::FVector2& p_mousePosition)
+void OvEditor::Core::GizmoBehaviour::SetCurrentMouse(const OvMaths::FVector2& p_mousePosition)
 {
 	if (m_firstMouse)
 	{
@@ -231,28 +287,28 @@ void Editor::Core::GizmoBehaviour::SetCurrentMouse(const Maths::FVector2& p_mous
 	}
 }
 
-bool Editor::Core::GizmoBehaviour::IsPicking() const
+bool OvEditor::Core::GizmoBehaviour::IsPicking() const
 {
 	return m_target;
 }
 
-Editor::Core::GizmoBehaviour::EDirection Editor::Core::GizmoBehaviour::GetDirection() const
+OvEditor::Core::GizmoBehaviour::EDirection OvEditor::Core::GizmoBehaviour::GetDirection() const
 {
 	return m_direction;
 }
 
-Maths::FVector3 Editor::Core::GizmoBehaviour::GetMouseRay(const Maths::FVector2& p_mousePos, const Maths::FMatrix4& p_viewMatrix, const Maths::FMatrix4& p_projectionMatrix, const Maths::FVector2& p_viewSize)
+OvMaths::FVector3 OvEditor::Core::GizmoBehaviour::GetMouseRay(const OvMaths::FVector2& p_mousePos, const OvMaths::FMatrix4& p_viewMatrix, const OvMaths::FMatrix4& p_projectionMatrix, const OvMaths::FVector2& p_viewSize)
 {
 	float x = 2.0f * (p_mousePos.x / p_viewSize.x) - 1.0f;
 	float y = 1.0f - 2.0f * (p_mousePos.y / p_viewSize.y);
 
-	Maths::FMatrix4 inverseView = Maths::FMatrix4::Inverse(p_viewMatrix);
-	Maths::FMatrix4 inverseProjection = Maths::FMatrix4::Inverse(p_projectionMatrix);
+	OvMaths::FMatrix4 inverseView = OvMaths::FMatrix4::Inverse(p_viewMatrix);
+	OvMaths::FMatrix4 inverseProjection = OvMaths::FMatrix4::Inverse(p_projectionMatrix);
 
-	Maths::FMatrix4 inverseViewProjection = inverseView * inverseProjection;
+	OvMaths::FMatrix4 inverseViewProjection = inverseView * inverseProjection;
 
-	Maths::FVector4 nearestPoint = inverseViewProjection * Maths::FVector4(x, y, -1.0f, 1.0f);
-	Maths::FVector4 farthestPoint = inverseViewProjection * Maths::FVector4(x, y, 1.0f, 1.0f);
+	OvMaths::FVector4 nearestPoint = inverseViewProjection * OvMaths::FVector4(x, y, -1.0f, 1.0f);
+	OvMaths::FVector4 farthestPoint = inverseViewProjection * OvMaths::FVector4(x, y, 1.0f, 1.0f);
 
-	return Maths::FVector3(farthestPoint.x, farthestPoint.y, farthestPoint.z) * nearestPoint.w - Maths::FVector3(nearestPoint.x, nearestPoint.y, nearestPoint.z) * farthestPoint.w; ;
+	return OvMaths::FVector3(farthestPoint.x, farthestPoint.y, farthestPoint.z) * nearestPoint.w - OvMaths::FVector3(nearestPoint.x, nearestPoint.y, nearestPoint.z) * farthestPoint.w; ;
 }

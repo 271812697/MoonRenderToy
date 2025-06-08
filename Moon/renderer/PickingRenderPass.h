@@ -1,45 +1,45 @@
 /**
-* @project: erload
-* @author: erload Tech.
+* @project: Overload
+* @author: Overload Tech.
 * @licence: MIT
 */
 
 #pragma once
 
-#include <Core/ECS/Actor.h>
-#include <Core/ECS/Components/CAmbientBoxLight.h>
-#include <Core/ECS/Components/CAmbientSphereLight.h>
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/Resources/Material.h>
-#include <Core/Rendering/SceneRenderer.h>
-#include <Core/SceneSystem/SceneManager.h>
+#include <OvCore/ECS/Actor.h>
+#include <OvCore/ECS/Components/CAmbientBoxLight.h>
+#include <OvCore/ECS/Components/CAmbientSphereLight.h>
+#include <OvCore/ECS/Components/CModelRenderer.h>
+#include <OvCore/Resources/Material.h>
+#include <OvCore/Rendering/SceneRenderer.h>
+#include <OvCore/SceneSystem/SceneManager.h>
 
 #include "Context.h"
 #include "GizmoBehaviour.h"
 
-#include <Rendering/Entities/Camera.h>
-#include <Rendering/Features/DebugShapeRenderFeature.h>
+#include <OvRendering/Entities/Camera.h>
+#include <OvRendering/Features/DebugShapeRenderFeature.h>
 
-namespace Editor::Rendering
+namespace OvEditor::Rendering
 {
 	/**
 	* Draw the scene for actor picking
 	*/
-	class PickingRenderPass : public ::Rendering::Core::ARenderPass
+	class PickingRenderPass : public OvRendering::Core::ARenderPass
 	{
 	public:
 		using PickingResult =
 			std::optional<
-			std::variant<Tools::Utils::OptRef<::Core::ECS::Actor>,
-			Editor::Core::GizmoBehaviour::EDirection>
+			std::variant<OvTools::Utils::OptRef<OvCore::ECS::Actor>,
+			OvEditor::Core::GizmoBehaviour::EDirection>
 			>;
 
 		/**
 		* Constructor
 		* @param p_renderer
 		*/
-		PickingRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
-		virtual ~PickingRenderPass()noexcept override;
+		PickingRenderPass(OvRendering::Core::CompositeRenderer& p_renderer);
+
 		/**
 		* Return the picking result at the given position
 		* @param p_scene
@@ -47,27 +47,29 @@ namespace Editor::Rendering
 		* @param p_y
 		*/
 		PickingResult ReadbackPickingResult(
-			const ::Core::SceneSystem::Scene& p_scene,
+			const OvCore::SceneSystem::Scene& p_scene,
 			uint32_t p_x,
 			uint32_t p_y
 		);
 
 	private:
-		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
-		void DrawPickableModels(::Rendering::Data::PipelineState p_pso, ::Core::SceneSystem::Scene& p_scene);
-		void DrawPickableCameras(::Rendering::Data::PipelineState p_pso, ::Core::SceneSystem::Scene& p_scene);
-		void DrawPickableLights(::Rendering::Data::PipelineState p_pso, ::Core::SceneSystem::Scene& p_scene);
+		virtual void Draw(OvRendering::Data::PipelineState p_pso) override;
+		void DrawPickableModels(OvRendering::Data::PipelineState p_pso, OvCore::SceneSystem::Scene& p_scene);
+		void DrawPickableCameras(OvRendering::Data::PipelineState p_pso, OvCore::SceneSystem::Scene& p_scene);
+		void DrawPickableReflectionProbes(OvRendering::Data::PipelineState p_pso, OvCore::SceneSystem::Scene& p_scene);
+		void DrawPickableLights(OvRendering::Data::PipelineState p_pso, OvCore::SceneSystem::Scene& p_scene);
 		void DrawPickableGizmo(
-			::Rendering::Data::PipelineState p_pso,
-			const Maths::FVector3& p_position,
-			const Maths::FQuaternion& p_rotation,
-			Editor::Core::EGizmoOperation p_operation
+			OvRendering::Data::PipelineState p_pso,
+			const OvMaths::FVector3& p_position,
+			const OvMaths::FQuaternion& p_rotation,
+			OvEditor::Core::EGizmoOperation p_operation
 		);
 
 	private:
-		::Rendering::HAL::Framebuffer m_actorPickingFramebuffer;
-		::Core::Resources::Material m_actorPickingMaterial;
-		::Core::Resources::Material m_lightMaterial;
-		::Core::Resources::Material m_gizmoPickingMaterial;
+		OvRendering::HAL::Framebuffer m_actorPickingFramebuffer;
+		OvCore::Resources::Material m_actorPickingFallbackMaterial;
+		OvCore::Resources::Material m_reflectionProbeMaterial;
+		OvCore::Resources::Material m_lightMaterial;
+		OvCore::Resources::Material m_gizmoPickingMaterial;
 	};
 }

@@ -1,14 +1,21 @@
-#include <filesystem>
-#include <Rendering/Entities/Light.h>
-#include <Core/Global/ServiceLocator.h>
-#include <Tools/Utils/SystemCalls.h>
-#include <Debug/Assertion.h>
-#include <Core/Scripting/ScriptEngine.h>
+/**
+* @project: Overload
+* @author: Overload Tech.
+* @licence: MIT
+*/
 
+#include <filesystem>
+
+#include <OvCore/Global/ServiceLocator.h>
+#include <OvCore/Scripting/ScriptEngine.h>
+#include <OvDebug/Assertion.h>
 #include "Context.h"
 
-using namespace Core::Global;
-using namespace Core::ResourceManagement;
+#include <OvRendering/Entities/Light.h>
+#include <OvTools/Utils/SystemCalls.h>
+
+using namespace OvCore::Global;
+using namespace OvCore::ResourceManagement;
 
 constexpr std::array<std::pair<int, int>, 13> kResolutions
 {
@@ -52,11 +59,11 @@ std::array<int, 4> FindBestFitWindowSizeAndPosition(std::array<int, 4> p_workAre
 		}
 	}
 
-	assert(false, "No resolution found to fit the work area");
+	OVASSERT(false, "No resolution found to fit the work area");
 	return {};
 }
 
-Editor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
+OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
 	projectPath(p_projectPath),
 	projectName(p_projectName),
 	projectFilePath(p_projectPath + p_projectName + ".ovproject"),
@@ -76,45 +83,39 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 
 
 
-
 	/* Graphics context creation */
-	driver = std::make_unique<Rendering::Context::Driver>(Rendering::Settings::DriverSettings{ true });
-	//textureRegistry = std::make_unique<Editor::Utils::TextureRegistry>();
-
-	std::filesystem::create_directories(Tools::Utils::SystemCalls::GetPathToAppdata() + "\\erloadTech\\Editor\\");
-
+	driver = std::make_unique<OvRendering::Context::Driver>(OvRendering::Settings::DriverSettings{ true });
 
 
 
 	/* Audio */
-	//audioEngine = std::make_unique<Audio::Core::AudioEngine>();
+	audioEngine = std::make_unique<OvAudio::Core::AudioEngine>();
 
 	/* Editor resources */
-	editorResources = std::make_unique<Editor::Core::EditorResources>(editorAssetsPath);
+	editorResources = std::make_unique<OvEditor::Core::EditorResources>(editorAssetsPath);
 
 	/* Physics engine */
-	physicsEngine = std::make_unique<Physics::Core::PhysicsEngine>(Physics::Settings::PhysicsSettings{ {0.0f, -9.81f, 0.0f } });
+	physicsEngine = std::make_unique<OvPhysics::Core::PhysicsEngine>(OvPhysics::Settings::PhysicsSettings{ {0.0f, -9.81f, 0.0f } });
 
 	/* Scripting */
-	scriptEngine = std::make_unique<::Core::Scripting::ScriptEngine>();
+	scriptEngine = std::make_unique<OvCore::Scripting::ScriptEngine>();
 	scriptEngine->SetScriptRootFolder(projectScriptsPath);
 
 	/* Service Locator providing */
-	ServiceLocator::Provide<Physics::Core::PhysicsEngine>(*physicsEngine);
+	ServiceLocator::Provide<OvPhysics::Core::PhysicsEngine>(*physicsEngine);
 	ServiceLocator::Provide<ModelManager>(modelManager);
 	ServiceLocator::Provide<TextureManager>(textureManager);
 	ServiceLocator::Provide<ShaderManager>(shaderManager);
 	ServiceLocator::Provide<MaterialManager>(materialManager);
 	ServiceLocator::Provide<SoundManager>(soundManager);
 
-	ServiceLocator::Provide<::Core::SceneSystem::SceneManager>(sceneManager);
-	ServiceLocator::Provide<Audio::Core::AudioEngine>(*audioEngine);
-	ServiceLocator::Provide<::Core::Scripting::ScriptEngine>(*scriptEngine);
-	ServiceLocator::Provide<::Editor::Core::Context>(*this);
-
+	ServiceLocator::Provide<OvCore::SceneSystem::SceneManager>(sceneManager);
+	ServiceLocator::Provide<OvAudio::Core::AudioEngine>(*audioEngine);
+	ServiceLocator::Provide<OvCore::Scripting::ScriptEngine>(*scriptEngine);
+	ServiceLocator::Provide<OvEditor::Core::Context>(*this);
 }
 
-Editor::Core::Context::~Context()
+OvEditor::Core::Context::~Context()
 {
 	modelManager.UnloadResources();
 	textureManager.UnloadResources();
@@ -123,18 +124,17 @@ Editor::Core::Context::~Context()
 	soundManager.UnloadResources();
 }
 
-void Editor::Core::Context::ResetProjectSettings()
+void OvEditor::Core::Context::ResetProjectSettings()
 {
 
 }
 
-bool Editor::Core::Context::IsProjectSettingsIntegrityVerified()
+bool OvEditor::Core::Context::IsProjectSettingsIntegrityVerified()
 {
-
 	return false;
 }
 
-void Editor::Core::Context::ApplyProjectSettings()
+void OvEditor::Core::Context::ApplyProjectSettings()
 {
 
 }
