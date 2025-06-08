@@ -46,7 +46,7 @@ namespace ImPlotCustom {
 				bar_w = gp.Style.MajorTickLen.y;
 		}
 
-		ImDrawList& DrawList = *ImGui::GetForegroundDrawList();;
+		ImDrawList& DrawList = *ImGui::GetForegroundDrawList();
 		ImRect bb_frame = ImRect(pos, pos + frame_size);
 
 

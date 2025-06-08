@@ -230,7 +230,7 @@ namespace QtImGui {
 
 		std::string path = "/Fonts/Ruda-Bold.ttf";
 		path = PROJECT_ENGINE_PATH + path;
-		io.FontDefault = io.Fonts->AddFontFromFileTTF(path.c_str(), 20);
+		io.FontDefault = io.Fonts->AddFontFromFileTTF(path.c_str(), 25);
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
 		// Upload texture to graphics system

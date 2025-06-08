@@ -263,7 +263,7 @@ namespace OvMaths
 		* @param p_matrix
 		*/
 		static FMatrix4 Transpose(const FMatrix4& p_matrix);
-
+		FMatrix4 TransposeMartix();
 		/**
 		* Return inverse matrix
 		* @param p_matrix
