@@ -11,6 +11,7 @@
 
 #include "OvCore/Global/ServiceLocator.h"
 #include "SceneView.h"
+#include <iostream>
 #include <QMouseEvent>
 
 static OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
@@ -97,8 +98,8 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 		GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
 		GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
 	}
-	ClearEvents();
-	
+	input.ClearEvents();
+
 }
 
 void OvEditor::Panels::SceneView::InitFrame()
@@ -143,7 +144,7 @@ void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
 	input.ReceiveEvent(e);
 	const QEvent::Type t = e->type();
 
-	m_cameraController.ReceiveEvent(e);
+	//m_cameraController.ReceiveEvent(e);
 	if (!m_cameraController.IsRightMousePressed()) {
 		if (t == QEvent::KeyPress) {
 			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
@@ -158,116 +159,9 @@ void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
 				m_currentOperation = OvEditor::Core::EGizmoOperation::SCALE;
 			}
 		}
-
-	}
-
-
-	//handle pick
-	if (t == QEvent::MouseButtonRelease) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if (e2->button() == Qt::LeftButton) {
-			m_gizmoOperations.StopPicking();
-		}
-	}
-	std::optional<
-		std::variant<OvTools::Utils::OptRef<OvCore::ECS::Actor>,
-		OvEditor::Core::GizmoBehaviour::EDirection>
-	>pickingResult = std::nullopt;
-	if (t == QEvent::MouseMove) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto mouseX = e2->x();
-
-		auto mouseY = e2->y();
-#else
-		auto x = e2->localPos().x();
-		auto y = e2->localPos().y();
-#endif
-
-		mouseY = GetSafeSize().second - mouseY - 1;
-
-		auto& scene = *GetScene();
-
-		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-
-		pickingResult = actorPickingFeature.ReadbackPickingResult(
-			scene,
-			static_cast<uint32_t>(mouseX),
-			static_cast<uint32_t>(mouseY)
-		);
-		m_highlightedActor = {};
-		m_highlightedGizmoDirection = {};
-
-		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
-		{
-			if (const auto pval = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&pickingResult.value()))
-			{
-				m_highlightedActor = *pval;
-			}
-			else if (const auto pval = std::get_if<OvEditor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
-			{
-				m_highlightedGizmoDirection = *pval;
-			}
-		}
-		else
-		{
-			m_highlightedActor = {};
-			m_highlightedGizmoDirection = {};
-		}
-	}
-
-	if (t == QEvent::MouseButtonPress) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if (e2->button() == Qt::LeftButton && !m_cameraController.IsRightMousePressed()) {
-			if (m_highlightedGizmoDirection)
-			{
-				m_gizmoOperations.StartPicking(
-					GetSelectedActor(),
-					m_camera.GetPosition(),
-					m_currentOperation,
-					m_highlightedGizmoDirection.value());
-			}
-			else if (m_highlightedActor)
-			{
-				SelectActor(m_highlightedActor.value());
-			}
-			else
-			{
-				UnselectActor();
-			}
-		}
-	}
-
-
-	if (t == QEvent::MouseMove) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto mouseX = e2->x();
-
-		auto mouseY = e2->y();
-#else
-		auto x = e2->localPos().x();
-		auto y = e2->localPos().y();
-#endif
-		if (m_gizmoOperations.IsPicking())
-		{
-			auto [winWidth, winHeight] = GetSafeSize();
-
-			m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mouseX), static_cast<float>(mouseY) });
-			m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
-		}
 	}
 }
 
-OvEditor::Panels::InputState& OvEditor::Panels::SceneView::getInutState()
-{
-	return input;
-}
-
-void OvEditor::Panels::SceneView::ClearEvents()
-{
-	input.ClearEvents();
-}
 
 OvCore::Rendering::SceneRenderer::SceneDescriptor OvEditor::Panels::SceneView::CreateSceneDescriptor()
 {
@@ -313,149 +207,90 @@ bool IsResizing()
 void OvEditor::Panels::SceneView::HandleActorPicking()
 {
 
-}
 
-OvEditor::Panels::InputState::InputState()
-{
-}
-namespace OvEditor::Panels {
-	KeyState OvEditor::Panels::InputState::GetKeyState(KeyBoard p_key) 
+	if (input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
-		return m_keyEvents[p_key];
+		m_gizmoOperations.StopPicking();
+
+
 	}
 
-	MouseButtonState InputState::GetMouseButtonState(MouseButton p_button)
+	if (!m_gizmoOperations.IsPicking())
 	{
-		return m_mouseButtonEvents[p_button];
-	}
 
-	bool InputState::IsKeyPressed(KeyBoard p_key)
-	{
-		return m_keyEvents.find(p_key) != m_keyEvents.end() && m_keyEvents.at(p_key) == KeyState::Down;
-	}
+		auto mousePos = input.GetMousePosition();
+		int mouseY = GetSafeSize().second - mousePos.second - 1;
+		int mouseX = mousePos.first;
 
-	bool InputState::IsKeyReleased(KeyBoard p_key) 
-	{
-		return m_keyEvents.find(p_key) != m_keyEvents.end() && m_keyEvents.at(p_key) == KeyState::Up;
-	}
+		auto& scene = *GetScene();
 
-	bool InputState::IsMouseButtonPressed(MouseButton p_button) 
-	{
-		return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_DOWN;
-	}
+		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
 
-	bool InputState::IsMouseButtonReleased(MouseButton p_button) 
-	{
-		return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_UP;
-	}
+		const auto pickingResult = actorPickingFeature.ReadbackPickingResult(
+			scene,
+			static_cast<uint32_t>(mouseX),
+			static_cast<uint32_t>(mouseY)
+		);
 
-	std::pair<double, double> InputState::GetMousePosition() 
-	{
-		return std::pair<double, double>(mouseX,mouseY);
-	}
 
-	std::pair<double, double> InputState::GetMouseScroll() 
-	{
-		return m_scrollData;
-	}
+		m_highlightedActor = {};
+		m_highlightedGizmoDirection = {};
 
-	void InputState::ClearEvents()
-	{
-		m_keyEvents.clear();
-		m_mouseButtonEvents.clear();
-		m_scrollData = { 0.0, 0.0 };
-	}
-
-	void InputState::ReceiveEvent(QEvent* e)
-	{
-		const QEvent::Type t = e->type();
-		if (t == QEvent::KeyPress) {
-			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
-			Qt::Key key = static_cast<Qt::Key>(e2->key());
-			switch (key)
+		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
+		{
+			if (const auto pval = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&pickingResult.value()))
 			{
-			case Qt::Key_W: { m_keyEvents[KEYW] = KeyState::Down; }break;
-			case Qt::Key_A: { m_keyEvents[KEYA] = KeyState::Down; }break;
-			case Qt::Key_S: { m_keyEvents[KEYS] = KeyState::Down; }break;
-			case Qt::Key_D: { m_keyEvents[KEYD] = KeyState::Down; }break;
-			case Qt::Key_Q: { m_keyEvents[KEYQ] = KeyState::Down; }break;
-			case Qt::Key_E: { m_keyEvents[KEYE] = KeyState::Down; }break;
-			case Qt::Key_R: { m_keyEvents[KEYR] = KeyState::Down; }break;
-			case Qt::Key_F: { m_keyEvents[KEYF] = KeyState::Down; }break;
-			case Qt::Key_Alt: { m_keyEvents[ALTA] = KeyState::Down; }break;
-			case Qt::Key_Right: { m_keyEvents[RIGHT] = KeyState::Down; }break;
-			case Qt::Key_Up: { m_keyEvents[UP] = KeyState::Down; }break;
-			case Qt::Key_Down: { m_keyEvents[DOWN] = KeyState::Down; }break;
-			case Qt::Key_Left: { m_keyEvents[LEFT] = KeyState::Down; }break;
-			case Qt::Key_PageUp: { m_keyEvents[PageUp] = KeyState::Down; }break;
-			case Qt::Key_PageDown: { m_keyEvents[PageDown] = KeyState::Down; }break;
-			default:
-				break;
+				m_highlightedActor = *pval;
 			}
-		}
-		else if (t == QEvent::KeyRelease) {
-			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
-			Qt::Key key = static_cast<Qt::Key>(e2->key());
-			switch (key)
+			else if (const auto pval = std::get_if<OvEditor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
 			{
-			case Qt::Key_W: { m_keyEvents[KEYW] = KeyState::Up; }break;
-			case Qt::Key_A: { m_keyEvents[KEYA] = KeyState::Up; }break;
-			case Qt::Key_S: { m_keyEvents[KEYS] = KeyState::Up; }break;
-			case Qt::Key_D: { m_keyEvents[KEYD] = KeyState::Up; }break;
-			case Qt::Key_Q: { m_keyEvents[KEYQ] = KeyState::Up; }break;
-			case Qt::Key_E: { m_keyEvents[KEYE] = KeyState::Up; }break;
-			case Qt::Key_R: { m_keyEvents[KEYR] = KeyState::Up; }break;
-			case Qt::Key_F: { m_keyEvents[KEYF] = KeyState::Up; }break;
-			case Qt::Key_Alt: { m_keyEvents[ALTA] = KeyState::Up; }break;
-			case Qt::Key_Right: { m_keyEvents[RIGHT] = KeyState::Up; }break;
-			case Qt::Key_Up: { m_keyEvents[UP] = KeyState::Up; }break;
-			case Qt::Key_Down: { m_keyEvents[DOWN] = KeyState::Up; }break;
-			case Qt::Key_Left: { m_keyEvents[LEFT] = KeyState::Up; }break;
-			case Qt::Key_PageUp: { m_keyEvents[PageUp] = KeyState::Up; }break;
-			case Qt::Key_PageDown: { m_keyEvents[PageDown] = KeyState::Up; }break;
-			default:
-				break;
+				m_highlightedGizmoDirection = *pval;
 			}
 		}
-		else if (t == QEvent::MouseMove) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-			mouseX = e2->x();
-			mouseY = e2->y();
+		else
+		{
+			m_highlightedActor = {};
+			m_highlightedGizmoDirection = {};
 		}
-		else if (t == QEvent::MouseButtonRelease) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-			if (e2->button() == Qt::LeftButton) {
-				switch (e2->button())
-				{
-				case Qt::LeftButton: { m_mouseButtonEvents[MOUSE_BUTTON_LEFT] = MouseButtonState::MOUSE_UP; }break;
-				case Qt::RightButton: { m_mouseButtonEvents[MOUSE_BUTTON_RIGHT] = MouseButtonState::MOUSE_UP; }break;
-				case Qt::MiddleButton: { m_mouseButtonEvents[MOUSE_BUTTON_RIGHT] = MouseButtonState::MOUSE_UP; }break;
-				default:
-					break;
-				}
+
+		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) && !m_cameraController.IsRightMousePressed())
+		{
+			if (m_highlightedGizmoDirection)
+			{
+				m_gizmoOperations.StartPicking(
+					GetSelectedActor(),
+					m_camera.GetPosition(),
+					m_currentOperation,
+					m_highlightedGizmoDirection.value());
 			}
-		}
-		else if (t == QEvent::MouseButtonPress) {
-			QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-			if (e2->button() == Qt::LeftButton) {
-				switch (e2->button())
-				{
-				case Qt::LeftButton: { m_mouseButtonEvents[MOUSE_BUTTON_LEFT] = MouseButtonState::MOUSE_DOWN; }break;
-				case Qt::RightButton: { m_mouseButtonEvents[MOUSE_BUTTON_RIGHT] = MouseButtonState::MOUSE_DOWN; }break;
-				case Qt::MiddleButton: { m_mouseButtonEvents[MOUSE_BUTTON_RIGHT] = MouseButtonState::MOUSE_DOWN; }break;
-				default:
-					break;
-				}
+			else if (m_highlightedActor)
+			{
+				SelectActor(m_highlightedActor.value());
 			}
-		}
-		else if (t == QEvent::Wheel) {
-			constexpr float kUnitsPerScroll = 1.0f;
-			QWheelEvent* e2 = static_cast<QWheelEvent*>(e);
-			m_scrollData.second  = 0.002 * static_cast<float>(
-				e2->angleDelta().y()
-				);
+			else
+			{
+				UnselectActor();
+			}
 		}
 	}
+	else
+	{
+		m_highlightedActor = std::nullopt;
+		m_highlightedGizmoDirection = std::nullopt;
+	}
 
+	if (m_gizmoOperations.IsPicking())
+	{
+		auto [winWidth, winHeight] = GetSafeSize();
+
+		auto mousePosition = input.GetMousePosition();
+
+
+
+		m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mousePosition.first), static_cast<float>(mousePosition.second) });
+		m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
+
+	}
 }
+
 

@@ -11,7 +11,7 @@
 #include <OvRendering/Entities/Camera.h>
 
 #include "AView.h"
-class QEvent;
+
 namespace OvEditor::Core
 {
 	/**
@@ -35,6 +35,7 @@ namespace OvEditor::Core
 		* @parma p_deltaTime
 		*/
 		void HandleInputs(float p_deltaTime);
+		void HandleFirstMouse();
 
 		/**
 		* Asks the camera to move to the target actor
@@ -96,7 +97,7 @@ namespace OvEditor::Core
 		* Removes any locked actor
 		*/
 		void UnlockTargetActor();
-		void ReceiveEvent(QEvent* e);
+
 	private:
 		std::optional<std::reference_wrapper<OvCore::ECS::Actor>> GetTargetActor() const;
 		void HandleCameraPanning(const OvMaths::FVector2& p_mouseOffset, bool p_firstMouse);
@@ -109,23 +110,7 @@ namespace OvEditor::Core
 		void HandleMouseReleased();
 
 	private:
-		enum KeyState
-		{
-			Down = 0,
-			Up
-		};
-		enum KeyBoard :uint8_t
-		{
-			KEYW = 0,
-			KEYA,
-			KEYS,
-			KEYD,
-			KEYQ,
-			KEYE,
-			KEYF,
-			ALTA
-		};
-		std::unordered_map<KeyBoard, KeyState>mKeyState;
+
 
 
 		OvEditor::Panels::AView& m_view;

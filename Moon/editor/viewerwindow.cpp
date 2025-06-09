@@ -68,7 +68,7 @@ namespace MOON {
 			std::cout << "say hello" << std::endl;
 			});
 		//¿ªÆô¼ÆÊ±Æ÷
-		this->startTimer(10);
+		this->startTimer(0);
 
 		editorContext = new OvEditor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
@@ -109,9 +109,10 @@ namespace MOON {
 	bool ViewerWindow::event(QEvent* evt)
 	{
 
-		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
+		//RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
+
 		return QOpenGLWidget::event(evt);
 	}
 
