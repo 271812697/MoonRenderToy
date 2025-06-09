@@ -12,6 +12,7 @@
 namespace OvEditor {
 	namespace Panels
 	{
+
 		class AViewControllable : public OvEditor::Panels::AView
 		{
 		public:

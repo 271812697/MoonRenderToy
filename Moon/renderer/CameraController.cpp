@@ -214,7 +214,7 @@ void OvEditor::Core::CameraController::ReceiveEvent(QEvent* e)
 			mKeyState[KEYE] = Down;
 
 		}
-		else if (key == Qt::Key_F || key == Qt::Key_Right || key == Qt::Key_Left || key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_PageUp || key == Qt::Key_PageDown) {
+		else if (key == Qt::Key_Right || key == Qt::Key_Left || key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_PageUp || key == Qt::Key_PageDown) {
 			if (m_view.IsSelectActor()) {
 				auto& target = m_view.GetSelectedActor();
 				auto targetPos = target.transform.GetWorldPosition();
