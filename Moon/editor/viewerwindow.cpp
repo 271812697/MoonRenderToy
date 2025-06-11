@@ -181,6 +181,13 @@ namespace MOON {
 			ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
 			ImPlot::EndPlot();
 		}
+		static ImS8  data[10] = { 1,2,3,4,5,6,7,8,9,10 };
+		if (ImPlot::BeginPlot("Bar Plot")) {
+			ImPlot::PlotBars("Vertical", y.data(), y.size(), 0.5, 1);
+			//ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
+			//ImPlot::PlotBars("Horizontal", data, 10, 0.4, 1, ImPlotBarsFlags_Horizontal);
+			ImPlot::EndPlot();
+		}
 		ImGui::Text("%f ms,%f FPS", ms, fps);
 
 		auto proj = sceneView->GetCamera()->GetProjectionMatrix();
@@ -188,6 +195,7 @@ namespace MOON {
 		view = view.TransposeMartix();
 		proj = proj.TransposeMartix();
 		ImGuizmo::DrawGizmo(view.data, proj.data, 10);
+		ImPlot::ShowDemoWindow();
 
 	}
 	void ViewerWindow::switchScene()
