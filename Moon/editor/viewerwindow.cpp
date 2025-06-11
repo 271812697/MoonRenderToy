@@ -186,6 +186,8 @@ namespace MOON {
 			ImPlot::PlotBars("Vertical", y.data(), y.size(), 0.5, 1);
 			//ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
 			//ImPlot::PlotBars("Horizontal", data, 10, 0.4, 1, ImPlotBarsFlags_Horizontal);
+			for (int i = 0; i < y.size(); ++i)
+				ImPlot::Annotation(i + 1, y[i], ImVec4(0, 0, 0, 0), ImVec2(0, -5), false, "%.1f FPS", y[i]);
 			ImPlot::EndPlot();
 		}
 		ImGui::Text("%f ms,%f FPS", ms, fps);
