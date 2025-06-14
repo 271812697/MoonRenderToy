@@ -1,4 +1,7 @@
 #pragma once
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 //#define IMOGUIZMO_LEFT_HANDED
 #include "imguizmo.h"
 #include <cmath>
@@ -85,15 +88,26 @@ namespace ImGuizmo {
 		void drawPositiveLine(const ImVec2 center, const ImVec2 axis, const ImU32 color, const float radius, const float thickness, const char* text, const bool selected) {
 			const auto lineEndPositive = ImVec2{ center.x + axis.x, center.y + axis.y };
 			internal::config.mDrawList->AddLine(center, lineEndPositive, color, thickness);
-			internal::config.mDrawList->AddCircleFilled(lineEndPositive, radius, color);
+			const auto nor = ImVec2{ -axis.y,axis.x };
+			float len = 1.73 * thickness / sqrtf(nor.x * nor.x + nor.y * nor.y);
+
+			if (axis.x * axis.x + axis.y * axis.y > FLT_EPSILON) {
+				internal::config.mDrawList->AddTriangleFilled(lineEndPositive + nor * len, lineEndPositive - nor * len, lineEndPositive + axis * len * 3.46, color);
+			}
+			else
+			{
+				len = 0;
+			}
+			//internal::config.mDrawList->AddCircleFilled(lineEndPositive, radius, color);
 			const auto labelSize = ImGui::CalcTextSize(text);
-			const auto textPos = ImVec2(floor(lineEndPositive.x - 0.5f * labelSize.x), floor(lineEndPositive.y - 0.5f * labelSize.y));
+			const auto corner = lineEndPositive - nor * len * 2.0;
+			const auto textPos = ImVec2(floor(corner.x - 0.5f * labelSize.x), floor(corner.y - 0.5f * labelSize.y));
 			if (selected) {
 				internal::config.mDrawList->AddCircle(lineEndPositive, radius, IM_COL32_WHITE, 0, 1.1f);
 				internal::config.mDrawList->AddText(textPos, IM_COL32_WHITE, text);
 
 			}
-			else internal::config.mDrawList->AddText(textPos, IM_COL32_BLACK, text);
+			else internal::config.mDrawList->AddText(textPos, color, text);
 		}
 
 		void drawNegativeLine(const ImVec2 center, const ImVec2 axis, const ImU32 color, const float radius, const bool selected) {
@@ -123,7 +137,7 @@ namespace ImGuizmo {
 			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = -f[2]; viewMatrix[11] = 0.0f;
 			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = dot(f, eye); viewMatrix[15] = 1.0f;
 #endif
-	}
+		}
 
 		void invert4x4(const float* m, float* out)
 		{
@@ -148,7 +162,7 @@ namespace ImGuizmo {
 			det = 1.0f / det;
 			for (unsigned int i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
-}
+	}
 
 	static struct Config {
 		// in relation to half the rect size
@@ -157,12 +171,12 @@ namespace ImGuizmo {
 		float positiveRadiusScale = 0.075f;
 		float negativeRadiusScale = 0.05f;
 		float hoverCircleRadiusScale = 0.88f;
-		ImU32 xCircleFrontColor = IM_COL32(255, 54, 83, 255);
-		ImU32 xCircleBackColor = IM_COL32(154, 57, 71, 255);
-		ImU32 yCircleFrontColor = IM_COL32(138, 219, 0, 255);
-		ImU32 yCircleBackColor = IM_COL32(98, 138, 34, 255);
-		ImU32 zCircleFrontColor = IM_COL32(44, 143, 255, 255);
-		ImU32 zCircleBackColor = IM_COL32(52, 100, 154, 255);
+		ImU32 xCircleFrontColor = IM_COL32(255, 0, 0, 255);
+		ImU32 xCircleBackColor = IM_COL32(200, 0, 0, 255);
+		ImU32 yCircleFrontColor = IM_COL32(0, 255, 0, 255);
+		ImU32 yCircleBackColor = IM_COL32(0, 200, 0, 255);
+		ImU32 zCircleFrontColor = IM_COL32(0, 0, 255, 255);
+		ImU32 zCircleBackColor = IM_COL32(0, 0, 200, 255);
 		ImU32 hoverCircleColor = IM_COL32(100, 100, 100, 130);
 	} config;
 
@@ -316,5 +330,5 @@ namespace ImGuizmo {
 	}
 
 		return false;
-	}
+}
 }
