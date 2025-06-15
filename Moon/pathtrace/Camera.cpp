@@ -110,8 +110,6 @@ namespace PathTrace
 		up = { m[1],m[5],m[9] };
 		right = { m[0],m[4],m[8] };
 		UpdateCamera();
-		std::cout << Vec3::Length(forward) << ":" << Vec3::Length(up) << ":" << Vec3::Length(right) << std::endl;;
-
 	}
 
 	Camera::Camera(const Camera& other)
@@ -192,7 +190,7 @@ namespace PathTrace
 	{
 		Vec3 at = position + forward;
 		LookAt(&position.x, &at.x, &up.x, view);
-		const float fov_v = (1.f / ratio) * tanf(fov / 2.f);
-		Perspective(Math::Degrees(fov_v), ratio, 0.1f, 1000.f, projection);
+
+		Perspective(Math::Degrees(fov) / 2, ratio, 0.1f, 1000.f, projection);
 	}
 }
