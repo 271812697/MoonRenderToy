@@ -194,15 +194,11 @@ namespace MOON {
 
 		auto proj = sceneView->GetCamera()->GetProjectionMatrix();
 		auto view = sceneView->GetCamera()->GetViewMatrix();
-		//view = view.TransposeMartix();
+		view = view.TransposeMartix();
 		proj = proj.TransposeMartix();
-		ImGuizmo::SetRect(50, viewH - 150, 100);
-		if (ImGuizmo::DrawGizmo(view.data, proj.data, 0)) {
-			auto& v = sceneView->GetCamera()->GetViewMatrix();
-			sceneView->GetCamera()->SetRotation(OvMaths::FQuaternion(view));
-			;
+		ImGuizmo::SetRect(40, viewH - 160, 120);
+		ImGuizmo::DrawGizmo(view.data, proj.data, 0);
 
-		}
 		ImPlot::ShowDemoWindow();
 
 	}
