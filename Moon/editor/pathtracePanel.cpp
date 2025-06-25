@@ -1,6 +1,7 @@
 #include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/implot/implotCustom.h"
+#include "Qtimgui/implot/imguizmo.h"
 #include <QMouseEvent>
 #include "pathtracePanel.h"
 #include "glloader.h"
@@ -116,6 +117,12 @@ namespace MOON {
 			ImPlot::EndPlot();
 		}
 		ImGui::Text("%f ms,%f FPS", ms, fps);
+		float view[16];
+		float proj[16];
+		PathTrace::CameraController::Instance().GetViewProject(view, proj);
+
+		ImGuizmo::SetRect(50, 50, 100);
+		ImGuizmo::DrawGizmo(view, proj, 0);
 	}
 
 

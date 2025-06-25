@@ -68,7 +68,7 @@ namespace MOON {
 			std::cout << "say hello" << std::endl;
 			});
 		//¿ªÆô¼ÆÊ±Æ÷
-		this->startTimer(10);
+		this->startTimer(0);
 
 		editorContext = new OvEditor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
@@ -109,9 +109,10 @@ namespace MOON {
 	bool ViewerWindow::event(QEvent* evt)
 	{
 
-		RenderWindowInteractor::Instance()->ReceiveEvent(evt);
+		//RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
+
 		return QOpenGLWidget::event(evt);
 	}
 
@@ -180,13 +181,25 @@ namespace MOON {
 			ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
 			ImPlot::EndPlot();
 		}
+		static ImS8  data[10] = { 1,2,3,4,5,6,7,8,9,10 };
+		if (ImPlot::BeginPlot("Bar Plot")) {
+			ImPlot::PlotBars("Vertical", y.data(), y.size(), 0.5, 1);
+			//ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
+			//ImPlot::PlotBars("Horizontal", data, 10, 0.4, 1, ImPlotBarsFlags_Horizontal);
+			for (int i = 0; i < y.size(); ++i)
+				ImPlot::Annotation(i + 1, y[i], ImVec4(0, 0, 0, 0), ImVec2(0, -5), false, "%.1f FPS", y[i]);
+			ImPlot::EndPlot();
+		}
 		ImGui::Text("%f ms,%f FPS", ms, fps);
 
 		auto proj = sceneView->GetCamera()->GetProjectionMatrix();
 		auto view = sceneView->GetCamera()->GetViewMatrix();
 		view = view.TransposeMartix();
 		proj = proj.TransposeMartix();
-		ImGuizmo::DrawGizmo(view.data, proj.data, 10);
+		ImGuizmo::SetRect(40, viewH - 160, 120);
+		ImGuizmo::DrawGizmo(view.data, proj.data, 0);
+
+		ImPlot::ShowDemoWindow();
 
 	}
 	void ViewerWindow::switchScene()

@@ -13,6 +13,8 @@
 
 namespace OvEditor::Panels
 {
+
+
 	class SceneView : public OvEditor::Panels::AViewControllable
 	{
 	public:
@@ -52,6 +54,8 @@ namespace OvEditor::Panels
 		*/
 		Core::EGizmoOperation GetGizmoOperation() const;
 		void ReceiveEvent(QEvent* e);
+
+
 	protected:
 		virtual OvCore::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 
@@ -69,5 +73,6 @@ namespace OvEditor::Panels
 
 		OvTools::Utils::OptRef<OvCore::ECS::Actor> m_highlightedActor;
 		std::optional<OvEditor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
+
 	};
 }

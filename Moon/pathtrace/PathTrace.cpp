@@ -220,6 +220,7 @@ namespace PathTrace {
 		eye[2] = p.z;
 	}
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
+		GetRenderer()->GetProgress();
 		scene->camera->ComputeViewProjectionMatrix(view, proj, 1.0f * renderOptions.windowResolution.x / renderOptions.windowResolution.y);
 	}
 	void CameraController::MoveToPivot(float deltaTime) {

@@ -1,4 +1,7 @@
 #pragma once
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 //#define IMOGUIZMO_LEFT_HANDED
 #include "imguizmo.h"
 #include <cmath>
@@ -82,26 +85,30 @@ namespace ImGuizmo {
 			return (point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y) <= radius * radius;
 		}
 
-		void drawPositiveLine(const ImVec2 center, const ImVec2 axis, const ImU32 color, const float radius, const float thickness, const char* text, const bool selected) {
+		void drawPositiveLine(const ImVec2& center, const ImVec2& axis, const ImU32& color, const float thickness, const char* text) {
 			const auto lineEndPositive = ImVec2{ center.x + axis.x, center.y + axis.y };
 			internal::config.mDrawList->AddLine(center, lineEndPositive, color, thickness);
-			internal::config.mDrawList->AddCircleFilled(lineEndPositive, radius, color);
-			const auto labelSize = ImGui::CalcTextSize(text);
-			const auto textPos = ImVec2(floor(lineEndPositive.x - 0.5f * labelSize.x), floor(lineEndPositive.y - 0.5f * labelSize.y));
-			if (selected) {
-				internal::config.mDrawList->AddCircle(lineEndPositive, radius, IM_COL32_WHITE, 0, 1.1f);
-				internal::config.mDrawList->AddText(textPos, IM_COL32_WHITE, text);
+			const auto nor = ImVec2{ -axis.y,axis.x };
+			float len = 1.5 * thickness / sqrtf(nor.x * nor.x + nor.y * nor.y);
 
+			if (axis.x * axis.x + axis.y * axis.y > FLT_EPSILON) {
+				internal::config.mDrawList->AddTriangleFilled(lineEndPositive + nor * len, lineEndPositive - nor * len, lineEndPositive + axis * len * 3.46, color);
 			}
-			else internal::config.mDrawList->AddText(textPos, IM_COL32_BLACK, text);
+			else
+			{
+				len = 0;
+			}
+			//internal::config.mDrawList->AddCircleFilled(lineEndPositive, radius, color);
+			const auto labelSize = ImGui::CalcTextSize(text);
+			const auto corner = lineEndPositive - nor * len * 2.0;
+			const auto textPos = ImVec2(floor(corner.x - 0.5f * labelSize.x), floor(corner.y - 0.5f * labelSize.y));
+			internal::config.mDrawList->AddText(textPos, color, text);
 		}
 
-		void drawNegativeLine(const ImVec2 center, const ImVec2 axis, const ImU32 color, const float radius, const bool selected) {
+		void drawNegativeLine(const ImVec2& center, const ImVec2& axis, const ImU32& color, const float radius) {
 			const auto lineEndNegative = ImVec2{ center.x - axis.x, center.y - axis.y };
 			internal::config.mDrawList->AddCircleFilled(lineEndNegative, radius, color);
-			if (selected) {
-				internal::config.mDrawList->AddCircle(lineEndNegative, radius, IM_COL32_WHITE, 0, 1.1f);
-			}
+
 		}
 
 		void lookAt(ImVec3 const& eye, ImVec3 const& at, ImVec3 const& up, float* viewMatrix)
@@ -123,7 +130,7 @@ namespace ImGuizmo {
 			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = -f[2]; viewMatrix[11] = 0.0f;
 			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = dot(f, eye); viewMatrix[15] = 1.0f;
 #endif
-	}
+		}
 
 		void invert4x4(const float* m, float* out)
 		{
@@ -148,7 +155,7 @@ namespace ImGuizmo {
 			det = 1.0f / det;
 			for (unsigned int i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
-}
+	}
 
 	static struct Config {
 		// in relation to half the rect size
@@ -157,12 +164,12 @@ namespace ImGuizmo {
 		float positiveRadiusScale = 0.075f;
 		float negativeRadiusScale = 0.05f;
 		float hoverCircleRadiusScale = 0.88f;
-		ImU32 xCircleFrontColor = IM_COL32(255, 54, 83, 255);
-		ImU32 xCircleBackColor = IM_COL32(154, 57, 71, 255);
-		ImU32 yCircleFrontColor = IM_COL32(138, 219, 0, 255);
-		ImU32 yCircleBackColor = IM_COL32(98, 138, 34, 255);
-		ImU32 zCircleFrontColor = IM_COL32(44, 143, 255, 255);
-		ImU32 zCircleBackColor = IM_COL32(52, 100, 154, 255);
+		ImU32 xCircleFrontColor = IM_COL32(255, 0, 0, 255);
+		ImU32 xCircleBackColor = IM_COL32(200, 0, 0, 255);
+		ImU32 yCircleFrontColor = IM_COL32(0, 255, 0, 255);
+		ImU32 yCircleBackColor = IM_COL32(0, 200, 0, 255);
+		ImU32 zCircleFrontColor = IM_COL32(0, 0, 255, 255);
+		ImU32 zCircleBackColor = IM_COL32(0, 0, 200, 255);
 		ImU32 hoverCircleColor = IM_COL32(100, 100, 100, 130);
 	} config;
 
@@ -193,7 +200,6 @@ namespace ImGuizmo {
 		const float size = internal::config.mSize;
 		const float hSize = size * 0.5f;
 		const auto center = ImVec2{ internal::config.mX + hSize, internal::config.mY + hSize };
-
 		float viewProjection[16];
 		internal::multiply(viewMatrix, projectionMatrix, viewProjection);
 		// correction for non-square aspect ratio
@@ -203,118 +209,34 @@ namespace ImGuizmo {
 		}
 		// axis
 		const float axisLength = size * config.axisLengthScale;
-		const ImVec4 xAxis = internal::multiply(viewProjection, ImVec4{ axisLength, 0, 0, 0 });
-		const ImVec4 yAxis = internal::multiply(viewProjection, ImVec4{ 0, axisLength, 0, 0 });
-		const ImVec4 zAxis = internal::multiply(viewProjection, ImVec4{ 0, 0, axisLength, 0 });
+		ImVec4 xAxis = internal::multiply(viewProjection, ImVec4{ axisLength, 0, 0, 0 });
+		ImVec4 yAxis = internal::multiply(viewProjection, ImVec4{ 0, axisLength, 0, 0 });
+		ImVec4 zAxis = internal::multiply(viewProjection, ImVec4{ 0, 0, axisLength, 0 });
+		ImVec2 x = { xAxis.x, -xAxis.y };
+		ImVec2 y = { yAxis.x, -yAxis.y };
+		ImVec2 z = { zAxis.x, -zAxis.y };
 
-		const bool interactive = pivotDistance > 0.0f;
-		const ImVec2 mousePos = ImGui::GetIO().MousePos;
-
-		const float hoverCircleRadius = hSize * config.hoverCircleRadiusScale;
 		SetDrawList(internal::config.mDrawList);
-		if (config.hoverCircleColor != 0 && interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos)) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
-
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
-		const bool xPositiveCloser = 0.0f >= xAxis.w;
-		const bool yPositiveCloser = 0.0f >= yAxis.w;
-		const bool zPositiveCloser = 0.0f >= zAxis.w;
-
-		// sort axis based on distance
-		// 0 : +x axis, 1 : +y axis, 2 : +z axis, 3 : -x axis, 4 : -y axis, 5 : -z axis
-		std::vector<std::pair<int, float>> pairs = { {0, xAxis.w}, {1, yAxis.w}, {2, zAxis.w}, {3, -xAxis.w}, {4, -yAxis.w}, {5, -zAxis.w} };
-		sort(pairs.begin(), pairs.end(), [=](const std::pair<int, float>& aA, const std::pair<int, float>& aB) { return aA.second > aB.second; });
-
-		// find selection, front to back
-		int selection = -1;
-		for (auto it = pairs.crbegin(); it != pairs.crend() && selection == -1 && interactive; ++it) {
-			switch (it->first) {
-			case 0: // +x axis
-				if (internal::checkInsideCircle(ImVec2{ center.x + xAxis.x, center.y - xAxis.y }, positiveRadius, mousePos)) selection = 0;
-				break;
-			case 1: // +y axis
-				if (internal::checkInsideCircle(ImVec2{ center.x + yAxis.x, center.y - yAxis.y }, positiveRadius, mousePos)) selection = 1;
-				break;
-			case 2: // +z axis
-				if (internal::checkInsideCircle(ImVec2{ center.x + zAxis.x, center.y - zAxis.y }, positiveRadius, mousePos)) selection = 2;
-				break;
-			case 3: // -x axis
-				if (internal::checkInsideCircle(ImVec2{ center.x - xAxis.x, center.y + xAxis.y }, negativeRadius, mousePos)) selection = 3;
-				break;
-			case 4: // -y axis
-				if (internal::checkInsideCircle(ImVec2{ center.x - yAxis.x, center.y + yAxis.y }, negativeRadius, mousePos)) selection = 4;
-				break;
-			case 5: // -z axis
-				if (internal::checkInsideCircle(ImVec2{ center.x - zAxis.x, center.y + zAxis.y }, negativeRadius, mousePos)) selection = 5;
-				break;
-			default: break;
-			}
-		}
-
 		// draw back first
 		const float lineThickness = size * config.lineThicknessScale;
-		for (const auto& [fst, snd] : pairs) {
-			switch (fst) {
-			case 0: // +x axis
-				internal::drawPositiveLine(center, ImVec2{ xAxis.x, -xAxis.y }, xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, positiveRadius, lineThickness, "X", selection == 0);
-				continue;
-			case 1: // +y axis
-				internal::drawPositiveLine(center, ImVec2{ yAxis.x, -yAxis.y }, yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, positiveRadius, lineThickness, "Y", selection == 1);
-				continue;
-			case 2: // +z axis
-				internal::drawPositiveLine(center, ImVec2{ zAxis.x, -zAxis.y }, zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, positiveRadius, lineThickness, "Z", selection == 2);
-				continue;
-			case 3: // -x axis
-				internal::drawNegativeLine(center, ImVec2{ xAxis.x, -xAxis.y }, !xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, negativeRadius, selection == 3);
-				continue;
-			case 4: // -y axis
-				internal::drawNegativeLine(center, ImVec2{ yAxis.x, -yAxis.y }, !yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, negativeRadius, selection == 4);
-				continue;
-			case 5: // -z axis
-				internal::drawNegativeLine(center, ImVec2{ zAxis.x, -zAxis.y }, !zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, negativeRadius, selection == 5);
-				continue;
-			default: break;
-			}
-		}
+		// +x axis
+		internal::drawPositiveLine(center, x, config.xCircleFrontColor, lineThickness, "X");
+		// +y axis
+		internal::drawPositiveLine(center, y, config.yCircleFrontColor, lineThickness, "Y");
+		// +z axis
+		internal::drawPositiveLine(center, z, config.zCircleFrontColor, lineThickness, "Z");
+		// -x axis
+		internal::drawNegativeLine(center, x, config.xCircleFrontColor, negativeRadius);
+		// -y axis
+		internal::drawNegativeLine(center, y, config.yCircleFrontColor, negativeRadius);
+		// -z axis
+		internal::drawNegativeLine(center, z, config.zCircleFrontColor, negativeRadius);
+		internal::config.mDrawList->AddCircleFilled(center, negativeRadius + 1, IM_COL32_WHITE);
+		//ImVec2 points[4] = { center,center + x,center + x + y,center + y };
+		//internal::config.mDrawList->AddConvexPolyFilled(points, 4, IM_COL32(0, 0, 255, 100));
 		internal::config.mDrawList = nullptr;
-
-		if (selection != -1 && ImGui::IsMouseClicked(ImGuiPopupFlags_MouseButtonLeft)) {
-			float modelMat[16];
-			internal::invert4x4(viewMatrix, modelMat);
-
-			const internal::ImVec3 pivotPos = internal::ImVec3{ &modelMat[12] } - internal::ImVec3{ &modelMat[8] } *pivotDistance;
-
-			internal::ImVec3 ups[6] = {
-#ifdef IMOGUIZMO_LEFT_HANDED
-#ifdef IMOGUIZMO_Z_UP
-				{0, 0, 1}, {0, 0, 1}, {0, -1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}
-#else // Y is up
-				{0, 1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 1, 0}
-#endif
-#else // IMOGUIZMO_RIGHT_HANDED
-#ifdef IMOGUIZMO_Z_UP
-				{0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, -1, 0}
-#else // Y is up
-				{0, 1, 0}, {0, 0, -1}, {0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 1, 0}
-#endif
-#endif
-		};
-			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[0], viewMatrix);
-			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[1], viewMatrix);
-			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[2], viewMatrix);
-			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[3], viewMatrix);
-			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[4], viewMatrix);
-			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[5], viewMatrix);
-
-			return true;
-	}
-
 		return false;
 	}
 }

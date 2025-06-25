@@ -11,6 +11,7 @@
 
 #include "OvCore/Global/ServiceLocator.h"
 #include "SceneView.h"
+#include <iostream>
 #include <QMouseEvent>
 
 static OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
@@ -97,6 +98,7 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 		GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
 		GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
 	}
+	input.ClearEvents();
 
 }
 
@@ -136,11 +138,13 @@ OvEditor::Core::EGizmoOperation OvEditor::Panels::SceneView::GetGizmoOperation()
 
 void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
 {
+
 	if (e == nullptr)
 		return;
+	input.ReceiveEvent(e);
 	const QEvent::Type t = e->type();
 
-	m_cameraController.ReceiveEvent(e);
+	//m_cameraController.ReceiveEvent(e);
 	if (!m_cameraController.IsRightMousePressed()) {
 		if (t == QEvent::KeyPress) {
 			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
@@ -155,106 +159,9 @@ void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
 				m_currentOperation = OvEditor::Core::EGizmoOperation::SCALE;
 			}
 		}
-
-	}
-
-
-	//handle pick
-	if (t == QEvent::MouseButtonRelease) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if (e2->button() == Qt::LeftButton) {
-			m_gizmoOperations.StopPicking();
-		}
-	}
-	std::optional<
-		std::variant<OvTools::Utils::OptRef<OvCore::ECS::Actor>,
-		OvEditor::Core::GizmoBehaviour::EDirection>
-	>pickingResult = std::nullopt;
-	if (t == QEvent::MouseMove) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto mouseX = e2->x();
-
-		auto mouseY = e2->y();
-#else
-		auto x = e2->localPos().x();
-		auto y = e2->localPos().y();
-#endif
-
-		mouseY = GetSafeSize().second - mouseY - 1;
-
-		auto& scene = *GetScene();
-
-		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-
-		pickingResult = actorPickingFeature.ReadbackPickingResult(
-			scene,
-			static_cast<uint32_t>(mouseX),
-			static_cast<uint32_t>(mouseY)
-		);
-		m_highlightedActor = {};
-		m_highlightedGizmoDirection = {};
-
-		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
-		{
-			if (const auto pval = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&pickingResult.value()))
-			{
-				m_highlightedActor = *pval;
-			}
-			else if (const auto pval = std::get_if<OvEditor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
-			{
-				m_highlightedGizmoDirection = *pval;
-			}
-		}
-		else
-		{
-			m_highlightedActor = {};
-			m_highlightedGizmoDirection = {};
-		}
-	}
-
-	if (t == QEvent::MouseButtonPress) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if (e2->button() == Qt::LeftButton && !m_cameraController.IsRightMousePressed()) {
-			if (m_highlightedGizmoDirection)
-			{
-				m_gizmoOperations.StartPicking(
-					GetSelectedActor(),
-					m_camera.GetPosition(),
-					m_currentOperation,
-					m_highlightedGizmoDirection.value());
-			}
-			else if (m_highlightedActor)
-			{
-				SelectActor(m_highlightedActor.value());
-			}
-			else
-			{
-				UnselectActor();
-			}
-		}
-	}
-
-
-	if (t == QEvent::MouseMove) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto mouseX = e2->x();
-
-		auto mouseY = e2->y();
-#else
-		auto x = e2->localPos().x();
-		auto y = e2->localPos().y();
-#endif
-		if (m_gizmoOperations.IsPicking())
-		{
-			auto [winWidth, winHeight] = GetSafeSize();
-
-			m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mouseX), static_cast<float>(mouseY) });
-			m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
-		}
 	}
 }
+
 
 OvCore::Rendering::SceneRenderer::SceneDescriptor OvEditor::Panels::SceneView::CreateSceneDescriptor()
 {
@@ -300,6 +207,90 @@ bool IsResizing()
 void OvEditor::Panels::SceneView::HandleActorPicking()
 {
 
+
+	if (input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
+	{
+		m_gizmoOperations.StopPicking();
+
+
+	}
+
+	if (!m_gizmoOperations.IsPicking())
+	{
+
+		auto mousePos = input.GetMousePosition();
+		int mouseY = GetSafeSize().second - mousePos.second - 1;
+		int mouseX = mousePos.first;
+
+		auto& scene = *GetScene();
+
+		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+
+		const auto pickingResult = actorPickingFeature.ReadbackPickingResult(
+			scene,
+			static_cast<uint32_t>(mouseX),
+			static_cast<uint32_t>(mouseY)
+		);
+
+
+		m_highlightedActor = {};
+		m_highlightedGizmoDirection = {};
+
+		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
+		{
+			if (const auto pval = std::get_if<OvTools::Utils::OptRef<OvCore::ECS::Actor>>(&pickingResult.value()))
+			{
+				m_highlightedActor = *pval;
+			}
+			else if (const auto pval = std::get_if<OvEditor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
+			{
+				m_highlightedGizmoDirection = *pval;
+			}
+		}
+		else
+		{
+			m_highlightedActor = {};
+			m_highlightedGizmoDirection = {};
+		}
+
+		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) && !m_cameraController.IsRightMousePressed())
+		{
+			if (m_highlightedGizmoDirection)
+			{
+				m_gizmoOperations.StartPicking(
+					GetSelectedActor(),
+					m_camera.GetPosition(),
+					m_currentOperation,
+					m_highlightedGizmoDirection.value());
+			}
+			else if (m_highlightedActor)
+			{
+				SelectActor(m_highlightedActor.value());
+			}
+			else
+			{
+				UnselectActor();
+			}
+		}
+	}
+	else
+	{
+		m_highlightedActor = std::nullopt;
+		m_highlightedGizmoDirection = std::nullopt;
+	}
+
+	if (m_gizmoOperations.IsPicking())
+	{
+		auto [winWidth, winHeight] = GetSafeSize();
+
+		auto mousePosition = input.GetMousePosition();
+
+
+
+		m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mousePosition.first), static_cast<float>(mousePosition.second) });
+		m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
+
+	}
 }
 
 

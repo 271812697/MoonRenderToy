@@ -12,7 +12,7 @@
 #include <OvCore/ECS/Components/CPhysicalSphere.h>
 
 #include "CameraController.h"
-#include <QMouseEvent>
+
 
 OvEditor::Core::CameraController::CameraController(
 	OvEditor::Panels::AView& p_view,
@@ -22,13 +22,7 @@ OvEditor::Core::CameraController::CameraController(
 	m_camera(p_camera)
 {
 	m_camera.SetFov(60.0f);
-	mKeyState[KEYW] = Up;
-	mKeyState[KEYA] = Up;
-	mKeyState[KEYS] = Up;
-	mKeyState[KEYD] = Up;
-	mKeyState[ALTA] = Up;
-	mKeyState[KEYQ] = Up;
-	mKeyState[KEYE] = Up;
+
 }
 
 float GetActorFocusDist(OvCore::ECS::Actor& p_actor)
@@ -97,6 +91,35 @@ float GetActorFocusDist(OvCore::ECS::Actor& p_actor)
 
 void OvEditor::Core::CameraController::HandleInputs(float p_deltaTime)
 {
+	HandleMouseReleased();
+	HandleMousePressed();
+	auto& input = m_view.getInutState();
+	if (m_view.IsSelectActor()) {
+		auto& target = m_view.GetSelectedActor();
+		auto targetPos = target.transform.GetWorldPosition();
+		float dist = GetActorFocusDist(target);
+
+		if (input.IsKeyPressed(OvEditor::Panels::KEYF))
+		{
+			MoveToTarget(target);
+		}
+
+		auto focusObjectFromAngle = [this, &targetPos, &dist](const OvMaths::FVector3& offset)
+			{
+				auto camPos = targetPos + offset * dist;
+				auto direction = OvMaths::FVector3::Normalize(targetPos - camPos);
+				m_camera.SetRotation(OvMaths::FQuaternion::LookAt(direction, abs(direction.y) == 1.0f ? OvMaths::FVector3::Right : OvMaths::FVector3::Up));
+				m_cameraDestinations.push({ camPos, m_camera.GetRotation() });
+			};
+
+		if (input.IsKeyPressed(OvEditor::Panels::UP))		focusObjectFromAngle(OvMaths::FVector3::Up);
+		if (input.IsKeyPressed(OvEditor::Panels::DOWN))		focusObjectFromAngle(-OvMaths::FVector3::Up);
+		if (input.IsKeyPressed(OvEditor::Panels::RIGHT))	focusObjectFromAngle(OvMaths::FVector3::Right);
+		if (input.IsKeyPressed(OvEditor::Panels::LEFT))		focusObjectFromAngle(-OvMaths::FVector3::Right);
+		if (input.IsKeyPressed(OvEditor::Panels::PageUp))	focusObjectFromAngle(OvMaths::FVector3::Forward);
+		if (input.IsKeyPressed(OvEditor::Panels::PageDown))	focusObjectFromAngle(-OvMaths::FVector3::Forward);
+	}
+
 	if (!m_cameraDestinations.empty())
 	{
 		m_currentMovementSpeed = 0.0f;
@@ -119,6 +142,70 @@ void OvEditor::Core::CameraController::HandleInputs(float p_deltaTime)
 			m_camera.SetPosition(OvMaths::FVector3::Lerp(m_camera.GetPosition(), destPos, t));
 			m_camera.SetRotation(OvMaths::FQuaternion::Lerp(m_camera.GetRotation(), destRotation, t));
 		}
+	}
+	else
+	{
+		if (m_rightMousePressed || m_middleMousePressed || m_leftMousePressed)
+		{
+			auto [xPos, yPos] = input.GetMousePosition();
+
+			bool wasFirstMouse = m_firstMouse;
+
+			if (m_firstMouse)
+			{
+				m_lastMousePosX = xPos;
+				m_lastMousePosY = yPos;
+				HandleFirstMouse();
+				m_firstMouse = false;
+			}
+
+			OvMaths::FVector2 mouseOffset
+			{
+				static_cast<float>(xPos - m_lastMousePosX),
+				static_cast<float>(m_lastMousePosY - yPos)
+			};
+
+			m_lastMousePosX = xPos;
+			m_lastMousePosY = yPos;
+
+			if (m_rightMousePressed)
+			{
+				HandleCameraFPSMouse(mouseOffset, wasFirstMouse);
+			}
+			else if (m_middleMousePressed)
+			{
+				if (input.IsKeyPressed(OvEditor::Panels::ALTA))
+				{
+					if (m_view.IsSelectActor())
+					{
+						auto& target = m_view.GetSelectedActor();
+						HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
+					}
+				}
+				else
+				{
+					HandleCameraPanning(mouseOffset, wasFirstMouse);
+				}
+
+			}
+
+		}
+
+
+		HandleCameraZoom();
+		HandleCameraFPSKeyboard(p_deltaTime);
+	}
+}
+OvMaths::FVector3 RemoveRoll(const OvMaths::FVector3& p_ypr);
+void OvEditor::Core::CameraController::HandleFirstMouse()
+{
+	m_ypr = OvMaths::FQuaternion::EulerAngles(m_camera.GetRotation());
+	m_ypr = RemoveRoll(m_ypr);
+	if (m_view.IsSelectActor()) {
+
+		m_orbitTarget = &m_view.GetSelectedActor().transform.GetFTransform();
+		m_orbitStartOffset = -OvMaths::FVector3::Forward * OvMaths::FVector3::Distance(m_orbitTarget->GetWorldPosition(), m_camera.GetPosition());
+
 	}
 
 }
@@ -183,197 +270,6 @@ void OvEditor::Core::CameraController::UnlockTargetActor()
 {
 	m_lockedActor = std::nullopt;
 }
-void OvEditor::Core::CameraController::ReceiveEvent(QEvent* e)
-{
-	if (e == nullptr)
-		return;
-
-	const QEvent::Type t = e->type();
-	if (t == QEvent::KeyPress) {
-		QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
-		Qt::Key key = static_cast<Qt::Key>(e2->key());
-		if (key == Qt::Key_W) {
-			mKeyState[KEYW] = Down;
-		}
-		else if (key == Qt::Key_A) {
-			mKeyState[KEYA] = Down;
-		}
-		else if (key == Qt::Key_S) {
-			mKeyState[KEYS] = Down;
-		}
-		else if (key == Qt::Key_D) {
-			mKeyState[KEYD] = Down;
-		}
-		else if (key == Qt::Key_Alt) {
-			mKeyState[ALTA] = Down;
-		}
-		else if (key == Qt::Key_Q) {
-			mKeyState[KEYQ] = Down;
-		}
-		else if (key == Qt::Key_E) {
-			mKeyState[KEYE] = Down;
-
-		}
-		else if (key == Qt::Key_F || key == Qt::Key_Right || key == Qt::Key_Left || key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_PageUp || key == Qt::Key_PageDown) {
-			if (m_view.IsSelectActor()) {
-				auto& target = m_view.GetSelectedActor();
-				auto targetPos = target.transform.GetWorldPosition();
-				float dist = GetActorFocusDist(target);
-				MoveToTarget(target);
-				auto focusObjectFromAngle = [this, &targetPos, &dist](const OvMaths::FVector3& offset)
-					{
-						auto camPos = targetPos + offset * dist;
-						auto direction = OvMaths::FVector3::Normalize(targetPos - camPos);
-						m_camera.SetRotation(OvMaths::FQuaternion::LookAt(direction, abs(direction.y) == 1.0f ? OvMaths::FVector3::Right : OvMaths::FVector3::Up));
-						m_cameraDestinations.push({ camPos, m_camera.GetRotation() });
-					};
-				if (key == Qt::Key_Up)			focusObjectFromAngle(OvMaths::FVector3::Up);
-				if (key == Qt::Key_Down)		focusObjectFromAngle(-OvMaths::FVector3::Up);
-				if (key == Qt::Key_Right)		focusObjectFromAngle(OvMaths::FVector3::Right);
-				if (key == Qt::Key_Left)		focusObjectFromAngle(-OvMaths::FVector3::Right);
-				if (key == Qt::Key_PageUp)	    focusObjectFromAngle(OvMaths::FVector3::Forward);
-				if (key == Qt::Key_PageDown)	focusObjectFromAngle(-OvMaths::FVector3::Forward);
-
-			}
-		}
-	}
-	else if (t == QEvent::KeyRelease) {
-		QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
-		Qt::Key key = static_cast<Qt::Key>(e2->key());
-		if (key == Qt::Key_W) {
-			mKeyState[KEYW] = Up;
-		}
-		else if (key == Qt::Key_A) {
-			mKeyState[KEYA] = Up;
-		}
-		else if (key == Qt::Key_S) {
-			mKeyState[KEYS] = Up;
-		}
-		else if (key == Qt::Key_D) {
-			mKeyState[KEYD] = Up;
-		}
-		else if (key == Qt::Key_Alt) {
-			mKeyState[ALTA] = Up;
-		}
-		else if (key == Qt::Key_Q) {
-			mKeyState[KEYQ] = Up;
-
-		}
-		else if (key == Qt::Key_E) {
-			mKeyState[KEYE] = Up;
-		}
-	}
-
-
-	if (t == QEvent::MouseButtonRelease) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		switch (e2->button())
-		{
-		case Qt::LeftButton:
-			m_leftMousePressed = false;
-			m_firstMouse = true;
-			break;
-
-		case Qt::MiddleButton:
-			m_middleMousePressed = false;
-			m_firstMouse = true;
-			break;
-
-		case Qt::RightButton:
-			m_rightMousePressed = false;
-			m_firstMouse = true;
-			break;
-
-		default:
-			break;
-		}
-	}
-	else if (t == QEvent::MouseButtonPress)
-	{
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		switch (e2->button())
-		{
-		case Qt::LeftButton:
-			m_leftMousePressed = true;
-
-			break;
-
-		case Qt::MiddleButton:
-			m_middleMousePressed = true;
-			break;
-		case Qt::RightButton:
-			m_rightMousePressed = true;
-			break;
-
-		default:
-			break;
-		}
-	}
-	else if (t == QEvent::MouseMove) {
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto xPos = e2->x();
-		auto yPos = e2->y();
-#else
-		auto x = e2->position().x();
-		auto y = e2->position().y();
-#endif
-
-		if (m_rightMousePressed || m_middleMousePressed || m_leftMousePressed) {
-			bool wasFirstMouse = m_firstMouse;
-
-			if (m_firstMouse)
-			{
-				m_lastMousePosX = xPos;
-				m_lastMousePosY = yPos;
-				m_firstMouse = false;
-			}
-
-			OvMaths::FVector2 mouseOffset
-			{
-				static_cast<float>(xPos - m_lastMousePosX),
-				static_cast<float>(m_lastMousePosY - yPos)
-			};
-
-			m_lastMousePosX = xPos;
-			m_lastMousePosY = yPos;
-			if (m_rightMousePressed)
-			{
-				HandleCameraFPSMouse(mouseOffset, wasFirstMouse);
-			}
-			else
-			{
-				if (m_middleMousePressed)
-				{
-					if (mKeyState[ALTA] == Down && m_view.IsSelectActor()) {
-						auto& target = m_view.GetSelectedActor();
-						HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
-					}
-					else {
-						HandleCameraPanning(mouseOffset, wasFirstMouse);
-					}
-
-				}
-
-			}
-		}
-
-	}
-	else if (t == QEvent::Wheel) {
-		constexpr float kUnitsPerScroll = 1.0f;
-		QWheelEvent* e2 = static_cast<QWheelEvent*>(e);
-		const auto verticalScroll = 0.002 * static_cast<float>(
-			e2->angleDelta().y()
-			);
-
-		m_camera.SetPosition(
-			m_camera.GetPosition() +
-			m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll
-		);
-	}
-
-	HandleCameraFPSKeyboard(0.016);
-}
 
 std::optional<std::reference_wrapper<OvCore::ECS::Actor>> OvEditor::Core::CameraController::GetTargetActor() const
 {
@@ -418,15 +314,6 @@ void OvEditor::Core::CameraController::HandleCameraOrbit(
 )
 {
 	auto mouseOffset = p_mouseOffset * m_cameraOrbitSpeed;
-
-	if (p_firstMouse)
-	{
-		m_ypr = OvMaths::FQuaternion::EulerAngles(m_camera.GetRotation());
-		m_ypr = RemoveRoll(m_ypr);
-		m_orbitTarget = &p_target.transform.GetFTransform();
-		m_orbitStartOffset = -OvMaths::FVector3::Forward * OvMaths::FVector3::Distance(m_orbitTarget->GetWorldPosition(), m_camera.GetPosition());
-	}
-
 	m_ypr.y += -mouseOffset.x;
 	m_ypr.x += -mouseOffset.y;
 	m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
@@ -444,7 +331,7 @@ void OvEditor::Core::CameraController::HandleCameraZoom()
 {
 	constexpr float kUnitsPerScroll = 1.0f;
 
-	const auto verticalScroll = 1.0;
+	const auto verticalScroll = m_view.getInutState().GetMouseScroll().second;
 
 	m_camera.SetPosition(
 		m_camera.GetPosition() +
@@ -456,11 +343,6 @@ void OvEditor::Core::CameraController::HandleCameraFPSMouse(const OvMaths::FVect
 {
 	auto mouseOffset = p_mouseOffset * m_mouseSensitivity;
 
-	if (p_firstMouse)
-	{
-		m_ypr = OvMaths::FQuaternion::EulerAngles(m_camera.GetRotation());
-		m_ypr = RemoveRoll(m_ypr);
-	}
 
 	m_ypr.y -= mouseOffset.x;
 	m_ypr.x += -mouseOffset.y;
@@ -472,28 +354,24 @@ void OvEditor::Core::CameraController::HandleCameraFPSMouse(const OvMaths::FVect
 void OvEditor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime)
 {
 	m_targetSpeed = OvMaths::FVector3(0.f, 0.f, 0.f);
-
+	auto& input = m_view.getInutState();
 	if (m_rightMousePressed)
 	{
-		m_targetSpeed = OvMaths::FVector3(0.f, 0.f, 0.f);
+		float velocity = m_cameraMoveSpeed * p_deltaTime * 2.0f;
 
-		float velocity = m_cameraMoveSpeed * p_deltaTime * 0.1f;
-
-		if (mKeyState[KEYW] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYW))
 			m_targetSpeed += m_camera.transform->GetWorldForward() * velocity;
-		if (mKeyState[KEYS] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYS))
 			m_targetSpeed += m_camera.transform->GetWorldForward() * -velocity;
-		if (mKeyState[KEYA] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYA))
 			m_targetSpeed += m_camera.transform->GetWorldRight() * velocity;
-		if (mKeyState[KEYD] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYD))
 			m_targetSpeed += m_camera.transform->GetWorldRight() * -velocity;
-		if (mKeyState[KEYE] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYE))
 			m_targetSpeed += {0.0f, velocity, 0.0f};
-		if (mKeyState[KEYQ] == Down)
+		if (input.IsKeyPressed(OvEditor::Panels::KEYQ))
 			m_targetSpeed += {0.0f, -velocity, 0.0f};
 
-		m_currentMovementSpeed = OvMaths::FVector3::Lerp(m_currentMovementSpeed, m_targetSpeed, 10.0f * p_deltaTime);
-		m_camera.SetPosition(m_camera.GetPosition() + m_currentMovementSpeed);
 	}
 
 	m_currentMovementSpeed = OvMaths::FVector3::Lerp(m_currentMovementSpeed, m_targetSpeed, 10.0f * p_deltaTime);
@@ -502,10 +380,42 @@ void OvEditor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime
 
 void OvEditor::Core::CameraController::HandleMousePressed()
 {
+	auto& input = m_view.getInutState();
+	if (input.IsMouseButtonPressed(OvEditor::Panels::MouseButton::MOUSE_BUTTON_LEFT))
+	{
+		m_leftMousePressed = true;
+	}
 
+	if (input.IsMouseButtonPressed(OvEditor::Panels::MouseButton::MOUSE_BUTTON_MIDDLE))
+	{
+		m_middleMousePressed = true;
+	}
+
+	if (input.IsMouseButtonPressed(OvEditor::Panels::MouseButton::MOUSE_BUTTON_RIGHT))
+	{
+		m_rightMousePressed = true;
+	}
 }
 
 void OvEditor::Core::CameraController::HandleMouseReleased()
 {
+	auto& input = m_view.getInutState();
+	if (m_leftMousePressed && input.IsMouseButtonReleased(OvEditor::Panels::MouseButton::MOUSE_BUTTON_LEFT))
+	{
+		m_leftMousePressed = false;
+		m_firstMouse = true;
+	}
 
+	if (m_middleMousePressed && input.IsMouseButtonReleased(OvEditor::Panels::MouseButton::MOUSE_BUTTON_MIDDLE))
+	{
+		m_middleMousePressed = false;
+		m_firstMouse = true;
+	}
+
+	if (m_rightMousePressed && input.IsMouseButtonReleased(OvEditor::Panels::MouseButton::MOUSE_BUTTON_RIGHT))
+	{
+		m_rightMousePressed = false;
+		m_firstMouse = true;
+
+	}
 }
