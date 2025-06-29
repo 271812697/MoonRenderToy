@@ -10,7 +10,6 @@
 #include "tracy_concurrentqueue.h"
 #include "tracy_SPSCQueue.h"
 #include "TracyCallstack.hpp"
-#include "TracyKCore.hpp"
 #include "TracySysPower.hpp"
 #include "TracySysTime.hpp"
 #include "TracyFastVector.hpp"
@@ -28,7 +27,7 @@
 #  include <mach/mach_time.h>
 #endif
 
-#if ( (defined _WIN32 && !(defined _M_ARM64 || defined _M_ARM)) || ( defined __i386 || defined _M_IX86 || defined __x86_64__ || defined _M_X64 ) || ( defined TARGET_OS_IOS && TARGET_OS_IOS == 1 ) )
+#if ( defined _WIN32 || ( defined __i386 || defined _M_IX86 || defined __x86_64__ || defined _M_X64 ) || ( defined TARGET_OS_IOS && TARGET_OS_IOS == 1 ) )
 #  define TRACY_HW_TIMER
 #endif
 
@@ -606,7 +605,8 @@ public:
         profiler.m_serialLock.unlock();
 #else
         static_cast<void>(depth); // unused
-        MemAllocNamed( ptr, size, secure, name );
+        static_cast<void>(name); // unused
+        MemAlloc( ptr, size, secure );
 #endif
     }
 
@@ -629,7 +629,8 @@ public:
         profiler.m_serialLock.unlock();
 #else
         static_cast<void>(depth); // unused
-        MemFreeNamed( ptr, secure, name );
+        static_cast<void>(name); // unused
+        MemFree( ptr, secure );
 #endif
     }
 
@@ -675,12 +676,11 @@ public:
     }
 
 #ifdef TRACY_FIBERS
-    static tracy_force_inline void EnterFiber( const char* fiber, int32_t groupHint )
+    static tracy_force_inline void EnterFiber( const char* fiber )
     {
         TracyQueuePrepare( QueueType::FiberEnter );
         MemWrite( &item->fiberEnter.time, GetTime() );
         MemWrite( &item->fiberEnter.fiber, (uint64_t)fiber );
-        MemWrite( &item->fiberEnter.groupHint, groupHint );
         TracyQueueCommit( fiberEnter );
     }
 
@@ -745,29 +745,29 @@ public:
     //  1b  null terminator
     //  nsz zone name (optional)
 
-    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, const char* function, uint32_t color = 0 )
+    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, const char* function )
     {
-        return AllocSourceLocation( line, source, function, nullptr, 0, color );
+        return AllocSourceLocation( line, source, function, nullptr, 0 );
     }
 
-    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, const char* function, const char* name, size_t nameSz, uint32_t color = 0 )
+    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, const char* function, const char* name, size_t nameSz )
     {
-        return AllocSourceLocation( line, source, strlen(source), function, strlen(function), name, nameSz, color );
+        return AllocSourceLocation( line, source, strlen(source), function, strlen(function), name, nameSz );
     }
 
-    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, uint32_t color = 0 )
+    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz )
     {
-        return AllocSourceLocation( line, source, sourceSz, function, functionSz, nullptr, 0, color );
+        return AllocSourceLocation( line, source, sourceSz, function, functionSz, nullptr, 0 );
     }
 
-    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz, uint32_t color = 0 )
+    static tracy_force_inline uint64_t AllocSourceLocation( uint32_t line, const char* source, size_t sourceSz, const char* function, size_t functionSz, const char* name, size_t nameSz )
     {
         const auto sz32 = uint32_t( 2 + 4 + 4 + functionSz + 1 + sourceSz + 1 + nameSz );
         assert( sz32 <= (std::numeric_limits<uint16_t>::max)() );
         const auto sz = uint16_t( sz32 );
         auto ptr = (char*)tracy_malloc( sz );
         memcpy( ptr, &sz, 2 );
-        memcpy( ptr + 2, &color, 4 );
+        memset( ptr + 2, 0, 4 );
         memcpy( ptr + 6, &line, 4 );
         memcpy( ptr + 10, function, functionSz );
         ptr[10 + functionSz] = '\0';
@@ -997,7 +997,6 @@ private:
     struct {
         struct sigaction pwr, ill, fpe, segv, pipe, bus, abrt;
     } m_prevSignal;
-    KCore* m_kcore;
 #endif
     bool m_crashHandlerInstalled;
 

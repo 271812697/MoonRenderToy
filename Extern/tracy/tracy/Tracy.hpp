@@ -18,8 +18,6 @@
 
 #ifndef TRACY_ENABLE
 
-#define TracyNoop
-
 #define ZoneNamed(x,y)
 #define ZoneNamedN(x,y,z)
 #define ZoneNamedC(x,y,z)
@@ -35,12 +33,8 @@
 
 #define ZoneText(x,y)
 #define ZoneTextV(x,y,z)
-#define ZoneTextF(x,...)
-#define ZoneTextVF(x,y,...)
 #define ZoneName(x,y)
 #define ZoneNameV(x,y,z)
-#define ZoneNameF(x,...)
-#define ZoneNameVF(x,y,...)
 #define ZoneColor(x)
 #define ZoneColorV(x,y)
 #define ZoneValue(x)
@@ -119,7 +113,6 @@
 #define TracySetProgramName(x)
 
 #define TracyFiberEnter(x)
-#define TracyFiberEnterHint(x,y)
 #define TracyFiberLeave
 
 #else
@@ -130,8 +123,6 @@
 #include "../client/TracyProfiler.hpp"
 #include "../client/TracyScoped.hpp"
 
-#define TracyNoop tracy::ProfilerAvailable()
-
 #if defined TRACY_HAS_CALLSTACK && defined TRACY_CALLSTACK
 #  define ZoneNamed( varname, active ) static constexpr tracy::SourceLocationData TracyConcat(__tracy_source_location,TracyLine) { nullptr, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; tracy::ScopedZone varname( &TracyConcat(__tracy_source_location,TracyLine), TRACY_CALLSTACK, active )
 #  define ZoneNamedN( varname, name, active ) static constexpr tracy::SourceLocationData TracyConcat(__tracy_source_location,TracyLine) { name, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; tracy::ScopedZone varname( &TracyConcat(__tracy_source_location,TracyLine), TRACY_CALLSTACK, active )
@@ -140,7 +131,6 @@
 
 #  define ZoneTransient( varname, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), nullptr, 0, TRACY_CALLSTACK, active )
 #  define ZoneTransientN( varname, name, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), name, strlen( name ), TRACY_CALLSTACK, active )
-#  define ZoneTransientNC( varname, name, color, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), name, strlen( name ), color, TRACY_CALLSTACK, active )
 #else
 #  define ZoneNamed( varname, active ) static constexpr tracy::SourceLocationData TracyConcat(__tracy_source_location,TracyLine) { nullptr, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; tracy::ScopedZone varname( &TracyConcat(__tracy_source_location,TracyLine), active )
 #  define ZoneNamedN( varname, name, active ) static constexpr tracy::SourceLocationData TracyConcat(__tracy_source_location,TracyLine) { name, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; tracy::ScopedZone varname( &TracyConcat(__tracy_source_location,TracyLine), active )
@@ -149,7 +139,6 @@
 
 #  define ZoneTransient( varname, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), nullptr, 0, active )
 #  define ZoneTransientN( varname, name, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), name, strlen( name ), active )
-#  define ZoneTransientNC( varname, name, color, active ) tracy::ScopedZone varname( TracyLine, TracyFile, strlen( TracyFile ), TracyFunction, strlen( TracyFunction ), name, strlen( name ), color, active )
 #endif
 
 #define ZoneScoped ZoneNamed( ___tracy_scoped_zone, true )
@@ -159,12 +148,8 @@
 
 #define ZoneText( txt, size ) ___tracy_scoped_zone.Text( txt, size )
 #define ZoneTextV( varname, txt, size ) varname.Text( txt, size )
-#define ZoneTextF( fmt, ... ) ___tracy_scoped_zone.TextFmt( fmt, ##__VA_ARGS__ )
-#define ZoneTextVF( varname, fmt, ... ) varname.TextFmt( fmt, ##__VA_ARGS__ )
 #define ZoneName( txt, size ) ___tracy_scoped_zone.Name( txt, size )
 #define ZoneNameV( varname, txt, size ) varname.Name( txt, size )
-#define ZoneNameF( fmt, ... ) ___tracy_scoped_zone.NameFmt( fmt, ##__VA_ARGS__ )
-#define ZoneNameVF( varname, fmt, ... ) varname.NameFmt( fmt, ##__VA_ARGS__ )
 #define ZoneColor( color ) ___tracy_scoped_zone.Color( color )
 #define ZoneColorV( varname, color ) varname.Color( color )
 #define ZoneValue( value ) ___tracy_scoped_zone.Value( value )
@@ -290,8 +275,7 @@
 #define TracySetProgramName( name ) tracy::GetProfiler().SetProgramName( name );
 
 #ifdef TRACY_FIBERS
-#  define TracyFiberEnter( fiber ) tracy::Profiler::EnterFiber( fiber, 0 )
-#  define TracyFiberEnterHint( fiber, groupHint ) tracy::Profiler::EnterFiber( fiber, groupHint )
+#  define TracyFiberEnter( fiber ) tracy::Profiler::EnterFiber( fiber )
 #  define TracyFiberLeave tracy::Profiler::LeaveFiber()
 #endif
 

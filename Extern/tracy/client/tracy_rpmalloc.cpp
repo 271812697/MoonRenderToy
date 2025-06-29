@@ -781,7 +781,7 @@ rpmalloc_set_main_thread(void) {
 
 static void
 _rpmalloc_spin(void) {
-#if defined(_MSC_VER) && !(defined(_M_ARM) || defined(_M_ARM64))
+#if defined(_MSC_VER)
 	_mm_pause();
 #elif defined(__x86_64__) || defined(__i386__)
 	__asm__ volatile("pause" ::: "memory");
@@ -793,7 +793,8 @@ _rpmalloc_spin(void) {
 #elif defined(__sparc__)
 	__asm__ volatile("rd %ccr, %g0 \n\trd %ccr, %g0 \n\trd %ccr, %g0");
 #else
-	std::this_thread::yield();
+	struct timespec ts = {0};
+	nanosleep(&ts, 0);
 #endif
 }
 

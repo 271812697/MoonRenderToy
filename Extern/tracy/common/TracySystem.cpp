@@ -101,10 +101,16 @@ TRACY_API uint32_t GetThreadHandleImpl()
 }
 
 #ifdef TRACY_ENABLE
+struct ThreadNameData
+{
+    uint32_t id;
+    const char* name;
+    ThreadNameData* next;
+};
 std::atomic<ThreadNameData*>& GetThreadNameData();
 #endif
 
-#if defined _MSC_VER && !defined __clang__
+#ifdef _MSC_VER
 #  pragma pack( push, 8 )
 struct THREADNAME_INFO
 {
@@ -129,11 +135,6 @@ void ThreadNameMsvcMagic( const THREADNAME_INFO& info )
 
 TRACY_API void SetThreadName( const char* name )
 {
-    SetThreadNameWithHint( name, 0 );
-}
-
-TRACY_API void SetThreadNameWithHint( const char* name, int32_t groupHint )
-{
 #if defined _WIN32
 #  ifdef TRACY_UWP
     static auto _SetThreadDescription = &::SetThreadDescription;
@@ -148,7 +149,7 @@ TRACY_API void SetThreadNameWithHint( const char* name, int32_t groupHint )
     }
     else
     {
-#  if defined _MSC_VER && !defined __clang__
+#  if defined _MSC_VER
         THREADNAME_INFO info;
         info.dwType = 0x1000;
         info.szName = name;
@@ -204,29 +205,12 @@ TRACY_API void SetThreadNameWithHint( const char* name, int32_t groupHint )
         buf[sz] = '\0';
         auto data = (ThreadNameData*)tracy_malloc_fast( sizeof( ThreadNameData ) );
         data->id = detail::GetThreadHandleImpl();
-        data->groupHint = groupHint;
         data->name = buf;
         data->next = GetThreadNameData().load( std::memory_order_relaxed );
         while( !GetThreadNameData().compare_exchange_weak( data->next, data, std::memory_order_release, std::memory_order_relaxed ) ) {}
     }
 #endif
 }
-
-#ifdef TRACY_ENABLE
-ThreadNameData* GetThreadNameData( uint32_t id )
-{
-    auto ptr = GetThreadNameData().load( std::memory_order_relaxed );
-    while( ptr )
-    {
-        if( ptr->id == id )
-        {
-            return ptr;
-        }
-        ptr = ptr->next;
-    }
-    return nullptr;
-}
-#endif
 
 TRACY_API const char* GetThreadName( uint32_t id )
 {
