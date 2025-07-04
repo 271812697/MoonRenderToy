@@ -33,16 +33,16 @@ namespace
 				std::nullopt;
 		};
 
-		if (auto value = as.operator()<bool>()) return *value;
-		if (auto value = as.operator()<int>()) return *value;
-		if (auto value = as.operator()<float>()) return *value;
-		if (auto value = as.operator()<FVector2>()) return *value;
-		if (auto value = as.operator()<FVector3>()) return *value;
-		if (auto value = as.operator()<FVector4>()) return *value;
-		if (auto value = as.operator()<FMatrix3>()) return *value;
-		if (auto value = as.operator()<FMatrix4>()) return *value;
-		if (auto value = as.operator()<HAL::TextureHandle*>()) return *value;
-		if (auto value = as.operator()<Resources::Texture*>()) return *value;
+		if (auto value = as.operator() < bool > ()) return *value;
+		if (auto value = as.operator() < int > ()) return *value;
+		if (auto value = as.operator() < float > ()) return *value;
+		if (auto value = as.operator() < FVector2 > ()) return *value;
+		if (auto value = as.operator() < FVector3 > ()) return *value;
+		if (auto value = as.operator() < FVector4 > ()) return *value;
+		if (auto value = as.operator() < FMatrix3 > ()) return *value;
+		if (auto value = as.operator() < FMatrix4 > ()) return *value;
+		if (auto value = as.operator() < HAL::TextureHandle* > ()) return *value;
+		if (auto value = as.operator() < Resources::Texture* > ()) return *value;
 
 		return std::monostate{};
 	}
@@ -74,7 +74,8 @@ void OvRendering::Data::Material::SetShader(OvRendering::Resources::Shader* p_sh
 
 	if (m_shader)
 	{
-		FillUniform();
+		m_properties.clear();
+		UpdateProperties();
 	}
 	else
 	{
@@ -94,29 +95,40 @@ OvTools::Utils::OptRef<OvRendering::HAL::ShaderProgram> OvRendering::Data::Mater
 			p_override.value_or(m_features)
 		);
 	}
-	
+
 	return std::nullopt;
 }
 
-void OvRendering::Data::Material::FillUniform()
+void OvRendering::Data::Material::UpdateProperties()
 {
-	m_properties.clear();
+	// Collect all uniform names currently used by the shader
+	std::unordered_set<std::string> usedUniforms;
 
-	for (const auto& featureVariants : m_shader->GetVariants() | std::views::values)
+	auto variants_view = m_shader->GetVariants()
+		| std::views::values
+		| std::views::join
+		| std::views::values;
+
+	for (const auto& variant : variants_view)
 	{
-		for (const auto& variant : featureVariants | std::views::values)
+		for (const auto& [name, uniformInfo] : variant->GetUniforms())
 		{
-			for (const auto& [name, uniformInfo] : variant->GetUniforms())
+			usedUniforms.insert(name);
+
+			if (!m_properties.contains(name))
 			{
 				m_properties.emplace(name, MaterialProperty{
 					.value = UniformToPropertyValue(uniformInfo.defaultValue),
 					.singleUse = false
-				});
+					});
 			}
 		}
 	}
-}
 
+	std::erase_if(m_properties, [&usedUniforms](const auto& property) {
+		return !usedUniforms.contains(property.first);
+		});
+}
 // Note: this function is critical for performance, as it may be called many times during a frame.
 // Avoid using any heavy operations or allocations inside this function.
 void OvRendering::Data::Material::Bind(
@@ -231,11 +243,11 @@ void OvRendering::Data::Material::SetProperty(const std::string p_name, const Ma
 {
 	OVASSERT(IsValid(), "Attempting to SetProperty on an invalid material.");
 	OVASSERT(HasProperty(p_name), "Attempting to SetProperty on a non-existing property.");
-	const auto property = 
+	const auto property =
 
-	m_properties[p_name] = MaterialProperty{
-		p_value,
-		p_singleUse
+		m_properties[p_name] = MaterialProperty{
+			p_value,
+			p_singleUse
 	};
 }
 

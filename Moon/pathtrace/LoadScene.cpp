@@ -7,6 +7,15 @@
 #include "Texture.h"
 #include "Material.h"
 #include "Renderer.h"
+#include "renderer/Context.h"
+#include "OvCore/Global/ServiceLocator.h"
+#include "OvCore/ECS/Components/CMaterialRenderer.h"
+#include <OvCore/ResourceManagement/MaterialManager.h>
+#include <OvCore/ResourceManagement/ModelManager.h>
+#include <OvCore/ResourceManagement/ShaderManager.h>
+#include <OvCore/ResourceManagement/SoundManager.h>
+#include <OvCore/ResourceManagement/TextureManager.h>
+#include <OvCore/SceneSystem/SceneManager.h>
 #include <tinygltf/include/tiny_gltf.h>
 
 namespace PathTrace
@@ -409,6 +418,7 @@ namespace PathTrace
 
 				if (!filename.empty())
 				{
+
 					int mesh_id = scene->AddMesh(filename);
 					if (mesh_id != -1)
 					{
@@ -503,6 +513,216 @@ namespace PathTrace
 		fclose(file);
 
 		return true;
+	}
+
+	bool LoadSceneFromFile(const std::string& filename, OvCore::SceneSystem::Scene* scene)
+	{
+		FILE* file;
+		file = fopen(filename.c_str(), "r");
+
+		if (!file)
+		{
+			CORE_ERROR("Couldn't open {0} for reading\n", filename.c_str());
+			return false;
+		}
+		CORE_INFO("Loading Scene..\n");
+		struct MaterialData
+		{
+			Material mat;
+			int id;
+		};
+		std::map<std::string, MaterialData> materialMap;
+		std::map<std::string, int>InstanceMap;
+		std::vector<std::string> albedoTex;
+		std::vector<std::string> metallicRoughnessTex;
+		std::vector<std::string> normalTex;
+		std::string path = filename.substr(0, filename.find_last_of("/\\")) + "/";
+		int materialCount = 0;
+		char line[kMaxLineLength];
+		while (fgets(line, kMaxLineLength, file))
+		{
+			// skip comments
+			if (line[0] == '#')
+				continue;
+
+			// name used for materials and meshes
+			char name[kMaxLineLength] = { 0 };
+
+			if (sscanf(line, " material %s", name) == 1)
+			{
+				Material material;
+				char albedoTexName[100] = "none";
+				char metallicRoughnessTexName[100] = "none";
+				char normalTexName[100] = "none";
+				char emissionTexName[100] = "none";
+				char alphaMode[20] = "none";
+				char mediumType[20] = "none";
+
+				while (fgets(line, kMaxLineLength, file))
+				{
+					// end group
+					if (strchr(line, '}'))
+						break;
+
+					sscanf(line, " color %f %f %f", &material.baseColor.x, &material.baseColor.y, &material.baseColor.z);
+					sscanf(line, " opacity %f", &material.opacity);
+					sscanf(line, " alphamode %s", alphaMode);
+					sscanf(line, " alphacutoff %f", &material.alphaCutoff);
+					sscanf(line, " emission %f %f %f", &material.emission.x, &material.emission.y, &material.emission.z);
+					sscanf(line, " metallic %f", &material.metallic);
+					sscanf(line, " roughness %f", &material.roughness);
+					sscanf(line, " subsurface %f", &material.subsurface);
+					sscanf(line, " speculartint %f", &material.specularTint);
+					sscanf(line, " anisotropic %f", &material.anisotropic);
+					sscanf(line, " sheen %f", &material.sheen);
+					sscanf(line, " sheentint %f", &material.sheenTint);
+					sscanf(line, " clearcoat %f", &material.clearcoat);
+					sscanf(line, " clearcoatgloss %f", &material.clearcoatGloss);
+					sscanf(line, " spectrans %f", &material.specTrans);
+					sscanf(line, " ior %f", &material.ior);
+					sscanf(line, " albedotexture %s", albedoTexName);
+					sscanf(line, " metallicroughnesstexture %s", metallicRoughnessTexName);
+					sscanf(line, " normaltexture %s", normalTexName);
+					sscanf(line, " emissiontexture %s", emissionTexName);
+					sscanf(line, " mediumtype %s", mediumType);
+					sscanf(line, " mediumdensity %f", &material.mediumDensity);
+					sscanf(line, " mediumcolor %f %f %f", &material.mediumColor.x, &material.mediumColor.y, &material.mediumColor.z);
+					sscanf(line, " mediumanisotropy %f", &material.mediumAnisotropy);
+				}
+				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
+				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
+				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColor.x, material.baseColor.y, material.baseColor.z, 1.0f });
+				tempMat->SetProperty("u_Metallic", material.metallic);
+				tempMat->SetProperty("u_Roughness", material.roughness);
+				//tempMat->SetProperty("u_Diffuse", Maths::FVector4{ 1.0,  1.0, 1.0, 1.0f });
+				tempMat->SetBackfaceCulling(false);;
+				tempMat->SetCastShadows(false);
+				tempMat->SetReceiveShadows(false);
+				// Albedo Texture
+				auto albedo=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + albedoTexName,true);
+				tempMat->SetProperty("u_AlbedoMap",albedo);
+				//if (strcmp(albedoTexName, "none") != 0)
+					//material.baseColorTexId = scene->AddTexture(path + albedoTexName);
+
+				// MetallicRoughness Texture
+				auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+				tempMat->SetProperty("u_RoughnessMap",roughness);
+				auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+				tempMat->SetProperty("u_RoughnessMap", metallicMap);
+				//if (strcmp(metallicRoughnessTexName, "none") != 0)
+					//material.metallicRoughnessTexID = scene->AddTexture(path + metallicRoughnessTexName);
+
+				// Normal Map Texture
+				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
+				tempMat->SetProperty("u_NormalMap", normalTex);
+
+			
+
+				// AlphaMode
+				if (strcmp(alphaMode, "opaque") == 0)
+					material.alphaMode = AlphaMode::Opaque;
+				else if (strcmp(alphaMode, "blend") == 0)
+					material.alphaMode = AlphaMode::Blend;
+				else if (strcmp(alphaMode, "mask") == 0)
+					material.alphaMode = AlphaMode::Mask;
+
+				// MediumType
+				if (strcmp(mediumType, "absorb") == 0)
+					material.mediumType = MediumType::Absorb;
+				else if (strcmp(mediumType, "scatter") == 0)
+					material.mediumType = MediumType::Scatter;
+				else if (strcmp(mediumType, "emissive") == 0)
+					material.mediumType = MediumType::Emissive;
+
+				// add material to map
+				if (materialMap.find(name) == materialMap.end()) // New material
+				{
+					//int id = scene->AddMaterial(material);
+					//materialMap[name] = MaterialData{ material, id };
+				}
+			}
+			// Mesh
+			if (strstr(line, "mesh"))
+			{
+				std::string filename;
+				Vec4 rotQuat;
+				Mat4 xform, translate, rot, scale;
+
+				int material_id = 0; // Default Material ID
+				int parentid = -1;
+				char meshName[200] = "none";
+				char parentName[200] = "none";
+				bool matrixProvided = false;
+			    char matName[100];
+				while (fgets(line, kMaxLineLength, file))
+				{
+					// end group
+					if (strchr(line, '}'))
+						break;
+
+					char file[2048];
+
+
+					sscanf(line, " name %[^\t\n]s", meshName);
+					if (sscanf(line, " parent %s", parentName) == 1)
+					{
+						//in this case parent must prior to this meshinstance
+						parentid = InstanceMap[parentName];
+
+					}
+					if (sscanf(line, " file %s", file) == 1)
+						filename = path + file;
+
+					if (sscanf(line, " material %s", matName) == 1)
+					{
+						// look up material in dictionary
+						if (materialMap.find(matName) != materialMap.end())
+							material_id = materialMap[matName].id;
+						else
+							printf("Could not find material %s\n", matName);
+					}
+
+					if (sscanf(line, " matrix %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+						&xform[0][0], &xform[1][0], &xform[2][0], &xform[3][0],
+						&xform[0][1], &xform[1][1], &xform[2][1], &xform[3][1],
+						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
+						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
+					) != 0)
+						matrixProvided = true;
+
+					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
+					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
+					if (sscanf(line, " rotation %f %f %f %f", &rotQuat.x, &rotQuat.y, &rotQuat.z, &rotQuat.w) != 0)
+						rot = Mat4::QuatToMatrix(rotQuat.x, rotQuat.y, rotQuat.z, rotQuat.w);
+				}
+
+				if (!filename.empty())
+				{
+					auto& actor = scene->CreateActor();
+					if (strcmp(meshName, "none") != 0)
+					{
+						actor.SetName(meshName);
+					}					
+					auto mesh=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(filename);
+					actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);	
+					Mat4 transformMat;
+
+					if (matrixProvided)
+						transformMat = xform;
+					else
+						transformMat = scale * rot * translate;
+					actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(transformMat.data);
+					auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+					auto mat=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(matName);
+					materilaRener.SetMaterialAtIndex(0, *mat);
+					materilaRener.UpdateMaterialList();
+
+				}
+			}
+		}
+
+		return false;
 	}
 
 	struct Primitive

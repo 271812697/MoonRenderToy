@@ -110,7 +110,7 @@ if(NOT TARGET tracy)
     
     
     add_library(tracy STATIC ${tracy_impl} ${tracy_head})
-    target_link_libraries(tracy PUBLIC dbghelp.lib)
+    target_link_libraries(tracy PUBLIC dbghelp.lib  ws2_32.lib)
     target_compile_definitions(tracy PUBLIC 
     TRACY_ENABLE
     TRACY_ON_DEMAND

@@ -1,5 +1,4 @@
 #include "editor/treeViewpanel.h"
-#include "editor/viewerwindow.h"
 #define __glad_h_
 #include "PathTrace.h"
 #include "LoadScene.h"
@@ -9,9 +8,7 @@
 #include "Renderer.h"
 #include "core/log.h"
 #include "Trace.h"
-#include "renderer/Context.h"
 
-#include "OvCore/Global/ServiceLocator.h"
 #include <filesystem>
 namespace PathTrace {
 
@@ -53,10 +50,10 @@ namespace PathTrace {
 			switchScene = false;
 			LoadScene(switchSceneName);
 			InitRenderer();
-			OVSERVICE(MOON::ViewerWindow).switchScene();
+
 			//OVSERVICE(MOON::TreeViewPanel).initModel();
 		}
-		PathTrace::CameraController::Instance().MoveToPivot(0.016);
+		//PathTrace::CameraController::Instance().MoveToPivot(0.016);
 	}
 	void GetSceneFiles()
 	{
@@ -69,6 +66,9 @@ namespace PathTrace {
 					sceneFiles.push_back(item.path().generic_string());
 				}
 			}
+
+		switchSceneName = PathTrace::sceneFiles[PathTrace::sampleSceneIdx];
+
 	}
 	void Resize(int width, int height) {
 		renderOptions.windowResolution.x = width;
@@ -92,6 +92,10 @@ namespace PathTrace {
 	void SwitchScene(std::string sceneName) {
 		switchScene = true;
 		switchSceneName = sceneName;
+	}
+	std::string GetSceneFilePath()
+	{
+		return switchSceneName;
 	}
 	void LoadScene(std::string sceneName)
 	{

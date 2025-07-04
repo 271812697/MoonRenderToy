@@ -19,6 +19,7 @@
 #include "parsescene.h"
 
 
+
 OvEditor::Core::Context* editorContext = nullptr;
 OvEditor::Panels::SceneView* sceneView = nullptr;
 static QtImGui::RenderRef imref = nullptr;
@@ -88,12 +89,15 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
+		TEST::TestInstance::Instance().flush();
+		TEST::TestInstance::Instance().execute();
 		QtImGui::newFrame(imref);
 		ImPlot::SetCurrentContext(ctx);
 		sceneView->Update(0.01);
 		if (mSwitchScene) {
 			mSwitchScene = false;
 			ParseScene::ParsePathTraceScene();
+			
 			sceneView->UnselectActor();
 			OVSERVICE(TreeViewPanel).initModel();
 		}
