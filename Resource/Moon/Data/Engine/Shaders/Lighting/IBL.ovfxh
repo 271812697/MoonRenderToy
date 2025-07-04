@@ -1,5 +1,14 @@
 #include ":Shaders/Common/Buffers/ReflectionUBO.ovfxh"
 
+bool IsPointInOBB(vec3 point, vec3 obbCenter, vec3 obbHalfExtents, mat3 obbOrientation)
+{
+    vec3 localPoint = obbOrientation * (point - obbCenter);
+    
+    return abs(localPoint.x) <= obbHalfExtents.x &&
+           abs(localPoint.y) <= obbHalfExtents.y &&
+           abs(localPoint.z) <= obbHalfExtents.z;
+}
+
 // https://seblagarde.wordpress.com/wp-content/uploads/2012/08/parallax_corrected_cubemap-siggraph2012.pdf
 vec3 BoxProjectionOBB(vec3 reflectionVector, vec3 worldPos, vec3 probePos, vec3 obbCenter, vec3 obbHalfExtents, mat3 obbOrientation)
 {
@@ -73,33 +82,62 @@ vec3 CalculateImageBasedLighting(
     float metallic,
     vec3 F0,
     float NdotV,
-    vec3 albedo
+    vec3 albedo,
+    float transmission,
+    float refractionIndex
 ) {
+    // Early exit if the fragment is outside the reflection probe bounds
+    if (ubo_ReflectionProbeData.local && !IsPointInOBB(
+        fragPos,
+        ubo_ReflectionProbeData.boxCenter.xyz,
+        ubo_ReflectionProbeData.boxHalfExtents.xyz,
+        mat3(ubo_ReflectionProbeData.rotation))
+    )
+    {
+        return vec3(0.0); // No reflection/refraction.
+    }
+
     // 0. Constants
     const int environmentMaxLOD = textureQueryLevels(environmentMap) - 1;
-    
+   
     // 1. Calculate reflection vector
     const vec3 R = ParallaxCorrect(reflect(-V, N), fragPos);
     
-    // 2. Diffuse irradiance (environment lighting)
-    const vec3 irradiance = textureLod(environmentMap, N, environmentMaxLOD).rgb; // High mip level for diffuse
+    // 2. Calculate refraction vector
+    const vec3 T = ParallaxCorrect(refract(-V, N, 1.0 / refractionIndex), fragPos);
+   
+    // 3. Diffuse irradiance (environment lighting)
+    const vec3 irradiance = textureLod(environmentMap, N, environmentMaxLOD).rgb;
+   
+    // 4. Specular reflection
+    const vec3 reflectedColor = textureLod(environmentMap, R, roughness * environmentMaxLOD).rgb;
     
-    // 3. Specular reflection
-    const vec3 prefilteredColor = textureLod(environmentMap, R, roughness * environmentMaxLOD).rgb;
+    // 5. Refracted environment sampling
+    const vec3 refractedColor = textureLod(environmentMap, T, roughness * environmentMaxLOD).rgb;
     
-    // 4. Apply BRDF
+    // 6. Apply BRDF
     const vec2 brdf = EnvBRDFApprox(NdotV, roughness);
-    
-    // 5. Calculate Fresnel for IBL
+   
+    // 7. Calculate Fresnel for IBL
     const vec3 F_IBL = FresnelSchlickRoughness(NdotV, F0, roughness);
     
-    // 6. Calculate specular and diffuse IBL components
+    // 8. Calculate transmission factor based on Fresnel
+    // Higher Fresnel = more reflection, less transmission
+    const float avgFresnel = (F_IBL.r + F_IBL.g + F_IBL.b) / 3.0;
+    const float transmissionFactor = transmission * (1.0 - avgFresnel);
+   
+    // 9. Calculate diffuse and reflection IBL components
     const vec3 kS_IBL = F_IBL;
     const vec3 kD_IBL = (1.0 - kS_IBL) * (1.0 - metallic);
-    
     const vec3 diffuseIBL = kD_IBL * irradiance * albedo;
-    const vec3 specularIBL = prefilteredColor * (F_IBL * brdf.x + brdf.y);
+    const vec3 reflectionIBL = reflectedColor * (F_IBL * brdf.x + brdf.y);
     
-    // 7. Return IBL contribution
+    // 10. Calculate refraction IBL component
+    const vec3 refractionIBL = refractedColor * albedo;
+
+    // 11. Mix reflection and refraction contributions based on transmission factor
+    const vec3 specularIBL = mix(reflectionIBL, refractionIBL, transmissionFactor);
+   
+    // 12. Return combined IBL contribution
     return (diffuseIBL + specularIBL) * ubo_ReflectionProbeData.brightness;
 }

@@ -77,7 +77,7 @@ namespace OvRendering::Data
 		/**
 		* Fill uniform with default uniform values
 		*/
-		void FillUniform();
+		void UpdateProperties();
 
 		/**
 		* Bind the material and send its uniform data to the GPU

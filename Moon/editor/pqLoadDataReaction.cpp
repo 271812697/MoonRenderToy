@@ -7,7 +7,10 @@
 #include <QRegExp>
 #include <QApplication>
 #include <QMainWindow>
+#include "editor/viewerwindow.h"
+#include "renderer/Context.h"
 
+#include "OvCore/Global/ServiceLocator.h"
 #include <algorithm>
 #include <cassert>
 #include <string>
@@ -59,6 +62,7 @@ void pqLoadDataReaction::onTriggered()
 		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 	PathTrace::SwitchScene(fileName.toStdString());
+	OVSERVICE(MOON::ViewerWindow).switchScene();
 
 
 
