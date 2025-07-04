@@ -9,7 +9,7 @@
 #include "OvCore/ECS/Components/CDirectionalLight.h"
 #include "OvCore/ECS/Components/CAmbientSphereLight.h"
 #include "OvCore/ECS/Components/CPostProcessStack.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "pathtrace/LoadScene.h"
 
 
 
@@ -96,38 +96,38 @@ namespace MOON {
 		//tonesettings.gammaCorrection = false;
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
 		addSphereLight(scene);
+		PathTrace::LoadSceneFromFile(PathTrace::GetSceneFilePath(),scene);
 
-
-		auto& mesh = sce->meshes;
-		auto& instance = sce->meshInstances;
-		auto& material = sce->materials;
-		for (int i = 0; i < mesh.size(); i++) {
-			auto m = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(mesh[i]->PackData(), {});
-			std::string name = "Scene::Mesh" + std::to_string(i);
-			OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().RegisterResource(name, m);
-		}
-		for (auto& mi : instance) {
-			OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-			OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(mi.name, tempMat);
-			tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-			auto& color = material[mi.materialID].baseColor;
-			tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ color.x,  color.y, color.z, 1.0f });
-			tempMat->SetProperty("u_Metallic", 0.3f);
-			tempMat->SetProperty("u_Roughness", 0.3f);
-			//tempMat->SetProperty("u_Diffuse", Maths::FVector4{ 1.0,  1.0, 1.0, 1.0f });
-			tempMat->SetBackfaceCulling(false);;
-			tempMat->SetCastShadows(false);
-			tempMat->SetReceiveShadows(false);
-			auto& actor = scene->CreateActor();
-			actor.SetName(mi.name);
-			auto m = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource("Scene::Mesh" + std::to_string(mi.meshID));
-			//auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("#" + mesh[mi.meshID]->name);
-			actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(m);
-			actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(mi.transform.data);
-			auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-			materilaRener.SetMaterialAtIndex(0, *tempMat);
-			materilaRener.UpdateMaterialList();
-		}
+		//auto& mesh = sce->meshes;
+		//auto& instance = sce->meshInstances;
+		//auto& material = sce->materials;
+		//for (int i = 0; i < mesh.size(); i++) {
+		//	auto m = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(mesh[i]->PackData(), {});
+		//	std::string name = "Scene::Mesh" + std::to_string(i);
+		//	OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().RegisterResource(name, m);
+		//}
+		//for (auto& mi : instance) {
+		//	OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
+		//	OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(mi.name, tempMat);
+		//	tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+		//	auto& color = material[mi.materialID].baseColor;
+		//	tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ color.x,  color.y, color.z, 1.0f });
+		//	tempMat->SetProperty("u_Metallic", 0.3f);
+		//	tempMat->SetProperty("u_Roughness", 0.3f);
+		//	//tempMat->SetProperty("u_Diffuse", Maths::FVector4{ 1.0,  1.0, 1.0, 1.0f });
+		//	tempMat->SetBackfaceCulling(false);;
+		//	tempMat->SetCastShadows(false);
+		//	tempMat->SetReceiveShadows(false);
+		//	auto& actor = scene->CreateActor();
+		//	actor.SetName(mi.name);
+		//	auto m = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource("Scene::Mesh" + std::to_string(mi.meshID));
+		//	//auto m = ::Core::Global::ServiceLocator::Get<::Core::ResourceManagement::ModelManager>().GetResource("#" + mesh[mi.meshID]->name);
+		//	actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(m);
+		//	actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(mi.transform.data);
+		//	auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+		//	materilaRener.SetMaterialAtIndex(0, *tempMat);
+		//	materilaRener.UpdateMaterialList();
+		//}
 	}
 
 }

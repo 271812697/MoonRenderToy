@@ -30,6 +30,7 @@ namespace PathTrace {
 	void GetEnvMaps();
 	void Resize(int width, int height);
 	void SwitchScene(std::string sceneName);
+	std::string GetSceneFilePath();
 	void LoadScene(std::string sceneName);
 
 	void TraceScene();
