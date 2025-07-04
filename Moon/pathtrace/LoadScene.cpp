@@ -592,24 +592,29 @@ namespace PathTrace
 				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
 				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
 				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColor.x, material.baseColor.y, material.baseColor.z, 1.0f });
+				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColor.x, material.baseColor.y, material.baseColor.z, material.opacity });
+				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ material.emission.x, material.emission.y, material.emission.z });
 				tempMat->SetProperty("u_Metallic", material.metallic);
 				tempMat->SetProperty("u_Roughness", material.roughness);
+				tempMat->SetProperty("u_RefractionIndex", material.ior);
+				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				//tempMat->SetProperty("u_Diffuse", Maths::FVector4{ 1.0,  1.0, 1.0, 1.0f });
 				tempMat->SetBackfaceCulling(false);;
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				// Albedo Texture
-				auto albedo=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + albedoTexName,true);
-				tempMat->SetProperty("u_AlbedoMap",albedo);
+				auto albedo = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + albedoTexName, true);
+				tempMat->SetProperty("u_AlbedoMap", albedo);
 				//if (strcmp(albedoTexName, "none") != 0)
 					//material.baseColorTexId = scene->AddTexture(path + albedoTexName);
 
 				// MetallicRoughness Texture
 				auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
-				tempMat->SetProperty("u_RoughnessMap",roughness);
+				tempMat->SetProperty("u_RoughnessMap", roughness);
+				auto emission = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + emissionTexName, true);
+				tempMat->SetProperty("u_EmissiveMap", roughness);
 				auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
-				tempMat->SetProperty("u_RoughnessMap", metallicMap);
+				tempMat->SetProperty("u_MetallicMap", metallicMap);
 				//if (strcmp(metallicRoughnessTexName, "none") != 0)
 					//material.metallicRoughnessTexID = scene->AddTexture(path + metallicRoughnessTexName);
 
@@ -617,7 +622,7 @@ namespace PathTrace
 				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
 				tempMat->SetProperty("u_NormalMap", normalTex);
 
-			
+
 
 				// AlphaMode
 				if (strcmp(alphaMode, "opaque") == 0)
@@ -635,12 +640,6 @@ namespace PathTrace
 				else if (strcmp(mediumType, "emissive") == 0)
 					material.mediumType = MediumType::Emissive;
 
-				// add material to map
-				if (materialMap.find(name) == materialMap.end()) // New material
-				{
-					//int id = scene->AddMaterial(material);
-					//materialMap[name] = MaterialData{ material, id };
-				}
 			}
 			// Mesh
 			if (strstr(line, "mesh"))
@@ -654,7 +653,7 @@ namespace PathTrace
 				char meshName[200] = "none";
 				char parentName[200] = "none";
 				bool matrixProvided = false;
-			    char matName[100];
+				char matName[100];
 				while (fgets(line, kMaxLineLength, file))
 				{
 					// end group
@@ -703,9 +702,9 @@ namespace PathTrace
 					if (strcmp(meshName, "none") != 0)
 					{
 						actor.SetName(meshName);
-					}					
-					auto mesh=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(filename);
-					actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);	
+					}
+					auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(filename);
+					actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
 					Mat4 transformMat;
 
 					if (matrixProvided)
@@ -714,7 +713,7 @@ namespace PathTrace
 						transformMat = scale * rot * translate;
 					actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(transformMat.data);
 					auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-					auto mat=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(matName);
+					auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(matName);
 					materilaRener.SetMaterialAtIndex(0, *mat);
 					materilaRener.UpdateMaterialList();
 
