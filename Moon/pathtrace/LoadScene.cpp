@@ -531,11 +531,7 @@ namespace PathTrace
 			Material mat;
 			int id;
 		};
-		std::map<std::string, MaterialData> materialMap;
-		std::map<std::string, int>InstanceMap;
-		std::vector<std::string> albedoTex;
-		std::vector<std::string> metallicRoughnessTex;
-		std::vector<std::string> normalTex;
+
 		std::string path = filename.substr(0, filename.find_last_of("/\\")) + "/";
 		int materialCount = 0;
 		char line[kMaxLineLength];
@@ -544,13 +540,90 @@ namespace PathTrace
 			// skip comments
 			if (line[0] == '#')
 				continue;
-
 			// name used for materials and meshes
 			char name[kMaxLineLength] = { 0 };
-
 			if (sscanf(line, " material %s", name) == 1)
 			{
-				Material material;
+				struct aMaterial
+				{
+					aMaterial()
+					{
+						baseColorR = baseColorG = baseColorB = 1.0f;
+						//各向异性
+						anisotropic = 0.0f;
+
+						emissionR = emissionG = emissionB = 0.0f;
+						// padding1
+
+						metallic = 0.0f;
+						roughness = 0.5f;
+						subsurface = 0.0f;
+						specularTint = 0.0f;
+
+						sheen = 0.0f;
+						sheenTint = 0.0f;
+						clearcoat = 0.0f;
+						clearcoatGloss = 0.0f;
+
+						specTrans = 0.0f;
+						ior = 1.5f;
+						//介质类型
+						mediumType = 0.0f;
+						mediumDensity = 0.0f;
+
+						mediumColor = Vec3(1.0f, 1.0f, 1.0f);
+						//各向同性
+						mediumAnisotropy = 0.0f;
+
+						baseColorTexId = -1.0f;
+						metallicRoughnessTexID = -1.0f;
+						normalmapTexID = -1.0f;
+						emissionmapTexID = -1.0f;
+
+						opacity = 1.0f;
+						alphaMode = 0.0f;
+						alphaCutoff = 0.0f;
+						// padding2
+					};
+					float  baseColorR;
+					float  baseColorG;
+					float  baseColorB;
+					float anisotropic;
+
+					float emissionR;
+					float emissionG;
+					float emissionB;
+					float ax;
+
+					float metallic;
+					float roughness;
+					float subsurface;
+					float specularTint;
+
+					float sheen;
+					float sheenTint;
+					float clearcoat;
+					float clearcoatGloss;
+
+					float specTrans;
+					float ior;
+					float mediumType;
+					float mediumDensity;
+
+					Vec3 mediumColor;
+					float mediumAnisotropy;
+
+					float baseColorTexId;
+					float metallicRoughnessTexID;
+					float normalmapTexID;
+					float emissionmapTexID;
+
+					float opacity;
+					float alphaMode;
+					float alphaCutoff;
+					float ay;
+				};
+				aMaterial material;
 				char albedoTexName[100] = "none";
 				char metallicRoughnessTexName[100] = "none";
 				char normalTexName[100] = "none";
@@ -564,11 +637,11 @@ namespace PathTrace
 					if (strchr(line, '}'))
 						break;
 
-					sscanf(line, " color %f %f %f", &material.baseColor.x, &material.baseColor.y, &material.baseColor.z);
+					sscanf(line, " color %f %f %f", &material.baseColorR, &material.baseColorG, &material.baseColorB);
 					sscanf(line, " opacity %f", &material.opacity);
 					sscanf(line, " alphamode %s", alphaMode);
 					sscanf(line, " alphacutoff %f", &material.alphaCutoff);
-					sscanf(line, " emission %f %f %f", &material.emission.x, &material.emission.y, &material.emission.z);
+					sscanf(line, " emission %f %f %f", &material.emissionR, &material.emissionG, &material.emissionB);
 					sscanf(line, " metallic %f", &material.metallic);
 					sscanf(line, " roughness %f", &material.roughness);
 					sscanf(line, " subsurface %f", &material.subsurface);
@@ -592,8 +665,8 @@ namespace PathTrace
 				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
 				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
 				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColor.x, material.baseColor.y, material.baseColor.z, material.opacity });
-				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ material.emission.x, material.emission.y, material.emission.z });
+				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColorR, material.baseColorG, material.baseColorB, material.opacity });
+				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ material.emissionR, material.emissionG, material.emissionB });
 				tempMat->SetProperty("u_Metallic", material.metallic);
 				tempMat->SetProperty("u_Roughness", material.roughness);
 				tempMat->SetProperty("u_RefractionIndex", material.ior);
@@ -605,8 +678,7 @@ namespace PathTrace
 				// Albedo Texture
 				auto albedo = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + albedoTexName, true);
 				tempMat->SetProperty("u_AlbedoMap", albedo);
-				//if (strcmp(albedoTexName, "none") != 0)
-					//material.baseColorTexId = scene->AddTexture(path + albedoTexName);
+
 
 				// MetallicRoughness Texture
 				auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
@@ -615,8 +687,7 @@ namespace PathTrace
 				tempMat->SetProperty("u_EmissiveMap", roughness);
 				auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_MetallicMap", metallicMap);
-				//if (strcmp(metallicRoughnessTexName, "none") != 0)
-					//material.metallicRoughnessTexID = scene->AddTexture(path + metallicRoughnessTexName);
+
 
 				// Normal Map Texture
 				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
@@ -636,7 +707,11 @@ namespace PathTrace
 				if (strcmp(mediumType, "absorb") == 0)
 					material.mediumType = MediumType::Absorb;
 				else if (strcmp(mediumType, "scatter") == 0)
+				{
 					material.mediumType = MediumType::Scatter;
+					tempMat->AddFeature("SPECULAR_WORKFLOW");
+				}
+
 				else if (strcmp(mediumType, "emissive") == 0)
 					material.mediumType = MediumType::Emissive;
 
@@ -667,7 +742,7 @@ namespace PathTrace
 					if (sscanf(line, " parent %s", parentName) == 1)
 					{
 						//in this case parent must prior to this meshinstance
-						parentid = InstanceMap[parentName];
+						//parentid = InstanceMap[parentName];
 
 					}
 					if (sscanf(line, " file %s", file) == 1)
@@ -675,11 +750,7 @@ namespace PathTrace
 
 					if (sscanf(line, " material %s", matName) == 1)
 					{
-						// look up material in dictionary
-						if (materialMap.find(matName) != materialMap.end())
-							material_id = materialMap[matName].id;
-						else
-							printf("Could not find material %s\n", matName);
+
 					}
 
 					if (sscanf(line, " matrix %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
