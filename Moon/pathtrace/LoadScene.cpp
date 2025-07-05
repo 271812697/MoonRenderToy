@@ -790,10 +790,71 @@ namespace PathTrace
 
 				}
 			}
-		}
 
-		return false;
+			if (strstr(line, "gltf"))
+			{
+				std::string filename;
+				Vec4 rotQuat;
+				Mat4 xform, translate, rot, scale;
+				bool matrixProvided = false;
+
+				while (fgets(line, kMaxLineLength, file))
+				{
+					// end group
+					if (strchr(line, '}'))
+						break;
+
+					char file[2048];
+
+					if (sscanf(line, " file %s", file) == 1)
+						filename = path + file;
+
+					if (sscanf(line, " matrix %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+						&xform[0][0], &xform[1][0], &xform[2][0], &xform[3][0],
+						&xform[0][1], &xform[1][1], &xform[2][1], &xform[3][1],
+						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
+						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
+					) != 0)
+						matrixProvided = true;
+
+					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
+					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
+					if (sscanf(line, " rotation %f %f %f %f", &rotQuat.x, &rotQuat.y, &rotQuat.z, &rotQuat.w) != 0)
+						rot = Mat4::QuatToMatrix(rotQuat.x, rotQuat.y, rotQuat.z, rotQuat.w);
+				}
+
+				if (!filename.empty())
+				{
+					std::string ext = filename.substr(filename.find_last_of(".") + 1);
+
+					bool success = false;
+					Mat4 transformMat;
+
+					if (matrixProvided)
+						transformMat = xform;
+					else
+						transformMat = scale * rot * translate;
+
+					// TODO: Add support for instancing.
+					// If the same gltf is loaded multiple times then mesh data gets duplicated
+					if (ext == "gltf")
+						success = LoadGLTF(filename, scene, transformMat, false);
+					else if (ext == "glb")
+						success = LoadGLTF(filename, scene, transformMat, true);
+
+					if (!success)
+					{
+						printf("Unable to load gltf %s\n", filename.c_str());
+						exit(0);
+					}
+				}
+			}
+		}
+		fclose(file);
+		return true;
 	}
+
+
 
 	struct Primitive
 	{
@@ -1147,7 +1208,7 @@ namespace PathTrace
 		std::string err;
 		std::string warn;
 
-		printf("Loading GLTF %s\n", filename.c_str());
+		CORE_INFO("Loading GLTF{0}", filename.c_str());
 
 		bool ret;
 
@@ -1158,7 +1219,7 @@ namespace PathTrace
 
 		if (!ret)
 		{
-			printf("Unable to load file %s. Error: %s\n", filename.c_str(), err.c_str());
+			CORE_ERROR("Unable to load file {0}. Error: {1}\n", filename.c_str(), err.c_str());
 			return false;
 		}
 
@@ -1167,6 +1228,372 @@ namespace PathTrace
 		LoadMaterials(scene, gltfModel);
 		LoadTextures(scene, gltfModel);
 		LoadInstances(scene, gltfModel, xform, meshPrimMap);
+		return true;
+	}
+
+	bool LoadGLTF(const std::string& filename, OvCore::SceneSystem::Scene* scene, Mat4 formaa, bool binary)
+	{
+		tinygltf::Model gltfModel;
+		tinygltf::TinyGLTF loader;
+		std::string err;
+		std::string warn;
+
+		CORE_INFO("Loading GLTF{0}", filename.c_str());
+
+		bool ret;
+
+		if (binary)
+			ret = loader.LoadBinaryFromFile(&gltfModel, &err, &warn, filename);
+		else
+			ret = loader.LoadASCIIFromFile(&gltfModel, &err, &warn, filename);
+
+		if (!ret)
+		{
+			CORE_ERROR("Unable to load file {0}. Error: {1}\n", filename.c_str(), err.c_str());
+			return false;
+		}
+		struct primIndex
+		{
+			std::string path;
+			int materialIndex;
+		};
+		std::map<int, std::vector<primIndex>> meshPrimMap;
+		std::unordered_map<int, std::string>textureMap;
+		std::unordered_map<int, std::string>materilaMap;
+		//Load Mesh
+		{
+			for (int gltfMeshIdx = 0; gltfMeshIdx < gltfModel.meshes.size(); gltfMeshIdx++)
+			{
+				tinygltf::Mesh gltfMesh = gltfModel.meshes[gltfMeshIdx];
+
+				for (int gltfPrimIdx = 0; gltfPrimIdx < gltfMesh.primitives.size(); gltfPrimIdx++)
+				{
+					tinygltf::Primitive prim = gltfMesh.primitives[gltfPrimIdx];
+
+					// Skip points and lines
+					if (prim.mode != TINYGLTF_MODE_TRIANGLES)
+						continue;
+
+					int indicesIndex = prim.indices;
+					int positionIndex = -1;
+					int normalIndex = -1;
+					int uv0Index = -1;
+
+					if (prim.attributes.count("POSITION") > 0)
+					{
+						positionIndex = prim.attributes["POSITION"];
+					}
+
+					if (prim.attributes.count("NORMAL") > 0)
+					{
+						normalIndex = prim.attributes["NORMAL"];
+					}
+
+					if (prim.attributes.count("TEXCOORD_0") > 0)
+					{
+						uv0Index = prim.attributes["TEXCOORD_0"];
+					}
+
+					// Vertex positions
+					tinygltf::Accessor positionAccessor = gltfModel.accessors[positionIndex];
+					tinygltf::BufferView positionBufferView = gltfModel.bufferViews[positionAccessor.bufferView];
+					const tinygltf::Buffer& positionBuffer = gltfModel.buffers[positionBufferView.buffer];
+					const uint8_t* positionBufferAddress = positionBuffer.data.data();
+					int positionStride = tinygltf::GetComponentSizeInBytes(positionAccessor.componentType) * tinygltf::GetNumComponentsInType(positionAccessor.type);
+					// TODO: Recheck
+					if (positionBufferView.byteStride > 0)
+						positionStride = positionBufferView.byteStride;
+
+					// FIXME: Some GLTF files like TriangleWithoutIndices.gltf have no indices
+					// Vertex indices
+					tinygltf::Accessor indexAccessor = gltfModel.accessors[indicesIndex];
+					tinygltf::BufferView indexBufferView = gltfModel.bufferViews[indexAccessor.bufferView];
+					const tinygltf::Buffer& indexBuffer = gltfModel.buffers[indexBufferView.buffer];
+					const uint8_t* indexBufferAddress = indexBuffer.data.data();
+					int indexStride = tinygltf::GetComponentSizeInBytes(indexAccessor.componentType) * tinygltf::GetNumComponentsInType(indexAccessor.type);
+
+					// Normals
+					tinygltf::Accessor normalAccessor;
+					tinygltf::BufferView normalBufferView;
+					const uint8_t* normalBufferAddress = nullptr;
+					int normalStride = -1;
+					if (normalIndex > -1)
+					{
+						normalAccessor = gltfModel.accessors[normalIndex];
+						normalBufferView = gltfModel.bufferViews[normalAccessor.bufferView];
+						const tinygltf::Buffer& normalBuffer = gltfModel.buffers[normalBufferView.buffer];
+						normalBufferAddress = normalBuffer.data.data();
+						normalStride = tinygltf::GetComponentSizeInBytes(normalAccessor.componentType) * tinygltf::GetNumComponentsInType(normalAccessor.type);
+						if (normalBufferView.byteStride > 0)
+							normalStride = normalBufferView.byteStride;
+					}
+
+					// Texture coordinates
+					tinygltf::Accessor uv0Accessor;
+					tinygltf::BufferView uv0BufferView;
+					const uint8_t* uv0BufferAddress = nullptr;
+					int uv0Stride = -1;
+					if (uv0Index > -1)
+					{
+						uv0Accessor = gltfModel.accessors[uv0Index];
+						uv0BufferView = gltfModel.bufferViews[uv0Accessor.bufferView];
+						const tinygltf::Buffer& uv0Buffer = gltfModel.buffers[uv0BufferView.buffer];
+						uv0BufferAddress = uv0Buffer.data.data();
+						uv0Stride = tinygltf::GetComponentSizeInBytes(uv0Accessor.componentType) * tinygltf::GetNumComponentsInType(uv0Accessor.type);
+						if (uv0BufferView.byteStride > 0)
+							uv0Stride = uv0BufferView.byteStride;
+					}
+
+					std::vector<OvMaths::FVector3> vertices;
+					std::vector<OvMaths::FVector3> normals;
+					std::vector<OvMaths::FVector2> uvs;
+
+					// Get vertex data
+					for (size_t vertexIndex = 0; vertexIndex < positionAccessor.count; vertexIndex++)
+					{
+						OvMaths::FVector3 vertex, normal;
+						OvMaths::FVector2 uv;
+
+						{
+							const uint8_t* address = positionBufferAddress + positionBufferView.byteOffset + positionAccessor.byteOffset + (vertexIndex * positionStride);
+							memcpy(&vertex, address, 12);
+						}
+
+						if (normalIndex > -1)
+						{
+							const uint8_t* address = normalBufferAddress + normalBufferView.byteOffset + normalAccessor.byteOffset + (vertexIndex * normalStride);
+							memcpy(&normal, address, 12);
+						}
+
+						if (uv0Index > -1)
+						{
+							const uint8_t* address = uv0BufferAddress + uv0BufferView.byteOffset + uv0Accessor.byteOffset + (vertexIndex * uv0Stride);
+							memcpy(&uv, address, 8);
+						}
+
+						vertices.push_back(vertex);
+						normals.push_back(normal);
+						uvs.push_back(uv);
+					}
+
+					// Get index data
+					std::vector<unsigned int> indices(indexAccessor.count);
+					const uint8_t* baseAddress = indexBufferAddress + indexBufferView.byteOffset + indexAccessor.byteOffset;
+					if (indexStride == 1)
+					{
+						std::vector<uint8_t> quarter;
+						quarter.resize(indexAccessor.count);
+
+						memcpy(quarter.data(), baseAddress, (indexAccessor.count * indexStride));
+
+						// Convert quarter precision indices to full precision
+						for (size_t i = 0; i < indexAccessor.count; i++)
+						{
+							indices[i] = quarter[i];
+						}
+					}
+					else if (indexStride == 2)
+					{
+						std::vector<uint16_t> half;
+						half.resize(indexAccessor.count);
+
+						memcpy(half.data(), baseAddress, (indexAccessor.count * indexStride));
+
+						// Convert half precision indices to full precision
+						for (size_t i = 0; i < indexAccessor.count; i++)
+						{
+							indices[i] = half[i];
+						}
+					}
+					else
+					{
+						memcpy(indices.data(), baseAddress, (indexAccessor.count * indexStride));
+					}
+					std::string modelname = filename + std::to_string(gltfMeshIdx) + "#" + std::to_string(gltfPrimIdx);
+					OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(modelname, vertices, normals, uvs, indices);
+
+
+					//int sceneMeshId = scene->meshes.size();
+					//scene->meshes.push_back(mesh);
+					// Store a mapping for a gltf mesh and the loaded primitive data
+					// This is used for creating instances based on the primitive
+					//int sceneMatIdx = prim.material + scene->materials.size();
+					meshPrimMap[gltfMeshIdx].push_back(primIndex{ modelname, prim.material });
+				}
+			}
+		}
+		//Load Texture
+		{
+			for (size_t i = 0; i < gltfModel.textures.size(); ++i)
+			{
+				tinygltf::Texture& gltfTex = gltfModel.textures[i];
+				tinygltf::Image& image = gltfModel.images[gltfTex.source];
+				std::string texName = gltfTex.name;
+				if (strcmp(gltfTex.name.c_str(), "") == 0)
+					texName = image.uri;
+				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().CreateFromMemory(texName, image.image.data(), image.width, image.height);
+				textureMap[i] = texName;
+			}
+		}
+		//Load Material
+		{
+
+			// TODO: Support for KHR extensions
+			for (size_t i = 0; i < gltfModel.materials.size(); i++)
+			{
+				const tinygltf::Material gltfMaterial = gltfModel.materials[i];
+				const tinygltf::PbrMetallicRoughness pbr = gltfMaterial.pbrMetallicRoughness;
+
+				// Convert glTF material
+				materilaMap[i] = gltfMaterial.name;
+				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
+				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(gltfMaterial.name, tempMat);
+				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ (float)pbr.baseColorFactor[0], (float)pbr.baseColorFactor[1], (float)pbr.baseColorFactor[2], (float)pbr.baseColorFactor[3] });
+				// Albedo Texture
+				if (pbr.baseColorTexture.index > -1) {
+					auto albedo = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.baseColorTexture.index], true);
+					tempMat->SetProperty("u_AlbedoMap", albedo);
+				}
+				tempMat->SetProperty("u_AlphaClippingThreshold", static_cast<float>(gltfMaterial.alphaCutoff));
+				tempMat->SetProperty("u_Roughness", (float)pbr.roughnessFactor);
+				tempMat->SetProperty("u_Metallic", (float)pbr.metallicFactor);
+				//if (strcmp(gltfMaterial.alphaMode.c_str(), "OPAQUE") == 0) material.alphaMode = AlphaMode::Opaque;
+				//else if (strcmp(gltfMaterial.alphaMode.c_str(), "BLEND") == 0) material.alphaMode = AlphaMode::Blend;
+				//else if (strcmp(gltfMaterial.alphaMode.c_str(), "MASK") == 0) material.alphaMode = AlphaMode::Mask;
+
+				// MetallicRoughness Texture
+				if (pbr.metallicRoughnessTexture.index > -1) {
+					auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
+					tempMat->SetProperty("u_RoughnessMap", roughness);
+
+					auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
+					tempMat->SetProperty("u_MetallicMap", metallicMap);
+				}
+				if (gltfMaterial.emissiveTexture.index > -1) {
+					auto emission = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.emissiveTexture.index], true);
+					tempMat->SetProperty("u_EmissiveMap", emission);
+				}
+				// Normal Map Texture
+				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.normalTexture.index], true);
+				tempMat->SetProperty("u_NormalMap", normalTex);
+				// Emission
+				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ (float)gltfMaterial.emissiveFactor[0], (float)gltfMaterial.emissiveFactor[1], (float)gltfMaterial.emissiveFactor[2] });
+				// KHR_materials_transmission
+				if (gltfMaterial.extensions.find("KHR_materials_transmission") != gltfMaterial.extensions.end())
+				{
+					const auto& ext = gltfMaterial.extensions.find("KHR_materials_transmission")->second;
+					if (ext.Has("transmissionFactor"))
+					{
+						tempMat->SetProperty("u_Transmission", (float)(ext.Get("transmissionFactor").Get<double>()));
+					}
+				}
+			}
+		}
+		//Load Actor
+		{
+			const tinygltf::Scene gltfScene = gltfModel.scenes[gltfModel.defaultScene];
+
+			for (int rootIdx = 0; rootIdx < gltfScene.nodes.size(); rootIdx++)
+			{
+				std::vector<int>indexStack;
+				std::vector<Mat4>transformStack;
+				indexStack.push_back(gltfScene.nodes[rootIdx]);
+				transformStack.push_back(formaa);
+				while (!indexStack.empty())
+				{
+					int nodeIdx = indexStack.back(); indexStack.pop_back();
+					Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+
+
+					tinygltf::Node gltfNode = gltfModel.nodes[nodeIdx];
+					Mat4 localMat;
+					if (gltfNode.matrix.size() > 0)
+					{
+						localMat.data[0][0] = gltfNode.matrix[0];
+						localMat.data[0][1] = gltfNode.matrix[1];
+						localMat.data[0][2] = gltfNode.matrix[2];
+						localMat.data[0][3] = gltfNode.matrix[3];
+
+						localMat.data[1][0] = gltfNode.matrix[4];
+						localMat.data[1][1] = gltfNode.matrix[5];
+						localMat.data[1][2] = gltfNode.matrix[6];
+						localMat.data[1][3] = gltfNode.matrix[7];
+
+						localMat.data[2][0] = gltfNode.matrix[8];
+						localMat.data[2][1] = gltfNode.matrix[9];
+						localMat.data[2][2] = gltfNode.matrix[10];
+						localMat.data[2][3] = gltfNode.matrix[11];
+
+						localMat.data[3][0] = gltfNode.matrix[12];
+						localMat.data[3][1] = gltfNode.matrix[13];
+						localMat.data[3][2] = gltfNode.matrix[14];
+						localMat.data[3][3] = gltfNode.matrix[15];
+					}
+					else
+					{
+						Mat4 translate, rot, scale;
+
+						if (gltfNode.translation.size() > 0)
+						{
+							translate.data[3][0] = gltfNode.translation[0];
+							translate.data[3][1] = gltfNode.translation[1];
+							translate.data[3][2] = gltfNode.translation[2];
+						}
+
+						if (gltfNode.rotation.size() > 0)
+						{
+							rot = Mat4::QuatToMatrix(gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2], gltfNode.rotation[3]);
+						}
+
+						if (gltfNode.scale.size() > 0)
+						{
+							scale.data[0][0] = gltfNode.scale[0];
+							scale.data[1][1] = gltfNode.scale[1];
+							scale.data[2][2] = gltfNode.scale[2];
+						}
+
+						localMat = scale * rot * translate;
+					}
+
+					Mat4 xform = localMat * parentMat;
+
+					// When at a leaf node, add an instance to the scene (if a mesh exists for it)
+					if (gltfNode.children.size() == 0 && gltfNode.mesh != -1)
+					{
+						std::vector<primIndex> prims = meshPrimMap[gltfNode.mesh];
+
+						// Write the instance data
+						for (int i = 0; i < prims.size(); i++)
+						{
+							std::string name = gltfNode.name;
+							// TODO: Better naming
+							if (strcmp(name.c_str(), "") == 0)
+								name = "Mesh " + std::to_string(gltfNode.mesh) + " Prim" + prims[i].path;
+							auto& actor = scene->CreateActor();
+							actor.SetName(name);
+
+							auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(prims[i].path);
+							actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
+
+							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
+							auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+
+							auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
+							materilaRener.SetMaterialAtIndex(0, *mat);
+							materilaRener.UpdateMaterialList();
+
+						}
+					}
+
+					for (size_t i = 0; i < gltfNode.children.size(); i++)
+					{
+						indexStack.push_back(gltfNode.children[i]);
+						transformStack.push_back(xform);
+					}
+				}
+			}
+		}
 		return true;
 	}
 }

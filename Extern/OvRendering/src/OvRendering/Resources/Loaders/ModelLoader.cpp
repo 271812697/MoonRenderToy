@@ -71,3 +71,24 @@ OvRendering::Resources::Model* OvRendering::Resources::Loaders::ModelLoader::Loa
 	return result;
 
 }
+
+OvRendering::Resources::Model* OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<OvMaths::FVector3>& normal, const std::vector<OvMaths::FVector2>& uv, const std::vector<unsigned int>& i)
+{
+	Model* result = new Model("Memory");
+	std::vector<Geometry::Vertex> vertices(vertex.size());
+	std::vector<uint32_t> indices = i;
+	for (int k = 0; k < vertices.size(); k++) {
+		vertices[k].position[0] = vertex[k].x;
+		vertices[k].position[1] = vertex[k].y;
+		vertices[k].position[2] = vertex[k].z;
+		vertices[k].normals[0] = normal[k].x;
+		vertices[k].normals[1] = normal[k].y;
+		vertices[k].normals[2] = normal[k].z;
+		vertices[k].texCoords[0] = uv[k].x;
+		vertices[k].texCoords[1] = uv[k].y;
+	}
+	result->m_meshes.push_back(new Mesh(vertices, indices, 0));
+	result->m_materialNames.push_back("Default");
+	result->ComputeBoundingSphere();
+	return result;
+}

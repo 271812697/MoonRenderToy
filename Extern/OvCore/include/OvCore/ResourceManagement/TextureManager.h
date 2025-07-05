@@ -22,7 +22,8 @@ namespace OvCore::ResourceManagement
 		* Create the resource identified by the given path
 		* @param p_path
 		*/
-		virtual OvRendering::Resources::Texture* CreateResource(const std::string & p_path) override;
+		virtual OvRendering::Resources::Texture* CreateResource(const std::string& p_path) override;
+		OvRendering::Resources::Texture* CreateFromMemory(const std::string& p_path, unsigned char* data, int w, int h);
 
 		/**
 		* Destroy the given resource
