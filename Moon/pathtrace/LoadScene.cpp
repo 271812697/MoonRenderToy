@@ -1288,10 +1288,7 @@ namespace PathTrace
 					{
 						normalIndex = prim.attributes["NORMAL"];
 					}
-					if (prim.attributes.count("TANGENT") > 0)
-					{
-						uv0Index = prim.attributes["TEXCOORD_0"];
-					}
+
 					if (prim.attributes.count("TEXCOORD_0") > 0)
 					{
 						uv0Index = prim.attributes["TEXCOORD_0"];
@@ -1377,7 +1374,7 @@ namespace PathTrace
 
 						vertices.push_back(vertex);
 						normals.push_back(normal);
-						uvs.push_back(uv);
+						uvs.push_back({ uv.x,1 - uv.y });
 					}
 
 					// Get index data
@@ -1591,7 +1588,9 @@ namespace PathTrace
 
 							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
 							auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-
+							if (prims[i].materialIndex < 0) {
+								assert(false);
+							}
 							auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
 							materilaRener.SetMaterialAtIndex(0, *mat);
 							materilaRener.UpdateMaterialList();
