@@ -176,7 +176,9 @@ void main()
     }
 
 #if defined(NORMAL_MAPPING)
-    const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, fs_in.TBN);
+    mat3 tbn=ComputeTBN(fs_in.FragPos,fs_in.Normal,texCoords);
+    const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, tbn);
+    //const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, fs_in.TBN);
 #else
     const vec3 normal = normalize(fs_in.Normal);
 #endif

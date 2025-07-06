@@ -124,6 +124,18 @@ mat3 ConstructTBN(mat4 model, vec3 normal, vec3 tangent, vec3 bitangent)
         normalize(vec3(model * vec4(normal,    0.0)))
     );
 }
+mat3 ComputeTBN(const vec3 position, const vec3 normal, const vec2 uv) {
+    vec3 dpx = dFdxFine(position);
+    vec3 dpy = dFdyFine(position);
+    vec2 duu = dFdxFine(uv);
+    vec2 dvv = dFdyFine(uv);
+
+    vec3 N = normalize(normal);
+    vec3 T = normalize(dpx * dvv.t - dpy * duu.t);
+    vec3 B = -normalize(cross(N, T));
+
+    return mat3(T, B, N);
+}
 
 
 vec3 ComputeNormal(vec2 texCoords, vec3 normal, sampler2D normalMap, mat3 TBN)

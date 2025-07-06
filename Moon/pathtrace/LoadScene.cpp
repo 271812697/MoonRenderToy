@@ -1288,11 +1288,15 @@ namespace PathTrace
 					{
 						normalIndex = prim.attributes["NORMAL"];
 					}
-
+					if (prim.attributes.count("TANGENT") > 0)
+					{
+						uv0Index = prim.attributes["TEXCOORD_0"];
+					}
 					if (prim.attributes.count("TEXCOORD_0") > 0)
 					{
 						uv0Index = prim.attributes["TEXCOORD_0"];
 					}
+
 
 					// Vertex positions
 					tinygltf::Accessor positionAccessor = gltfModel.accessors[positionIndex];
@@ -1445,9 +1449,18 @@ namespace PathTrace
 				const tinygltf::PbrMetallicRoughness pbr = gltfMaterial.pbrMetallicRoughness;
 
 				// Convert glTF material
+
 				materilaMap[i] = gltfMaterial.name;
+				if (materilaMap[i] == "") {
+					materilaMap[i] = filename + "::material " + std::to_string(i);
+				}
+
 				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(gltfMaterial.name, tempMat);
+				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(materilaMap[i], tempMat);
+				tempMat->SetBackfaceCulling(false);;
+				tempMat->SetCastShadows(false);
+				tempMat->SetReceiveShadows(false);
+				tempMat->AddFeature("NORMAL_MAPPING");
 				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
 				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ (float)pbr.baseColorFactor[0], (float)pbr.baseColorFactor[1], (float)pbr.baseColorFactor[2], (float)pbr.baseColorFactor[3] });
 				// Albedo Texture
