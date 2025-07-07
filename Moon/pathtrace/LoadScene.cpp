@@ -1488,6 +1488,7 @@ namespace PathTrace
 				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.normalTexture.index], true);
 				tempMat->SetProperty("u_NormalMap", normalTex);
 				// Emission
+				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ (float)gltfMaterial.emissiveFactor[0], (float)gltfMaterial.emissiveFactor[1], (float)gltfMaterial.emissiveFactor[2] });
 				// KHR_materials_transmission
 				if (gltfMaterial.extensions.find("KHR_materials_transmission") != gltfMaterial.extensions.end())

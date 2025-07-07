@@ -91,6 +91,7 @@ uniform float u_Glossiness = 1.0;
 uniform sampler2D u_MetallicMap;
 uniform float u_Metallic = 1.0;
 uniform sampler2D u_RoughnessMap;
+uniform sampler2D u_RoughnessMetallicMap;
 uniform float u_Roughness = 1.0;
 #endif
 
@@ -191,7 +192,7 @@ void main()
     const float roughness = 1.0 - glossiness;
 #else
     const float metallic = texture(u_MetallicMap, texCoords).r * u_Metallic;
-    const float roughness = texture(u_RoughnessMap, texCoords).r * u_Roughness;
+    const float roughness = texture(u_RoughnessMap, texCoords).g * u_Roughness;
 #endif
 
     const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
