@@ -1,0 +1,7 @@
+v 0 0 -1 1
+v 0 0 1 1
+cstype rat bspline
+deg 1
+curv 0 1 1 2
+parm u 0 0 1 1
+end
