@@ -977,7 +977,7 @@ namespace PathTrace
 
 					vertices.push_back(vertex);
 					normals.push_back(normal);
-					uvs.push_back(uv);
+					uvs.push_back({ uv.x, uv.y });
 				}
 
 				// Get index data
