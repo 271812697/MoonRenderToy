@@ -35,7 +35,8 @@ void main()
     vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos, 1.0));
     vs_out.TexCoords = geo_TexCoords;
     vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
-    vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, geo_Bitangent);
+    //vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, geo_Bitangent);
+    vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, cross(geo_Normal, geo_Tangent));
 
 #if defined(PARALLAX_MAPPING)
     const mat3 TBNi = transpose(vs_out.TBN);
@@ -90,6 +91,7 @@ uniform float u_Glossiness = 1.0;
 uniform sampler2D u_MetallicMap;
 uniform float u_Metallic = 1.0;
 uniform sampler2D u_RoughnessMap;
+uniform sampler2D u_RoughnessMetallicMap;
 uniform float u_Roughness = 1.0;
 #endif
 
@@ -176,6 +178,8 @@ void main()
     }
 
 #if defined(NORMAL_MAPPING)
+    //mat3 tbn=ComputeTBN(fs_in.FragPos,fs_in.Normal,texCoords);
+    //const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, tbn);
     const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, fs_in.TBN);
 #else
     const vec3 normal = normalize(fs_in.Normal);
@@ -188,7 +192,7 @@ void main()
     const float roughness = 1.0 - glossiness;
 #else
     const float metallic = texture(u_MetallicMap, texCoords).r * u_Metallic;
-    const float roughness = texture(u_RoughnessMap, texCoords).r * u_Roughness;
+    const float roughness = texture(u_RoughnessMap, texCoords).g * u_Roughness;
 #endif
 
     const float ao = texture(u_AmbientOcclusionMap, texCoords).r;

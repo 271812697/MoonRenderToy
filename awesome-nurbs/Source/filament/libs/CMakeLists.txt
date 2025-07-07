@@ -1,0 +1,8 @@
+add_subdirectory(bluegl)
+add_subdirectory(camutils)
+add_subdirectory(filabridge)
+add_subdirectory(filaflat)
+add_subdirectory(filamat)
+add_subdirectory(ibl)
+add_subdirectory(math)
+add_subdirectory(utils)

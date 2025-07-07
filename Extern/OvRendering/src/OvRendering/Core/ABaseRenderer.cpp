@@ -223,8 +223,6 @@ void OvRendering::Core::ABaseRenderer::Blit(
 void OvRendering::Core::ABaseRenderer::Present(OvRendering::HAL::Framebuffer& p_src)
 {
 	ZoneScoped;
-
-
 	const auto colorTex = p_src.GetAttachment<HAL::Texture>(Settings::EFramebufferAttachment::COLOR);
 	OVASSERT(colorTex.has_value(), "Invalid color attachment");
 	m_presentMaterial.SetProperty("_InputTexture", &colorTex.value());

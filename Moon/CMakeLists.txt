@@ -57,12 +57,13 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${ThirdPartyDir}
 )
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
-set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 17)
+set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
 set(OIDN_LIBRARIES "OpenImageDenoise")
 target_link_directories(${TARGET_NAME} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib
 )
+
 
 
 

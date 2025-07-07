@@ -100,6 +100,7 @@ namespace PathTrace
 		pivot = lookat;
 		radius = Vec3::Distance(eye, lookat);
 		radius = std::max(radius, 0.05f);
+		radius = std::min(radius, 20.0f);
 		worldUp = Vec3(0, 1, 0);
 		this->fov = Math::Radians(fov);
 		focalDist = 0.1f;
@@ -159,7 +160,7 @@ namespace PathTrace
 	void Camera::SetRadius(float dr)
 	{
 		radius += dr;
-		radius = std::max(radius, 0.05f);
+		//radius = std::max(radius, 0.05f);
 		position = pivot - radius * forward;
 		UpdateCamera();
 	}

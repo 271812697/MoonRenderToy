@@ -53,7 +53,7 @@ namespace PathTrace {
 
 			//OVSERVICE(MOON::TreeViewPanel).initModel();
 		}
-		//PathTrace::CameraController::Instance().MoveToPivot(0.016);
+		PathTrace::CameraController::Instance().MoveToPivot(0.016);
 	}
 	void GetSceneFiles()
 	{

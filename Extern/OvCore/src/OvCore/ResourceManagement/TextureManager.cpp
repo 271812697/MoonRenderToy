@@ -40,7 +40,7 @@ namespace
 	}
 }
 
-OvRendering::Resources::Texture* OvCore::ResourceManagement::TextureManager::CreateResource(const std::string & p_path)
+OvRendering::Resources::Texture* OvCore::ResourceManagement::TextureManager::CreateResource(const std::string& p_path)
 {
 	std::string realPath = GetRealPath(p_path);
 
@@ -58,6 +58,20 @@ OvRendering::Resources::Texture* OvCore::ResourceManagement::TextureManager::Cre
 	if (texture)
 		*reinterpret_cast<std::string*>(reinterpret_cast<char*>(texture) + offsetof(OvRendering::Resources::Texture, path)) = p_path; // Force the resource path to fit the given path
 
+	return texture;
+}
+
+OvRendering::Resources::Texture* OvCore::ResourceManagement::TextureManager::CreateFromMemory(const std::string& p_path, unsigned char* data, int w, int h)
+{
+	OvRendering::Resources::Texture* texture = OvRendering::Resources::Loaders::TextureLoader::CreateFromMemory(data, w, h, OvRendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
+		OvRendering::Settings::ETextureFilteringMode::LINEAR,
+		OvRendering::Settings::ETextureWrapMode::REPEAT,
+		OvRendering::Settings::ETextureWrapMode::REPEAT,
+		true
+	);
+	if (texture)
+		*reinterpret_cast<std::string*>(reinterpret_cast<char*>(texture) + offsetof(OvRendering::Resources::Texture, path)) = p_path; // Force the resource path to fit the given path
+	RegisterResource(p_path, texture);
 	return texture;
 }
 
