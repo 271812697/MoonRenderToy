@@ -1,4 +1,4 @@
-﻿
+﻿#ifdef SDLWindow
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -127,8 +127,7 @@ int main(int argc, char* argv[])
 	FilamentApp::get().run(app.config, setup, cleanup);
 	return 0;
 }
-
-/*
+#else
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -150,23 +149,26 @@ int main(int argc, char* argv[])
 #include <filament/Renderer.h>
 #include <filament/Viewport.h>
 #include <utils/EntityManager.h>
+#include <filameshio/MeshReader.h>
 #include <generated/resources/resources.h>
+#include "generated/resources/monkey.h"
 #include <backend/platforms/PlatformGlfwGL.h>
+#include <camutils/Manipulator.h>
 
-struct Vertex {
-	filament::math::float2 position;
-	uint32_t color;
-};
-#define M_PI       3.14159265358979323846
-static const Vertex TRIANGLE_VERTICES[3] = {
-	{{1, 0}, 0xffff0000u},
-	{{cos(M_PI * 2 / 3), sin(M_PI * 2 / 3)}, 0xff00ff00u},
-	{{cos(M_PI * 4 / 3), sin(M_PI * 4 / 3)}, 0xff0000ffu},
-};
-static constexpr uint16_t TRIANGLE_INDICES[3] = { 0, 1, 2 };
 
+struct App {
+
+	utils::Entity light;
+	filament::Material* material;
+	filament::MaterialInstance* materialInstance;
+	filamesh::MeshReader::Mesh mesh;
+	filament::Camera* cam;
+	filament::camutils::Manipulator<float>* mMainCameraMan;
+	filament::math::mat4f transform;
+};
 int main()
 {
+	App app;
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -194,7 +196,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-	filament::backend::PlatformGlfwGL* platform=new filament::backend::PlatformGlfwGL();
+	filament::backend::PlatformGlfwGL* platform = new filament::backend::PlatformGlfwGL();
 	auto createEngine = [&]() {
 		auto backend = filament::Engine::Backend::OPENGL;
 		filament::Engine::Config engineConfig = {};
@@ -210,62 +212,85 @@ int main()
 	auto renderer = engine->createRenderer();
 	auto scene = engine->createScene();
 	auto view = engine->createView();
-    auto swapchain=engine->createSwapChain(window,0);
+	auto swapchain = engine->createSwapChain(window, 0);
 	view->setName("Main View");
 
 	auto setup = [&]() {
 		auto skybox = filament::Skybox::Builder().color({ 0.1, 0.125, 0.25, 1.0 }).build(*engine);
 		scene->setSkybox(skybox);
-		view->setPostProcessingEnabled(false);
-		auto vb = filament::VertexBuffer::Builder()
-			.vertexCount(3)
-			.bufferCount(1)
-			.attribute(filament::VertexAttribute::POSITION, 0, filament::VertexBuffer::AttributeType::FLOAT2, 0, 12)
-			.attribute(filament::VertexAttribute::COLOR, 0, filament::VertexBuffer::AttributeType::UBYTE4, 8, 12)
-			.normalized(filament::VertexAttribute::COLOR)
-			.build(*engine);
-		vb->setBufferAt(*engine, 0,
-			filament::VertexBuffer::BufferDescriptor(TRIANGLE_VERTICES, 36, nullptr));
-		auto ib = filament::IndexBuffer::Builder()
-			.indexCount(3)
-			.bufferType(filament::IndexBuffer::IndexType::USHORT)
-			.build(*engine);
-		ib->setBuffer(*engine,
-			filament::IndexBuffer::BufferDescriptor(TRIANGLE_INDICES, 6, nullptr));
-		auto mat = filament::Material::Builder()
-			.package(RESOURCES_BAKEDCOLOR_DATA, RESOURCES_BAKEDCOLOR_SIZE)
-			.build(*engine);
-		auto renderable = utils::EntityManager::get().create();
+		view->setPostProcessingEnabled(true);
+		auto& tcm = engine->getTransformManager();
+		auto& rcm = engine->getRenderableManager();
+		auto& em = utils::EntityManager::get();
+		app.mMainCameraMan = filament::camutils::Manipulator<float>::Builder()
+			.targetPosition(0, 0, 0)
+			.flightMoveDamping(15.0)
+			.build(filament::camutils::Mode::ORBIT);
+		app.material = filament::Material::Builder()
+			.package(RESOURCES_AIDEFAULTMAT_DATA, RESOURCES_AIDEFAULTMAT_SIZE).build(*engine);
+		auto mi = app.materialInstance = app.material->createInstance();
+		mi->setParameter("baseColor", filament::RgbType::LINEAR, filament::math::float3{ 0.8 });
+		mi->setParameter("metallic", 1.0f);
+		mi->setParameter("roughness", 0.4f);
+		mi->setParameter("reflectance", 0.5f);
+		app.mesh = filamesh::MeshReader::loadMeshFromBuffer(engine, MONKEY_SUZANNE_DATA, nullptr, nullptr, mi);
+		auto ti = tcm.getInstance(app.mesh.renderable);
+		app.transform = filament::math::mat4f{ filament::math::mat3f(1), filament::math::float3(0, 0, -4) } *tcm.getWorldTransform(ti);
+		rcm.setCastShadows(rcm.getInstance(app.mesh.renderable), false);
+		scene->addEntity(app.mesh.renderable);
 
-		filament::RenderableManager::Builder(1)
-			.boundingBox({ { -1, -1, -1 }, { 1, 1, 1 } })
-			.material(0, mat->getDefaultInstance())
-			.geometry(0, filament::RenderableManager::PrimitiveType::TRIANGLES, vb, ib, 0, 3)
-			.culling(false)
-			.receiveShadows(false)
+		// Add light sources into the scene.
+		app.light = em.create();
+		filament::LightManager::Builder(filament::LightManager::Type::SUN)
+			.color(filament::Color::toLinear<filament::ACCURATE>(filament::sRGBColor(0.98f, 0.92f, 0.89f)))
+			.intensity(110000)
+			.direction({ 0.7, -1, -0.8 })
+			.sunAngularRadius(1.9f)
 			.castShadows(false)
-			.build(*engine, renderable);
-		scene->addEntity(renderable);
+			.build(*engine, app.light);
+		scene->addEntity(app.light);
+		//scene->addEntity(renderable);
 		auto camera = utils::EntityManager::get().create();
-		auto cam = engine->createCamera(camera);
-		view->setCamera(cam);
+		app.cam = engine->createCamera(camera);
+		view->setCamera(app.cam);
+
 		};
 	setup();
+	auto animate = [&app](filament::Engine* engine, filament::View* view, double now) {
+
+		auto& tcm = engine->getTransformManager();
+		auto ti = tcm.getInstance(app.mesh.renderable);
+		tcm.setTransform(ti, app.transform * filament::math::mat4f::rotation(now, filament::math::float3{ 0, 1, 0 }));
+		filament::math::float3 eye, center, up;
+		app.mMainCameraMan->getLookAt(&eye, &center, &up);
+		app.cam->lookAt(eye, center, up);
+		constexpr float ZOOM = 1.5f;
+		const uint32_t w = view->getViewport().width;
+		const uint32_t h = view->getViewport().height;
+		const float aspect = (float)w / h;
+		app.cam->setProjection(filament::Camera::Projection::ORTHO,
+			-aspect * ZOOM, aspect * ZOOM,
+			-ZOOM, ZOOM, 0, 1000);
+		};
 	view->setScene(scene);
 	view->setViewport({ 0,0,1280,800 });
 	while (!glfwWindowShouldClose(window))
 	{
+
 		engine->execute();
-		bool flag=renderer->beginFrame(swapchain);
+		static double t = 0.0f;
+		t += 0.0016;
+		animate(engine, view, t);
+		bool flag = renderer->beginFrame(swapchain);
 		renderer->render(view);
 		renderer->endFrame();
-        glfwSwapBuffers(window);
+		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
+#endif // SDLWindow
 
-*/
 
