@@ -231,6 +231,7 @@ namespace TEST {
 			material.uib);
 
 		CodeGenerator::generateSeparator(vs);
+		cg.generateSamplers(vs, DescriptorSetBindingPoints::PER_MATERIAL, material.sib);
 		// main entry point
 		appendShader(vs, mMaterialVertexCode, mMaterialVertexLineOffset);
 		CodeGenerator::generateEpilog(vs);

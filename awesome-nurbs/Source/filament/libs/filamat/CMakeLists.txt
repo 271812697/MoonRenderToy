@@ -85,7 +85,7 @@ include_directories(${CMAKE_BINARY_DIR})
 add_library(${TARGET} STATIC ${HDRS} ${PRIVATE_HDRS} ${SRCS})
 target_include_directories(${TARGET} PUBLIC ${PUBLIC_HDR_DIR})
 set_target_properties(${TARGET} PROPERTIES FOLDER Libs)
-target_link_libraries(${TARGET} backend_headers shaders filabridge utils smol-v)
+target_link_libraries(${TARGET} backend_headers filabridge utils)
 
 if (FILAMENT_SUPPORTS_WEBGPU)
     target_link_libraries(${TARGET} libtint)
@@ -98,12 +98,7 @@ target_include_directories(${TARGET} PRIVATE ${spirv-tools_SOURCE_DIR}/include)
 # glslang libraries have circular dependencies. To make sure the proper object are part of the link
 # we need to force archive re-scan on new symbol dependencies via start/end-group.
 # Read more about this here https://eli.thegreenplace.net/2013/07/09/library-order-in-static-linking
-if (APPLE OR MSVC)
-    target_link_libraries(${TARGET} glslang SPIRV SPIRV-Tools-opt spirv-cross-glsl)
-else()
-    target_link_libraries(${TARGET}
-            -Wl,--start-group glslang SPIRV SPIRV-Tools-opt spirv-cross-glsl -Wl,--end-group)
-endif()
+
 
 # ==================================================================================================
 # Compiler flags

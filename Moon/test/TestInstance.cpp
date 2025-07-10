@@ -21,7 +21,7 @@ namespace TEST {
 		mData->driver = std::make_shared<Driver>();
 		mData->buffer = std::shared_ptr<CommandBufferQueue>(new CommandBufferQueue(9 * MiB, 27 * MiB, false));
 		mData->api = std::make_shared<CommandStream>(*mData->driver.get(), mData->buffer->getCircularBuffer());
-		//getCommandStream()->createProgram(MaterialCompiler::compile("D:/Project/UseQt/Build/bin/Debug/normalColor.mat"));
+		getCommandStream()->createProgram(MaterialCompiler::compile("D:/Project/UseQt/normalColor.mat"));
 	}
 
 	void TestInstance::flush()
