@@ -692,7 +692,8 @@ namespace PathTrace
 				// Normal Map Texture
 				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
 				tempMat->SetProperty("u_NormalMap", normalTex);
-
+				if (normalTex)
+					tempMat->AddFeature("NORMAL_MAPPING");
 
 
 				// AlphaMode

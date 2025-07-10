@@ -112,7 +112,7 @@ add_library(${TARGET} STATIC ${PUBLIC_HDRS} ${SRCS})
 target_include_directories(${TARGET} PUBLIC ${PUBLIC_HDR_DIR})
 set_target_properties(${TARGET} PROPERTIES FOLDER Libs)
 target_link_libraries(${TARGET} PUBLIC tsl)
-
+target_compile_definitions(${TARGET} PUBLIC FILAMENT_SINGLE_THREADED)
 if (ANDROID)
     target_link_libraries(${TARGET} PUBLIC log)
     target_link_libraries(${TARGET} PRIVATE dl)

@@ -126,6 +126,7 @@ if (FILAMENT_SUPPORTS_OPENGL AND NOT FILAMENT_USE_EXTERNAL_GLES3)
         endif()
     elseif (WIN32)
         list(APPEND SRCS src/opengl/platforms/PlatformWGL.cpp)
+        list(APPEND SRCS src/opengl/platforms/PlatformGlfwGL.cpp)
     endif()
 endif()
 
