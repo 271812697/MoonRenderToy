@@ -1,3 +1,0 @@
-
-Most of these textures come from "http://www.textures.com/".
-They are only included in this repository for graphical demonstration purposes.

@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <tinyxml2.h>
 

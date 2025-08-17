@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvRendering/HAL/None/NoneShaderProgram.h>
 #include <OvRendering/HAL/None/NoneTexture.h>

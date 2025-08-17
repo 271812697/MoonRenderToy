@@ -5,8 +5,7 @@
 #include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
-#include "test/TestInstance.h"
-#include "test/CommandStream.h"
+
 #include "Guizmo/RenderWindowInteractor.h"
 #define __glad_h_
 #include "renderer/Context.h"
@@ -64,10 +63,7 @@ namespace MOON {
 		bool flag = initializeOpenGLFunctions();
 		OpenGLProcAddressHelper::ctx = context();
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
-		TEST::TestInstance::Instance().getCommandStream()->test(8);
-		TEST::TestInstance::Instance().getCommandStream()->queueCommand([]() {
-			std::cout << "say hello" << std::endl;
-			});
+
 		//¿ªÆô¼ÆÊ±Æ÷
 		this->startTimer(0);
 
@@ -89,15 +85,14 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
-		TEST::TestInstance::Instance().flush();
-		TEST::TestInstance::Instance().execute();
+
 		QtImGui::newFrame(imref);
 		ImPlot::SetCurrentContext(ctx);
 		sceneView->Update(0.01);
 		if (mSwitchScene) {
 			mSwitchScene = false;
 			ParseScene::ParsePathTraceScene();
-			
+
 			sceneView->UnselectActor();
 			OVSERVICE(TreeViewPanel).initModel();
 		}

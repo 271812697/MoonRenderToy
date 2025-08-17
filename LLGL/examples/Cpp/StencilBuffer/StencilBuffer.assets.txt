@@ -1,3 +1,0 @@
-Models/Portal-*.obj
-Models/WiredBox.obj
-Models/Pyramid.obj

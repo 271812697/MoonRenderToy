@@ -1,15 +1,8 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 
 #include <OvCore/ECS/Components/CAmbientBoxLight.h>
 #include <OvCore/ECS/Components/CAmbientSphereLight.h>
-#include <OvCore/ECS/Components/CPhysicalBox.h>
-#include <OvCore/ECS/Components/CPhysicalCapsule.h>
-#include <OvCore/ECS/Components/CPhysicalSphere.h>
 
 #include "CameraController.h"
 
@@ -31,45 +24,6 @@ float GetActorFocusDist(OvCore::ECS::Actor& p_actor)
 
 	if (p_actor.IsActive())
 	{
-		if (auto pb = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalBox>())
-		{
-			distance = std::max(distance, std::max
-			(
-				std::max
-				(
-					pb->GetSize().x * p_actor.transform.GetWorldScale().x,
-					pb->GetSize().y * p_actor.transform.GetWorldScale().y
-				),
-				pb->GetSize().z * p_actor.transform.GetWorldScale().z
-			) * 1.5f);
-		}
-
-		if (auto ps = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalSphere>())
-		{
-			distance = std::max(distance, std::max
-			(
-				std::max
-				(
-					ps->GetRadius() * p_actor.transform.GetWorldScale().x,
-					ps->GetRadius() * p_actor.transform.GetWorldScale().y
-				),
-				ps->GetRadius() * p_actor.transform.GetWorldScale().z
-			) * 1.5f);
-		}
-
-		if (auto pc = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalCapsule>())
-		{
-			distance = std::max(distance, std::max
-			(
-				std::max
-				(
-					pc->GetRadius() * p_actor.transform.GetWorldScale().x,
-					pc->GetHeight() * p_actor.transform.GetWorldScale().y
-				),
-				pc->GetRadius() * p_actor.transform.GetWorldScale().z
-			) * 1.5f);
-		}
-
 		if (auto modelRenderer = p_actor.GetComponent<OvCore::ECS::Components::CModelRenderer>())
 		{
 			const bool hasCustomBoundingSphere = modelRenderer->GetFrustumBehaviour() == OvCore::ECS::Components::CModelRenderer::EFrustumBehaviour::CUSTOM_BOUNDS;

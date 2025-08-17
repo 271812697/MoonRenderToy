@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvDebug/Logger.h>
 #include <OvDebug/Assertion.h>

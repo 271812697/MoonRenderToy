@@ -1,5 +1,0 @@
-License:
-    CC0
-
-Source:
-    https://polyhaven.com/a/gray_rocks

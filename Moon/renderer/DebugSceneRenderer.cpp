@@ -1,15 +1,9 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvCore/ECS/Components/CCamera.h>
 #include <OvCore/ECS/Components/CDirectionalLight.h>
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
-#include <OvCore/ECS/Components/CPhysicalBox.h>
-#include <OvCore/ECS/Components/CPhysicalCapsule.h>
-#include <OvCore/ECS/Components/CPhysicalSphere.h>
+
 #include <OvCore/ECS/Components/CPointLight.h>
 #include <OvCore/ECS/Components/CSpotLight.h>
 #include <OvCore/Rendering/EngineDrawableDescriptor.h>
@@ -388,12 +382,6 @@ protected:
 				}
 			}
 
-			/* Render the actor collider */
-			if (p_actor.GetComponent<OvCore::ECS::Components::CPhysicalObject>())
-			{
-				DrawActorCollider(p_actor);
-			}
-
 			/* Render the actor ambient light */
 			if (auto ambientBoxComp = p_actor.GetComponent<OvCore::ECS::Components::CAmbientBoxLight>())
 			{
@@ -567,61 +555,7 @@ protected:
 
 	void DrawActorCollider(OvCore::ECS::Actor& p_actor)
 	{
-		using namespace OvCore::ECS::Components;
-		using namespace OvPhysics::Entities;
 
-		auto pso = m_renderer.CreatePipelineState();
-		pso.depthTest = false;
-
-		/* Draw the box collider if any */
-		if (auto boxColliderComponent = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalBox>(); boxColliderComponent)
-		{
-			m_debugShapeFeature.DrawBox(
-				pso,
-				p_actor.transform.GetWorldPosition(),
-				p_actor.transform.GetWorldRotation(),
-				boxColliderComponent->GetSize() * p_actor.transform.GetWorldScale(),
-				OvMaths::FVector3{ 0.f, 1.f, 0.f },
-				1.0f,
-				false
-			);
-		}
-
-		/* Draw the sphere collider if any */
-		if (auto sphereColliderComponent = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalSphere>(); sphereColliderComponent)
-		{
-			FVector3 actorScale = p_actor.transform.GetWorldScale();
-			float radius = sphereColliderComponent->GetRadius() * std::max(std::max(std::max(actorScale.x, actorScale.y), actorScale.z), 0.0f);
-
-			m_debugShapeFeature.DrawSphere(
-				pso,
-				p_actor.transform.GetWorldPosition(),
-				p_actor.transform.GetWorldRotation(),
-				radius,
-				OvMaths::FVector3{ 0.f, 1.f, 0.f },
-				1.0f,
-				false
-			);
-		}
-
-		/* Draw the capsule collider if any */
-		if (auto capsuleColliderComponent = p_actor.GetComponent<OvCore::ECS::Components::CPhysicalCapsule>(); capsuleColliderComponent)
-		{
-			FVector3 actorScale = p_actor.transform.GetWorldScale();
-			float radius = abs(capsuleColliderComponent->GetRadius() * std::max(std::max(actorScale.x, actorScale.z), 0.f));
-			float height = abs(capsuleColliderComponent->GetHeight() * actorScale.y);
-
-			m_debugShapeFeature.DrawCapsule(
-				pso,
-				p_actor.transform.GetWorldPosition(),
-				p_actor.transform.GetWorldRotation(),
-				radius,
-				height,
-				OvMaths::FVector3{ 0.f, 1.f, 0.f },
-				1.0f,
-				false
-			);
-		}
 	}
 
 	void DrawLightBounds(OvCore::ECS::Components::CLight& p_light)
@@ -681,7 +615,7 @@ protected:
 	void DrawBoundingSpheres(OvCore::ECS::Components::CModelRenderer& p_modelRenderer)
 	{
 		using namespace OvCore::ECS::Components;
-		using namespace OvPhysics::Entities;
+
 
 
 		auto pso = m_renderer.CreatePipelineState();

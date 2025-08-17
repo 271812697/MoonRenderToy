@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
 #include <OvCore/Global/ServiceLocator.h>

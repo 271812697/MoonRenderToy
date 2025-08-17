@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #pragma once
 
@@ -12,7 +8,7 @@ namespace OvCore::ECS { class Actor; }
 
 namespace OvCore::ECS::Components
 {
-	class CPhysicalObject;
+
 
 	/**
 	* AComponent is the base class for any component.
@@ -76,42 +72,6 @@ namespace OvCore::ECS::Components
 		* @param p_deltaTime
 		*/
 		virtual void OnLateUpdate(float p_deltaTime) {}
-
-		/**
-		* Called when the owner of this component enter in collision with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnCollisionEnter(Components::CPhysicalObject& p_otherObject) {}
-
-		/**
-		* Called when the owner of this component is in collision with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnCollisionStay(Components::CPhysicalObject& p_otherObject) {}
-
-		/**
-		* Called when the owner of this component exit from collision with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnCollisionExit(Components::CPhysicalObject& p_otherObject) {}
-
-		/**
-		* Called when the owner of this component enter in trigger with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnTriggerEnter(Components::CPhysicalObject& p_otherObject) {}
-
-		/**
-		* Called when the owner of this component is in trigger with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnTriggerStay(Components::CPhysicalObject& p_otherObject) {}
-
-		/**
-		* Called when the owner of this component exit from trigger with another physical object
-		* @param p_otherObject
-		*/
-		virtual void OnTriggerExit(Components::CPhysicalObject& p_otherObject) {}
 
 		/**
 		* Returns the name of the component

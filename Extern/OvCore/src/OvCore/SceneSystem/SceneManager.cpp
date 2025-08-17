@@ -1,11 +1,7 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <tinyxml2.h>
-
+#include <filesystem>
 
 #include "OvCore/SceneSystem/SceneManager.h"
 #include "OvCore/ECS/Components/CDirectionalLight.h"

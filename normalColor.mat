@@ -5,6 +5,47 @@ material {
         color,
         custom0
     ],
+        parameters : [
+        {
+           type : sampler2d,
+           name : color,
+           precision: medium
+        },
+        {
+           type : sampler2d,
+           name : colorLinear,
+           precision: medium
+        },
+        {
+           type : sampler2d,
+           name : coc,
+           precision: medium
+        },
+        {
+           type : sampler2d,
+           name : tiles,
+           precision: medium
+        },
+        {
+           type : float2,
+           name : cocToTexelScale,
+           precision: high
+        },
+        {
+           type : float,
+           name : cocToPixelScale,
+           precision: medium
+        },
+        {
+            type : float,
+            name : bokehAngle,
+        },
+        {
+           type : float4,
+           name : ringCounts,
+           precision: medium
+        }
+    ],
     variables : [
         customnormal
     ],

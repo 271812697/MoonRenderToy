@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "OvDebug/Logger.h"
 #include "OvTools/Time/Date.h"

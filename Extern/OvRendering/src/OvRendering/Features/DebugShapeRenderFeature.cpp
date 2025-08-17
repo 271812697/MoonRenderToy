@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvRendering/Core/CompositeRenderer.h>
 #include <OvRendering/Features/DebugShapeRenderFeature.h>

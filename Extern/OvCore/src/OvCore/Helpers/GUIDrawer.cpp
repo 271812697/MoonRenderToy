@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <array>
 
@@ -15,7 +11,6 @@
 #include <OvCore/ResourceManagement/TextureManager.h>
 #include <OvCore/ResourceManagement/ShaderManager.h>
 #include <OvCore/ResourceManagement/MaterialManager.h>
-#include <OvCore/ResourceManagement/SoundManager.h>
 
 #include "OvCore/Helpers/GUIDrawer.h"
 

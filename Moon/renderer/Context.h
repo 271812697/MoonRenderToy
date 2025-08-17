@@ -1,24 +1,19 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #pragma once
 
 #include <filesystem>
 
-#include <OvAudio/Core/AudioEngine.h>
 #include <OvCore/ResourceManagement/MaterialManager.h>
 #include <OvCore/ResourceManagement/ModelManager.h>
 #include <OvCore/ResourceManagement/ShaderManager.h>
-#include <OvCore/ResourceManagement/SoundManager.h>
+
 #include <OvCore/ResourceManagement/TextureManager.h>
 #include <OvCore/SceneSystem/SceneManager.h>
-#include <OvCore/Scripting/ScriptEngine.h>
+
 #include "EditorResources.h"
 
-#include <OvPhysics/Core/PhysicsEngine.h>
+
 #include <OvRendering/HAL/UniformBuffer.h>
 #include <OvRendering/HAL/ShaderStorageBuffer.h>
 #include <OvTools/Filesystem/IniFile.h>
@@ -69,11 +64,9 @@ namespace OvEditor::Core
 
 		std::unique_ptr<OvRendering::Context::Driver> driver;
 
-		std::unique_ptr<OvPhysics::Core::PhysicsEngine> physicsEngine;
-		std::unique_ptr<OvAudio::Core::AudioEngine> audioEngine;
 		std::unique_ptr<OvEditor::Core::EditorResources> editorResources;
 
-		std::unique_ptr<OvCore::Scripting::ScriptEngine> scriptEngine;
+
 
 		OvCore::SceneSystem::SceneManager sceneManager;
 
@@ -81,8 +74,6 @@ namespace OvEditor::Core
 		OvCore::ResourceManagement::TextureManager textureManager;
 		OvCore::ResourceManagement::ShaderManager shaderManager;
 		OvCore::ResourceManagement::MaterialManager materialManager;
-		OvCore::ResourceManagement::SoundManager soundManager;
-
 
 		OvTools::Filesystem::IniFile projectSettings;
 	};
