@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "AViewControllable.h"
 #include "DebugSceneRenderer.h"

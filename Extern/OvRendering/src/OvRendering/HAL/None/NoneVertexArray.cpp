@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvDebug/Assertion.h>
 #include <OvRendering/HAL/None/NoneVertexArray.h>

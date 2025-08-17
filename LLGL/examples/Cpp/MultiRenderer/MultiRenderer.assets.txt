@@ -1,2 +1,0 @@
-Textures/Logo_Metal.png
-Textures/Logo_OpenGL.png

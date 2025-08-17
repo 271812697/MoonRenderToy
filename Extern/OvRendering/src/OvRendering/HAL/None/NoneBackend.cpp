@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 /**
 * Although this is intended as a Null implementation, certain components of the engine rely on OpenGL,

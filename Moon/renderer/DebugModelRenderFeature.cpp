@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "DebugModelRenderFeature.h"
 #include "OvCore/Rendering/EngineDrawableDescriptor.h"

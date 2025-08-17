@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <tinyxml2.h>
 
@@ -10,7 +6,7 @@
 #include <OvCore/ResourceManagement/ModelManager.h>
 #include <OvCore/ResourceManagement/ShaderManager.h>
 #include <OvCore/ResourceManagement/MaterialManager.h>
-#include <OvCore/ResourceManagement/SoundManager.h>
+
 #include <OvCore/Global/ServiceLocator.h>
 #include <OvCore/Helpers/Serializer.h>
 
@@ -181,7 +177,7 @@ void OvCore::Helpers::Serializer::SerializeMaterial(tinyxml2::XMLDocument& p_doc
 
 void OvCore::Helpers::Serializer::SerializeSound(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node, const std::string& p_name, OvAudio::Resources::Sound* p_value)
 {
-	SerializeString(p_doc, p_node, p_name.c_str(), p_value ? p_value->path : "?");
+
 }
 
 void OvCore::Helpers::Serializer::DeserializeString(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node, const std::string& p_name, std::string& p_out)
@@ -334,10 +330,7 @@ void OvCore::Helpers::Serializer::DeserializeMaterial(tinyxml2::XMLDocument& p_d
 
 void OvCore::Helpers::Serializer::DeserializeSound(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node, const std::string& p_name, OvAudio::Resources::Sound*& p_out)
 {
-	if (std::string path = DeserializeString(p_doc, p_node, p_name.c_str()); path != "?" && path != "")
-		p_out = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::SoundManager>().GetResource(path);
-	else
-		p_out = nullptr;
+
 }
 
 bool OvCore::Helpers::Serializer::DeserializeBoolean(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node, const std::string& p_name)

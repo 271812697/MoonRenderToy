@@ -1,13 +1,9 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <filesystem>
 
 #include <OvCore/Global/ServiceLocator.h>
-#include <OvCore/Scripting/ScriptEngine.h>
+
 #include <OvDebug/Assertion.h>
 #include "Context.h"
 
@@ -79,7 +75,7 @@ OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::st
 	TextureManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 	ShaderManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 	MaterialManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
-	SoundManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
+
 
 
 
@@ -88,30 +84,20 @@ OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::st
 
 
 
-	/* Audio */
-	audioEngine = std::make_unique<OvAudio::Core::AudioEngine>();
-
 	/* Editor resources */
 	editorResources = std::make_unique<OvEditor::Core::EditorResources>(editorAssetsPath);
 
-	/* Physics engine */
-	physicsEngine = std::make_unique<OvPhysics::Core::PhysicsEngine>(OvPhysics::Settings::PhysicsSettings{ {0.0f, -9.81f, 0.0f } });
-
-	/* Scripting */
-	scriptEngine = std::make_unique<OvCore::Scripting::ScriptEngine>();
-	scriptEngine->SetScriptRootFolder(projectScriptsPath);
 
 	/* Service Locator providing */
-	ServiceLocator::Provide<OvPhysics::Core::PhysicsEngine>(*physicsEngine);
+
 	ServiceLocator::Provide<ModelManager>(modelManager);
 	ServiceLocator::Provide<TextureManager>(textureManager);
 	ServiceLocator::Provide<ShaderManager>(shaderManager);
 	ServiceLocator::Provide<MaterialManager>(materialManager);
-	ServiceLocator::Provide<SoundManager>(soundManager);
 
 	ServiceLocator::Provide<OvCore::SceneSystem::SceneManager>(sceneManager);
-	ServiceLocator::Provide<OvAudio::Core::AudioEngine>(*audioEngine);
-	ServiceLocator::Provide<OvCore::Scripting::ScriptEngine>(*scriptEngine);
+
+
 	ServiceLocator::Provide<OvEditor::Core::Context>(*this);
 }
 
@@ -121,7 +107,7 @@ OvEditor::Core::Context::~Context()
 	textureManager.UnloadResources();
 	shaderManager.UnloadResources();
 	materialManager.UnloadResources();
-	soundManager.UnloadResources();
+
 }
 
 void OvEditor::Core::Context::ResetProjectSettings()

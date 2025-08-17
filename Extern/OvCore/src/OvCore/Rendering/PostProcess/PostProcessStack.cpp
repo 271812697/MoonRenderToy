@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "OvCore/Rendering/PostProcess/PostProcessStack.h"
 #include "OvCore/Rendering/PostProcess/BloomEffect.h"

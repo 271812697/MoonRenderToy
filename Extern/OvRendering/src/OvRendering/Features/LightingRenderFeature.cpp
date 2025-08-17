@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "OvRendering/Features/LightingRenderFeature.h"
 #include "OvRendering/Core/CompositeRenderer.h"

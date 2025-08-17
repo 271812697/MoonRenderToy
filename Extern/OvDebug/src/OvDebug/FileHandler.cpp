@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #define _CRT_SECURE_NO_WARNINGS // Enable getenv
 

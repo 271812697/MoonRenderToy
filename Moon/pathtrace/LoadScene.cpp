@@ -13,7 +13,7 @@
 #include <OvCore/ResourceManagement/MaterialManager.h>
 #include <OvCore/ResourceManagement/ModelManager.h>
 #include <OvCore/ResourceManagement/ShaderManager.h>
-#include <OvCore/ResourceManagement/SoundManager.h>
+
 #include <OvCore/ResourceManagement/TextureManager.h>
 #include <OvCore/SceneSystem/SceneManager.h>
 #include <tinygltf/include/tiny_gltf.h>

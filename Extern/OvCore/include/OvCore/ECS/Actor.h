@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #pragma once
 
@@ -13,7 +9,7 @@
 
 #include "OvCore/ECS/Components/AComponent.h"
 #include "OvCore/ECS/Components/CTransform.h"
-#include "OvCore/ECS/Components/Behaviour.h"
+
 #include "OvCore/API/ISerializable.h"
 
 namespace OvCore::ECS
@@ -205,41 +201,6 @@ namespace OvCore::ECS
 		*/
 		void OnLateUpdate(float p_deltaTime);
 
-		/**
-		* Called when the actor enter in collision with another physical object
-		* @param p_otherObject
-		*/
-		void OnCollisionEnter(Components::CPhysicalObject& p_otherObject);
-
-		/**
-		* Called when the actor is in collision with another physical object
-		* @param p_otherObject
-		*/
-		void OnCollisionStay(Components::CPhysicalObject& p_otherObject);
-
-		/**
-		* Called when the actor exit from collision with another physical object
-		* @param p_otherObject
-		*/
-		void OnCollisionExit(Components::CPhysicalObject& p_otherObject);
-
-		/**
-		* Called when the actor enter in trigger with another physical object
-		* @param p_otherObject
-		*/
-		void OnTriggerEnter(Components::CPhysicalObject& p_otherObject);
-
-		/**
-		* Called when the actor is in trigger with another physical object
-		* @param p_otherObject
-		*/
-		void OnTriggerStay(Components::CPhysicalObject& p_otherObject);
-
-		/**
-		* Called when the actor exit from trigger with another physical object
-		* @param p_otherObject
-		*/
-		void OnTriggerExit(Components::CPhysicalObject& p_otherObject);
 
 		/**
 		* Add a component to the actor (Or return the component if already existing)
@@ -271,34 +232,6 @@ namespace OvCore::ECS
 		*/
 		std::vector<std::shared_ptr<Components::AComponent>>& GetComponents();
 
-		/**
-		* Add a behaviour to the actor
-		* @param p_name
-		*/
-		Components::Behaviour& AddBehaviour(const std::string& p_name);
-
-		/**
-		* Remove a behaviour by refering to the given instance
-		* @param p_behaviour
-		*/
-		bool RemoveBehaviour(Components::Behaviour& p_behaviour);
-
-		/**
-		* Remove a behaviour by refering to his name
-		* @param p_name
-		*/
-		bool RemoveBehaviour(const std::string& p_name);
-
-		/**
-		* Try to get the given behaviour (Returns nullptr on failure)
-		* @param p_name
-		*/
-		Components::Behaviour* GetBehaviour(const std::string& p_name);
-
-		/**
-		* Returns a reference to the vector of behaviours
-		*/
-		std::unordered_map<std::string, Components::Behaviour>& GetBehaviours();
 
 		/**
 		* Serialize all the components
@@ -324,8 +257,7 @@ namespace OvCore::ECS
 		/* Some events that are triggered when an action occur on the actor instance */
 		OvTools::Eventing::Event<Components::AComponent&>	ComponentAddedEvent;
 		OvTools::Eventing::Event<Components::AComponent&>	ComponentRemovedEvent;
-		OvTools::Eventing::Event<Components::Behaviour&>	BehaviourAddedEvent;
-		OvTools::Eventing::Event<Components::Behaviour&>	BehaviourRemovedEvent;
+
 
 		/* Some events that are triggered when an action occur on any actor */
 		static OvTools::Eventing::Event<Actor&>				DestroyedEvent;
@@ -338,7 +270,7 @@ namespace OvCore::ECS
 		std::string		m_name;
 		std::string		m_tag;
 		bool			m_active = true;
-		bool&			m_playing;
+		bool& m_playing;
 
 		/* Internal settings */
 		int64_t	m_actorID;
@@ -350,12 +282,12 @@ namespace OvCore::ECS
 
 		/* Parenting system stuff */
 		int64_t					m_parentID = 0;
-		Actor*					m_parent = nullptr;
+		Actor* m_parent = nullptr;
 		std::vector<Actor*>		m_children;
 
 		/* Actors components */
 		std::vector<std::shared_ptr<Components::AComponent>> m_components;
-		std::unordered_map<std::string, Components::Behaviour> m_behaviours;
+
 
 	public:
 		Components::CTransform& transform;

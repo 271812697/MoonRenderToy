@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include <OvTools/Filesystem/IniFile.h>
 #include <OvTools/Utils/String.h>

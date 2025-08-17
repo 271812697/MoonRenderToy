@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "OvRendering/Features/ARenderFeature.h"
 #include "OvRendering/Core/ABaseRenderer.h"

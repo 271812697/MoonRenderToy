@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "GizmoBehaviour.h"
 //#include "OvEditor/Core/EditorActions.h"

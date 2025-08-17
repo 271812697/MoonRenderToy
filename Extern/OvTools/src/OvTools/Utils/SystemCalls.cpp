@@ -1,8 +1,4 @@
-/**
-* @project: Overload
-* @author: Overload Tech.
-* @licence: MIT
-*/
+
 
 #include "OvTools/Utils/PathParser.h"
 #include "OvTools/Utils/SystemCalls.h"

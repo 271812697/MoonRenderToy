@@ -1,8 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>res/texture.fs</file>
-        <file>res/texture.vs</file>
-        <file>res/earth.png</file>
-        <file>res/sun.png</file>
-    </qresource>
-</RCC>
