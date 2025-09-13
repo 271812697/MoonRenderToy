@@ -11,12 +11,12 @@ int main(int argc, char* argv[])
 	const int font_id = QFontDatabase::addApplicationFont(
 		":/darkstyle/Ubuntu-R.ttf");
 	QFont font(QFontDatabase::applicationFontFamilies(font_id).at(0));
-	font.setPointSize(9);
+	font.setPointSize(10);
 	MOON::Log::Init();
 	CORE_INFO("start");
 	QApplication::setFont(font);
 	MOON::Editor editor;
-	editor.setWindowTitle("Editor");
+	editor.setWindowTitle("MOON");
 	editor.resize(1920, 1080);
 	editor.show();
 	int res = QApplication::exec();

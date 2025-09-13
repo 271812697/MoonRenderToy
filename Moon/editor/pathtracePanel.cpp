@@ -1,19 +1,11 @@
-#include "Qtimgui/imguiwidgets/QtImGui.h"
-#include "Qtimgui/imgui/imgui.h"
-#include "Qtimgui/implot/implotCustom.h"
-#include "Qtimgui/implot/imguizmo.h"
 #include <QMouseEvent>
 #include "pathtracePanel.h"
 #include "glloader.h"
-
 #include "pathtrace/PathTrace.h"
 #include "pathtrace/Renderer.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/Camera.h"
 
-
-static QtImGui::RenderRef imref = nullptr;
-static ImPlotContext* ctx = nullptr;
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -62,8 +54,7 @@ namespace MOON {
 		}
 		initFlag = true;
 
-		imref = QtImGui::initialize(this, false);
-		ctx = ImPlot::CreateContext();
+
 	}
 
 	void  PathTracePanel::timerEvent(QTimerEvent* e)
@@ -73,59 +64,15 @@ namespace MOON {
 
 	void  PathTracePanel::paintGL()
 	{
-		QtImGui::newFrame(imref);
-		ImPlot::SetCurrentContext(ctx);
+
 		PathTrace::Update();
 		PathTrace::GetRenderer()->Update(0.016);
 		PathTrace::GetRenderer()->Render();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 		PathTrace::GetRenderer()->Present();
-		showImgui();
-		ImGui::Render();
-		QtImGui::render(imref);
+
 	}
-
-	void PathTracePanel::showImgui()
-	{
-		static std::chrono::steady_clock::time_point pretime = std::chrono::steady_clock::now();
-		static std::chrono::steady_clock::time_point curtime = std::chrono::steady_clock::now();
-		curtime = std::chrono::steady_clock::now();
-		std::chrono::duration<double>delta = curtime - pretime;
-		pretime = curtime;
-		static std::vector<float>x;
-		static std::vector<float>y;
-		static float history = 2.0f;
-		static float t = 0.0f;
-		float detalTime = delta.count();
-		t += detalTime;
-		float fps = 1 / detalTime;
-		float ms = detalTime * 1000;
-		float xm = fmod(t, history);
-		if (!x.empty() && xm < x.back()) {
-			x.clear();
-			y.clear();
-		}
-		x.push_back(xm);
-		y.push_back(fps);
-		static ImPlotAxisFlags flags = ImPlotAxisFlags_None;
-		if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 300))) {
-			ImPlot::SetupAxes(nullptr, nullptr, flags, flags);
-			ImPlot::SetupAxisLimits(ImAxis_X1, 0, history, ImGuiCond_Always);
-			ImPlot::SetupAxisLimits(ImAxis_Y1, 60, 140);
-			ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
-			ImPlot::EndPlot();
-		}
-		ImGui::Text("%f ms,%f FPS", ms, fps);
-		float view[16];
-		float proj[16];
-		PathTrace::CameraController::Instance().GetViewProject(view, proj);
-
-		ImGuizmo::SetRect(50, 50, 100);
-		ImGuizmo::DrawGizmo(view, proj, 0);
-	}
-
-
 
 	void  PathTracePanel::leaveEvent(QEvent* event)
 	{
