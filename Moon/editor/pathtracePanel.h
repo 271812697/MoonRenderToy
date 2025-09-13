@@ -14,7 +14,7 @@ namespace MOON {
 		void initializeGL() override;
 		void timerEvent(QTimerEvent* e) override;
 		void paintGL() override;
-		void showImgui();
+
 		//bool event(QEvent* evt) override;
 		void leaveEvent(QEvent* event) override;
 

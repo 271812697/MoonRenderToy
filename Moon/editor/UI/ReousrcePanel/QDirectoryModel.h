@@ -5,8 +5,6 @@
 #include <QStandardItemModel>
 #include <QSortFilterProxyModel>
 
-
-
 namespace MOON
 {
 
@@ -89,6 +87,5 @@ namespace MOON
 		QStandardItem* m_activeItem = nullptr;	// active item
 		std::vector< QStandardItem*>	m_dirItems;		        // 所有目录item
 		QModelIndex						m_currentSelect;        // 当前选中
-		//Echo::Dword						m_selectTime = 0;	    // 当前选中时间
 	};
 }
