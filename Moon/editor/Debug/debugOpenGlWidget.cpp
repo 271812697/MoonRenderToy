@@ -1,11 +1,13 @@
 #include "debugOpenGlWidget.h"
 #include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/imgui/imgui_internal.h"
 #include "Qtimgui/implot/implotCustom.h"
 #include "Qtimgui/implot/imguizmo.h"
 namespace MOON {
 	static QtImGui::RenderRef imref = nullptr;
 	static ImPlotContext* ctx = nullptr;
+	static bool isDoRender = false;
 	DebugOpenGLWidget::DebugOpenGLWidget(QWidget* parent) {
 		this->setFocusPolicy(Qt::StrongFocus);
 		this->setMouseTracking(true);
@@ -31,15 +33,17 @@ namespace MOON {
 		this->update();
 	}
 	void DebugOpenGLWidget::paintGL() {
+		if (isDoRender) {
+			return;
+		}
+		isDoRender = true;
 		QtImGui::newFrame(imref);
 		ImPlot::SetCurrentContext(ctx);
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-
-
-
 		showImGui();
 		ImGui::Render();
 		QtImGui::render(imref);
+		isDoRender = false;
 	}
 	bool DebugOpenGLWidget::event(QEvent* evt) {
 		return QOpenGLWidget::event(evt);
@@ -72,7 +76,27 @@ namespace MOON {
 	void DebugOpenGLWidget::keyReleaseEvent(QKeyEvent* event) {
 
 	}
+	void SetImdockSpace() {
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		ImGui::Begin("##dockspace", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking);
+		ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoWindowMenuButton);
+		ImGui::SetWindowPos({ 0.f, 0.f });
+		ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+		ImGui::SetWindowSize({ (float)displaySize.x, (float)displaySize.y });
+		ImGui::End();
+
+		ImGui::PopStyleVar(3);
+	}
 	void DebugOpenGLWidget::showImGui() {
+		SetImdockSpace();
 		static std::chrono::steady_clock::time_point pretime = std::chrono::steady_clock::now();
 		static std::chrono::steady_clock::time_point curtime = std::chrono::steady_clock::now();
 		curtime = std::chrono::steady_clock::now();
@@ -93,24 +117,28 @@ namespace MOON {
 		}
 		x.push_back(xm);
 		y.push_back(fps);
-		static ImPlotAxisFlags flags = ImPlotAxisFlags_None;
-		if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 300))) {
-			ImPlot::SetupAxes(nullptr, nullptr, flags, flags);
-			ImPlot::SetupAxisLimits(ImAxis_X1, 0, history, ImGuiCond_Always);
-			ImPlot::SetupAxisLimits(ImAxis_Y1, 60, 140);
-			ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
-			ImPlot::EndPlot();
+		if (ImGui::Begin("implot try")) {
+			static ImPlotAxisFlags flags = ImPlotAxisFlags_None;
+			if (ImPlot::BeginPlot("##Rolling", ImVec2(-1, 300))) {
+				ImPlot::SetupAxes(nullptr, nullptr, flags, flags);
+				ImPlot::SetupAxisLimits(ImAxis_X1, 0, history, ImGuiCond_Always);
+				ImPlot::SetupAxisLimits(ImAxis_Y1, 60, 140);
+				ImPlot::PlotLine("FPS", &x[0], &y[0], x.size(), 0, 0, sizeof(float));
+				ImPlot::EndPlot();
+			}
+			static ImS8  data[10] = { 1,2,3,4,5,6,7,8,9,10 };
+			if (ImPlot::BeginPlot("Bar Plot")) {
+				ImPlot::PlotBars("Vertical", y.data(), y.size(), 0.5, 1);
+				//ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
+				//ImPlot::PlotBars("Horizontal", data, 10, 0.4, 1, ImPlotBarsFlags_Horizontal);
+				for (int i = 0; i < y.size(); ++i)
+					ImPlot::Annotation(i + 1, y[i], ImVec4(0, 0, 0, 0), ImVec2(0, -5), false, "%.1f FPS", y[i]);
+				ImPlot::EndPlot();
+			}
+			ImGui::Text("%f ms,%f FPS", ms, fps);
 		}
-		static ImS8  data[10] = { 1,2,3,4,5,6,7,8,9,10 };
-		if (ImPlot::BeginPlot("Bar Plot")) {
-			ImPlot::PlotBars("Vertical", y.data(), y.size(), 0.5, 1);
-			//ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
-			//ImPlot::PlotBars("Horizontal", data, 10, 0.4, 1, ImPlotBarsFlags_Horizontal);
-			for (int i = 0; i < y.size(); ++i)
-				ImPlot::Annotation(i + 1, y[i], ImVec4(0, 0, 0, 0), ImVec2(0, -5), false, "%.1f FPS", y[i]);
-			ImPlot::EndPlot();
-		}
-		ImGui::Text("%f ms,%f FPS", ms, fps);
+		ImGui::End();
+
 		ImPlot::ShowDemoWindow();
 	}
 }
