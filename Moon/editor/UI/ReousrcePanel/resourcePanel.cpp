@@ -21,12 +21,7 @@
 #include <QtWidgets/QWidget>
 #include <QClipboard>
 #include <filesystem>
-
-
-
 QT_BEGIN_NAMESPACE
-
-
 class Ui_ResPanel
 {
 public:
@@ -267,7 +262,6 @@ namespace MOON {
 	{
 		std::filesystem::directory_entry p_directory(res);
 		if (p_directory.is_directory()) {
-
 			internal->m_dirModel->setCurrentSelect(res);
 		}
 	}
@@ -309,9 +303,7 @@ namespace MOON {
 		QString openDir = internal->m_currentDir.c_str();
 		if (!openDir.isEmpty())
 		{
-
 			QDesktopServices::openUrl(openDir);
-
 		}
 	}
 	void ResPanel::newFolder()
@@ -362,7 +354,6 @@ namespace MOON {
 			if (!std::filesystem::is_directory(fullPathName))
 			{
 				std::filesystem::directory_entry p_directory(fullPathName);
-
 				std::string path = p_directory.path().parent_path().string();
 				std::string fileName = p_directory.path().filename().string();
 				fileName = fileName.substr(0, fileName.rfind("."));
@@ -373,7 +364,6 @@ namespace MOON {
 					if (!std::filesystem::exists(newPath))
 					{
 						std::filesystem::copy(fullPathName, newPath);
-						//Echo::PathUtil::CopyFilePath(fullPathName, newPath, false);
 						break;
 					}
 				}
@@ -381,7 +371,6 @@ namespace MOON {
 			else
 			{
 				std::filesystem::directory_entry p_directory(fullPathName);
-
 				std::string parentpath = p_directory.path().parent_path().string();
 				std::string fileName = p_directory.path().filename().string();
 				for (int i = 0; i < 65535; i++)
@@ -393,11 +382,7 @@ namespace MOON {
 						break;
 					}
 				}
-
-
 			}
-
-
 			reselectCurrentDir();
 		}
 	}
@@ -408,7 +393,6 @@ namespace MOON {
 			std::string path = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
 			QClipboard* clipboard = QApplication::clipboard();
 			clipboard->setText(path.c_str());
-
 		}
 	}
 	void ResPanel::onRenamedRes(const QString src, const QString dest)
