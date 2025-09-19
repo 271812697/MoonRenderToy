@@ -1,6 +1,4 @@
-
-
-#include <algorithm>
+﻿#include <algorithm>
 #include <string>
 
 #include <tinyxml2.h>

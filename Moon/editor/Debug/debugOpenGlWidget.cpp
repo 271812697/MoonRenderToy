@@ -1,4 +1,5 @@
-#include "debugOpenGlWidget.h"
+ï»¿#include "debugOpenGlWidget.h"
+#include "Settings/DebugSetting.h"
 #include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/imgui/imgui_internal.h"
@@ -24,7 +25,7 @@ namespace MOON {
 		// opengl funcs
 		bool flag = initializeOpenGLFunctions();
 
-		//¿ªÆô¼ÆÊ±Æ÷
+		//å¼€å¯è®¡æ—¶å™¨
 		this->startTimer(0);
 		imref = QtImGui::initialize(this, false);
 		ctx = ImPlot::CreateContext();
@@ -138,7 +139,7 @@ namespace MOON {
 			ImGui::Text("%f ms,%f FPS", ms, fps);
 		}
 		ImGui::End();
-
+		DebugSettings::instance().drawImgui();
 		ImPlot::ShowDemoWindow();
 	}
 }

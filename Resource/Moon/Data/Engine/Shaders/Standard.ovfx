@@ -180,10 +180,14 @@ void main()
 #if defined(NORMAL_MAPPING)
     //mat3 tbn=ComputeTBN(fs_in.FragPos,fs_in.Normal,texCoords);
     //const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, tbn);
-    const vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, fs_in.TBN);
+    vec3 normal = ComputeNormal(texCoords, fs_in.Normal, u_NormalMap, fs_in.TBN);
 #else
-    const vec3 normal = normalize(fs_in.Normal);
+    vec3 normal = normalize(fs_in.Normal);
 #endif
+    vec3 VD=normalize(ubo_ViewPos-fs_in.FragPos);
+    if(dot(VD,normal)<0.0f){
+        normal=-normal;
+    }
 
 #if defined(SPECULAR_WORKFLOW)
     const float specular = texture(u_SpecularMap, texCoords).r * u_Specular;

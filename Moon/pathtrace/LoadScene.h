@@ -1,7 +1,5 @@
-#pragma once
-
+﻿#pragma once
 #include <string>
-
 namespace OvCore {
 	namespace SceneSystem {
 		class Scene;

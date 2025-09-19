@@ -1,23 +1,20 @@
-#include <QMouseEvent>
+ï»¿#include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
-
 #include "Guizmo/RenderWindowInteractor.h"
 #define __glad_h_
+#include "core/callbackManager.h"
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
-#include "treeViewpanel.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
 #include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "parsescene.h"
 
-
-
 OvEditor::Core::Context* editorContext = nullptr;
 OvEditor::Panels::SceneView* sceneView = nullptr;
-
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -31,13 +28,13 @@ namespace MOON {
 	ViewerWindow::ViewerWindow(QWidget* parent) :
 		QOpenGLWidget(parent)
 	{
-		//ÉèÖÃ¿ÉÒÔ²¶»ñÊó±êÒÆ¶¯ÏûÏ¢
+		//è®¾ç½®å¯ä»¥æ•èŽ·é¼ æ ‡ç§»åŠ¨æ¶ˆæ¯
 		// default to strong focus
 		this->setFocusPolicy(Qt::StrongFocus);
 		//this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 		this->setMouseTracking(true);
 		//this->grabKeyboard();
-		//·´¾â³Ý
+		//åé”¯é½¿
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
@@ -58,18 +55,13 @@ namespace MOON {
 		bool flag = initializeOpenGLFunctions();
 		OpenGLProcAddressHelper::ctx = context();
 		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
-
-		//¿ªÆô¼ÆÊ±Æ÷
+		//å¼€å¯è®¡æ—¶å™¨
 		this->startTimer(0);
-
 		editorContext = new OvEditor::Core::Context("", "");
 		editorContext->sceneManager.LoadDefaultScene();
 		sceneView = new OvEditor::Panels::SceneView("SceneView");
 		ParseScene::ParsePathTraceScene();
-
-		OVSERVICE(TreeViewPanel).initModel();
-
-
+		
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -79,15 +71,12 @@ namespace MOON {
 
 	void ViewerWindow::paintGL()
 	{
-
-
+		CallBackManager::instance().exectue();
 		sceneView->Update(0.01);
 		if (mSwitchScene) {
 			mSwitchScene = false;
 			ParseScene::ParsePathTraceScene();
-
 			sceneView->UnselectActor();
-			OVSERVICE(TreeViewPanel).initModel();
 		}
 		sceneView->Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
@@ -96,11 +85,8 @@ namespace MOON {
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
-
-		//RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 		if (sceneView != nullptr)
 			sceneView->ReceiveEvent(evt);
-
 		return QOpenGLWidget::event(evt);
 	}
 

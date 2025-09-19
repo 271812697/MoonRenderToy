@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "treeViewpanel.h"
+#include "editor/UI/TreeViewPanel/EntityTreeModel.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "OvCore/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
@@ -18,6 +19,7 @@ namespace MOON {
 		TreeNode(const std::string& v, TreeNode* p = nullptr) :val(v), parent(p) {}
 		TreeNode() = default;
 	};
+
 	class TreeViewModel : public QAbstractItemModel {
 	public:
 		TreeViewModel(QObject* parent) :QAbstractItemModel(parent) {
@@ -162,7 +164,22 @@ namespace MOON {
 
 		return QVariant();
 	}
-	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent)
+
+	
+	class TreeViewPanel::TreeViewPanelInternal {
+	public:
+		TreeViewPanelInternal(TreeViewPanel* tree):mSelf(tree) {
+			mModel = new EntityTreeModel(mSelf);
+		}
+		~TreeViewPanelInternal() {
+
+		}
+	private:
+		friend TreeViewPanel;
+		EntityTreeModel* mModel = nullptr;
+		TreeViewPanel* mSelf = nullptr;
+	};
+	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent),mInternal(new TreeViewPanelInternal(this))
 	{
 		COPROVITE(TreeViewPanel, *this);
 		QSizePolicy sizePolicy8(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -171,16 +188,13 @@ namespace MOON {
 		sizePolicy8.setWidthForHeight(true);
 		sizePolicy8.setHeightForWidth(this->sizePolicy().hasHeightForWidth());
 		this->setSizePolicy(sizePolicy8);
+		this->setModel(mInternal->mModel);
 
 
 	}
-	void TreeViewPanel::initModel()
+	TreeViewPanel::~TreeViewPanel()
 	{
-		if (treemodel != nullptr) {
-			delete treemodel;
-		}
-		treemodel = new TreeViewModel(this);
-
-		setModel(treemodel);
+		delete mInternal;
 	}
+
 }

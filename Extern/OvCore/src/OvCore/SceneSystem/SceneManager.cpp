@@ -1,4 +1,4 @@
-
+﻿
 
 #include <tinyxml2.h>
 #include <filesystem>
@@ -51,8 +51,9 @@ void OvCore::SceneSystem::SceneManager::LoadDefaultScene()
 	m_currentScene.reset(new Scene());
 	m_currentScene->AddDefaultCamera();
 	m_currentScene->AddDefaultLights();
-	m_currentScene->AddDefaultReflections();
-	m_currentScene->AddDefaultAtmosphere();
+	//m_currentScene->AddDefaultReflections();
+	//m_currentScene->AddDefaultAtmosphere();
+	m_currentScene->AddDefaultSkysphere();
 	m_currentScene->AddDefaultPostProcessStack();
 	SceneLoadEvent.Invoke();
 }
