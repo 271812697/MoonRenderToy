@@ -1,8 +1,4 @@
-
-
-#pragma once
-
-
+﻿#pragma once
 #include <OvCore/API/ISerializable.h>
 #include <OvCore/ECS/Actor.h>
 #include <OvCore/ECS/Components/CCamera.h>
@@ -198,7 +194,10 @@ namespace OvCore::SceneSystem
 		int64_t m_availableID = 1;
 		bool m_isPlaying = false;
 		std::vector<ECS::Actor*> m_actors;
-
 		FastAccessComponents m_fastAccessComponents;
+
+		//std::vector<OvMaths::FVector4> verticesUVX;
+		//std::vector<OvMaths::FVector4> verticesUVY;
+
 	};
 }

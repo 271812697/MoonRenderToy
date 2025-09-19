@@ -1,7 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
-
 using namespace std;
 namespace PathTrace {
 	class Scene;

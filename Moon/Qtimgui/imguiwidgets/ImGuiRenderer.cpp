@@ -77,16 +77,18 @@ namespace QtImGui {
 
 		// Setup backend capabilities flags
 		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 #ifndef QT_NO_CURSOR
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
 		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;  // We can honor io.WantSetMousePos requests (optional, rarely used)
 #endif
 		io.BackendPlatformName = "qtimgui";
 
+
 		// Setup keyboard mapping
 		for (ImGuiKey key : keyMap.values()) {
-			// io.KeysData[key] = key;
-			 //io.KeyMap[key] = key;
+			//io.KeysData[key] = key;
+			//io.KeyMap[key] = key;
 		}
 
 		//io.RenderDrawListsFn = [](ImDrawData *drawData) {
@@ -112,6 +114,7 @@ namespace QtImGui {
 
 		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 		const ImGuiIO& io = ImGui::GetIO();
+
 		int fb_width = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
 		int fb_height = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
 		if (fb_width == 0 || fb_height == 0)
@@ -515,7 +518,7 @@ namespace QtImGui {
 #else
 		Q_UNUSED(io);
 #endif
-	}
+		}
 
 	void ImGuiRenderer::setCursorPos(const ImGuiIO& io)
 	{
@@ -530,7 +533,7 @@ namespace QtImGui {
 #else
 		Q_UNUSED(io);
 #endif
-	}
+		}
 
 	bool ImGuiRenderer::eventFilter(QObject* watched, QEvent* event)
 	{
@@ -563,4 +566,4 @@ namespace QtImGui {
 		return instance;
 	}
 
-} // namespace QtImGui
+	} // namespace QtImGui

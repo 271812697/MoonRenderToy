@@ -1,4 +1,4 @@
-#include <cstring>
+ï»¿#include <cstring>
 #include "core/log.h"
 #include "MathUtil.h"
 #include "LoadScene.h"
@@ -549,7 +549,7 @@ namespace PathTrace
 					aMaterial()
 					{
 						baseColorR = baseColorG = baseColorB = 1.0f;
-						//¸÷ÏòÒìĞÔ
+						//å„å‘å¼‚æ€§
 						anisotropic = 0.0f;
 
 						emissionR = emissionG = emissionB = 0.0f;
@@ -567,12 +567,12 @@ namespace PathTrace
 
 						specTrans = 0.0f;
 						ior = 1.5f;
-						//½éÖÊÀàĞÍ
+						//ä»‹è´¨ç±»å‹
 						mediumType = 0.0f;
 						mediumDensity = 0.0f;
 
 						mediumColor = Vec3(1.0f, 1.0f, 1.0f);
-						//¸÷ÏòÍ¬ĞÔ
+						//å„å‘åŒæ€§
 						mediumAnisotropy = 0.0f;
 
 						baseColorTexId = -1.0f;
@@ -1414,12 +1414,6 @@ namespace PathTrace
 					std::string modelname = filename + std::to_string(gltfMeshIdx) + "#" + std::to_string(gltfPrimIdx);
 					OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(modelname, vertices, normals, uvs, indices);
 
-
-					//int sceneMeshId = scene->meshes.size();
-					//scene->meshes.push_back(mesh);
-					// Store a mapping for a gltf mesh and the loaded primitive data
-					// This is used for creating instances based on the primitive
-					//int sceneMatIdx = prim.material + scene->materials.size();
 					meshPrimMap[gltfMeshIdx].push_back(primIndex{ modelname, prim.material });
 				}
 			}

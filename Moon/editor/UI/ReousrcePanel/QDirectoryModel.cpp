@@ -1,6 +1,4 @@
-
-
-#include <algorithm>
+ï»¿#include <algorithm>
 #include "QDirectoryModel.h"
 #include <filesystem>
 using namespace std;
@@ -232,15 +230,15 @@ namespace MOON
 		m_currentSelect = pIndex;
 		QString filePath = m_proxy ? m_proxy->data(pIndex, Qt::UserRole).toString() : this->data(pIndex, Qt::UserRole).toString();
 
-		// È¡Ïû¼¤»î // ´ÖÌåÏÔÊ¾
+		// å–æ¶ˆæ¿€æ´» // ç²—ä½“æ˜¾ç¤º
 		if (m_activeItem)
 			m_activeItem->setFont(m_treeView->font());
 
-		// ÉèÖÃ¼¤»î
+		// è®¾ç½®æ¿€æ´»
 		m_activeItem = itemFromIndex(pIndex);
 		if (m_activeItem)
 		{
-			// ½çÃæÏìÓ¦
+			// ç•Œé¢å“åº”
 			QFont font = m_treeView->font();
 			font.setBold(true);
 
@@ -254,15 +252,15 @@ namespace MOON
 	{
 		QString filePath = m_proxy ? m_proxy->data(pIndex, Qt::UserRole).toString() : this->data(pIndex, Qt::UserRole).toString();
 
-		// È¡Ïû¼¤»î // ´ÖÌåÏÔÊ¾
+		// å–æ¶ˆæ¿€æ´» // ç²—ä½“æ˜¾ç¤º
 		if (m_activeItem)
 			m_activeItem->setFont(m_treeView->font());
 
-		// ÉèÖÃ¼¤»î
+		// è®¾ç½®æ¿€æ´»
 		m_activeItem = itemFromIndex(pIndex);
 		if (m_activeItem)
 		{
-			// ½çÃæÏìÓ¦
+			// ç•Œé¢å“åº”
 			QFont font = m_treeView->font();
 			font.setBold(true);
 
