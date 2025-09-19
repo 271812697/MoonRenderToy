@@ -1,4 +1,4 @@
-#include "pqLoadDataReaction.h"
+﻿#include "pqLoadDataReaction.h"
 #include "pqFileDialog.h"
 #include <QtWidgets/QFileDialog>
 #include <QDebug>
@@ -56,7 +56,7 @@ void pqLoadDataReaction::onTriggered()
 	QString fileName = QFileDialog::getOpenFileName(nullptr,
 		tr("Open Flow Scene"),
 		QDir::homePath(),
-		tr("Flow Scene Files (*.scene;*.gltf)"));
+		tr("Flow Scene Files (*.scene;*.gltf;*.obj;*.stl)"));
 
 	if (!QFileInfo::exists(fileName))
 		return;

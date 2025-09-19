@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 #include <map>
@@ -14,8 +14,6 @@ namespace PathTrace
 	class Mesh;
 	class Texture;
 	class Material;
-
-
 	struct Indices
 	{
 		int x, y, z;

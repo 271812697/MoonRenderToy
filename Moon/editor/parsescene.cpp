@@ -1,6 +1,5 @@
-#include "parsescene.h"
+﻿#include "parsescene.h"
 #include "renderer/Context.h"
-
 #include "OvCore/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
@@ -10,6 +9,8 @@
 #include "OvCore/ECS/Components/CAmbientSphereLight.h"
 #include "OvCore/ECS/Components/CPostProcessStack.h"
 #include "pathtrace/LoadScene.h"
+#include "Settings/DebugSetting.h"
+
 
 
 
@@ -23,7 +24,14 @@ namespace MOON {
 
 
 	void addSphereLight(OvCore::SceneSystem::Scene* scene) {
-
+		auto node=DebugSettings::instance().getNode("showLight");
+		DebugSettings::instance().addCallBack("showLight", [=]() {
+			bool value=node->getData<bool>();
+			scene->FindActorByName("PointLight1")->SetActive(value);
+			scene->FindActorByName("PointLight2")->SetActive(value);
+			scene->FindActorByName("PointLight3")->SetActive(value);
+			scene->FindActorByName("PointLight4")->SetActive(value);
+			});
 		auto ambient = scene->FindActorByName("Ambient Light");
 		auto& ac1 = scene->CreateActor("PointLight1");
 		auto& pointLight1 = ac1.AddComponent<OvCore::ECS::Components::CPointLight>();
@@ -84,10 +92,10 @@ namespace MOON {
 	}
 
 	void ParseScene::ParsePathTraceScene() {
-		PathTrace::Scene* sce = PathTrace::GetScene();
+		
 		OVSERVICE(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
 		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
-		if (sce == nullptr || scene == nullptr) {
+		if ( scene == nullptr) {
 			return;
 		}
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
@@ -96,13 +104,44 @@ namespace MOON {
 		std::string sceneName = PathTrace::GetSceneFilePath();
 		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
 		Mat4 xform;
-
 		if (ext == "scene")
 			PathTrace::LoadSceneFromFile(sceneName, scene);
 		else if (ext == "gltf")
 			PathTrace::LoadGLTF(sceneName, scene, xform, false);
 		else if (ext == "glb")
 			PathTrace::LoadGLTF(sceneName, scene, xform, true);
+		else
+		{
+			auto model=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadResource(sceneName);
+			
+
+			OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
+			OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
+			tempMat->SetBackfaceCulling(false);;
+			tempMat->SetCastShadows(false);
+			tempMat->SetReceiveShadows(false);
+			
+			tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+			tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+		
+			tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+			tempMat->SetProperty("u_Roughness", 0.1f);
+			tempMat->SetProperty("u_Metallic",0.1f);
+			// Emission
+			tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+			tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f,0.0f,0.0f});
+
+            auto& actor=scene->CreateActor();
+			actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
+
+			actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
+			auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+			
+			
+			materilaRener.SetMaterialAtIndex(0, *tempMat);
+			materilaRener.UpdateMaterialList();
+
+		}
 
 	}
 
