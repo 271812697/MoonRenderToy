@@ -12,20 +12,18 @@
 #define ReMoveBehaviour(be) MOON::Guizmo::instance().removeBehaviour(be)
 #define GetBehaviour(be) MOON::Guizmo::instance().getBehaviour(be)
 
+namespace OvEditor {
+	namespace Panels {
+		class SceneView;
+	}
+}
 namespace MOON
 {
-	class AbstractWidget;
-
 	class Behaviour;
 	class GL2DRender;
 	class GLRenderPoints;
 	class GLRenderLines;
 	class GLRenderTriangles;
-
-	class RenderWidget;
-	class Mesh;
-	class Entity;
-
 	struct VertexData
 	{
 		Eigen::Vector4<float> positionSize; // xyz = position, w = size
@@ -326,7 +324,7 @@ namespace MOON
 
 
 		CameraParam& getCameraParam();
-		void newFrame(const RenderWidget* widget);
+		void newFrame(const OvEditor::Panels::SceneView* view);
 		void test();
 		void drawUnsort();
 		void drawSort();
@@ -385,18 +383,16 @@ namespace MOON
 		void runDrawTask();
 		void drawWidgets();
 		void placeDrawTask(const std::string& name, std::function<void()> task);
-		void placeWidget(const std::string& name, AbstractWidget* widget);
 		void cancleDrawTask(const std::string& name);
 
 		void create2DRender();
 	private:
-		RenderWidget* renderWidget = nullptr;
+		OvEditor::Panels::SceneView* renderView = nullptr;
 
 	private:
 		std::vector<std::string> cancelList;
 		std::unordered_map<std::string, std::function<void()>> mDrawTaskMap;
 
-		std::unordered_map<std::string, Mesh*> mPreStoredMesh;
 
 		//intrusive_ptr<RHI::ShaderInstance> mShader = nullptr;
 

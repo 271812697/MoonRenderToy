@@ -1,7 +1,6 @@
 ﻿#include <QMouseEvent>
 #include "viewerwindow.h"
 #include "glloader.h"
-#include "Guizmo/RenderWindowInteractor.h"
 #define __glad_h_
 #include "core/callbackManager.h"
 #include "renderer/Context.h"
@@ -11,30 +10,75 @@
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
 #include "OvCore/ECS/Components/CMaterialRenderer.h"
-#include "parsescene.h"
+#include "editor/parsescene.h"
 
-OvEditor::Core::Context* editorContext = nullptr;
-OvEditor::Panels::SceneView* sceneView = nullptr;
 namespace MOON {
-	static float viewW;
-	static float viewH;
-
 	struct OpenGLProcAddressHelper {
 		inline static QOpenGLContext* ctx;
 		static void* getProcAddress(const char* name) {
 			return (void*)ctx->getProcAddress(name);
 		}
 	};
+	class ViewerWindow::ViewerWindowInternal {
+	public:
+		ViewerWindowInternal(ViewerWindow* view) :mSelf(view) {
+		}
+		void initializeGL() {
+			mEditorContext = new OvEditor::Core::Context("", "");
+			mEditorContext->sceneManager.LoadDefaultScene();
+			mSceneView = new OvEditor::Panels::SceneView("SceneView");
+			ParseScene::ParsePathTraceScene();
+		}
+		~ViewerWindowInternal() {
+			delete mEditorContext;
+			delete mSceneView;
+		}
+		void paintGL() {
+			mSceneView->Update(0.01);
+			if (mSwitchScene) {
+				mSwitchScene = false;
+				ParseScene::ParsePathTraceScene();
+				mSceneView->UnselectActor();
+			}
+			mSceneView->Render();
+			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
+			mSceneView->Present();
+		}
+		bool event(QEvent* evt)
+		{
+			if (mSceneView != nullptr)
+				mSceneView->ReceiveEvent(evt);
+			return true;
+		}
+		void resizeEvent(QResizeEvent* event)
+		{
+			mViewWidth = event->size().width();
+			mViewHeight = event->size().height();
+			if (mSceneView != nullptr)
+				mSceneView->Resize(mViewWidth, mViewHeight);
+		}
+		void switchScene()
+		{
+			mSwitchScene = true;
+		}
+	private:
+		ViewerWindow* mSelf = nullptr;
+		OvEditor::Core::Context* mEditorContext = nullptr;
+		OvEditor::Panels::SceneView* mSceneView = nullptr;
+		int mViewWidth;
+		int mViewHeight;
+		bool mInitFlag = false;
+		bool mSwitchScene = false;
+
+	};
 	ViewerWindow::ViewerWindow(QWidget* parent) :
-		QOpenGLWidget(parent)
+		QOpenGLWidget(parent), mInternal(new ViewerWindowInternal(this))
 	{
 		//设置可以捕获鼠标移动消息
 		// default to strong focus
 		this->setFocusPolicy(Qt::StrongFocus);
 		//this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 		this->setMouseTracking(true);
-		//this->grabKeyboard();
-		//反锯齿
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
@@ -43,25 +87,19 @@ namespace MOON {
 
 	ViewerWindow::~ViewerWindow()
 	{
-		delete editorContext;
-
+		delete mInternal;
 	}
 
 	void ViewerWindow::initializeGL()
 	{
-
 		QOpenGLWidget::initializeGL();
 		// opengl funcs
 		bool flag = initializeOpenGLFunctions();
 		OpenGLProcAddressHelper::ctx = context();
-		CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
+		GlLoader::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		//开启计时器
 		this->startTimer(0);
-		editorContext = new OvEditor::Core::Context("", "");
-		editorContext->sceneManager.LoadDefaultScene();
-		sceneView = new OvEditor::Panels::SceneView("SceneView");
-		ParseScene::ParsePathTraceScene();
-		
+		mInternal->initializeGL();
 	}
 
 	void ViewerWindow::timerEvent(QTimerEvent* e)
@@ -72,21 +110,12 @@ namespace MOON {
 	void ViewerWindow::paintGL()
 	{
 		CallBackManager::instance().exectue();
-		sceneView->Update(0.01);
-		if (mSwitchScene) {
-			mSwitchScene = false;
-			ParseScene::ParsePathTraceScene();
-			sceneView->UnselectActor();
-		}
-		sceneView->Render();
-		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		sceneView->Present();
+		mInternal->paintGL();
 	}
 
 	bool ViewerWindow::event(QEvent* evt)
 	{
-		if (sceneView != nullptr)
-			sceneView->ReceiveEvent(evt);
+		mInternal->event(evt);
 		return QOpenGLWidget::event(evt);
 	}
 
@@ -97,11 +126,7 @@ namespace MOON {
 	void ViewerWindow::resizeEvent(QResizeEvent* event)
 	{
 		QOpenGLWidget::resizeEvent(event);
-		viewW = event->size().width();
-		viewH = event->size().height();
-		if (sceneView != nullptr)
-			sceneView->Resize(viewW, viewH);
-
+		mInternal->resizeEvent(event);
 	}
 
 	void ViewerWindow::mousePressEvent(QMouseEvent* e)
@@ -127,6 +152,6 @@ namespace MOON {
 	}
 	void ViewerWindow::switchScene()
 	{
-		mSwitchScene = true;
+		mInternal->switchScene();
 	}
 }

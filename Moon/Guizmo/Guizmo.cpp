@@ -2,9 +2,8 @@
 #include "Guizmo/MathUtil/MathUtil.h"
 #include "Settings/DebugSetting.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "renderer/SceneView.h"
 #include <glad/glad.h>
-
-
 namespace MOON
 {
 	class GL2DRender
@@ -4051,13 +4050,11 @@ namespace MOON
 		return cameraParam;
 	}
 
-	void Guizmo::newFrame(const RenderWidget* widget)
+	void Guizmo::newFrame(const OvEditor::Panels::SceneView* sceneView)
 	{
 		litVertexArray.clear();
 		drawMeshList.clear();
-		const_cast<RenderWidget*>(widget);
-		renderWidget = const_cast<RenderWidget*>(widget);
-
+		renderView = const_cast<OvEditor::Panels::SceneView*>(sceneView);
 		// all state stacks should be default here.
 		assert(colorStack.size() == 1);
 		assert(alphaStack.size() == 1);
@@ -4066,17 +4063,14 @@ namespace MOON
 		assert(layerIdStack.size() == 1);
 		assert(matrixStack.size() == 1);
 		assert(idStack.size() == 1);
-
 		assert(primMode == PrimitiveModeNone);
 		primMode = PrimitiveModeNone;
 		primType = DrawPrimitiveCount;
-
 		assert(vertexData[0].size() == vertexData[1].size());
 		for (int i = 0; i < vertexData[0].size(); ++i)
 		{
 			vertexData[0][i]->clear();
 			vertexData[1][i]->clear();
-
 		}
 		drawLists.clear();
 		sortCalled = false;
@@ -4084,8 +4078,7 @@ namespace MOON
 
 		// copy keydown array internally so that we can make a delta to detect key presses
 		memcpy(keyDownPrev, keyDownCurr, KeyCount); // \todo avoid this copy, use an index
-		memcpy(keyDownCurr, cameraParam.keyDown,
-			KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
+		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
 
 		// update gizmo modes
 		if (wasKeyPressed(ActionGizmoTranslation))
@@ -4110,37 +4103,30 @@ namespace MOON
 		}
 
 		// set up engine params
-		auto mainView = widget->getView();
-
-		auto mat = mainView->getViewMatrix();
+		auto& inputState = renderView->getInutState();
+		auto& viewMatrix = renderView->GetCamera()->GetViewMatrix();
 		Eigen::Matrix4f view;
-		view.row(0) << mat[0][0], mat[0][1], mat[0][2], mat[0][3];
-		view.row(1) << mat[1][0], mat[1][1], mat[1][2], mat[1][3];
-		view.row(2) << mat[2][0], mat[2][1], mat[2][2], mat[2][3];
-		view.row(3) << mat[3][0], mat[3][1], mat[3][2], mat[3][3];
+		memcpy(view.data(), viewMatrix.data, 16 * sizeof(float));
 		view.transposeInPlace();
-
 		auto viewinverse = view.inverse();
-
-		mat = mainView->getProjection();
+		auto& projMat = renderView->GetCamera()->GetProjectionMatrix();
 		Eigen::Matrix4f proj;
-		proj.row(0) << mat[0][0], mat[0][1], mat[0][2], mat[0][3];
-		proj.row(1) << mat[1][0], mat[1][1], mat[1][2], mat[1][3];
-		proj.row(2) << mat[2][0], mat[2][1], mat[2][2], mat[2][3];
-		proj.row(3) << mat[3][0], mat[3][1], mat[3][2], mat[3][3];
+		memcpy(proj.data(), projMat.data, 16 * sizeof(float));
 		proj.transposeInPlace();
 		Eigen::Vector3f vieweye = Eigen::Vector3f(viewinverse(0, 3), viewinverse(1, 3), viewinverse(2, 3));
 		Eigen::Vector3f viewforward = Eigen::Vector3f(viewinverse(0, 2), viewinverse(1, 2), viewinverse(2, 2)).normalized();
 		Eigen::Matrix4f camWorld = viewinverse;
 
-		Eigen::Vector2<float> cursorPos = Eigen::Vector2<float>(widget->currentPoint().x(), widget->currentPoint().y());
-		auto cfg = Pipeline::find(widget->getId())->getConfig();
-		cursorPos = Eigen::Vector2<float>((cursorPos.x() / cfg.mViewportWidth) * 2.0f - 1.0f, (cursorPos.y() / cfg.mViewportHeight) * 2.0f - 1.0f);
-
+		auto [w, h] = renderView->GetSafeSize();
+		auto [x, y] = inputState.GetMousePosition();
+		Eigen::Vector2<float> cursorPos = Eigen::Vector2<float>(x, y);
+		cursorPos = Eigen::Vector2<float>((cursorPos.x() / w) * 2.0f - 1.0f, (cursorPos.y() / h) * 2.0f - 1.0f);
 		cursorPos(1) = -cursorPos(1);
 		Eigen::Vector3f rayOrigin, rayDirection;
 		//
-		if (true)
+		bool isOrth = renderView->GetCamera()->GetProjectionMode() == OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC;
+
+		if (isOrth)
 		{
 			rayOrigin(0) = cursorPos.x() / proj(0, 0) - proj(0, 3) / proj(0, 0);
 			rayOrigin(1) = cursorPos.y() / proj(1, 1) - proj(1, 3) / proj(1, 1);
@@ -4162,8 +4148,8 @@ namespace MOON
 			rayDirection = Eigen::Vector3f(it.x(), it.y(), it.z());
 		}
 
-		cameraParam.viewportWidth = cfg.mViewportWidth;
-		cameraParam.viewportHeight = cfg.mViewportHeight;
+		cameraParam.viewportWidth = w;
+		cameraParam.viewportHeight = h;
 		///
 		cameraParam.projectY = 2.0 / proj(1, 1);
 		cameraParam.orthProj = true;
@@ -4172,23 +4158,23 @@ namespace MOON
 		cameraParam.viewDirectioin = viewforward;
 		cameraParam.rayOrigin = rayOrigin;
 		cameraParam.rayDirection = rayDirection;
-		cameraParam.cursor.x() = widget->currentPoint().x();
-		cameraParam.cursor.y() = widget->currentPoint().y();
+		cameraParam.cursor.x() = x;
+		cameraParam.cursor.y() = y;
 		cameraParam.view = view;
 		cameraParam.inverseView = view.inverse();
 		cameraParam.proj = proj;
 		cameraParam.viewProj = proj * view;
-		bool ctrlDown = false;
 
-		ctrlDown = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0;
-		cameraParam.keyDown[MouseLeft] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		bool ctrlDown = inputState.IsKeyPressed(OvEditor::Panels::Control);
+
+		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_LEFT);
 		cameraParam.keyDown[ActionControl] = ctrlDown;
 
-		cameraParam.keyDown[KeyL] = ctrlDown && (GetAsyncKeyState(0x4c) & 0x8000) != 0;
+		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYL);
 
-		cameraParam.keyDown[KeyT] = ctrlDown && (GetAsyncKeyState(0x54) & 0x8000) != 0;
-		cameraParam.keyDown[KeyR] = ctrlDown && (GetAsyncKeyState(0x52) & 0x8000) != 0;
-		cameraParam.keyDown[KeyS] = ctrlDown && (GetAsyncKeyState(0x53) & 0x8000) != 0;
+		cameraParam.keyDown[KeyT] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYT);
+		cameraParam.keyDown[KeyR] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYR);
+		cameraParam.keyDown[KeyS] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYS);
 
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
@@ -4226,7 +4212,7 @@ namespace MOON
 		glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glEnable(GL_POLYGON_OFFSET_FILL); // 2.0f, 25.0f
-		glViewport(0, 0, cameraParam.viewportWidth, cameraParam.viewportHeight));
+		glViewport(0, 0, cameraParam.viewportWidth, cameraParam.viewportHeight);
 
 		for (int i = 0, n = drawLists.size(); i < n; ++i)
 		{
@@ -4258,9 +4244,9 @@ namespace MOON
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
 			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)drawList.vertexCount * sizeof(VertexData),
 				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW);
-			mShader->setActiveVariant(passTag, {});
-			mShader->bindActiveProgram();
-			mShader->commitDescriptorSetToActiveProgram();
+			//mShader->setActiveVariant(passTag, {});
+			//mShader->bindActiveProgram();
+			//mShader->commitDescriptorSetToActiveProgram();
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 		}
 	}
@@ -4322,9 +4308,9 @@ namespace MOON
 			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)drawList.vertexCount * sizeof(VertexData),
 				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW);
 
-			mShader->setActiveVariant(passTag, {});
-			mShader->bindActiveProgram();
-			mShader->commitDescriptorSetToActiveProgram();
+			//mShader->setActiveVariant(passTag, {});
+			//mShader->bindActiveProgram();
+			//mShader->commitDescriptorSetToActiveProgram();
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 
 		}
@@ -4333,12 +4319,12 @@ namespace MOON
 		{
 			glBindVertexArray(VertexArray);
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-			glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW));
+			glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW);
 
-			mShader->setActiveVariant("Lit", {});
-			mShader->bindActiveProgram();
-			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size()));
-			mShader->unBindActiveProgram();
+			//mShader->setActiveVariant("Lit", {});
+			//mShader->bindActiveProgram();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size());
+			//mShader->unBindActiveProgram();
 		}
 
 	}
@@ -4352,7 +4338,6 @@ namespace MOON
 	{
 		buffer.flush();
 		auto ranges = buffer.waitForCommands();
-
 		for (auto& item : ranges)
 		{
 			if (item.begin)
@@ -4537,10 +4522,7 @@ namespace MOON
 		}
 		mDrawTaskMap.emplace(name, task);
 	}
-	void Guizmo::placeWidget(const std::string& name, AbstractWidget* widget)
-	{
 
-	}
 	void Guizmo::cancleDrawTask(const std::string& name)
 	{
 		cancelList.push_back(name);
