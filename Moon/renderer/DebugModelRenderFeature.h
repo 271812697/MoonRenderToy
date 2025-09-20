@@ -1,7 +1,4 @@
-
-
 #pragma once
-
 #include <OvRendering/Features/ARenderFeature.h>
 
 namespace OvEditor::Rendering

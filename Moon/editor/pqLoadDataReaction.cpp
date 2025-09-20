@@ -7,7 +7,7 @@
 #include <QRegExp>
 #include <QApplication>
 #include <QMainWindow>
-#include "editor/viewerwindow.h"
+#include "editor/View/sceneview/viewerwindow.h"
 #include "renderer/Context.h"
 
 #include "OvCore/Global/ServiceLocator.h"

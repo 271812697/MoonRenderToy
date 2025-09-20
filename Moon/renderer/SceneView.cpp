@@ -1,23 +1,16 @@
-
-
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
-
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
-
 #include "OvCore/Global/ServiceLocator.h"
 #include "SceneView.h"
 #include <iostream>
 #include <QMouseEvent>
 
 static OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
-
 	float elevation = a / 180.0 * 3.14159265;
 	float azimuth = b / 180.0 * 3.14159265;
 	return OvMaths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 }
-
-
 namespace
 {
 	OvTools::Utils::OptRef<OvCore::ECS::Actor> GetActorFromPickingResult(
@@ -43,14 +36,10 @@ OvEditor::Panels::SceneView::SceneView
 	m_sceneManager(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().sceneManager)
 {
 	m_renderer = std::make_unique<OvEditor::Rendering::DebugSceneRenderer>(*OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver);
-
 	m_camera.SetFar(5000.0f);
-
 	m_fallbackMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
 	m_fallbackMaterial.SetProperty("u_Diffuse", OvMaths::FVector4{ 1.f, 0.f, 1.f, 1.0f });
 	m_fallbackMaterial.SetProperty("u_DiffuseMap", static_cast<OvRendering::Resources::Texture*>(nullptr));
-
-
 	OvCore::ECS::Actor::DestroyedEvent += [this](const OvCore::ECS::Actor& actor)
 		{
 			if (m_highlightedActor.has_value() && m_highlightedActor.value().GetID() == actor.GetID())
@@ -63,14 +52,12 @@ OvEditor::Panels::SceneView::SceneView
 void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 {
 	AViewControllable::Update(p_deltaTime);
-
 	auto headLight = GetScene()->FindActorByName("HeadLight");
 	if (!headLight) {
 		return;
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
-
 		auto& ac = GetSelectedActor();
 		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
 		auto target = ac.transform.GetWorldPosition();
@@ -131,7 +118,6 @@ OvCore::SceneSystem::Scene* OvEditor::Panels::SceneView::GetScene()
 void OvEditor::Panels::SceneView::SetGizmoOperation(OvEditor::Core::EGizmoOperation p_operation)
 {
 	m_currentOperation = p_operation;
-	//EDITOR_EVENT(EditorOperationChanged).Invoke(m_currentOperation);
 }
 
 OvEditor::Core::EGizmoOperation OvEditor::Panels::SceneView::GetGizmoOperation() const
@@ -141,13 +127,10 @@ OvEditor::Core::EGizmoOperation OvEditor::Panels::SceneView::GetGizmoOperation()
 
 void OvEditor::Panels::SceneView::ReceiveEvent(QEvent* e)
 {
-
 	if (e == nullptr)
 		return;
 	input.ReceiveEvent(e);
 	const QEvent::Type t = e->type();
-
-	//m_cameraController.ReceiveEvent(e);
 	if (!m_cameraController.IsRightMousePressed()) {
 		if (t == QEvent::KeyPress) {
 			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);

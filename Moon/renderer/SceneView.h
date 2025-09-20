@@ -58,9 +58,6 @@ namespace OvEditor::Panels
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
-
-
-
 	private:
 		OvCore::SceneSystem::SceneManager& m_sceneManager;
 		OvEditor::Core::GizmoBehaviour m_gizmoOperations;

@@ -1,6 +1,6 @@
 #include "MulViewPanel.h"
-#include "uppanel.h"
-#include "downpanel.h"
+#include "editor/View/sceneview/uppanel.h"
+#include "editor/View/pathtrace/downpanel.h"
 #include <QTabWidget>
 #include <QGridLayout>
 namespace MOON {

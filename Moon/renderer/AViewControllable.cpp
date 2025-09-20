@@ -1,8 +1,7 @@
-
-
 #include "AViewControllable.h"
 #include "DebugSceneRenderer.h"
 #include "GridRenderPass.h"
+
 const OvMaths::FVector3 kDefaultGridColor{ 1.0f, 1.0f, 1.0f };
 const OvMaths::FVector3 kDefaultClearColor{ 0.0f, 0.0f, 0.0f };
 const OvMaths::FVector3 kDefaultCameraPosition{ -10.0f, 3.0f, 10.0f };
@@ -28,9 +27,7 @@ void OvEditor::Panels::AViewControllable::InitFrame()
 {
 	m_camera.SetFrustumGeometryCulling(false);
 	m_camera.SetFrustumLightCulling(false);
-
 	AView::InitFrame();
-
 	m_renderer->AddDescriptor<Rendering::GridRenderPass::GridDescriptor>({
 		m_gridColor,
 		m_camera.GetPosition()

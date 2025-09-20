@@ -1,23 +1,13 @@
-
-
 #pragma once
-
 #include "AView.h"
 #include "CameraController.h"
 
 namespace OvEditor {
 	namespace Panels
 	{
-
 		class AViewControllable : public OvEditor::Panels::AView
 		{
 		public:
-			/**
-			* Constructor
-			* @param p_title
-			* @param p_opened
-			* @param p_windowSettings
-			*/
 			AViewControllable(
 				const std::string& p_title);
 

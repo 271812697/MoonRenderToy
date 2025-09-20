@@ -4,9 +4,6 @@
 #include<iostream>
 
 namespace MOON {
-
-
-
 	UpPanel::UpPanel(QWidget* parent, Qt::WindowFlags f) :QWidget(parent)
 	{
 		auto preview_window_ = new ViewerWindow(this);

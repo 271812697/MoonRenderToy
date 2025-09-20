@@ -1,7 +1,7 @@
 #include "glloader.h"
 #include <glad/glad.h>
 
-bool CustomLoadGL(void* load)
+bool GlLoader::CustomLoadGL(void* load)
 {
 	static bool initFlag = false;
 	if (!initFlag) {
@@ -10,8 +10,5 @@ bool CustomLoadGL(void* load)
 			return false;
 		}
 	}
-
 	return true;
 }
-
-

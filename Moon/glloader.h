@@ -1,2 +1,6 @@
 #pragma once
-bool CustomLoadGL(void* load);
+class GlLoader {
+public:
+	static bool CustomLoadGL(void* load);
+};
+
