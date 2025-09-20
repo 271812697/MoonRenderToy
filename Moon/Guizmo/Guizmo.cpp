@@ -3,6 +3,8 @@
 #include "Settings/DebugSetting.h"
 #include "Qtimgui/imgui/imgui.h"
 #include <glad/glad.h>
+
+
 namespace MOON
 {
 	class GL2DRender
@@ -4002,7 +4004,6 @@ namespace MOON
 		auto c1 = ImGui::ColorConvertFloat4ToU32({ 0.8156f, 0.9215f, 1.0f, 1.0f });
 		auto c2 = ImGui::ColorConvertFloat4ToU32({ 1, 1, 0, 1 });
 		float radius = 4.0f;
-		//ImGui::GetBackgroundDrawList()->AddCircleFilled({pos.x(), pos.y()}, radius, isHot2D(id)?c2:c1);
 
 		bool ret = false;
 		bool hitFlag = (pos - cameraParam.cursor).norm() < radius;
@@ -4129,8 +4130,7 @@ namespace MOON
 		proj.row(3) << mat[3][0], mat[3][1], mat[3][2], mat[3][3];
 		proj.transposeInPlace();
 		Eigen::Vector3f vieweye = Eigen::Vector3f(viewinverse(0, 3), viewinverse(1, 3), viewinverse(2, 3));
-		Eigen::Vector3f viewforward =
-			Eigen::Vector3f(viewinverse(0, 2), viewinverse(1, 2), viewinverse(2, 2)).normalized();
+		Eigen::Vector3f viewforward = Eigen::Vector3f(viewinverse(0, 2), viewinverse(1, 2), viewinverse(2, 2)).normalized();
 		Eigen::Matrix4f camWorld = viewinverse;
 
 		Eigen::Vector2<float> cursorPos = Eigen::Vector2<float>(widget->currentPoint().x(), widget->currentPoint().y());
@@ -4149,7 +4149,6 @@ namespace MOON
 			rayOrigin = Eigen::Vector3f(it.x() / it.w(), it.y() / it.w(), it.z() / it.w());
 			it = camWorld * Eigen::Vector4<float>(0.0f, 0.0f, -1.0f, 0.0f);
 			rayDirection = Eigen::Vector3f(it.x(), it.y(), it.z());
-			;
 		}
 		else
 		{
@@ -4157,13 +4156,12 @@ namespace MOON
 			rayDirection(0) = cursorPos.x() / proj(0, 0);
 			rayDirection(1) = cursorPos.y() / proj(1, 1);
 			rayDirection(2) = -1.0f;
-
 			Eigen::Vector3f rayDirectionNormalized = rayDirection.normalized();
 			Eigen::Vector4<float> it = camWorld * Eigen::Vector4<float>(rayDirectionNormalized.x(),
 				rayDirectionNormalized.y(), rayDirectionNormalized.z(), 0.0f);
 			rayDirection = Eigen::Vector3f(it.x(), it.y(), it.z());
 		}
-		// CameraParam& cameraParam = RPI::Guizmo::instance().getCameraParam();
+
 		cameraParam.viewportWidth = cfg.mViewportWidth;
 		cameraParam.viewportHeight = cfg.mViewportHeight;
 		///
@@ -4181,50 +4179,17 @@ namespace MOON
 		cameraParam.proj = proj;
 		cameraParam.viewProj = proj * view;
 		bool ctrlDown = false;
-		if (ZF::RPI::DebugSettings::instance().getOrDefault("UseWinKey", false))
-		{
-			ctrlDown = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0;
-			cameraParam.keyDown[MouseLeft] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-			cameraParam.keyDown[ActionControl] = ctrlDown;
 
-			cameraParam.keyDown[KeyL] = ctrlDown && (GetAsyncKeyState(0x4c) & 0x8000) != 0;
+		ctrlDown = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0;
+		cameraParam.keyDown[MouseLeft] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		cameraParam.keyDown[ActionControl] = ctrlDown;
 
-			cameraParam.keyDown[KeyT] = ctrlDown && (GetAsyncKeyState(0x54) & 0x8000) != 0;
-			cameraParam.keyDown[KeyR] = ctrlDown && (GetAsyncKeyState(0x52) & 0x8000) != 0;
-			cameraParam.keyDown[KeyS] = ctrlDown && (GetAsyncKeyState(0x53) & 0x8000) != 0;
-		}
-		else
-		{
-			cameraParam.keyDown[MouseLeft] = renderWidget->isMouseKeyDown(Qt::MouseButton::LeftButton);
-			ctrlDown = renderWidget->isKeyDown(Qt::Key::Key_Control);
+		cameraParam.keyDown[KeyL] = ctrlDown && (GetAsyncKeyState(0x4c) & 0x8000) != 0;
 
-			cameraParam.keyDown[KeyL] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_L);
-			cameraParam.keyDown[ActionControl] = ctrlDown;
-			cameraParam.keyDown[KeyT] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_T);
-			cameraParam.keyDown[KeyR] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_R);
-			cameraParam.keyDown[KeyS] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_S);
-		}
-		//#ifdef UsewinKey
-		//    ctrlDown = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) != 0;
-		//    cameraParam.keyDown[MouseLeft] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-		//    cameraParam.keyDown[ActionControl] = ctrlDown;
-		//
-		//    cameraParam.keyDown[KeyL] = ctrlDown && (GetAsyncKeyState(0x4c) & 0x8000) != 0;
-		//
-		//    cameraParam.keyDown[KeyT] = ctrlDown && (GetAsyncKeyState(0x54) & 0x8000) != 0;
-		//    cameraParam.keyDown[KeyR] = ctrlDown && (GetAsyncKeyState(0x52) & 0x8000) != 0;
-		//    cameraParam.keyDown[KeyS] = ctrlDown && (GetAsyncKeyState(0x53) & 0x8000) != 0;
-		//  
-		//#else
-		//    cameraParam.keyDown[MouseLeft] = renderWidget->isMouseKeyDown(Qt::MouseButton::LeftButton);
-		//    ctrlDown = renderWidget->isKeyDown(Qt::Key::Key_Control);
-		//
-		//    cameraParam.keyDown[KeyL] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_L);
-		//    cameraParam.keyDown[ActionControl] = ctrlDown;
-		//    cameraParam.keyDown[KeyT] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_T);
-		//    cameraParam.keyDown[KeyR] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_R);
-		//    cameraParam.keyDown[KeyS] = ctrlDown && renderWidget->isKeyDown(Qt::Key::Key_S);
-		//#endif // DEBUG
+		cameraParam.keyDown[KeyT] = ctrlDown && (GetAsyncKeyState(0x54) & 0x8000) != 0;
+		cameraParam.keyDown[KeyR] = ctrlDown && (GetAsyncKeyState(0x52) & 0x8000) != 0;
+		cameraParam.keyDown[KeyS] = ctrlDown && (GetAsyncKeyState(0x53) & 0x8000) != 0;
+
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
@@ -4352,22 +4317,22 @@ namespace MOON
 				return;
 			};
 
-			glBindVertexArray(VertexArray));
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer));
+			glBindVertexArray(VertexArray);
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
 			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)drawList.vertexCount * sizeof(VertexData),
-				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW));
+				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW);
 
-				mShader->setActiveVariant(passTag, {});
-				mShader->bindActiveProgram();
-				mShader->commitDescriptorSetToActiveProgram();
-				glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount));
+			mShader->setActiveVariant(passTag, {});
+			mShader->bindActiveProgram();
+			mShader->commitDescriptorSetToActiveProgram();
+			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 
 		}
 
 		//draw lit vertex data
 		{
-			glBindVertexArray(VertexArray));
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer));
+			glBindVertexArray(VertexArray);
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
 			glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW));
 
 			mShader->setActiveVariant("Lit", {});
