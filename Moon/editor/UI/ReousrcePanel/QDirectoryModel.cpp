@@ -1,11 +1,11 @@
 <<<<<<< HEAD
 #include <algorithm>
-=======
-ï»¿#include <algorithm>
->>>>>>> 55bf1f75852debbf88cca55155cea5d07b047be7
+	====== =
+	ï» ? include <algorithm>
+	>>>>>> > 55bf1f75852debbf88cca55155cea5d07b047be7
 #include "QDirectoryModel.h"
 #include <filesystem>
-using namespace std;
+	using namespace std;
 namespace MOON
 {
 	static std::string GetFileExt(const std::string& p_path)
@@ -195,16 +195,16 @@ namespace MOON
 	{
 		m_currentSelect = pIndex;
 		QString filePath = m_proxy ? m_proxy->data(pIndex, Qt::UserRole).toString() : this->data(pIndex, Qt::UserRole).toString();
-<<<<<<< HEAD
-		// È¡Ïû¼¤»î // ´ÖÌåÏÔÊ¾
-=======
+		<<<<<<< HEAD
+			// È¡Ïû¼¤»î // ´ÖÌåÏÔÊ¾
+			====== =
 
-		// å–æ¶ˆæ¿€æ´» // ç²—ä½“æ˜¾ç¤º
->>>>>>> 55bf1f75852debbf88cca55155cea5d07b047be7
-		if (m_activeItem)
-			m_activeItem->setFont(m_treeView->font());
+			// å–æ¶ˆæ¿€æ´?// ç²—ä½“æ˜¾ç¤º
+			>>>>>> > 55bf1f75852debbf88cca55155cea5d07b047be7
+			if (m_activeItem)
+				m_activeItem->setFont(m_treeView->font());
 
-		// è®¾ç½®æ¿€æ´»
+		// è®¾ç½®æ¿€æ´?
 		m_activeItem = itemFromIndex(pIndex);
 		if (m_activeItem)
 		{
@@ -220,11 +220,11 @@ namespace MOON
 	{
 		QString filePath = m_proxy ? m_proxy->data(pIndex, Qt::UserRole).toString() : this->data(pIndex, Qt::UserRole).toString();
 
-		// å–æ¶ˆæ¿€æ´» // ç²—ä½“æ˜¾ç¤º
+		// å–æ¶ˆæ¿€æ´?// ç²—ä½“æ˜¾ç¤º
 		if (m_activeItem)
 			m_activeItem->setFont(m_treeView->font());
 
-		// è®¾ç½®æ¿€æ´»
+		// è®¾ç½®æ¿€æ´?
 		m_activeItem = itemFromIndex(pIndex);
 		if (m_activeItem)
 		{
