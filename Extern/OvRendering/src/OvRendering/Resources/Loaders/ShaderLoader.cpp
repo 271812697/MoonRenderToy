@@ -1,5 +1,3 @@
-
-
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -29,6 +27,7 @@ namespace
 		constexpr std::string_view kFeatureToken = "#feature";
 		constexpr std::string_view kVertexShaderToken = "#shader vertex";
 		constexpr std::string_view kFragmentShaderToken = "#shader fragment";
+		constexpr std::string_view kGeomertyShaderToken = "#shader geomerty";
 		constexpr std::string_view kIncludeToken = "#include";
 		constexpr std::string_view kDefineToken = "#define";
 		constexpr std::string_view kVersionToken = "#version";
@@ -59,6 +58,7 @@ namespace
 		const ShaderInputInfo inputInfo;
 		const std::string vertexShader;
 		const std::string fragmentShader;
+		const std::string geomertyShader;
 		const std::unordered_set<std::string> passes;
 		const OvRendering::Data::FeatureSet features;
 	};
@@ -168,7 +168,7 @@ namespace
 		for (const auto& stageInput : p_stages)
 		{
 			const auto& processedStage = processedStages.emplace_back(stageInput.type);
-			
+
 			std::unordered_set<std::string_view> defines(p_features.begin(), p_features.end());
 			defines.insert(p_pass);
 			const auto source = AddDefinesToShaderCode(stageInput.source, defines);
@@ -285,8 +285,8 @@ void main()
 )";
 
 		auto shaders = std::array<ShaderStageDesc, 2>{
-			ShaderStageDesc{vertex, OvRendering::Settings::EShaderType::VERTEX},
-			ShaderStageDesc{fragment, OvRendering::Settings::EShaderType::FRAGMENT}
+			ShaderStageDesc{ vertex, OvRendering::Settings::EShaderType::VERTEX },
+				ShaderStageDesc{ fragment, OvRendering::Settings::EShaderType::FRAGMENT }
 		};
 
 		auto program = CreateProgram(
@@ -427,6 +427,9 @@ void main()
 			{
 				currentType = EShaderType::FRAGMENT;
 			}
+			else if (trimmedLine.starts_with(Grammar::kGeomertyShaderToken)) {
+				currentType = EShaderType::GEOMERTY;
+			}
 			else if (currentType != EShaderType::NONE)
 			{
 				shaderSources[currentType] << line << '\n';
@@ -437,6 +440,7 @@ void main()
 			.inputInfo = p_shaderLoadResult.inputInfo,
 			.vertexShader = shaderSources[EShaderType::VERTEX].str(),
 			.fragmentShader = shaderSources[EShaderType::FRAGMENT].str(),
+			.geomertyShader = shaderSources[EShaderType::GEOMERTY].str(),
 			.passes = passes,
 			.features = features
 		};
@@ -454,12 +458,19 @@ void main()
 		uint32_t failures = 0;
 
 		OvRendering::Resources::Shader::Variants variants;
-
+		auto stages = std::vector<ShaderStageDesc>(
+			{
+			  { p_parseResult.vertexShader, OvRendering::Settings::EShaderType::VERTEX },
+			  { p_parseResult.fragmentShader, OvRendering::Settings::EShaderType::FRAGMENT }
+			});
+		if (p_parseResult.geomertyShader != "") {
+			stages.push_back({ p_parseResult.geomertyShader, OvRendering::Settings::EShaderType::GEOMERTY });
+		}
 		// We create as many additional shader programs (variants) as there are passes
 		for (const auto& pass : p_parseResult.passes)
 		{
 			OvRendering::Resources::Shader::FeatureVariants featureVariants;
-			featureVariants.reserve(featureVariantCount * p_parseResult.passes.size());
+			featureVariants.reserve(featureVariantCount);
 
 			// We create a shader program (AKA shader variant) for each combination of features.
 			// The number of combinations is 2^n, where n is the number of features.
@@ -474,10 +485,7 @@ void main()
 					}
 				}
 
-				const auto stages = std::to_array<ShaderStageDesc>({
-					{ p_parseResult.vertexShader, OvRendering::Settings::EShaderType::VERTEX },
-					{ p_parseResult.fragmentShader, OvRendering::Settings::EShaderType::FRAGMENT }
-					});
+
 
 				auto program = CreateProgram(
 					p_parseResult.inputInfo,
@@ -562,7 +570,8 @@ void main()
 
 	ShaderAssembleResult CompileShaderFromSources(
 		const std::string& p_vertexShader,
-		const std::string& p_fragmentShader
+		const std::string& p_fragmentShader,
+		const std::string& p_geomertyShader
 	)
 	{
 		const ShaderParseResult shaderParseResult{
@@ -572,6 +581,7 @@ void main()
 			},
 			.vertexShader = p_vertexShader,
 			.fragmentShader = p_fragmentShader,
+			.geomertyShader = p_geomertyShader,
 			.passes = {{}}, // Default pass (empty string)
 			.features = {} // No support for features in embedded shaders
 		};
@@ -598,9 +608,9 @@ namespace OvRendering::Resources::Loaders
 		return new Shader(p_filePath, std::move(result.variants));
 	}
 
-	Shader* ShaderLoader::CreateFromSource(const std::string& p_vertexShader, const std::string& p_fragmentShader)
+	Shader* ShaderLoader::CreateFromSource(const std::string& p_vertexShader, const std::string& p_fragmentShader, const std::string& p_geomertyShader)
 	{
-		auto result = CompileShaderFromSources(p_vertexShader, p_fragmentShader);
+		auto result = CompileShaderFromSources(p_vertexShader, p_fragmentShader, p_geomertyShader);
 		return new Shader({}, std::move(result.variants));
 	}
 

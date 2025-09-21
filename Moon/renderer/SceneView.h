@@ -1,7 +1,4 @@
-
-
 #pragma once
-
 #include "GizmoBehaviour.h"
 #include "AViewControllable.h"
 #include "PickingRenderPass.h"

@@ -1,10 +1,7 @@
-
-
-
 #include <OvCore/ECS/Components/CAmbientBoxLight.h>
 #include <OvCore/ECS/Components/CAmbientSphereLight.h>
-
 #include "CameraController.h"
+#include <iostream>
 
 
 OvEditor::Core::CameraController::CameraController(
@@ -286,7 +283,6 @@ void OvEditor::Core::CameraController::HandleCameraZoom()
 	constexpr float kUnitsPerScroll = 1.0f;
 
 	const auto verticalScroll = m_view.getInutState().GetMouseScroll().second;
-
 	m_camera.SetPosition(
 		m_camera.GetPosition() +
 		m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll

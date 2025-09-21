@@ -1,7 +1,4 @@
-
-
 #pragma once
-
 #include <map>
 
 #include <OvRendering/Core/CompositeRenderer.h>

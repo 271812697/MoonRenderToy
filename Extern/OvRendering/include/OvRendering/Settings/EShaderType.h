@@ -1,7 +1,4 @@
-
-
 #pragma once
-
 #include <cstdint>
 
 namespace OvRendering::Settings
@@ -13,6 +10,7 @@ namespace OvRendering::Settings
 	{
 		NONE,
 		VERTEX,
+		GEOMERTY,
 		FRAGMENT,
 	};
 }

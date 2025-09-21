@@ -414,7 +414,8 @@ struct OvTools::Utils::MappingFor<OvRendering::Settings::EShaderType, GLenum>
 	using EnumType = OvRendering::Settings::EShaderType;
 	using type = std::tuple<
 		EnumValuePair<EnumType::VERTEX, GL_VERTEX_SHADER>,
-		EnumValuePair<EnumType::FRAGMENT, GL_FRAGMENT_SHADER>
+		EnumValuePair<EnumType::FRAGMENT, GL_FRAGMENT_SHADER>,
+		EnumValuePair<EnumType::GEOMERTY, GL_GEOMETRY_SHADER>
 	>;
 };
 

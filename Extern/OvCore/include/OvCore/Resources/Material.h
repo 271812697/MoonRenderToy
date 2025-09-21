@@ -1,12 +1,7 @@
-
-
 #pragma once
-
 #include <any>
 #include <map>
-
 #include <OvRendering/Data/Material.h>
-
 #include "OvCore/API/ISerializable.h"
 
 namespace OvCore::Resources

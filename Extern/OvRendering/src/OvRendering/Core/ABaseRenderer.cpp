@@ -1,9 +1,5 @@
-
-
 #include <functional>
-
 #include <tracy/Tracy.hpp>
-
 #include <OvRendering/Core/ABaseRenderer.h>
 #include <OvRendering/HAL/TextureHandle.h>
 #include <OvRendering/Resources/Loaders/TextureLoader.h>

@@ -17,6 +17,11 @@ namespace OvEditor {
 		class SceneView;
 	}
 }
+
+namespace OvRendering::Data
+{
+	class Material;
+}
 namespace MOON
 {
 	class Behaviour;
@@ -195,6 +200,7 @@ namespace MOON
 	{
 	private:
 		Guizmo();
+		~Guizmo();
 		Guizmo(const Guizmo&) = delete;
 		Guizmo& operator=(const Guizmo&) = delete;
 
@@ -376,7 +382,7 @@ namespace MOON
 		}
 		void pushLayerId(unsigned int layer);
 		void popLayerId();
-		~Guizmo();
+
 		float pixelsToWorldSize(const Eigen::Vector3f& position, float pixels);
 		Eigen::Vector3f screenToWorld(const Eigen::Vector2f& pos);
 
@@ -384,7 +390,6 @@ namespace MOON
 		void drawWidgets();
 		void placeDrawTask(const std::string& name, std::function<void()> task);
 		void cancleDrawTask(const std::string& name);
-
 		void create2DRender();
 	private:
 		OvEditor::Panels::SceneView* renderView = nullptr;
@@ -393,8 +398,10 @@ namespace MOON
 		std::vector<std::string> cancelList;
 		std::unordered_map<std::string, std::function<void()>> mDrawTaskMap;
 
-
 		//intrusive_ptr<RHI::ShaderInstance> mShader = nullptr;
+		OvRendering::Data::Material* mLineMaterial = nullptr;
+		OvRendering::Data::Material* mPointMaterial = nullptr;
+		OvRendering::Data::Material* mTriangleMaterial = nullptr;
 
 		std::vector<Eigen::Vector4<uint8_t>> colorStack;
 		std::vector<float> alphaStack;

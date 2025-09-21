@@ -18,7 +18,6 @@ namespace OvEditor {
 
 			AView(
 				const std::string& p_title
-
 			);
 
 			/**

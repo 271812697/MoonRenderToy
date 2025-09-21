@@ -10,6 +10,7 @@ namespace OvRendering::Utils
 		{
 		case OvRendering::Settings::EShaderType::VERTEX: return "Vertex";
 		case OvRendering::Settings::EShaderType::FRAGMENT: return "Fragment";
+		case OvRendering::Settings::EShaderType::GEOMERTY: return "Geomerty";
 		}
 
 		return "None";

@@ -3,9 +3,21 @@
 #include "Settings/DebugSetting.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "renderer/SceneView.h"
+#include "OvCore/Global/ServiceLocator.h"
+#include <OvRendering/Data/Material.h>
+#include <OvRendering/Resources/Loaders/ShaderLoader.h>
+#include <OvMaths/FMatrix4.h>
 #include <glad/glad.h>
 namespace MOON
 {
+
+	static OvMaths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
+		Eigen::Matrix4f temp = mat;
+		temp.transposeInPlace();
+		OvMaths::FMatrix4 ret;
+		memcpy(ret.data, temp.data(), 16 * sizeof(float));
+		return ret;
+	}
 	class GL2DRender
 	{
 	public:
@@ -274,6 +286,7 @@ namespace MOON
 			// std::cout << "say hello" << std::endl;
 			}
 		);
+
 	}
 
 	Guizmo& Guizmo::instance()
@@ -334,8 +347,11 @@ namespace MOON
 	}
 	void Guizmo::prepareGl()
 	{
+		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
+		mLineMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
+		mPointMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
+		mTriangleMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
 
-		//mShader = RHI::ShaderInstance::create("surface");
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
 		glBindVertexArray(VertexArray);
@@ -362,6 +378,9 @@ namespace MOON
 		delete m_lines;
 		delete m_points;
 		delete m_triangles;
+		delete mLineMaterial;
+		delete mPointMaterial;
+		delete mTriangleMaterial;
 	}
 	void Guizmo::begin(PrimitiveMode _mode)
 	{
@@ -4184,10 +4203,42 @@ namespace MOON
 	void Guizmo::test()
 	{
 		drawViewCube();
+		colorStack.push_back(Color_Gold);
+		drawPoint({ 0,0,0 }, 40);
+		colorStack.push_back(Color_Red);
+		drawPoint({ 1,1,1 }, 40);
+		colorStack.pop_back();
+		colorStack.pop_back();
+		drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
+		drawSphere({ 2,2,2 }, 2);
+		static Eigen::Vector3f t = { 0,0,0 };
+		static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
+		static Eigen::Vector3f scale = { 1,1,1 };
+
+		boxEdit(makeId("box edit"), t, rotation, scale);
 	}
 
 	void Guizmo::drawUnsort()
 	{
+		auto driver = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver.get();
+		auto p_pso = driver->CreatePipelineState();
+		p_pso.stencilTest = true;
+		p_pso.stencilWriteMask = 0xFF;
+		p_pso.stencilFuncRef = 1;
+		p_pso.stencilFuncMask = 0xFF;
+		p_pso.stencilOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.colorWriting.mask = 0x00;
+		p_pso.depthWriting = true;
+		p_pso.colorWriting.mask = 0xFF;
+		p_pso.blending = true;
+		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
+		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::ALWAYS;
+		///p_pso.culling = ;
+		p_pso.depthTest = true;
+
 		drawLists.clear();
 		// draw unsorted primitives first
 		for (int i = 0; i < vertexData[0].size(); ++i)
@@ -4202,37 +4253,41 @@ namespace MOON
 				dl.vertexCount = vertexData[0][i]->size();
 			}
 		}
+		driver->SetPipelineState(p_pso);
 		glEnable(GL_POINT_SPRITE);
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glEnable(GL_BLEND);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_PROGRAM_POINT_SIZE);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_ALWAYS);
-		glDisable(GL_CULL_FACE);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glEnable(GL_POLYGON_OFFSET_FILL); // 2.0f, 25.0f
+		//glEnable(GL_DEPTH_TEST);
+		//glDepthFunc(GL_ALWAYS);
+		//glDisable(GL_CULL_FACE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glEnable(GL_POLYGON_OFFSET_FILL); // 2.0f, 25.0f
 		glViewport(0, 0, cameraParam.viewportWidth, cameraParam.viewportHeight);
 
 		for (int i = 0, n = drawLists.size(); i < n; ++i)
 		{
 			const DrawList& drawList = drawLists[i];
 			unsigned int prim;
-
+			OvRendering::Data::Material* mat = nullptr;
 			std::string passTag = "";
 			switch (drawList.primType)
 			{
 			case DrawPrimitivePoints:
 				prim = GL_POINTS;
 				passTag = "point";
+				mat = mPointMaterial;
 				break;
 			case DrawPrimitiveLines:
 				prim = GL_LINES;
 				passTag = "line";
+				mat = mLineMaterial;
 				break;
 			case DrawPrimitiveTriangles:
 				prim = GL_TRIANGLES;
 				passTag = "triangle";
+				mat = mTriangleMaterial;
 				// glEnable(GL_CULL_FACE); // culling valid for triangles, but optional
 				break;
 			default:
@@ -4247,6 +4302,12 @@ namespace MOON
 			//mShader->setActiveVariant(passTag, {});
 			//mShader->bindActiveProgram();
 			//mShader->commitDescriptorSetToActiveProgram();
+			if (drawList.primType == DrawPrimitiveLines) {
+				mat->SetProperty("uViewport", OvMaths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
+
+			}
+			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));
+			mat->Bind();
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 		}
 	}
@@ -4254,13 +4315,33 @@ namespace MOON
 	void Guizmo::drawSort()
 	{
 		drawLists.clear();
+		auto driver = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver.get();
+		auto p_pso = driver->CreatePipelineState();
+		p_pso.stencilTest = true;
+		p_pso.stencilWriteMask = 0xFF;
+		p_pso.stencilFuncRef = 1;
+		p_pso.stencilFuncMask = 0xFF;
+		p_pso.stencilOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.colorWriting.mask = 0x00;
+		p_pso.depthWriting = true;
+		p_pso.colorWriting.mask = 0xFF;
+		p_pso.blending = true;
+		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
+		///p_pso.culling = ;
+		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.blendingDestFactor = OvRendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
+		p_pso.depthTest = true;
+		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		driver->SetPipelineState(p_pso);
 		// Enable Depth Test
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_POINT_SPRITE);
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDepthFunc(GL_LEQUAL);
+		//glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_POINT_SPRITE);
+		//glEnable(GL_BLEND);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glDepthFunc(GL_LEQUAL);
 		for (int i = 0; i < vertexData[1].size(); ++i)
 		{
 			if (vertexData[1][i]->size() > 0)
@@ -4279,22 +4360,22 @@ namespace MOON
 			unsigned int prim;
 
 			std::string passTag = "";
-
+			OvRendering::Data::Material* mat = nullptr;
 			switch (drawList.primType)
 			{
 			case DrawPrimitivePoints:
 				prim = GL_POINTS;
-
+				mat = mPointMaterial;
 				passTag = "point";
 				break;
 			case DrawPrimitiveLines:
 				prim = GL_LINES;
-
+				mat = mLineMaterial;
 				passTag = "line";
 				break;
 			case DrawPrimitiveTriangles:
 				prim = GL_TRIANGLES;
-
+				mat = mTriangleMaterial;
 				passTag = "triangle";
 				// glEnable(GL_CULL_FACE); // culling valid for triangles, but optional
 				break;
@@ -4307,24 +4388,26 @@ namespace MOON
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
 			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)drawList.vertexCount * sizeof(VertexData),
 				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW);
+			if (drawList.primType == DrawPrimitiveLines) {
+				mat->SetProperty("uViewport", OvMaths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
 
-			//mShader->setActiveVariant(passTag, {});
-			//mShader->bindActiveProgram();
-			//mShader->commitDescriptorSetToActiveProgram();
+			}
+			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));;
+			mat->Bind();
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 
 		}
 
 		//draw lit vertex data
 		{
-			glBindVertexArray(VertexArray);
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-			glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW);
+			//glBindVertexArray(VertexArray);
+			//glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
+			//glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW);
 
-			//mShader->setActiveVariant("Lit", {});
-			//mShader->bindActiveProgram();
-			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size());
-			//mShader->unBindActiveProgram();
+			////mShader->setActiveVariant("Lit", {});
+			////mShader->bindActiveProgram();
+			//glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size());
+			////mShader->unBindActiveProgram();
 		}
 
 	}
@@ -4483,7 +4566,7 @@ namespace MOON
 			delete vertexData[0][i];
 			delete vertexData[1][i];
 		}
-		// terminate();
+		terminate();
 	}
 	float Guizmo::pixelsToWorldSize(const Eigen::Vector3f& position, float pixels)
 	{

@@ -172,10 +172,6 @@ OvCore::Rendering::SceneRenderer::SceneDescriptor OvEditor::Panels::SceneView::C
 
 void OvEditor::Panels::SceneView::DrawFrame()
 {
-	auto& pickingPass = m_renderer->GetPass<OvEditor::Rendering::PickingRenderPass>("Picking");
-
-
-
 	OvEditor::Panels::AViewControllable::DrawFrame();
 	HandleActorPicking();
 }
@@ -187,26 +183,18 @@ bool IsResizing()
 
 void OvEditor::Panels::SceneView::HandleActorPicking()
 {
-
-
 	if (input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();
-
-
 	}
 
 	if (!m_gizmoOperations.IsPicking())
 	{
-
 		auto mousePos = input.GetMousePosition();
 		int mouseY = GetSafeSize().second - mousePos.second - 1;
 		int mouseX = mousePos.first;
-
 		auto& scene = *GetScene();
-
 		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-
 		const auto pickingResult = actorPickingFeature.ReadbackPickingResult(
 			scene,
 			static_cast<uint32_t>(mouseX),
@@ -263,11 +251,7 @@ void OvEditor::Panels::SceneView::HandleActorPicking()
 	if (m_gizmoOperations.IsPicking())
 	{
 		auto [winWidth, winHeight] = GetSafeSize();
-
 		auto mousePosition = input.GetMousePosition();
-
-
-
 		m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mousePosition.first), static_cast<float>(mousePosition.second) });
 		m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
 

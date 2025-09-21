@@ -57,7 +57,7 @@ namespace OvRendering::Resources::Loaders
 		* @param p_fragmentShader
 		* @note Doesn't support parsing (no include, no features)
 		*/
-		static Shader* CreateFromSource(const std::string& p_vertexShader, const std::string& p_fragmentShader);
+		static Shader* CreateFromSource(const std::string& p_vertexShader, const std::string& p_fragmentShader, const std::string& p_geomertyShader = "");
 
 		/**
 		* Recompiles a shader
