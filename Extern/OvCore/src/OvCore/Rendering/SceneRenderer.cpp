@@ -1,5 +1,3 @@
-
-
 #include <ranges>
 #include <tracy/Tracy.hpp>
 
@@ -195,11 +193,11 @@ void OvCore::Rendering::SceneRenderer::BeginFrame(const OvRendering::Data::Frame
 	AddDescriptor<OvRendering::Features::LightingRenderFeature::LightingDescriptor>({
 		FindActiveLights(sceneDescriptor.scene),
 		frustumLightCulling ? sceneDescriptor.frustumOverride : std::nullopt
-	});
+		});
 
 	AddDescriptor<OvCore::Rendering::ReflectionRenderFeature::ReflectionDescriptor>({
 		FindActiveReflectionProbes(sceneDescriptor.scene)
-	});
+		});
 
 	OvRendering::Core::CompositeRenderer::BeginFrame(p_frameDescriptor);
 
@@ -207,7 +205,7 @@ void OvCore::Rendering::SceneRenderer::BeginFrame(const OvRendering::Data::Frame
 		ParseScene(SceneParsingInput{
 			.scene = sceneDescriptor.scene
 		})
-	});
+		});
 
 	// Default filtered drawables descriptor using the main camera (used by most render passes).
 	// Some other render passes can decide to filter the drawables themselves, using the 
@@ -223,7 +221,7 @@ void OvCore::Rendering::SceneRenderer::BeginFrame(const OvRendering::Data::Frame
 				.requiredVisibilityFlags = EVisibilityFlags::GEOMETRY
 			}
 		)
-	});
+		});
 }
 
 void OvCore::Rendering::SceneRenderer::DrawModelWithSingleMaterial(OvRendering::Data::PipelineState p_pso, OvRendering::Resources::Model& p_model, OvRendering::Data::Material& p_material, const OvMaths::FMatrix4& p_modelMatrix)
@@ -267,7 +265,7 @@ SceneRenderer::SceneDrawablesDescriptor OvCore::Rendering::SceneRenderer::ParseS
 		if (!model) continue;
 		const auto materialRenderer = modelRenderer->owner.GetComponent<CMaterialRenderer>();
 		if (!materialRenderer) continue;
-				
+
 		const auto& transform = owner.transform.GetFTransform();
 		const auto& materials = materialRenderer->GetMaterials();
 
@@ -295,20 +293,20 @@ SceneRenderer::SceneDrawablesDescriptor OvCore::Rendering::SceneRenderer::ParseS
 				case CUSTOM_BOUNDS: return modelRenderer->GetCustomBoundingSphere();
 				}
 				return std::nullopt;
-			}();
+				}();
 
-			drawable.AddDescriptor<SceneDrawableDescriptor>({
-				.actor = modelRenderer->owner,
-				.visibilityFlags = materialRenderer->GetVisibilityFlags(),
-				.bounds = bounds,
-			});
-			
-			drawable.AddDescriptor<EngineDrawableDescriptor>({
-				transform.GetWorldMatrix(),
-				materialRenderer->GetUserMatrix()
-			});
+				drawable.AddDescriptor<SceneDrawableDescriptor>({
+					.actor = modelRenderer->owner,
+					.visibilityFlags = materialRenderer->GetVisibilityFlags(),
+					.bounds = bounds,
+					});
 
-			result.drawables.push_back(drawable);
+				drawable.AddDescriptor<EngineDrawableDescriptor>({
+					transform.GetWorldMatrix(),
+					materialRenderer->GetUserMatrix()
+					});
+
+				result.drawables.push_back(drawable);
 		}
 	}
 
@@ -347,7 +345,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor OvCore::Rendering::SceneRenderer
 			continue;
 		}
 
-		const auto targetMaterial = 
+		const auto targetMaterial =
 			p_filteringInput.overrideMaterial.has_value() ?
 			p_filteringInput.overrideMaterial.value() :
 			(drawable.material.has_value() ? drawable.material.value() : p_filteringInput.fallbackMaterial);
@@ -399,21 +397,21 @@ SceneRenderer::SceneFilteredDrawablesDescriptor OvCore::Rendering::SceneRenderer
 		{
 			output.ui.emplace(decltype(decltype(output.ui)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
-				.distance = distanceToCamera
+					.distance = distanceToCamera
 			}, drawableCopy);
 		}
 		else if (drawableCopy.material->IsBlendable())
 		{
 			output.transparents.emplace(decltype(decltype(output.transparents)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
-				.distance = distanceToCamera
+					.distance = distanceToCamera
 			}, drawableCopy);
 		}
 		else
 		{
 			output.opaques.emplace(decltype(decltype(output.opaques)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
-				.distance = distanceToCamera
+					.distance = distanceToCamera
 			}, drawableCopy);
 		}
 	}

@@ -1,8 +1,6 @@
-
-
 #include "OvCore/ResourceManagement/ShaderManager.h"
 
-OvRendering::Resources::Shader* OvCore::ResourceManagement::ShaderManager::CreateResource(const std::string & p_path)
+OvRendering::Resources::Shader* OvCore::ResourceManagement::ShaderManager::CreateResource(const std::string& p_path)
 {
 	std::string realPath = GetRealPath(p_path);
 	auto pathParserCallback = std::bind(&OvCore::ResourceManagement::ShaderManager::GetRealPath, this, std::placeholders::_1);

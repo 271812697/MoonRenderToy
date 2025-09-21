@@ -1,7 +1,4 @@
-
-
 #pragma once
-
 #include <OvCore/ECS/Actor.h>
 #include <OvCore/ECS/Components/CAmbientBoxLight.h>
 #include <OvCore/ECS/Components/CAmbientSphereLight.h>

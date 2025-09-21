@@ -11,6 +11,7 @@
 #include "pathtrace/PathTrace.h"
 #include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
+#include "Guizmo/Guizmo.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -24,25 +25,31 @@ namespace MOON {
 		ViewerWindowInternal(ViewerWindow* view) :mSelf(view) {
 		}
 		void initializeGL() {
+			Guizmo::instance().init();
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new OvEditor::Panels::SceneView("SceneView");
 			ParseScene::ParsePathTraceScene();
+
 		}
 		~ViewerWindowInternal() {
 			delete mEditorContext;
 			delete mSceneView;
 		}
 		void paintGL() {
+
 			mSceneView->Update(0.01);
+			Guizmo::instance().newFrame(mSceneView);
 			if (mSwitchScene) {
 				mSwitchScene = false;
 				ParseScene::ParsePathTraceScene();
 				mSceneView->UnselectActor();
 			}
+
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
+			Guizmo::instance().endFrame();
 		}
 		bool event(QEvent* evt)
 		{

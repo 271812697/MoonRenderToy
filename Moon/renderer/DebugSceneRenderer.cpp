@@ -598,9 +598,7 @@ protected:
 	{
 		auto pso = m_renderer.CreatePipelineState();
 		pso.depthTest = false;
-
 		auto& data = p_ambientSphereLight.GetData();
-
 		m_debugShapeFeature.DrawSphere(
 			pso,
 			p_ambientSphereLight.owner.transform.GetWorldPosition(),
@@ -615,16 +613,8 @@ protected:
 	void DrawBoundingSpheres(OvCore::ECS::Components::CModelRenderer& p_modelRenderer)
 	{
 		using namespace OvCore::ECS::Components;
-
-
-
 		auto pso = m_renderer.CreatePipelineState();
-
-
 		const auto frustumBehaviour = p_modelRenderer.GetFrustumBehaviour();
-
-
-
 		// Draw the mesh, model, or custom bounding sphere
 		if (auto model = p_modelRenderer.GetModel())
 		{
@@ -676,11 +666,6 @@ protected:
 OvEditor::Rendering::DebugSceneRenderer::DebugSceneRenderer(OvRendering::Context::Driver& p_driver) :
 	OvCore::Rendering::SceneRenderer(p_driver, true /* enable stencil write, required by the grid */)
 {
-	//using namespace OvRendering::Features;
-	//using namespace OvEditor::Rendering;
-	//using namespace OvRendering::Settings;
-	//using enum OvRendering::Features::EFeatureExecutionPolicy;
-
 	AddFeature<OvRendering::Features::FrameInfoRenderFeature, OvRendering::Features::EFeatureExecutionPolicy::ALWAYS>();
 	AddFeature<OvRendering::Features::DebugShapeRenderFeature, OvRendering::Features::EFeatureExecutionPolicy::FRAME_EVENTS_ONLY>();
 	AddFeature<OvEditor::Rendering::DebugModelRenderFeature, OvRendering::Features::EFeatureExecutionPolicy::NEVER>();

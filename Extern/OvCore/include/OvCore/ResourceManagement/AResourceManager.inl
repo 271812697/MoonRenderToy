@@ -1,15 +1,11 @@
-
-
 #pragma once
-
 #include <algorithm>
-
 #include "OvCore/ResourceManagement/AResourceManager.h"
 
 namespace OvCore::ResourceManagement
 {
 	template<typename T>
-	inline T* AResourceManager<T>::LoadResource(const std::string & p_path)
+	inline T* AResourceManager<T>::LoadResource(const std::string& p_path)
 	{
 		if (auto resource = GetResource(p_path, false); resource)
 			return resource;
@@ -24,7 +20,7 @@ namespace OvCore::ResourceManagement
 	}
 
 	template<typename T>
-	inline void AResourceManager<T>::UnloadResource(const std::string & p_path)
+	inline void AResourceManager<T>::UnloadResource(const std::string& p_path)
 	{
 		if (auto resource = GetResource(p_path, false); resource)
 		{
@@ -34,7 +30,7 @@ namespace OvCore::ResourceManagement
 	}
 
 	template<typename T>
-	inline bool AResourceManager<T>::MoveResource(const std::string & p_previousPath, const std::string & p_newPath)
+	inline bool AResourceManager<T>::MoveResource(const std::string& p_previousPath, const std::string& p_newPath)
 	{
 		if (IsResourceRegistered(p_previousPath) && !IsResourceRegistered(p_newPath))
 		{
@@ -57,7 +53,7 @@ namespace OvCore::ResourceManagement
 	}
 
 	template<typename T>
-	inline bool AResourceManager<T>::IsResourceRegistered(const std::string & p_path)
+	inline bool AResourceManager<T>::IsResourceRegistered(const std::string& p_path)
 	{
 		return m_resources.find(p_path) != m_resources.end();
 	}
@@ -65,7 +61,7 @@ namespace OvCore::ResourceManagement
 	template<typename T>
 	inline void AResourceManager<T>::UnloadResources()
 	{
-		for (auto&[key, value] : m_resources)
+		for (auto& [key, value] : m_resources)
 			DestroyResource(value);
 
 		m_resources.clear();
@@ -83,7 +79,7 @@ namespace OvCore::ResourceManagement
 	}
 
 	template<typename T>
-	inline void AResourceManager<T>::UnregisterResource(const std::string & p_path)
+	inline void AResourceManager<T>::UnregisterResource(const std::string& p_path)
 	{
 		m_resources.erase(p_path);
 	}
@@ -104,7 +100,7 @@ namespace OvCore::ResourceManagement
 	}
 
 	template<typename T>
-	inline T* AResourceManager<T>::operator[](const std::string & p_path)
+	inline T* AResourceManager<T>::operator[](const std::string& p_path)
 	{
 		return GetResource(p_path);
 	}

@@ -1,5 +1,3 @@
-
-
 #include <functional>
 #include <ranges>
 #include <tracy/Tracy.hpp>
@@ -109,7 +107,7 @@ void OvRendering::Core::CompositeRenderer::DrawEntity(
 	}
 
 	ABaseRenderer::DrawEntity(p_pso, p_drawable);
-	
+
 	for (const auto& feature : m_features | std::views::values)
 	{
 		if (feature->IsEnabledFor(typeid(m_currentPass.value())))

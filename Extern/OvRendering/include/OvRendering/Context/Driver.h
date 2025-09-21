@@ -72,7 +72,7 @@ namespace OvRendering::Context
 			bool p_colorBuffer,
 			bool p_depthBuffer,
 			bool p_stencilBuffer,
-			const OvMaths::FVector4& p_color = OvMaths::FVector4::Zero 
+			const OvMaths::FVector4& p_color = OvMaths::FVector4::Zero
 		);
 
 		/**
@@ -114,7 +114,7 @@ namespace OvRendering::Context
 		*/
 		std::string_view GetShadingLanguageVersion() const;
 
-	private:
+	public:
 		void SetPipelineState(Data::PipelineState p_state);
 		void ResetPipelineState();
 
