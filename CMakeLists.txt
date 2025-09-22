@@ -39,5 +39,5 @@ set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
 add_subdirectory(Extern)
 add_subdirectory(QtNode)
 add_subdirectory(Moon)
-add_subdirectory(test)
+add_subdirectory(Tools)
 

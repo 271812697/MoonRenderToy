@@ -1,14 +1,14 @@
-#include "ReadMeshModel.h"
+﻿#include "ReadMeshModel.h"
 #include "nodedatas/StringData.h"
 #include "nodedatas/SurfaceMeshData.h"
 #include "core/read_mesh.h"
-#include "editor/viewerwindow.h"
+//#include "editor/viewerwindow.h"
 #include <QtCore/QJsonValue>
 #include <QtWidgets/QLineEdit>
 #include <QVBoxLayout>
 #include <QPushButton>
 namespace MOON {
-	extern ViewerWindow* viewer_instance;
+	//extern ViewerWindow* viewer_instance;
 }
 ReadMeshModel::ReadMeshModel()
 	: _param{ nullptr }, _lineEdit{ nullptr }, _show{ nullptr }
