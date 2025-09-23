@@ -1,11 +1,16 @@
 #pragma once
-
-
-
+#include <QObject>
 namespace MOON {
-	class ParseScene {
+	class ParseScene :public QObject {
+		Q_OBJECT
 	public:
-		static void ParsePathTraceScene();
+		ParseScene(QObject* parent);
+		void ParsePathTraceScene();
+	public slots:
+		void updateTreeViewSceneRoot();
+		void updateTreeViewPathRoot();
+
+
 
 	};
 

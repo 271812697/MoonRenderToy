@@ -5,12 +5,13 @@
 #include "core/callbackManager.h"
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
-#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+
 #include "OvCore/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
 #include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "Guizmo/Guizmo.h"
 
 namespace MOON {
@@ -23,13 +24,18 @@ namespace MOON {
 	class ViewerWindow::ViewerWindowInternal {
 	public:
 		ViewerWindowInternal(ViewerWindow* view) :mSelf(view) {
+
 		}
 		void initializeGL() {
+			auto& tree = OVSERVICE(TreeViewPanel);
+			QObject::connect(mSelf, &ViewerWindow::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
+				, Qt::ConnectionType::QueuedConnection);
 			Guizmo::instance().init();
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new OvEditor::Panels::SceneView("SceneView");
-			ParseScene::ParsePathTraceScene();
+			parser->ParsePathTraceScene();
+			emit mSelf->sceneChange();
 
 		}
 		~ViewerWindowInternal() {
@@ -42,8 +48,9 @@ namespace MOON {
 			Guizmo::instance().newFrame(mSceneView);
 			if (mSwitchScene) {
 				mSwitchScene = false;
-				ParseScene::ParsePathTraceScene();
+				parser->ParsePathTraceScene();
 				mSceneView->UnselectActor();
+				emit mSelf->sceneChange();
 			}
 
 			mSceneView->Render();
@@ -72,6 +79,7 @@ namespace MOON {
 		ViewerWindow* mSelf = nullptr;
 		OvEditor::Core::Context* mEditorContext = nullptr;
 		OvEditor::Panels::SceneView* mSceneView = nullptr;
+		ParseScene* parser = nullptr;
 		int mViewWidth;
 		int mViewHeight;
 		bool mInitFlag = false;
@@ -90,6 +98,13 @@ namespace MOON {
 		format.setSamples(4);
 		this->setFormat(format);
 		COPROVITE(ViewerWindow, *this);
+		//connect(this, &ViewerWindow::sceneChange, this, []() {
+
+
+			//});
+
+
+
 	}
 
 	ViewerWindow::~ViewerWindow()

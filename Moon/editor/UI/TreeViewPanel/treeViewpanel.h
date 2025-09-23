@@ -6,7 +6,9 @@ namespace MOON {
 	public:
 		TreeViewPanel(QWidget* parent);
 		~TreeViewPanel();
-
+	public slots:
+		void updateTreeViewSceneRoot();
+		void updateTreeViewPathRoot();
 	private:
 		class TreeViewPanelInternal;
 		TreeViewPanelInternal* mInternal;

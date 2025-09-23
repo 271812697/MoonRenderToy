@@ -12,8 +12,6 @@
 #include "Settings/DebugSetting.h"
 
 
-
-
 namespace MOON {
 	OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
 
@@ -24,9 +22,9 @@ namespace MOON {
 
 
 	void addSphereLight(OvCore::SceneSystem::Scene* scene) {
-		auto node=DebugSettings::instance().getNode("showLight");
+		auto node = DebugSettings::instance().getNode("showLight");
 		DebugSettings::instance().addCallBack("showLight", [=]() {
-			bool value=node->getData<bool>();
+			bool value = node->getData<bool>();
 			scene->FindActorByName("PointLight1")->SetActive(value);
 			scene->FindActorByName("PointLight2")->SetActive(value);
 			scene->FindActorByName("PointLight3")->SetActive(value);
@@ -91,11 +89,13 @@ namespace MOON {
 		pointLight5.SetQuadratic(0.0);
 	}
 
+
+
 	void ParseScene::ParsePathTraceScene() {
-		
+
 		OVSERVICE(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
 		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
-		if ( scene == nullptr) {
+		if (scene == nullptr) {
 			return;
 		}
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
@@ -112,37 +112,51 @@ namespace MOON {
 			PathTrace::LoadGLTF(sceneName, scene, xform, true);
 		else
 		{
-			auto model=OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadResource(sceneName);
-			
+			auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadResource(sceneName);
+
 
 			OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
 			OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
 			tempMat->SetBackfaceCulling(false);;
 			tempMat->SetCastShadows(false);
 			tempMat->SetReceiveShadows(false);
-			
+
 			tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
 			tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
-		
+
 			tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
 			tempMat->SetProperty("u_Roughness", 0.1f);
-			tempMat->SetProperty("u_Metallic",0.1f);
+			tempMat->SetProperty("u_Metallic", 0.1f);
 			// Emission
 			tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-			tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f,0.0f,0.0f});
+			tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f,0.0f,0.0f });
 
-            auto& actor=scene->CreateActor();
+			auto& actor = scene->CreateActor();
 			actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
 
 			actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
 			auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-			
-			
 			materilaRener.SetMaterialAtIndex(0, *tempMat);
 			materilaRener.UpdateMaterialList();
 
 		}
 
+	}
+
+	void ParseScene::updateTreeViewSceneRoot()
+	{
+		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		if (scene == nullptr) {
+			return;
+		}
+	}
+
+	void ParseScene::updateTreeViewPathRoot()
+	{
+	}
+
+	ParseScene::ParseScene(QObject* parent) :QObject(parent)
+	{
 	}
 
 }

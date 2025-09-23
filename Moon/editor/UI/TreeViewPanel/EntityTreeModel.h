@@ -3,7 +3,6 @@
 #include <string>
 #include <QTreeView>
 #include <QStandardItemModel>
-#include <QSortFilterProxyModel>
 
 namespace MOON
 {
@@ -11,12 +10,17 @@ namespace MOON
 	class EntityTreeModel : public QStandardItemModel
 	{
 		Q_OBJECT
-			
+
 	public:
 		// 构造函数
-		EntityTreeModel(QObject* parent);
+		EntityTreeModel(QTreeView* parent);
+		~EntityTreeModel();
+		void onSceneRootChange();
+		QStandardItem* sceneRoot();
+		QStandardItem* pathRoot();
 	private:
-		QTreeView* m_treeView = nullptr;// treeView
-		QModelIndex	m_currentSelect;   
+		class EntityTreeModelInternal;
+		EntityTreeModelInternal* mInternl = nullptr;
+
 	};
 }
