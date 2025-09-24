@@ -23,8 +23,12 @@ namespace MOON {
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
 		void switchScene();
+	signals:
+		void sceneChange();
 	private:
 		class ViewerWindowInternal;
 		ViewerWindowInternal* mInternal = nullptr;
+
+
 	};
 }

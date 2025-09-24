@@ -165,10 +165,10 @@ namespace MOON {
 		return QVariant();
 	}
 
-	
+
 	class TreeViewPanel::TreeViewPanelInternal {
 	public:
-		TreeViewPanelInternal(TreeViewPanel* tree):mSelf(tree) {
+		TreeViewPanelInternal(TreeViewPanel* tree) :mSelf(tree) {
 			mModel = new EntityTreeModel(mSelf);
 		}
 		~TreeViewPanelInternal() {
@@ -179,7 +179,7 @@ namespace MOON {
 		EntityTreeModel* mModel = nullptr;
 		TreeViewPanel* mSelf = nullptr;
 	};
-	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent),mInternal(new TreeViewPanelInternal(this))
+	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent), mInternal(new TreeViewPanelInternal(this))
 	{
 		COPROVITE(TreeViewPanel, *this);
 		QSizePolicy sizePolicy8(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -196,5 +196,13 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
+	void TreeViewPanel::updateTreeViewSceneRoot() {
+		mInternal->mModel->onSceneRootChange();
+	}
+	void TreeViewPanel::updateTreeViewPathRoot()
+	{
+
+	}
+
 
 }
