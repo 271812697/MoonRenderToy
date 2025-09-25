@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "treeViewpanel.h"
 #include "editor/UI/TreeViewPanel/EntityTreeModel.h"
+#include "editor/UI/TreeViewPanel/EntityTreeStyle.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "OvCore/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
@@ -8,6 +9,8 @@
 #include "pathtrace/Scene.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
+#include <QHeaderView>
+#include <QMouseEvent>
 #include <string>
 #include <vector>
 
@@ -189,13 +192,18 @@ namespace MOON {
 		sizePolicy8.setHeightForWidth(this->sizePolicy().hasHeightForWidth());
 		this->setSizePolicy(sizePolicy8);
 		this->setModel(mInternal->mModel);
-
+		//this->setItemDelegate(new EntityTreeViewStyleDelegate(this));
+		this->header()->hide();
+		this->setStyleSheet("QTreeView::indicator:checked {image: url(:/entityTree/icons/pqEyeball.svg);}"
+		"QTreeView::indicator:unchecked {image: url(:/entityTree/icons/pqEyeballClosed.svg);}"
+		);
 
 	}
 	TreeViewPanel::~TreeViewPanel()
 	{
 		delete mInternal;
 	}
+
 	void TreeViewPanel::updateTreeViewSceneRoot() {
 		mInternal->mModel->onSceneRootChange();
 	}
@@ -203,6 +211,37 @@ namespace MOON {
 	{
 
 	}
+
+	void TreeViewPanel::mousePressEvent(QMouseEvent* event)
+	{
+		QPoint mousePos = event->pos();
+
+		QTreeView::mousePressEvent(event);
+		QModelIndex index = indexAt(mousePos);
+		if (!index.isValid()) return;
+		QRect itemRect = visualRect(index);
+
+
+		// 获取item在视图中的矩形
+		
+		if (!itemRect.contains(mousePos)) {
+			
+			return;
+		}
+		QStyleOptionViewItem option = viewOptions();
+		option.rect = itemRect;
+		option.index = index;
+		QRect textRect = style()->subElementRect(QStyle::SE_ItemViewItemText, &option, this);
+		QPoint posInItem = mousePos;
+		if (textRect.contains(posInItem)) {
+			OvCore::ECS::Actor* actor = static_cast<OvCore::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
+			if (actor) {
+				emit setSelectActor(actor);
+			}
+			//emit textClicked(index);
+		}
+	}
+
 
 
 }

@@ -1502,14 +1502,19 @@ namespace PathTrace
 
 			for (int rootIdx = 0; rootIdx < gltfScene.nodes.size(); rootIdx++)
 			{
+				auto& rootActor = scene->CreateActor();
+				rootActor.SetName("Root "+std::to_string(rootIdx));
 				std::vector<int>indexStack;
-				std::vector<Mat4>transformStack;
+				//std::vector<Mat4>transformStack;
+				std::vector<int64_t>parentStack;
 				indexStack.push_back(gltfScene.nodes[rootIdx]);
-				transformStack.push_back(formaa);
+				//transformStack.push_back(formaa);
+				parentStack.push_back(rootActor.GetID());
 				while (!indexStack.empty())
 				{
 					int nodeIdx = indexStack.back(); indexStack.pop_back();
-					Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+					//Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+					int parentActorIdx = parentStack.back();parentStack.pop_back();
 
 
 					tinygltf::Node gltfNode = gltfModel.nodes[nodeIdx];
@@ -1559,11 +1564,12 @@ namespace PathTrace
 							scale.data[2][2] = gltfNode.scale[2];
 						}
 
-						localMat = scale * rot * translate;
+						//localMat = scale * rot * translate;
+						localMat =  translate* rot *scale ;
 					}
 
-					Mat4 xform = localMat * parentMat;
-
+					//Mat4 xform = localMat * parentMat;
+					localMat = localMat.Transpose();
 					// When at a leaf node, add an instance to the scene (if a mesh exists for it)
 					if (gltfNode.children.size() == 0 && gltfNode.mesh != -1)
 					{
@@ -1577,28 +1583,42 @@ namespace PathTrace
 							if (strcmp(name.c_str(), "") == 0)
 								name = "Mesh " + std::to_string(gltfNode.mesh) + " Prim" + prims[i].path;
 							auto& actor = scene->CreateActor();
+							actor.SetParent(*scene->FindActorByID(parentActorIdx));
 							actor.SetName(name);
 
 							auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(prims[i].path);
 							actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
 
-							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
+							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(localMat.data);
 							auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
 							if (prims[i].materialIndex < 0) {
 								assert(false);
 							}
+
 							auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
 							materilaRener.SetMaterialAtIndex(0, *mat);
 							materilaRener.UpdateMaterialList();
 
 						}
 					}
+					else {
+						std::string name = gltfNode.name;
+						// TODO: Better naming
+						if (strcmp(name.c_str(), "") == 0)
+							name = "Mesh #" ;
+						auto& actor = scene->CreateActor();
+						actor.SetParent(*scene->FindActorByID(parentActorIdx));
+						actor.SetName(name);
 
-					for (size_t i = 0; i < gltfNode.children.size(); i++)
-					{
-						indexStack.push_back(gltfNode.children[i]);
-						transformStack.push_back(xform);
+						for (size_t i = 0; i < gltfNode.children.size(); i++)
+						{
+							indexStack.push_back(gltfNode.children[i]);
+							//transformStack.push_back(xform);
+							parentStack.push_back(actor.GetID());
+						}
 					}
+
+
 				}
 			}
 		}

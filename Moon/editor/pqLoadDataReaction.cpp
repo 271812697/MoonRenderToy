@@ -23,8 +23,6 @@
 pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
 	: Superclass(parentObject)
 {
-
-
 	this->updateEnableState();
 }
 

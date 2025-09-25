@@ -1,4 +1,4 @@
-#include <qpushbutton.h>
+﻿#include <qpushbutton.h>
 #include <qboxlayout.h>
 #include <QtWidgets/QApplication>
 #include <QMenuBar>
@@ -20,6 +20,9 @@ namespace MOON {
 
 		}
 		void initPanels() {
+			QIcon icon;
+			icon.addFile(QString::fromUtf8(":/widgets/icons/awesomeface.png"), QSize(), QIcon::Normal, QIcon::Off);
+			self->setWindowIcon(icon);
 			auto centralwidget = new QWidget(self);
 			self->setCentralWidget(centralwidget);
 			auto centralwidget_layout = new QHBoxLayout(centralwidget);

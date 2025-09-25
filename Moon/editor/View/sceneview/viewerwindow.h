@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_5_Core>
-
+namespace OvCore::ECS {
+	class Actor;
+}
 namespace MOON {
 
 	class ViewerWindow : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
@@ -23,8 +25,11 @@ namespace MOON {
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
 		void switchScene();
+	public slots:
+		void onActorSelected(OvCore::ECS::Actor* actor);
 	signals:
 		void sceneChange();
+		
 	private:
 		class ViewerWindowInternal;
 		ViewerWindowInternal* mInternal = nullptr;
