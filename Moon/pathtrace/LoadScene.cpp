@@ -982,6 +982,9 @@ namespace PathTrace
 				}
 
 				// Get index data
+				if (indexAccessor.count == 0) {
+					assert(false);
+				}
 				std::vector<int> indices(indexAccessor.count);
 				const uint8_t* baseAddress = indexBufferAddress + indexBufferView.byteOffset + indexAccessor.byteOffset;
 				if (indexStride == 1)
@@ -1163,11 +1166,13 @@ namespace PathTrace
 				scale.data[2][2] = gltfNode.scale[2];
 			}
 
-			localMat = scale * rot * translate;
+			//localMat = scale * rot * translate;
+			localMat = translate.Transpose() * rot.Transpose() * scale.Transpose();
 		}
 
-		Mat4 xform = localMat * parentMat;
-
+		Mat4 xform = parentMat * localMat.Transpose();
+		//Mat4 xform = localMat * parentMat;
+		//xform = xform.Transpose();
 		// When at a leaf node, add an instance to the scene (if a mesh exists for it)
 		if (gltfNode.children.size() == 0 && gltfNode.mesh != -1)
 		{
@@ -1198,7 +1203,94 @@ namespace PathTrace
 
 		for (int rootIdx = 0; rootIdx < gltfScene.nodes.size(); rootIdx++)
 		{
-			TraverseNodes(scene, gltfModel, gltfScene.nodes[rootIdx], xform, meshPrimMap);
+
+			std::vector<int>indexStack;
+			std::vector<Mat4>transformStack;
+
+			indexStack.push_back(gltfScene.nodes[rootIdx]);
+			transformStack.push_back(xform);
+
+			while (!indexStack.empty())
+			{
+				int nodeIdx = indexStack.back(); indexStack.pop_back();
+				Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+
+				tinygltf::Node gltfNode = gltfModel.nodes[nodeIdx];
+				Mat4 localMat;
+				if (gltfNode.matrix.size() > 0)
+				{
+					localMat.data[0][0] = gltfNode.matrix[0];
+					localMat.data[0][1] = gltfNode.matrix[1];
+					localMat.data[0][2] = gltfNode.matrix[2];
+					localMat.data[0][3] = gltfNode.matrix[3];
+
+					localMat.data[1][0] = gltfNode.matrix[4];
+					localMat.data[1][1] = gltfNode.matrix[5];
+					localMat.data[1][2] = gltfNode.matrix[6];
+					localMat.data[1][3] = gltfNode.matrix[7];
+
+					localMat.data[2][0] = gltfNode.matrix[8];
+					localMat.data[2][1] = gltfNode.matrix[9];
+					localMat.data[2][2] = gltfNode.matrix[10];
+					localMat.data[2][3] = gltfNode.matrix[11];
+
+					localMat.data[3][0] = gltfNode.matrix[12];
+					localMat.data[3][1] = gltfNode.matrix[13];
+					localMat.data[3][2] = gltfNode.matrix[14];
+					localMat.data[3][3] = gltfNode.matrix[15];
+				}
+				else
+				{
+					Mat4 translate, rot, scale;
+
+					if (gltfNode.translation.size() > 0)
+					{
+						translate.data[3][0] = gltfNode.translation[0];
+						translate.data[3][1] = gltfNode.translation[1];
+						translate.data[3][2] = gltfNode.translation[2];
+					}
+
+					if (gltfNode.rotation.size() > 0)
+					{
+						rot = Mat4::QuatToMatrix(gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2], gltfNode.rotation[3]);
+					}
+
+					if (gltfNode.scale.size() > 0)
+					{
+						scale.data[0][0] = gltfNode.scale[0];
+						scale.data[1][1] = gltfNode.scale[1];
+						scale.data[2][2] = gltfNode.scale[2];
+					}
+
+					localMat = scale * rot * translate;
+				}
+
+				Mat4 xform = localMat * parentMat;
+				// When at a leaf node, add an instance to the scene (if a mesh exists for it)
+				if (gltfNode.children.size() == 0 && gltfNode.mesh != -1)
+				{
+					std::vector<Primitive> prims = meshPrimMap[gltfNode.mesh];
+
+					// Write the instance data
+					for (int i = 0; i < prims.size(); i++)
+					{
+						std::string name = gltfNode.name;
+						// TODO: Better naming
+						if (strcmp(name.c_str(), "") == 0)
+							name = "Mesh " + std::to_string(gltfNode.mesh) + " Prim" + std::to_string(prims[i].primitiveId);
+
+						MeshInstance instance(name, prims[i].primitiveId, xform, prims[i].materialId < 0 ? 0 : prims[i].materialId);
+						scene->AddMeshInstance(instance);
+					}
+				}
+				else {
+					for (size_t i = 0; i < gltfNode.children.size(); i++)
+					{
+						indexStack.push_back(gltfNode.children[i]);
+						transformStack.push_back(xform);
+					}
+				}
+			}
 		}
 	}
 
@@ -1502,14 +1594,19 @@ namespace PathTrace
 
 			for (int rootIdx = 0; rootIdx < gltfScene.nodes.size(); rootIdx++)
 			{
+				auto& rootActor = scene->CreateActor();
+				rootActor.SetName("Root " + std::to_string(rootIdx));
 				std::vector<int>indexStack;
-				std::vector<Mat4>transformStack;
+				//std::vector<Mat4>transformStack;
+				std::vector<int64_t>parentStack;
 				indexStack.push_back(gltfScene.nodes[rootIdx]);
-				transformStack.push_back(formaa);
+				//transformStack.push_back(formaa);
+				parentStack.push_back(rootActor.GetID());
 				while (!indexStack.empty())
 				{
 					int nodeIdx = indexStack.back(); indexStack.pop_back();
-					Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+					//Mat4 parentMat = transformStack.back(); transformStack.pop_back();
+					int parentActorIdx = parentStack.back(); parentStack.pop_back();
 
 
 					tinygltf::Node gltfNode = gltfModel.nodes[nodeIdx];
@@ -1560,10 +1657,11 @@ namespace PathTrace
 						}
 
 						localMat = scale * rot * translate;
+						//localMat = translate * rot * scale;
 					}
 
-					Mat4 xform = localMat * parentMat;
-
+					//Mat4 xform = localMat * parentMat;
+					//localMat = localMat.Transpose();
 					// When at a leaf node, add an instance to the scene (if a mesh exists for it)
 					if (gltfNode.children.size() == 0 && gltfNode.mesh != -1)
 					{
@@ -1577,27 +1675,39 @@ namespace PathTrace
 							if (strcmp(name.c_str(), "") == 0)
 								name = "Mesh " + std::to_string(gltfNode.mesh) + " Prim" + prims[i].path;
 							auto& actor = scene->CreateActor();
+							actor.SetParent(*scene->FindActorByID(parentActorIdx));
 							actor.SetName(name);
 
 							auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(prims[i].path);
 							actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
 
-							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
+							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(localMat.data);
 							auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
 							if (prims[i].materialIndex < 0) {
 								assert(false);
 							}
+
 							auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
 							materilaRener.SetMaterialAtIndex(0, *mat);
 							materilaRener.UpdateMaterialList();
 
 						}
 					}
-
-					for (size_t i = 0; i < gltfNode.children.size(); i++)
-					{
-						indexStack.push_back(gltfNode.children[i]);
-						transformStack.push_back(xform);
+					else {
+						std::string name = gltfNode.name;
+						// TODO: Better naming
+						if (strcmp(name.c_str(), "") == 0)
+							name = "Mesh #";
+						auto& actor = scene->CreateActor();
+						actor.SetParent(*scene->FindActorByID(parentActorIdx));
+						actor.SetName(name);
+						actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(localMat.data);
+						for (size_t i = 0; i < gltfNode.children.size(); i++)
+						{
+							indexStack.push_back(gltfNode.children[i]);
+							//transformStack.push_back(xform);
+							parentStack.push_back(actor.GetID());
+						}
 					}
 				}
 			}

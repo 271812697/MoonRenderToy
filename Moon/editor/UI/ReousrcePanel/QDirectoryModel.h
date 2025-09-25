@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <string>
 #include <QTreeView>
@@ -24,68 +24,68 @@ namespace MOON
 		typedef std::vector<RootPath> RootPathArray;
 
 	public:
-		// ¹¹Ôìº¯Êı
+		// æ„é€ å‡½æ•°
 		QDirectoryModel();
 
-		// ÉèÖÃÖ÷Ä¿Â¼, ÎÄ¼şÀàĞÍ¹ıÂË
+		// è®¾ç½®ä¸»ç›®å½•, æ–‡ä»¶ç±»å‹è¿‡æ»¤
 		void setRootPath(const RootPathArray& rootPaths, const char* extFilter, QTreeView* treeView, QSortFilterProxyModel* proxy);
 
-		// ÊÇ·ñÖ§³ÖÎÄ¼şÀàĞÍ
+		// æ˜¯å¦æ”¯æŒæ–‡ä»¶ç±»å‹
 		bool IsSupportExt(const std::string& ext);
 
-		// Ë¢ĞÂÏÔÊ¾
+		// åˆ·æ–°æ˜¾ç¤º
 		void Refresh() { Refresh(NULL); }
 		void Refresh(volatile bool* interrupt);
 
-		// ÉèÖÃÍ¼±ê
-		void SetIcon(const char* name, const QIcon& icon) { m_iconMaps[name] = icon; }
+		// è®¾ç½®å›¾æ ‡
+		void SetIcon(const char* name, const QIcon& icon);
 
-		// ÉèÖÃµ±Ç°Ñ¡ÖĞ
+		// è®¾ç½®å½“å‰é€‰ä¸­
 		void setCurrentSelect(const char* dir);
 
-		// ¸ù¾İÊó±êÎ»ÖÃ»ñÈ¡Ä¿Â¼
+		// æ ¹æ®é¼ æ ‡ä½ç½®è·å–ç›®å½•
 		QString getFileUnderMousePos(const QPoint& pos);
 
-		// Çå¿Õ
+		// æ¸…ç©º
 		void Clean();
 
 	private:
-		// µü´úÄ¿Â¼
+		// è¿­ä»£ç›®å½•
 		void RecursiveDir(const std::string& dir, QStandardItem* parentItem) { RecursiveDir(dir, parentItem, NULL); }
 		void RecursiveDir(const std::string& dir, QStandardItem* parentItem, volatile bool* interrupt);
 
-		// »ñÈ¡ÎÄ¼şÍ¼±ê
+		// è·å–æ–‡ä»¶å›¾æ ‡
 		QIcon getFileIcon(const char* fullPath);
 
 		void _addToRingQueue(QStandardItem* parent, QStandardItem* child);
 
 	public: signals:
-		// ±à¼­²ÄÖÊ
+		// ç¼–è¾‘æè´¨
 		void FileSelected(const char* path);
 
-		// ±à¼­ÎÄ¼ş
+		// ç¼–è¾‘æ–‡ä»¶
 		void FileEdit(const char* path);
 
 		void signalThreadFindDirectory();
 
 	private slots:
-		// Õ¹¿ªÄ³Fiter
+		// å±•å¼€æŸFiter
 		void OnExpandedFilter(const QModelIndex& pIndex);
 
-		// Ñ¡ÔñÄ³ÎÄ¼ş
+		// é€‰æ‹©æŸæ–‡ä»¶
 		void onSelectedFile(const QModelIndex& pIndex);
 
-		// Ë«»÷Ä³ÎÄ¼ş
+		// åŒå‡»æŸæ–‡ä»¶
 		void OnEditFile(const QModelIndex& pIndex);
 
 	private:
 		QTreeView* m_treeView = nullptr;	// treeView
 		QSortFilterProxyModel* m_proxy = nullptr;	    // proxy
 		RootPathArray					m_rootPaths;
-		std::vector<std::string>					m_exts;			        // ÎÄ¼şÀàĞÍ
-		IconMap							m_iconMaps;		        // Í¼±ê
+		std::vector<std::string>					m_exts;			        // æ–‡ä»¶ç±»å‹
+		IconMap							m_iconMaps;		        // å›¾æ ‡
 		QStandardItem* m_activeItem = nullptr;	// active item
-		std::vector< QStandardItem*>	m_dirItems;		        // ËùÓĞÄ¿Â¼item
-		QModelIndex						m_currentSelect;        // µ±Ç°Ñ¡ÖĞ
+		std::vector< QStandardItem*>	m_dirItems;		        // æ‰€æœ‰ç›®å½•item
+		QModelIndex						m_currentSelect;        // å½“å‰é€‰ä¸­
 	};
 }

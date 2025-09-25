@@ -30,6 +30,7 @@ namespace MOON {
 			auto& tree = OVSERVICE(TreeViewPanel);
 			QObject::connect(mSelf, &ViewerWindow::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
+			QObject::connect(&tree,&TreeViewPanel::setSelectActor,mSelf,&onActorSelected);
 			Guizmo::instance().init();
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
@@ -76,6 +77,7 @@ namespace MOON {
 			mSwitchScene = true;
 		}
 	private:
+		friend ViewerWindow;
 		ViewerWindow* mSelf = nullptr;
 		OvEditor::Core::Context* mEditorContext = nullptr;
 		OvEditor::Panels::SceneView* mSceneView = nullptr;
@@ -175,5 +177,10 @@ namespace MOON {
 	void ViewerWindow::switchScene()
 	{
 		mInternal->switchScene();
+	}
+	void ViewerWindow::onActorSelected(OvCore::ECS::Actor* actor) {
+		if (actor != nullptr) {
+            mInternal->mSceneView->SelectActor(*actor);
+		}
 	}
 }

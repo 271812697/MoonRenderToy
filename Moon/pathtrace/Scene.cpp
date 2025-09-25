@@ -120,7 +120,7 @@ namespace PathTrace
 		dirty = true;
 	}
 
-	bool Scene::IntersectionByScreen(float x, float y,Vec3& p)
+	bool Scene::IntersectionByScreen(float x, float y, Vec3& p)
 	{
 
 
@@ -300,12 +300,20 @@ namespace PathTrace
 		for (int i = 0; i < meshInstances.size(); i++) {
 			Mat4 T = meshInstances[i].localform;
 			int id = meshInstances[i].parentID;
-			while (id != -1)
-			{
-				T = T * meshInstances[id].localform;
-				id = meshInstances[id].parentID;
+			if (id == -1) {
+				meshInstances[i].transform = meshInstances[i].transform;
 			}
-			meshInstances[i].transform = T;
+			else
+			{
+
+				while (id != -1)
+				{
+					T = T * meshInstances[id].localform;
+					id = meshInstances[id].parentID;
+				}
+				meshInstances[i].transform = T;
+			}
+
 		}
 		std::vector<RadeonRays::bbox> bounds;
 		bounds.resize(meshInstances.size());

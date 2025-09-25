@@ -27,6 +27,7 @@
         <file>darkstyle/icon_radiobutton_unchecked_disabled.png</file>
     </qresource>
     <qresource prefix="/widgets">
+        <file>icons/awesomeface.png</file>
         <file>icons/pqOpen.svg</file>
         <file>icons/pqGroupFiles.svg</file>
         <file>icons/pqReset.svg</file>
@@ -40,5 +41,9 @@
         <file>icons/root.png</file>
         <file>icons/folder_close.png</file>
         <file>icons/folder_open.png</file>
+    </qresource>
+    <qresource prefix="/entityTree">
+        <file>icons/pqEyeball.svg</file>
+        <file>icons/pqEyeballClosed.svg</file>
     </qresource>
 </RCC>
