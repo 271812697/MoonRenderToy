@@ -36,7 +36,7 @@ namespace PathTrace
 		MeshInstance(std::string name, int meshId, Mat4 xform, int matId)
 			: name(name)
 			, meshID(meshId)
-			, transform(xform)
+			, transform(xform), localform(xform)
 			, materialID(matId)
 		{
 			parentID = -1;
