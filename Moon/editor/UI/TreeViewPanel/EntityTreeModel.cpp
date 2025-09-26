@@ -86,8 +86,73 @@ namespace MOON {
 	{
 		return mInternl->pathRoot;
 	}
+	// 同步子节点状态（父节点勾选/取消时调用）
+	void syncChildItems(QStandardItem* parent, Qt::CheckState state) {
+		for (int i = 0; i < parent->rowCount(); ++i) {
+			QStandardItem* child = parent->child(i);
+			if (child && child->isCheckable() && child->checkState() != state) {
+				child->setCheckState(state);
+				// 如果子节点还有子节点，递归同步
+				if (child->hasChildren()) {
+					syncChildItems(child, state);
+				}
+			}
+		}
+	}
+
+	// 同步父节点状态（子节点勾选/取消时调用）
+	void syncParentItem(QStandardItem* parent) {
+		int checkedCount = 0;
+		int totalCount = parent->rowCount();
+
+		// 统计已勾选的子节点数量
+		for (int i = 0; i < totalCount; ++i) {
+			QStandardItem* child = parent->child(i);
+			if (child && child->isCheckable() && child->checkState() == Qt::Checked) {
+				checkedCount++;
+			}
+		}
+
+		// 根据子节点勾选情况更新父节点状态
+		Qt::CheckState newState;
+		if (checkedCount == 0) {
+			newState = Qt::Unchecked;      // 全未勾选
+		}
+		else if (checkedCount == totalCount) {
+			newState = Qt::Checked;        // 全勾选
+		}
+		else {
+			newState = Qt::PartiallyChecked; // 部分勾选（半选状态）
+		}
+
+		if (parent->checkState() != newState) {
+			parent->setCheckState(newState);
+			// 如果父节点还有父节点，递归检查
+			if (parent->parent()) {
+				syncParentItem(parent->parent());
+			}
+		}
+	}
+
 	void EntityTreeModel::onCheckStageChange(QStandardItem* item)
 	{
+		//// 防止递归调用导致的死循环
+		static bool isProcessing = false;
+		if (isProcessing) {
+			return;
+		}
+		isProcessing = true;
+
+		// 如果是父节点，同步所有子节点状态
+		if (item->hasChildren()) {
+			syncChildItems(item, item->checkState());
+		}
+		// 如果是子节点，检查是否需要同步父节点状态
+		if (item->parent()) {
+			syncParentItem(item->parent());
+		}
+
+		isProcessing = false;
 		if (item->isCheckable()) {
 			OvCore::ECS::Actor* actor=static_cast<OvCore::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
 			if (actor) {

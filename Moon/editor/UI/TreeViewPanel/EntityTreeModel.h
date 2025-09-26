@@ -14,10 +14,12 @@ namespace MOON
 		void onSceneRootChange();
 		QStandardItem* sceneRoot();
 		QStandardItem* pathRoot();
+
 	public slots:
 		//void OnExpandedFilter(const QModelIndex& pIndex);
 		void onCheckStageChange(QStandardItem* item);
-	
+	private:
+
 	private:
 		class EntityTreeModelInternal;
 		EntityTreeModelInternal* mInternl = nullptr;
