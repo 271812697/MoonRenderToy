@@ -59,7 +59,8 @@ void pqLoadDataReaction::onTriggered()
 	if (!QFileInfo::exists(fileName))
 		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
-	PathTrace::SwitchScene(fileName.toStdString());
+	PathTrace::PathTraceRender::instance().SwitchScene(fileName.toStdString());
+
 	OVSERVICE(MOON::ViewerWindow).switchScene();
 
 

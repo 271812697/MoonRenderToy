@@ -26,34 +26,34 @@ namespace MOON {
 	class TreeViewModel : public QAbstractItemModel {
 	public:
 		TreeViewModel(QObject* parent) :QAbstractItemModel(parent) {
-			auto& actors = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().sceneManager.GetCurrentScene()->GetActors();
-			root.val = "root";
-			root.childs.push_back(TreeNode("scene", &root));
-			for (auto& item : actors) {
-				root.childs[0].childs.push_back(TreeNode(item->GetName(), &root.childs[0]));
-			}
-			root.childs.push_back(TreeNode("pathtrace", &root));
-			if (!PathTrace::GetScene()) {
-				return;
-			}
-			auto& meshR = PathTrace::GetScene()->meshInstancesRoots;
-			auto& meshT = PathTrace::GetScene()->meshInstancesTree;
-			auto& meshI = PathTrace::GetScene()->meshInstances;
-			for (auto& r : meshR) {
-				std::vector<int>stack0 = { r };
-				std::vector<TreeNode*>stack1 = { &root.childs[1] };
-				while (!stack0.empty())
-				{
-					int curI = stack0.back(); stack0.pop_back();
-					TreeNode* curP = stack1.back(); stack1.pop_back();
-					curP->childs.push_back(TreeNode(meshI[curI].name, curP));
-					TreeNode* nextP = &curP->childs.back();
-					for (int i = 0; i < meshT[curI].size(); i++) {
-						stack0.push_back(meshT[curI][i]);
-						stack1.push_back(nextP);
-					}
-				}
-			}
+			//auto& actors = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().sceneManager.GetCurrentScene()->GetActors();
+			//root.val = "root";
+			//root.childs.push_back(TreeNode("scene", &root));
+			//for (auto& item : actors) {
+			//	root.childs[0].childs.push_back(TreeNode(item->GetName(), &root.childs[0]));
+			//}
+			////root.childs.push_back(TreeNode("pathtrace", &root));
+			////if (!PathTrace::GetScene()) {
+			////	return;
+			////}
+			//auto& meshR = PathTrace::GetScene()->meshInstancesRoots;
+			//auto& meshT = PathTrace::GetScene()->meshInstancesTree;
+			//auto& meshI = PathTrace::GetScene()->meshInstances;
+			//for (auto& r : meshR) {
+			//	std::vector<int>stack0 = { r };
+			//	std::vector<TreeNode*>stack1 = { &root.childs[1] };
+			//	while (!stack0.empty())
+			//	{
+			//		int curI = stack0.back(); stack0.pop_back();
+			//		TreeNode* curP = stack1.back(); stack1.pop_back();
+			//		curP->childs.push_back(TreeNode(meshI[curI].name, curP));
+			//		TreeNode* nextP = &curP->childs.back();
+			//		for (int i = 0; i < meshT[curI].size(); i++) {
+			//			stack0.push_back(meshT[curI][i]);
+			//			stack1.push_back(nextP);
+			//		}
+			//	}
+			//}
 		}
 
 		int columnCount(const QModelIndex&) const override;
@@ -194,8 +194,9 @@ namespace MOON {
 		this->setModel(mInternal->mModel);
 		//this->setItemDelegate(new EntityTreeViewStyleDelegate(this));
 		this->header()->hide();
-		this->setStyleSheet("QTreeView::indicator:checked {image: url(:/entityTree/icons/pqEyeball.svg);}"
-		"QTreeView::indicator:unchecked {image: url(:/entityTree/icons/pqEyeballClosed.svg);}"
+		this->setStyleSheet(
+			"QTreeView::indicator:checked {image: url(:/entityTree/icons/pqEyeball.svg);}"
+			"QTreeView::indicator:unchecked {image: url(:/entityTree/icons/pqEyeballClosed.svg);}"
 		);
 
 	}
@@ -223,9 +224,9 @@ namespace MOON {
 
 
 		// 获取item在视图中的矩形
-		
+
 		if (!itemRect.contains(mousePos)) {
-			
+
 			return;
 		}
 		QStyleOptionViewItem option = viewOptions();

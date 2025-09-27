@@ -9,15 +9,11 @@
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_write.h"
 #include "core/log.h"
-
-
 #include "oidn/include/OpenImageDenoise/oidn.hpp"
 #include <fstream>
+
 namespace PathTrace {
 
-	extern bool space_down;
-	extern float screenX[2];
-	extern float screenY[2];
 
 }
 inline bool raster = false;
@@ -699,29 +695,29 @@ namespace PathTrace
 	void Renderer::SaveFrame()
 	{
 
-		unsigned char* data = nullptr;
-		//getoup
-		int w, h;
-		GetOutputBuffer(&data, w, h);
-		std::string filename = "./img_" + std::to_string(GetSampleCount()) + ".png";
-		stbi_flip_vertically_on_write(true);
-		stbi_write_png(filename.c_str(), w, h, 4, data, w * 4);
-		printf("saved Frame: %s\n", filename.c_str());
+		//unsigned char* data = nullptr;
+		////getoup
+		//int w, h;
+		//GetOutputBuffer(&data, w, h);
+		//std::string filename = "./img_" + std::to_string(GetSampleCount()) + ".png";
+		//stbi_flip_vertically_on_write(true);
+		//stbi_write_png(filename.c_str(), w, h, 4, data, w * 4);
+		//printf("saved Frame: %s\n", filename.c_str());
 
-		float x[2] = { std::min(screenX[0],screenX[1]),std::max(screenX[0],screenX[1]) };
-		float y[2] = { std::min(screenY[0],screenY[1]),std::max(screenY[0],screenY[1]) };
-		int sx = std::min(w * x[0], w * 1.0f);
-		int sy = std::min(h * y[0], h * 1.0f);
-		int ex = std::min(w * x[1], w * 1.0f);
-		int ey = std::min(h * y[1], h * 1.0f);
-		unsigned char* img = new unsigned char[(ex - sx + 1) * (ey - sy + 1) * 4];
-		int j = 0;
-		for (int i = sy; i <= ey; i++) {
-			memcpy(img + (j) * (ex - sx + 1) * 4, data + (i)*w * 4 + sx * 4, (ex - sx + 1) * 4);
-			j++;
-		}
-		filename = "./screen_" + std::to_string(GetSampleCount()) + ".png";
-		stbi_write_png(filename.c_str(), (ex - sx + 1), (ey - sy + 1), 4, img, (ex - sx + 1) * 4);
+		//float x[2] = { std::min(screenX[0],screenX[1]),std::max(screenX[0],screenX[1]) };
+		//float y[2] = { std::min(screenY[0],screenY[1]),std::max(screenY[0],screenY[1]) };
+		//int sx = std::min(w * x[0], w * 1.0f);
+		//int sy = std::min(h * y[0], h * 1.0f);
+		//int ex = std::min(w * x[1], w * 1.0f);
+		//int ey = std::min(h * y[1], h * 1.0f);
+		//unsigned char* img = new unsigned char[(ex - sx + 1) * (ey - sy + 1) * 4];
+		//int j = 0;
+		//for (int i = sy; i <= ey; i++) {
+		//	memcpy(img + (j) * (ex - sx + 1) * 4, data + (i)*w * 4 + sx * 4, (ex - sx + 1) * 4);
+		//	j++;
+		//}
+		//filename = "./screen_" + std::to_string(GetSampleCount()) + ".png";
+		//stbi_write_png(filename.c_str(), (ex - sx + 1), (ey - sy + 1), 4, img, (ex - sx + 1) * 4);
 
 	}
 
@@ -760,16 +756,7 @@ namespace PathTrace
 			quad->Draw(outputShader.get());
 		}
 
-		if (space_down) {
-			float x[2] = { std::min(screenX[0],screenX[1]),std::max(screenX[0],screenX[1]) };
-			float y[2] = { std::min(screenY[0],screenY[1]),std::max(screenY[0],screenY[1]) };
-			lineShader->Bind();
-			glProgramUniform2fv(lineShader->ID(), 0, 1, x);
-			glProgramUniform2fv(lineShader->ID(), 1, 1, y);
-			lineShader->Unbind();
 
-			quad->Draw(lineShader.get());
-		}
 
 	}
 

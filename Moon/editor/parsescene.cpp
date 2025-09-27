@@ -101,7 +101,7 @@ namespace MOON {
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
 		addSphereLight(scene);
-		std::string sceneName = PathTrace::GetSceneFilePath();
+		std::string sceneName = PathTrace::PathTraceRender::instance().GetSceneFilePath();
 		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
 		Mat4 xform;
 		if (ext == "scene")

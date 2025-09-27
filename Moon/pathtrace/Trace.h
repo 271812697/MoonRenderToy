@@ -3,7 +3,7 @@
 #include "MathUtil.h"
 namespace PathTrace
 {
-	struct RenderOptions;
+
 
 	struct Medium
 	{
