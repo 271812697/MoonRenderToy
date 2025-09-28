@@ -17,7 +17,10 @@
 #include <OvCore/ResourceManagement/TextureManager.h>
 #include <OvCore/SceneSystem/SceneManager.h>
 #include <tinygltf/include/tiny_gltf.h>
-
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/matrix4x4.h>
+#include <assimp/postprocess.h>
 namespace PathTrace
 {
 	static const int kMaxLineLength = 2048;
@@ -512,6 +515,74 @@ namespace PathTrace
 
 		fclose(file);
 
+		return true;
+	}
+
+	bool LoadSingleModel(const std::string& filename, Scene* scene)
+	{
+		Assimp::Importer importer;
+		const aiScene* ascene=importer.ReadFile(filename,aiProcess_Triangulate|aiProcess_JoinIdenticalVertices| aiProcess_SortByPType| aiProcess_GenSmoothNormals);
+		if (!ascene||ascene->mFlags& AI_SCENE_FLAGS_INCOMPLETE||!ascene->mRootNode) {
+			CORE_ERROR("Assimp parse Error for {0}\n",importer.GetErrorString());
+			return false;
+		}
+		//for (int i = 0;i < ascene->mNumMaterials;i++) {
+		//	aiMaterial* material=ascene->mMaterials[i];
+		//
+		//}
+		;
+		Material mate;
+		//mate.baseColor = { 1.0,1.0,0.0 };
+		int mateId = scene->AddMaterial(mate);
+
+		aiMatrix4x4 mat;
+		std::vector<aiMatrix4x4>matStack = {mat};
+		std::vector<aiNode*>nodeStack = {ascene->mRootNode};
+		while (!nodeStack.empty()) {
+			aiNode* node = nodeStack.back();nodeStack.pop_back();
+			aiMatrix4x4 parentMat = matStack.back();matStack.pop_back();
+			aiMatrix4x4 transMat = parentMat * node->mTransformation;
+			
+			for (int i = 0;i < node->mNumMeshes;i++) {
+				aiMesh* mesh = ascene->mMeshes[node->mMeshes[i]];
+				
+				Mesh* pathTraceMesh = new Mesh();
+				std::vector<Vec4> posArr;
+				std::vector<Vec4>norArr;
+				for (int k = 0;k < mesh->mNumVertices;k++) {
+					const aiVector3D pos = mesh->mVertices[k];
+					const aiVector3D nor = mesh->mNormals[k];
+					posArr.push_back({ pos.x,pos.y,pos.z,1.0 });
+					norArr.push_back({ nor.x,nor.y,nor.z,1.0 });
+					//pathTraceMesh->verticesUVX.push_back({pos.x,pos.y,pos.z,1.0});
+					//pathTraceMesh->normalsUVY.push_back({ nor.x,nor.y,nor.z,1.0 });
+				}
+				for (uint32_t faceID = 0; faceID < mesh->mNumFaces; ++faceID)
+				{
+					auto& face = mesh->mFaces[faceID];
+
+					for (size_t indexID = 0; indexID < 3; ++indexID)
+					{
+						pathTraceMesh->verticesUVX.push_back(posArr[face.mIndices[indexID]]);
+						pathTraceMesh->normalsUVY.push_back(norArr[face.mIndices[indexID]]);
+					}
+						
+				}
+				;
+				int meshId = scene->meshes.size();
+				scene->meshes.push_back(pathTraceMesh);
+				Mat4  xform;
+				memcpy(xform.data,&transMat.a1,16*sizeof(float));
+				MeshInstance ins(std::string(mesh->mName.C_Str()),meshId,xform,mateId);
+				scene->AddMeshInstance(ins);
+			}
+			for (int i = 0;i < node->mNumChildren;i++) {
+				matStack.push_back(transMat);
+				nodeStack.push_back(node->mChildren[i]);
+			}
+		}
+
+		//const aiSce
 		return true;
 	}
 

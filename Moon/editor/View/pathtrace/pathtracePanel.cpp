@@ -1,10 +1,11 @@
-#include <QMouseEvent>
+ï»¿#include <QMouseEvent>
 #include "pathtracePanel.h"
 #include "glloader.h"
 #include "pathtrace/PathTrace.h"
-#include "pathtrace/Renderer.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/Camera.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "OvCore/Global/ServiceLocator.h"
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -17,15 +18,16 @@ namespace MOON {
 	PathTracePanel::PathTracePanel(QWidget* parent) :
 		QOpenGLWidget(parent)
 	{
-		//ÉèÖÃ¿ÉÒÔ²¶»ñÊó±êÒÆ¶¯ÏûÏ¢
+		//è®¾ç½®å¯ä»¥æ•èŽ·é¼ æ ‡ç§»åŠ¨æ¶ˆæ¯
 		this->setMouseTracking(true);
 		//this->grabKeyboard();
-		//·´¾â³Ý
+		//åé”¯é½¿
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
-		setFocusPolicy(Qt::StrongFocus);  // ÔÊÐíÍ¨¹ýµã»÷»òTab¼ü»ñÈ¡½¹µã
-		setFocus();                      // Ö÷¶¯»ñÈ¡½¹µã£¨¿ÉÑ¡£©
+		setFocusPolicy(Qt::StrongFocus);  // å…è®¸é€šè¿‡ç‚¹å‡»æˆ–Tabé”®èŽ·å–ç„¦ç‚¹
+		setFocus();                      // ä¸»åŠ¨èŽ·å–ç„¦ç‚¹ï¼ˆå¯é€‰ï¼‰
+		COPROVITE(PathTracePanel, *this);
 	}
 	PathTracePanel::~PathTracePanel()
 	{
@@ -40,7 +42,7 @@ namespace MOON {
 		//CUSTOM_GL_API::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		GlLoader::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 
-		//¿ªÆô¼ÆÊ±Æ÷
+		//å¼€å¯è®¡æ—¶å™¨
 		this->startTimer(0);
 		PathTraceRender::instance().GetSceneFiles();
 		PathTraceRender::instance().GetEnvMaps();
@@ -49,6 +51,10 @@ namespace MOON {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
+
+		auto& tree = OVSERVICE(TreeViewPanel);
+		connect(this,&PathTracePanel::sceneChange,&tree,&TreeViewPanel::updateTreeViewPathRoot);
+		emit sceneChange();
 	}
 	void  PathTracePanel::timerEvent(QTimerEvent* e)
 	{
@@ -108,5 +114,12 @@ namespace MOON {
 			PathTraceRender::instance().ReceiveEvent(e);
 		}
 		return QOpenGLWidget::event(e);
+	}
+	void PathTracePanel::onUpdateEntityTreeView()
+	{
+		emit sceneChange();
+	}
+	void PathTracePanel::onSceneChange(const QString& path) {
+		PathTraceRender::instance().onSwitchScene(path.toStdString());
 	}
 }

@@ -1,6 +1,4 @@
-
-
-#define TINYOBJLOADER_IMPLEMENTATION
+ï»¿#define TINYOBJLOADER_IMPLEMENTATION
 #include <iostream>
 #include "tinyobjloader/tiny_obj_loader.h"
 #include <glad/glad.h>
@@ -38,7 +36,7 @@ namespace PathTrace
 	{
 		name = filename;
 		tinyobj::attrib_t attrib;
-		//¶à¸öÓĞ×éÖ¯µÄĞÎ×´(V,I)
+		//å¤šä¸ªæœ‰ç»„ç»‡çš„å½¢çŠ¶(V,I)
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
 		std::string err;
@@ -49,7 +47,7 @@ namespace PathTrace
 			printf("Unable to load model\n");
 			return false;
 		}
-		//´ò°ü³ÉÈı½ÇĞÎ
+		//æ‰“åŒ…æˆä¸‰è§’å½¢
 		// Loop over shapes
 		for (size_t s = 0; s < shapes.size(); s++)
 		{
@@ -144,7 +142,7 @@ namespace PathTrace
 	void Mesh::BuildBVH()
 	{
 		const int numTris = verticesUVX.size() / 3;
-		//ÎªËùÓĞµÄÈı½ÇĞÎ¹¹½¨°üÎ§ºĞ£¬È»ºóÔÚ¶ÔËùÓĞµÄ°üÎ§ºĞ¹¹½¨bvh
+		//ä¸ºæ‰€æœ‰çš„ä¸‰è§’å½¢æ„å»ºåŒ…å›´ç›’ï¼Œç„¶ååœ¨å¯¹æ‰€æœ‰çš„åŒ…å›´ç›’æ„å»ºbvh
 		std::vector<RadeonRays::bbox> bounds(numTris);
 
 		for (int i = 0; i < numTris; ++i)

@@ -1,6 +1,5 @@
-#pragma once
+﻿#pragma once
 
-//#include "pqApplicationComponentsModule.h"
 #include <QAction>
 #include <QObject>
 

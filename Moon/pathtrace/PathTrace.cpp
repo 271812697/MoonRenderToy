@@ -1,4 +1,6 @@
 ﻿#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "editor/View/pathtrace/pathtracePanel.h"
+#include "OvCore/Global/ServiceLocator.h"
 #define __glad_h_
 #include "PathTrace.h"
 #include "LoadScene.h"
@@ -8,6 +10,7 @@
 #include "Renderer.h"
 #include "core/log.h"
 #include "Trace.h"
+
 #include <filesystem>
 #include <QMouseEvent>
 
@@ -62,7 +65,7 @@ namespace PathTrace {
 				switchScene = false;
 				LoadScene(switchSceneName);
 				InitRenderer();
-				//OVSERVICE(MOON::TreeViewPanel).initModel();
+				OVSERVICE(MOON::PathTracePanel).onUpdateEntityTreeView();
 			}
 			cameraController->MoveToPivot(0.016);
 			GetRenderer()->Update(0.016);
@@ -78,9 +81,7 @@ namespace PathTrace {
 						sceneFiles.push_back(item.path().generic_string());
 					}
 				}
-
 			switchSceneName = sceneFiles[sampleSceneIdx];
-
 		}
 		void Resize(int width, int height) {
 			renderOptions.windowResolution.x = width;
@@ -124,6 +125,9 @@ namespace PathTrace {
 				success = LoadGLTF(sceneName, scene, renderOptions, xform, false);
 			else if (ext == "glb")
 				success = LoadGLTF(sceneName, scene, renderOptions, xform, true);
+			else {
+				success = LoadSingleModel(sceneName,scene);
+			}
 
 			if (!success)
 			{
@@ -148,7 +152,6 @@ namespace PathTrace {
 		}
 		void TraceScene()
 		{
-
 			//TraceScreen(renderOptions.windowResolution.x, renderOptions.windowResolution.y);
 		}
 		bool InitRenderer()
@@ -271,7 +274,6 @@ namespace PathTrace {
 	void PathTraceRender::Update()
 	{
 		mInternal->Update();
-
 	}
 
 	RenderOptions& PathTraceRender::GetRenderOptions()
@@ -289,7 +291,7 @@ namespace PathTrace {
 		mInternal->Resize(width, height);
 	}
 
-	void PathTraceRender::SwitchScene(std::string sceneName)
+	void PathTraceRender::onSwitchScene(std::string sceneName)
 	{
 		mInternal->SwitchScene(sceneName);
 	}

@@ -210,7 +210,7 @@ namespace MOON {
 	}
 	void TreeViewPanel::updateTreeViewPathRoot()
 	{
-
+		mInternal->mModel->onPathRootChange();
 	}
 
 	void TreeViewPanel::mousePressEvent(QMouseEvent* event)

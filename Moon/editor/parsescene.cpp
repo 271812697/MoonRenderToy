@@ -91,7 +91,7 @@ namespace MOON {
 
 
 
-	void ParseScene::ParsePathTraceScene() {
+	void ParseScene::ParsePathTraceScene(const std::string& path) {
 
 		OVSERVICE(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
 		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
@@ -101,7 +101,7 @@ namespace MOON {
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
 		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
 		addSphereLight(scene);
-		std::string sceneName = PathTrace::PathTraceRender::instance().GetSceneFilePath();
+		std::string sceneName = path;
 		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
 		Mat4 xform;
 		if (ext == "scene")
@@ -145,10 +145,7 @@ namespace MOON {
 
 	void ParseScene::updateTreeViewSceneRoot()
 	{
-		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
-		if (scene == nullptr) {
-			return;
-		}
+
 	}
 
 	void ParseScene::updateTreeViewPathRoot()

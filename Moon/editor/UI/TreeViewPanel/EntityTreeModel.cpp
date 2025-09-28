@@ -3,6 +3,8 @@
 #include "OvCore/SceneSystem/Scene.h"
 #include "renderer/Context.h"
 #include "treeViewpanel.h"
+#include "pathtrace/PathTrace.h"
+#include "pathtrace/Scene.h"
 
 
 namespace MOON {
@@ -77,6 +79,31 @@ namespace MOON {
 			}
 		}
 
+	}
+	void EntityTreeModel::onPathRootChange()
+	{
+		auto scene=PathTrace::PathTraceRender::instance().GetScene();
+		if (scene != nullptr) {
+			mInternl->pathRoot->removeRows(0,mInternl->pathRoot->rowCount());
+			for (int i = 0;i < scene->meshInstancesRoots.size();i++) {
+				
+				std::vector<QStandardItem*> root = {mInternl->pathRoot};
+				std::vector<int> node = {scene->meshInstancesRoots[i]};
+				while (!node.empty()) {
+					int nodeId = node.back();node.pop_back();
+					QStandardItem* parent = root.back(); root.pop_back();
+					QStandardItem* temp = new QStandardItem;
+					temp->setText(QString::fromStdString(scene->meshInstances[nodeId].name));
+					temp->setCheckable(true);
+					temp->setCheckState(Qt::CheckState::Checked);
+					parent->setChild(parent->rowCount(), temp);
+					for (auto& child : scene->meshInstancesTree[nodeId]) {
+						node.push_back(child);
+						root.push_back(temp);
+					}
+				}
+			}
+		}
 	}
 	QStandardItem* EntityTreeModel::sceneRoot()
 	{

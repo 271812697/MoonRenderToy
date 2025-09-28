@@ -1,7 +1,4 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <memory>
 
 #include <OvRendering/HAL/IndexBuffer.h>

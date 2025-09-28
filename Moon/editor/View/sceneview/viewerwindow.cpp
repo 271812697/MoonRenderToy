@@ -32,10 +32,11 @@ namespace MOON {
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree,&TreeViewPanel::setSelectActor,mSelf,&onActorSelected);
 			Guizmo::instance().init();
+			mScenePath=QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new OvEditor::Panels::SceneView("SceneView");
-			parser->ParsePathTraceScene();
+			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
 
 		}
@@ -44,12 +45,11 @@ namespace MOON {
 			delete mSceneView;
 		}
 		void paintGL() {
-
 			mSceneView->Update(0.01);
 			Guizmo::instance().newFrame(mSceneView);
 			if (mSwitchScene) {
 				mSwitchScene = false;
-				parser->ParsePathTraceScene();
+				parser->ParsePathTraceScene(mScenePath.toStdString());
 				mSceneView->UnselectActor();
 				emit mSelf->sceneChange();
 			}
@@ -72,8 +72,9 @@ namespace MOON {
 			if (mSceneView != nullptr)
 				mSceneView->Resize(mViewWidth, mViewHeight);
 		}
-		void switchScene()
+		void onSwitchScene(const QString& path)
 		{
+			mScenePath = path;
 			mSwitchScene = true;
 		}
 	private:
@@ -86,6 +87,7 @@ namespace MOON {
 		int mViewHeight;
 		bool mInitFlag = false;
 		bool mSwitchScene = false;
+		QString mScenePath = "";
 
 	};
 	ViewerWindow::ViewerWindow(QWidget* parent) :
@@ -100,11 +102,6 @@ namespace MOON {
 		format.setSamples(4);
 		this->setFormat(format);
 		COPROVITE(ViewerWindow, *this);
-		//connect(this, &ViewerWindow::sceneChange, this, []() {
-
-
-			//});
-
 
 
 	}
@@ -174,9 +171,10 @@ namespace MOON {
 	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
 	{
 	}
-	void ViewerWindow::switchScene()
+
+	void ViewerWindow::onSceneChange(const QString& path)
 	{
-		mInternal->switchScene();
+		mInternal->onSwitchScene(path);
 	}
 	void ViewerWindow::onActorSelected(OvCore::ECS::Actor* actor) {
 		if (actor != nullptr) {

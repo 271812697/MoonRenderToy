@@ -18,7 +18,7 @@ namespace PathTrace {
 		RenderOptions& GetRenderOptions();
 		void GetEnvMaps();
 		void Resize(int width, int height);
-		void SwitchScene(std::string sceneName);
+		void onSwitchScene(std::string sceneName);
 		std::string GetSceneFilePath();
 		void LoadScene(std::string sceneName);
 		void LoadDefaultScene();
