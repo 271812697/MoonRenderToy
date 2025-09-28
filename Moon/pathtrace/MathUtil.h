@@ -110,6 +110,36 @@ namespace PathTrace {
 	Vec3 pow(const Vec3& a, const Vec3& b);
 	Vec3 RoateDir(const Vec3& d, const Vec3& axis, float rad);
 	Vec3 RoatePoint(const Vec3& p, const Vec3& axis, const Vec3& pivot, float rad);
+	struct BBox
+	{
+		Vec3 mMinConer;
+		Vec3 mMaxConer;
+		BBox(const Vec3& a, const Vec3& b)
+			:mMinConer(a), mMaxConer(b)
+		{
+
+		}
+		BBox()
+			:mMinConer({ 0,0,0 }), mMaxConer({ 0, 0, 0
+				})
+		{
+
+		}
+		void grow(const Vec3& a) {
+			mMinConer = Vec3::Min(a, mMinConer);
+			mMaxConer = Vec3::Max(a, mMaxConer);
+		}
+		Vec3 center() {
+			return (mMinConer + mMaxConer) / 2;
+		}
+		float extent() {
+			return Vec3::Distance(mMinConer, mMaxConer);
+		}
+		float halfExtent() {
+			return extent() / 2;
+		}
+
+	};
 	struct Ray
 	{
 		Vec3 origin;

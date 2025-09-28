@@ -88,7 +88,7 @@ namespace PathTrace {
 			renderOptions.windowResolution.y = height;
 			if (!renderOptions.independentRenderSize)
 				renderOptions.renderResolution = renderOptions.windowResolution;
-			scene->renderOptions = renderOptions;
+			scene->getRenderOptions() = renderOptions;
 			renderer->ResizeRenderer();
 		}
 		void GetEnvMaps()
@@ -126,7 +126,7 @@ namespace PathTrace {
 			else if (ext == "glb")
 				success = LoadGLTF(sceneName, scene, renderOptions, xform, true);
 			else {
-				success = LoadSingleModel(sceneName,scene);
+				success = LoadSingleModel(sceneName, scene);
 			}
 
 			if (!success)
@@ -138,14 +138,14 @@ namespace PathTrace {
 			selectedInstance = 0;
 			selectedMat = 0;
 			// Add a default HDR if there are no lights in the scene
-			if (!scene->envMap && !envMaps.empty())
+			if (!scene->getEnvironmentMap() && !envMaps.empty())
 			{
 				scene->AddEnvMap(envMaps[envMapIdx]);
 				renderOptions.enableEnvMap = true;
 				renderOptions.envMapIntensity = 1.5f;
 			}
 
-			scene->renderOptions = renderOptions;
+			scene->getRenderOptions() = renderOptions;
 		}
 		void LoadDefaultScene() {
 			LoadScene(sceneFiles[sampleSceneIdx]);
@@ -352,14 +352,14 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 		if (mouseMiddle) {
-			render->GetScene()->camera->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
-			render->GetScene()->dirty = true;
+			render->GetScene()->getCamera()->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
+			render->GetScene()->setDirty(true);
 		}
 		else if (mouseRight)
 		{
 
-			render->GetScene()->camera->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
-			render->GetScene()->dirty = true;
+			render->GetScene()->getCamera()->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
+			render->GetScene()->setDirty(true);
 		}
 		//x = _x;
 		//y = _y;
@@ -378,7 +378,7 @@ namespace PathTrace {
 	{
 		this->tx = x;
 		this->ty = y;
-		render->GetScene()->camera->UpdateCamera();
+		render->GetScene()->getCamera()->UpdateCamera();
 		mouseMiddle = true;
 	}
 
@@ -386,7 +386,7 @@ namespace PathTrace {
 	{
 		this->rx = x;
 		this->ry = y;
-		render->GetScene()->camera->UpdateCamera();
+		render->GetScene()->getCamera()->UpdateCamera();
 		mouseRight = true;
 	}
 
@@ -402,18 +402,18 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-		render->GetScene()->camera->SetRadius(delta * 0.0025);
-		render->GetScene()->dirty = true;
+		render->GetScene()->getCamera()->SetRadius(delta * 0.0025);
+		render->GetScene()->setDirty(true);
 	}
 	void CameraController::GetCameraPosition(float eye[3]) {
-		Vec3 p = render->GetScene()->camera->GetEye();
+		Vec3 p = render->GetScene()->getCamera()->GetEye();
 		eye[0] = p.x;
 		eye[1] = p.y;
 		eye[2] = p.z;
 	}
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
 		render->GetRenderer()->GetProgress();
-		render->GetScene()->camera->ComputeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
+		render->GetScene()->getCamera()->ComputeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
 	}
 	void CameraController::MoveToPivot(float deltaTime) {
 		if (!cameraDestinations.empty()) {
@@ -422,16 +422,16 @@ namespace PathTrace {
 			}
 			float t = 5.0f * deltaTime;
 			auto& destion = cameraDestinations[0];
-			auto& piviot = render->GetScene()->camera->GetPivoit();
+			auto& piviot = render->GetScene()->getCamera()->GetPivoit();
 			if (Vec3::Length(destion - piviot) < 0.03f) {
-				render->GetScene()->camera->setPivot(destion);
+				render->GetScene()->getCamera()->setPivot(destion);
 				cameraDestinations.pop_back();
 			}
 			else
 			{
-				render->GetScene()->camera->setPivot(destion * t + (1 - t) * piviot);
+				render->GetScene()->getCamera()->setPivot(destion * t + (1 - t) * piviot);
 			}
-			render->GetScene()->dirty = true;
+			render->GetScene()->setDirty(true);
 		}
 	}
 	void CameraController::PustCameraDestination(float x, float y, float z) {

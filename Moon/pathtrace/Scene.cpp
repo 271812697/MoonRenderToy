@@ -18,7 +18,7 @@ namespace PathTrace
 {
 
 
-	Scene::Scene() : camera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
+	Scene::Scene() : mCamera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
 		sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
 	}
 	Scene::~Scene()
@@ -31,8 +31,8 @@ namespace PathTrace
 			delete textures[i];
 		textures.clear();
 
-		if (camera)
-			delete camera;
+		if (mCamera)
+			delete mCamera;
 
 		if (sceneBvh)
 			delete sceneBvh;
@@ -43,8 +43,8 @@ namespace PathTrace
 
 	void Scene::AddCamera(Vec3 pos, Vec3 lookAt, float fov)
 	{
-		delete camera;
-		camera = new Camera(pos, lookAt, fov);
+		delete mCamera;
+		mCamera = new Camera(pos, lookAt, fov);
 	}
 
 	int Scene::AddMesh(const std::string& filename)
@@ -52,7 +52,7 @@ namespace PathTrace
 		int id = -1;
 		// Check if mesh was already loaded
 		for (int i = 0; i < meshes.size(); i++)
-			if (meshes[i]->name == filename)
+			if (meshes[i]->getName() == filename)
 				return i;
 
 		id = meshes.size();
@@ -125,13 +125,13 @@ namespace PathTrace
 
 
 		Vec2 dd = { 2 * x - 1.0f,2 * y - 1.0f };
-		float scale = tan(camera->fov * 0.5);
+		float scale = tan(mCamera->fov * 0.5);
 		//fov水平方向的张角
 		dd.y *= renderOptions.renderResolution.y * 1.0f / renderOptions.renderResolution.x * scale;
 		dd.x *= scale;
-		Vec3 RayDir = camera->right * dd.x + camera->up * dd.y + camera->forward;
+		Vec3 RayDir = mCamera->right * dd.x + mCamera->up * dd.y + mCamera->forward;
 		RayDir = Vec3::Normalize(RayDir);
-		Vec3 RayPos = camera->position;
+		Vec3 RayPos = mCamera->position;
 		Ray r = { RayPos ,RayDir };
 		float t = 9999.0f;
 		float d = 0.0f;
@@ -281,6 +281,91 @@ namespace PathTrace
 		return Vec3();
 	}
 
+	Camera* Scene::getCamera()
+	{
+		return mCamera;
+	}
+
+	std::vector<MeshInstance>& Scene::getMeshInstances()
+	{
+		return meshInstances;
+	}
+
+	std::vector<std::vector<int>>& Scene::getMeshInstancesTree()
+	{
+		return meshInstancesTree;
+	}
+
+	std::vector<int>& Scene::getMeshInstancesRoots()
+	{
+		return meshInstancesRoots;
+	}
+
+	std::vector<Light>& Scene::getLights()
+	{
+		return lights;
+	}
+
+	RadeonRays::BvhTranslator& Scene::getBvhTranslator()
+	{
+		return bvhTranslator;
+	}
+
+	std::vector<Indices>& Scene::getVertIndices()
+	{
+		return vertIndices;
+	}
+
+	std::vector<Vec4>& Scene::getVerticesUVX()
+	{
+		return verticesUVX;
+	}
+
+	std::vector<Vec4>& Scene::getNormalsUVY()
+	{
+		return normalsUVY;
+	}
+
+	std::vector<Mat4>& Scene::getTransforms()
+	{
+		return transforms;
+	}
+
+	std::vector<Texture*>& Scene::getTextures()
+	{
+		return textures;
+	}
+
+	std::vector<Material>& Scene::getMaterials()
+	{
+		return materials;
+	}
+
+	std::vector<Mesh*>& Scene::getMeshes()
+	{
+		return meshes;
+	}
+
+	RenderOptions& Scene::getRenderOptions()
+	{
+		return renderOptions;
+	}
+
+	EnvironmentMap* Scene::getEnvironmentMap()
+	{
+		return envMap;
+	}
+
+	void Scene::setPath(const std::string& p)
+	{
+		path = p;
+	}
+
+	void Scene::setDirty(bool flag)
+	{
+		dirty = flag;
+	}
+
 	int Scene::AddMeshInstance(const MeshInstance& meshInstance)
 	{
 		int id = meshInstances.size();
@@ -320,7 +405,7 @@ namespace PathTrace
 		//遍历所有的MeshInstance,将mesh做变换后的包围盒构建顶层BVH
 		for (int i = 0; i < meshInstances.size(); i++)
 		{
-			RadeonRays::bbox bbox = meshes[meshInstances[i].meshID]->bvh->Bounds();
+			RadeonRays::bbox bbox = meshes[meshInstances[i].meshID]->getBvH()->Bounds();
 			Mat4 matrix = meshInstances[i].transform;
 
 			Vec3 minBound = bbox.pmin;
@@ -357,7 +442,7 @@ namespace PathTrace
 	{
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			CORE_INFO("Building BVH for {0}\n", meshes[i]->name.c_str());
+			CORE_INFO("Building BVH for {0}\n", meshes[i]->getName().c_str());
 			meshes[i]->BuildBVH();
 		}
 	}
@@ -380,90 +465,7 @@ namespace PathTrace
 
 	void Scene::Save()
 	{
-		std::string prefix = R"(
-renderer
-{
-  resolution 800 800
-  maxdepth 3
-  tilewidth 200
-  tileheight 200
-  envmapintensity 0.5
-}
-material pa
-{
-  color 1.00 1.00 1.00
-  metallic 0.122
-  roughness 0.150
-}
-material red
-{
-  color 1.00 0.065 0.05
-  metallic 0.122
-  roughness 0.150
-}
 
-material off_Platform
-{
-	color 1.0 0.94 0.8
-	roughness 1.0
-	specular 0.5
-}
-mesh
-{
-	name Platform
-	file plate.obj
-	material off_Platform
-	position -1.06 -0.36 0.031
-    scale 0.4 0.236 0.25
-}
-light
-{
-	emission 100 100 100
-	position 40.9 39.0 43.9
-	radius 6.0
-	type sphere
-}
-)";
-
-		std::fstream file;
-		file.open(path, std::ios::out);
-		file << prefix;
-		file << "camera\n" << "{\n  position " << camera->position.x << " " << camera->position.y << " " << camera->position.z << std::endl;
-		file << "  lookat " << camera->pivot.x << " " << camera->pivot.y << " " << camera->pivot.z << std::endl;
-		file << "  fov " << Math::Degrees(camera->fov) << std::endl << "}" << std::endl;
-
-
-		//////
-		for (int i = 0; i < meshInstances.size(); i++) {
-			if (meshInstances[i].parentID == -1 && (meshInstances[i].name != "Platform.obj" && meshInstances[i].name != "Platform")) {
-				file << "mesh" << std::endl << "{" << std::endl;
-				file << "  file " << meshes[meshInstances[i].meshID]->name.substr(meshes[meshInstances[i].meshID]->name.find_last_of("/") + 1) << std::endl;
-				file << "  name " << meshInstances[i].name << std::endl;
-				file << "  material pa" << std::endl;
-				file << "  matrix";
-				for (int j = 0; j < 16; j++) {
-					file << " " << meshInstances[i].transform.data[j % 4][j / 4];
-				}
-				file << std::endl;
-				file << "}" << std::endl;
-			}
-		}
-		//poi
-		for (int i = 0; i < meshInstances.size(); i++) {
-			if (meshInstances[i].parentID != -1) {
-				file << "mesh" << std::endl << "{" << std::endl;
-				file << "  file " << meshInstances[i].name << std::endl;
-				file << "  parent " << meshInstances[meshInstances[i].parentID].name << std::endl;
-				file << "  material red" << std::endl;
-				file << "  matrix";
-				for (int j = 0; j < 16; j++) {
-					file << " " << meshInstances[i].localform.data[j % 4][j / 4];
-				}
-				file << std::endl;
-				file << "}" << std::endl;
-			}
-		}
-		file.close();
 
 	}
 
@@ -493,8 +495,8 @@ light
 		{
 			// Copy indices from BVH and not from Mesh. 
 			// Required if splitBVH is used as a triangle can be shared by leaf nodes
-			int numIndices = meshes[i]->bvh->GetNumIndices();
-			const int* triIndices = meshes[i]->bvh->GetIndices();
+			int numIndices = meshes[i]->getBvH()->GetNumIndices();
+			const int* triIndices = meshes[i]->getBvH()->GetIndices();
 
 			for (int j = 0; j < numIndices; j++)
 			{
@@ -506,10 +508,10 @@ light
 				vertIndices.push_back(Indices{ v1, v2, v3 });
 			}
 
-			verticesUVX.insert(verticesUVX.end(), meshes[i]->verticesUVX.begin(), meshes[i]->verticesUVX.end());
-			normalsUVY.insert(normalsUVY.end(), meshes[i]->normalsUVY.begin(), meshes[i]->normalsUVY.end());
+			verticesUVX.insert(verticesUVX.end(), meshes[i]->getPosUvX().begin(), meshes[i]->getPosUvX().end());
+			normalsUVY.insert(normalsUVY.end(), meshes[i]->getNorUvY().begin(), meshes[i]->getNorUvY().end());
 
-			verticesCnt += meshes[i]->verticesUVX.size();
+			verticesCnt += meshes[i]->getPosUvX().size();
 		}
 
 		// Copy transforms
@@ -546,7 +548,7 @@ light
 		}
 
 		// Add a default camera
-		if (!camera)
+		if (!mCamera)
 		{
 			RadeonRays::bbox bounds = sceneBvh->Bounds();
 			Vec3 extents = bounds.extents();

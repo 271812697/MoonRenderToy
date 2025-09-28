@@ -20,12 +20,12 @@ namespace MOON {
 			arrays.push_back(sceneRoot);
 			pathRoot = new QStandardItem;
 			pathRoot->setText(QString("PathTrace"));
-			
+
 			arrays.push_back(pathRoot);
 			self->invisibleRootItem()->appendColumn(arrays);
 			mIconMaps["eyeOpen"] = QIcon(":/entityTree/icons/pqEyeball.svg");
 			mIconMaps["eyeClose"] = QIcon(":/entityTree/icons/pqEyeballClosed.svg");
-			
+
 		}
 	private:
 		friend EntityTreeModel;
@@ -35,14 +35,14 @@ namespace MOON {
 		QStandardItem* sceneRoot = nullptr;
 		QStandardItem* pathRoot = nullptr;
 		std::unordered_map<std::string, QIcon>mIconMaps;
-		
+
 	};
 	EntityTreeModel::EntityTreeModel(TreeViewPanel* parent) :
 		QStandardItemModel(parent), mInternl(new EntityTreeModelInternal(this, parent))
 	{
 		mInternl->init();
 		COPROVITE(EntityTreeModel, *this);
-		connect(this ,&QStandardItemModel::itemChanged,this,&EntityTreeModel::onCheckStageChange);
+		connect(this, &QStandardItemModel::itemChanged, this, &EntityTreeModel::onCheckStageChange);
 	}
 	EntityTreeModel::~EntityTreeModel()
 	{
@@ -68,9 +68,9 @@ namespace MOON {
 					//temp->setIcon(mInternl->mIconMaps["eyeOpen"]);
 					temp->setCheckable(true);
 					temp->setCheckState(Qt::CheckState::Checked);
-					temp->setData(QVariant::fromValue((void*)cur),Qt::UserRole);
+					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->setChild(parent->rowCount(), temp);
-					
+
 					for (auto& child : cur->GetChildren()) {
 						s.push_back(child);
 						root.push_back(temp);
@@ -82,22 +82,25 @@ namespace MOON {
 	}
 	void EntityTreeModel::onPathRootChange()
 	{
-		auto scene=PathTrace::PathTraceRender::instance().GetScene();
+		auto scene = PathTrace::PathTraceRender::instance().GetScene();
+		auto& meshInstancesRoots = scene->getMeshInstancesRoots();
+		auto& meshInstances = scene->getMeshInstances();
+		auto& meshInstancesTree = scene->getMeshInstancesTree();
 		if (scene != nullptr) {
-			mInternl->pathRoot->removeRows(0,mInternl->pathRoot->rowCount());
-			for (int i = 0;i < scene->meshInstancesRoots.size();i++) {
-				
-				std::vector<QStandardItem*> root = {mInternl->pathRoot};
-				std::vector<int> node = {scene->meshInstancesRoots[i]};
+			mInternl->pathRoot->removeRows(0, mInternl->pathRoot->rowCount());
+			for (int i = 0; i < meshInstancesRoots.size(); i++) {
+
+				std::vector<QStandardItem*> root = { mInternl->pathRoot };
+				std::vector<int> node = { meshInstancesRoots[i] };
 				while (!node.empty()) {
-					int nodeId = node.back();node.pop_back();
+					int nodeId = node.back(); node.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
 					QStandardItem* temp = new QStandardItem;
-					temp->setText(QString::fromStdString(scene->meshInstances[nodeId].name));
+					temp->setText(QString::fromStdString(meshInstances[nodeId].name));
 					temp->setCheckable(true);
 					temp->setCheckState(Qt::CheckState::Checked);
 					parent->setChild(parent->rowCount(), temp);
-					for (auto& child : scene->meshInstancesTree[nodeId]) {
+					for (auto& child : meshInstancesTree[nodeId]) {
 						node.push_back(child);
 						root.push_back(temp);
 					}
@@ -181,7 +184,7 @@ namespace MOON {
 
 		isProcessing = false;
 		if (item->isCheckable()) {
-			OvCore::ECS::Actor* actor=static_cast<OvCore::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
+			OvCore::ECS::Actor* actor = static_cast<OvCore::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
 			if (actor) {
 				Qt::CheckState currentState = item->checkState();
 				if (currentState == Qt::Checked) {
@@ -191,6 +194,6 @@ namespace MOON {
 					actor->SetActive(false);
 				}
 			}
-		}	
+		}
 	}
 }

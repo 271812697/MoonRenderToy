@@ -69,7 +69,7 @@ namespace RadeonRays
 		int nodeCnt = 0;
 
 		for (int i = 0; i < meshes.size(); i++)
-			nodeCnt += meshes[i]->bvh->m_nodecnt;
+			nodeCnt += meshes[i]->getBvH()->m_nodecnt;
 		topLevelIndex = nodeCnt;
 
 		// reserve space for top level nodes
@@ -85,10 +85,10 @@ namespace RadeonRays
 			curNode = bvhRootIndex;
 
 			bvhRootStartIndices.push_back(bvhRootIndex);
-			bvhRootIndex += mesh->bvh->m_nodecnt;
+			bvhRootIndex += mesh->getBvH()->m_nodecnt;
 
-			ProcessBLASNodes(mesh->bvh->m_root);
-			curTriIndex += mesh->bvh->GetNumIndices();
+			ProcessBLASNodes(mesh->getBvH()->m_root);
+			curTriIndex += mesh->getBvH()->GetNumIndices();
 		}
 	}
 

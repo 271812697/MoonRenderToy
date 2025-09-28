@@ -17,6 +17,13 @@ namespace PathTrace
 		bool LoadFromFile(const std::string& filename);
 		void Draw();
 		std::vector<float>PackData();
+		RadeonRays::Bvh* getBvH();
+		std::vector<Vec4>& getPosUvX();
+		std::vector<Vec4>& getNorUvY();
+		std::string getName();
+		void setName(const std::string& name);
+		BBox& getBBox();
+	private:
 		//存储法线顶点坐标 uv分开存
 		std::vector<Vec4> verticesUVX; // Vertex + texture Coord (u/s)
 		std::vector<Vec4> normalsUVY;  // Normal + texture Coord (v/t)
@@ -25,8 +32,9 @@ namespace PathTrace
 		unsigned int vbon;
 		bool hasVAO = false;
 
-		RadeonRays::Bvh* bvh;
-		std::string name;
+		RadeonRays::Bvh* mBvh;
+		std::string mName;
+		BBox mBBox;
 	};
 
 	class MeshInstance
