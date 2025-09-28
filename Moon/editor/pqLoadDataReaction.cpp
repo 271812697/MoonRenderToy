@@ -8,6 +8,7 @@
 #include <QApplication>
 #include <QMainWindow>
 #include "editor/View/sceneview/viewerwindow.h"
+#include "editor/View/pathtrace/pathtracePanel.h"
 #include "renderer/Context.h"
 
 #include "OvCore/Global/ServiceLocator.h"
@@ -17,13 +18,18 @@
 #include <vector>
 #include <iostream>
 #include "core/log.h"
-#include "pathtrace/PathTrace.h"
 
+
+namespace MOON {
 //-----------------------------------------------------------------------------
 pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
 	: Superclass(parentObject)
 {
 	this->updateEnableState();
+	auto& viewer = OVSERVICE(ViewerWindow);
+	auto& pathTrace = OVSERVICE(PathTracePanel);
+	connect(this,&pqLoadDataReaction::sceneChange,&viewer,&ViewerWindow::onSceneChange);
+	connect(this,&pqLoadDataReaction::sceneChange,&pathTrace,&PathTracePanel::onSceneChange);
 }
 
 void pqLoadDataReaction::onTriggered()
@@ -49,22 +55,14 @@ void pqLoadDataReaction::onTriggered()
 	}
 
 	*/
-
-
 	QString fileName = QFileDialog::getOpenFileName(nullptr,
 		tr("Open Flow Scene"),
 		QDir::homePath(),
 		tr("Flow Scene Files (*.scene;*.gltf;*.obj;*.stl)"));
-
 	if (!QFileInfo::exists(fileName))
 		return;
 	CORE_INFO("Switch to Scene {0}", fileName.toStdString());
-	PathTrace::SwitchScene(fileName.toStdString());
-	OVSERVICE(MOON::ViewerWindow).switchScene();
-
-
-
-
+	emit sceneChange(fileName);
 }
 
 //-----------------------------------------------------------------------------
@@ -73,6 +71,8 @@ void pqLoadDataReaction::updateEnableState()
 
 }
 
+
+}
 
 
 

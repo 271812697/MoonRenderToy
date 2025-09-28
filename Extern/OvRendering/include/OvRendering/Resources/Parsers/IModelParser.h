@@ -1,9 +1,5 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <string>
-
 #include "OvRendering/Resources/Mesh.h"
 #include "OvRendering/Resources/Parsers/EModelParserFlags.h"
 

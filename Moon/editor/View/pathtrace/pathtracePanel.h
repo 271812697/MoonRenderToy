@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_5_Core>
 namespace MOON {
 	class PathTracePanel : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
+		Q_OBJECT
 	public:
 		explicit PathTracePanel(QWidget* parent);
 		~PathTracePanel();
@@ -18,6 +19,14 @@ namespace MOON {
 		void wheelEvent(QWheelEvent* event) override;
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
+
+		bool event(QEvent* e) override;
+	signals:
+		void sceneChange();
+	
+	public slots:
+		void onSceneChange(const QString& path);
+	    void onUpdateEntityTreeView();
 	private:
 		bool initFlag = false;
 	};

@@ -1,10 +1,11 @@
-#include <QMouseEvent>
+ï»¿#include <QMouseEvent>
 #include "pathtracePanel.h"
 #include "glloader.h"
 #include "pathtrace/PathTrace.h"
-#include "pathtrace/Renderer.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/Camera.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "OvCore/Global/ServiceLocator.h"
 namespace MOON {
 	static float viewW;
 	static float viewH;
@@ -17,19 +18,21 @@ namespace MOON {
 	PathTracePanel::PathTracePanel(QWidget* parent) :
 		QOpenGLWidget(parent)
 	{
-		//ÉèÖÃ¿ÉÒÔ²¶»ñÊó±êÒÆ¶¯ÏûÏ¢
+		//è®¾ç½®å¯ä»¥æ•èŽ·é¼ æ ‡ç§»åŠ¨æ¶ˆæ¯
 		this->setMouseTracking(true);
 		//this->grabKeyboard();
-		//·´¾â³Ý
+		//åé”¯é½¿
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
-		setFocusPolicy(Qt::StrongFocus);  // ÔÊÐíÍ¨¹ýµã»÷»òTab¼ü»ñÈ¡½¹µã
-		setFocus();                      // Ö÷¶¯»ñÈ¡½¹µã£¨¿ÉÑ¡£©
+		setFocusPolicy(Qt::StrongFocus);  // å…è®¸é€šè¿‡ç‚¹å‡»æˆ–Tabé”®èŽ·å–ç„¦ç‚¹
+		setFocus();                      // ä¸»åŠ¨èŽ·å–ç„¦ç‚¹ï¼ˆå¯é€‰ï¼‰
+		COPROVITE(PathTracePanel, *this);
 	}
 	PathTracePanel::~PathTracePanel()
 	{
-		PathTrace::Ret();
+		PathTraceRender::instance().Ret();
+
 	}
 	void PathTracePanel::initializeGL()
 	{
@@ -39,15 +42,19 @@ namespace MOON {
 		//CUSTOM_GL_API::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 		GlLoader::CustomLoadGL(OpenGLProcAddressHelper::getProcAddress);
 
-		//¿ªÆô¼ÆÊ±Æ÷
+		//å¼€å¯è®¡æ—¶å™¨
 		this->startTimer(0);
-		PathTrace::GetSceneFiles();
-		PathTrace::GetEnvMaps();
-		PathTrace::LoadScene(PathTrace::sceneFiles[PathTrace::sampleSceneIdx]);
-		if (!PathTrace::InitRenderer()) {
+		PathTraceRender::instance().GetSceneFiles();
+		PathTraceRender::instance().GetEnvMaps();
+		PathTraceRender::instance().LoadDefaultScene();
+		if (!PathTraceRender::instance().InitRenderer()) {
 			std::cout << "error" << std::endl;
 		}
 		initFlag = true;
+
+		auto& tree = OVSERVICE(TreeViewPanel);
+		connect(this,&PathTracePanel::sceneChange,&tree,&TreeViewPanel::updateTreeViewPathRoot);
+		emit sceneChange();
 	}
 	void  PathTracePanel::timerEvent(QTimerEvent* e)
 	{
@@ -55,11 +62,10 @@ namespace MOON {
 	}
 	void  PathTracePanel::paintGL()
 	{
-		PathTrace::Update();
-		PathTrace::GetRenderer()->Update(0.016);
-		PathTrace::GetRenderer()->Render();
+		PathTraceRender::instance().Update();
+		PathTraceRender::instance().Render();
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
-		PathTrace::GetRenderer()->Present();
+		PathTraceRender::instance().Present();
 	}
 	void  PathTracePanel::leaveEvent(QEvent* event)
 	{
@@ -70,65 +76,50 @@ namespace MOON {
 		viewW = event->size().width();
 		viewH = event->size().height();
 		if (initFlag && viewH > 0 && viewH > 0) {
-			PathTrace::Resize(viewW, viewH);
+			PathTrace::PathTraceRender::instance().Resize(viewW, viewH);
 		}
+
 	}
 	void  PathTracePanel::mousePressEvent(QMouseEvent* e)
 	{
-		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto x = e2->x();
-		auto y = e2->y();
-#else
-		auto x = e2->position().x();
-		auto y = e2->position().y();
-#endif
-		Qt::MouseButton mb = e->button();
-		if (mb == Qt::MouseButton::LeftButton) {
-			PathTrace::CameraController::Instance().mouseLeftPress(x, y);
-		}
-		else if (mb == Qt::MouseButton::MiddleButton) {
-			PathTrace::CameraController::Instance().mouseMiddlePress(x, y);
-		}
-		else if (mb == Qt::MouseButton::RightButton)
-		{
-			PathTrace::CameraController::Instance().mouseRightPress(x, y);
-		}
 	}
 
 	void  PathTracePanel::mouseMoveEvent(QMouseEvent* event)
 	{
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-		auto x = event->x();
-		auto y = event->y();
-#else
-		auto x = e2->position().x();
-		auto y = e2->position().y();
-#endif
-		PathTrace::CameraController::Instance().mouseMove(x, y);
 	}
 	void  PathTracePanel::mouseReleaseEvent(QMouseEvent* e)
 	{
-		Qt::MouseButton mb = e->button();
-		if (mb == Qt::MouseButton::LeftButton) {
-			//PathTrace::CameraController::Instance().mousele;
-		}
-		else if (mb == Qt::MouseButton::MiddleButton) {
-			PathTrace::CameraController::Instance().mouseMiddleRelease(0, 0);
-		}
-		else if (mb == Qt::MouseButton::RightButton)
-		{
-			PathTrace::CameraController::Instance().mouseRightRelease(0, 0);
-		}
 	}
 	void  PathTracePanel::wheelEvent(QWheelEvent* event)
 	{
-		PathTrace::CameraController::Instance().wheelMouseWheel(event->angleDelta().y());
 	}
 	void  PathTracePanel::keyPressEvent(QKeyEvent* event)
 	{
 	}
 	void  PathTracePanel::keyReleaseEvent(QKeyEvent* event)
 	{
+	}
+
+	bool PathTracePanel::event(QEvent* e)
+	{
+		const QEvent::Type t = e->type();
+		if (t == QEvent::Resize) {
+			QResizeEvent* event = static_cast<QResizeEvent*>(e);
+			if (initFlag && event->size().width() > 0 && event->size().height() > 0) {
+				PathTraceRender::instance().ReceiveEvent(e);
+			}
+		}
+		else
+		{
+			PathTraceRender::instance().ReceiveEvent(e);
+		}
+		return QOpenGLWidget::event(e);
+	}
+	void PathTracePanel::onUpdateEntityTreeView()
+	{
+		emit sceneChange();
+	}
+	void PathTracePanel::onSceneChange(const QString& path) {
+		PathTraceRender::instance().onSwitchScene(path.toStdString());
 	}
 }

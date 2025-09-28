@@ -1,9 +1,5 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <string>
-
 #include "OvRendering/Resources/Model.h"
 #include "OvRendering/Resources/Parsers/AssimpParser.h"
 #include "OvMaths/FVector2.h"

@@ -1,8 +1,4 @@
-
-
-#include <vector>
-
-
+﻿#include <vector>
 #include "OvRendering/Geometry/Vertex.h"
 #include "OvRendering/Resources/Mesh.h"
 #include "OvRendering/Resources/Parsers/IModelParser.h"

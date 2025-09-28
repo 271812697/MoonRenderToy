@@ -1,7 +1,4 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <OvRendering/Resources/Loaders/ModelLoader.h>
 
 #include "OvCore/ResourceManagement/AResourceManager.h"

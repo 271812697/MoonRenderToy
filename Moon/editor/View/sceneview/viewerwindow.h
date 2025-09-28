@@ -24,9 +24,10 @@ namespace MOON {
 		void wheelEvent(QWheelEvent* event) override;
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
-		void switchScene();
+
 	public slots:
 		void onActorSelected(OvCore::ECS::Actor* actor);
+		void onSceneChange(const QString& path);
 	signals:
 		void sceneChange();
 		
