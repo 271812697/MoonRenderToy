@@ -269,7 +269,8 @@ namespace PathTrace
 		if (instanceId != -1) {
 
 			Vec3 pos = (vert0 * bary.x + vert1 * bary.y + vert2 * bary.z).xyz();
-			p = pos;
+			p = meshInstances[instanceId].transform.MulPoint(pos);
+			//p = pos;
 			CORE_INFO("Hit {0} pos ({1},{2},{3})", meshInstances[instanceId].name, p.x, p.y, p.z);
 			return true;
 		}
@@ -554,6 +555,7 @@ namespace PathTrace
 			Vec3 extents = bounds.extents();
 			Vec3 center = bounds.center();
 			AddCamera(Vec3(center.x, center.y, center.z + Vec3::Length(extents) * 2.0f), center, 45.0f);
+
 		}
 
 		initialized = true;

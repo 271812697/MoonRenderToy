@@ -401,9 +401,9 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-		
-		float dt=delta * 0.000025*render->GetScene()->getBBox().diagonalDistance();
-		render->GetScene()->getCamera()->SetRadius(dt);
+
+		float dt = delta * 0.000025 * render->GetScene()->getBBox().diagonalDistance();
+		render->GetScene()->getCamera()->OffsetRadius(dt);
 		render->GetScene()->setDirty(true);
 	}
 	void CameraController::GetCameraPosition(float eye[3]) {

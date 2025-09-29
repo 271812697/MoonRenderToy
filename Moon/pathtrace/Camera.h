@@ -19,7 +19,8 @@ namespace PathTrace
 		void setPivot(const Vec3& p);
 		void Strafe(float dx, float dy);
 		void Update();
-		void SetRadius(float dr);
+		void setRadius(float r);
+		void OffsetRadius(float dr);
 		void ComputeViewProjectionMatrix(float* view, float* projection, float ratio);
 		void SetFov(float val);
 		Vec3 GetEye();
@@ -35,7 +36,7 @@ namespace PathTrace
 		Vec3 lastright;
 		Vec3 lastforward;
 		Vec3 lastpivot;
-		
+
 
 		float focalDist;
 		float aperture;
@@ -43,7 +44,7 @@ namespace PathTrace
 
 		bool isMoving;
 		void UpdateCamera();
-	
+
 	private:
 
 		Vec3 worldUp;
