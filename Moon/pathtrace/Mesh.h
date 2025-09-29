@@ -1,5 +1,6 @@
-#pragma once
+ï»¿#pragma once
 #include "MathUtil.h"
+#include "RadeonRays/bbox.h"
 #include <vector>
 namespace RadeonRays {
 	class Bvh;
@@ -22,9 +23,9 @@ namespace PathTrace
 		std::vector<Vec4>& getNorUvY();
 		std::string getName();
 		void setName(const std::string& name);
-		BBox& getBBox();
+		RadeonRays::bbox& getBBox();
 	private:
-		//´æ´¢·¨Ïß¶¥µã×ø±ê uv·Ö¿ª´æ
+		//å­˜å‚¨æ³•çº¿é¡¶ç‚¹åæ ‡ uvåˆ†å¼€å­˜
 		std::vector<Vec4> verticesUVX; // Vertex + texture Coord (u/s)
 		std::vector<Vec4> normalsUVY;  // Normal + texture Coord (v/t)
 		unsigned int vao;
@@ -34,7 +35,8 @@ namespace PathTrace
 
 		RadeonRays::Bvh* mBvh;
 		std::string mName;
-		BBox mBBox;
+		RadeonRays::bbox meshBounds;
+	
 	};
 
 	class MeshInstance

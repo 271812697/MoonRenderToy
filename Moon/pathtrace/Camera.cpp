@@ -1,11 +1,11 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <cstring>
 #include "Camera.h"
 
 namespace PathTrace
 {
 
-	//²ÉÓÃÓÒÊÖ×ø±êÏµ£¬´æµÄÊ±ºò×ªÖÃÒ»ÏÂ
+	//é‡‡ç”¨å³æ‰‹åæ ‡ç³»ï¼Œå­˜çš„æ—¶å€™è½¬ç½®ä¸€ä¸‹
 	void Frustum(float left, float right, float bottom, float top, float znear, float zfar, float* m16)
 	{
 		float temp, temp2, temp3, temp4;
@@ -152,6 +152,7 @@ namespace PathTrace
 
 	void Camera::Strafe(float dx, float dy)
 	{
+		std::cout << "dx:" << dx << " | dy:" << dy << std::endl;
 		Vec3 translation = lastright * -dx + lastup * dy;
 		pivot = lastpivot + translation;
 		position = pivot - radius * lastforward;
@@ -160,7 +161,7 @@ namespace PathTrace
 	void Camera::SetRadius(float dr)
 	{
 		radius += dr;
-		//radius = std::max(radius, 0.05f);
+		radius = std::max(radius, 0.000005f);
 		position = pivot - radius * forward;
 		UpdateCamera();
 	}
@@ -191,7 +192,6 @@ namespace PathTrace
 	{
 		Vec3 at = position + forward;
 		LookAt(&position.x, &at.x, &up.x, view);
-
 		Perspective(Math::Degrees(fov) / 2, ratio, 0.1f, 1000.f, projection);
 	}
 }

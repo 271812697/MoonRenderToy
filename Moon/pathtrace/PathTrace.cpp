@@ -367,7 +367,6 @@ namespace PathTrace {
 
 	void CameraController::mouseLeftPress(int x, int y)
 	{
-
 		Vec3 p;
 		if (render->GetScene()->IntersectionByScreen(1.0 * x / render->GetRenderOptions().windowResolution.x, 1.0 - 1.0 * y / render->GetRenderOptions().windowResolution.y, p)) {
 			cameraDestinations.push_back(p);
@@ -402,7 +401,9 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-		render->GetScene()->getCamera()->SetRadius(delta * 0.0025);
+		
+		float dt=delta * 0.000025*render->GetScene()->getBBox().diagonalDistance();
+		render->GetScene()->getCamera()->SetRadius(dt);
 		render->GetScene()->setDirty(true);
 	}
 	void CameraController::GetCameraPosition(float eye[3]) {

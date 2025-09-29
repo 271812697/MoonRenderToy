@@ -52,6 +52,7 @@ namespace PathTrace
 		std::vector<Mesh*>& getMeshes();
 		RenderOptions& getRenderOptions();
 		EnvironmentMap* getEnvironmentMap();
+		RadeonRays::bbox& getBBox();
 		void setPath(const std::string& p);
 		void setDirty(bool flag);
 		void ProcessScene();

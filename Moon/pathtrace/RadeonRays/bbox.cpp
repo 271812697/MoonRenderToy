@@ -1,9 +1,13 @@
-#include "bbox.h"
+ï»¿#include "bbox.h"
 namespace RadeonRays
 {
 	Vec3 bbox::center()  const { return (pmax + pmin) * 0.5f; }
 	Vec3 bbox::extents() const { return pmax - pmin; }
-	//°üÎ§ºĞÃæ»ı
+	float bbox::diagonalDistance() const
+	{
+		return Vec3::Length(pmax - pmin);
+	}
+	//åŒ…å›´ç›’é¢ç§¯
 	float bbox::surface_area() const
 	{
 		Vec3 ext = extents();
@@ -29,7 +33,7 @@ namespace RadeonRays
 			fabs(center().y - p.y) <= radius.y &&
 			fabs(center().z - p.z) <= radius.z;
 	}
-	//Á½¸ö°üÎ§ºĞÇó²¢
+	//ä¸¤ä¸ªåŒ…å›´ç›’æ±‚å¹¶
 	bbox bboxunion(bbox const& box1, bbox const& box2)
 	{
 		bbox res;
@@ -37,7 +41,7 @@ namespace RadeonRays
 		res.pmax = Vec3::Max(box1.pmax, box2.pmax);
 		return res;
 	}
-	//Á½¸ö°üÎ§ºĞÇó½»
+	//ä¸¤ä¸ªåŒ…å›´ç›’æ±‚äº¤
 	bbox intersection(bbox const& box1, bbox const& box2)
 	{
 		return bbox(Vec3::Max(box1.pmin, box2.pmin), Vec3::Min(box1.pmax, box2.pmax));

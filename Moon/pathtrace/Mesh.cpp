@@ -142,9 +142,9 @@ namespace PathTrace
 		mName = name;
 	}
 
-	BBox& Mesh::getBBox()
+	RadeonRays::bbox& Mesh::getBBox()
 	{
-		return mBBox;
+		return meshBounds;
 	}
 
 	void Mesh::GenVAO()
@@ -187,6 +187,7 @@ namespace PathTrace
 		}
 
 		mBvh->Build(&bounds[0], numTris);
-		mBBox = { mBvh->Bounds().pmin, mBvh->Bounds().pmax };
+		meshBounds = mBvh->Bounds();
+		//mBBox = { mBvh->Bounds().pmin, mBvh->Bounds().pmax };
 	}
 }

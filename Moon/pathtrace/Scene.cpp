@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <fstream>
 #include "stb_image/stb_image_resize.h"
@@ -356,6 +356,11 @@ namespace PathTrace
 		return envMap;
 	}
 
+	RadeonRays::bbox& Scene::getBBox()
+	{
+		return sceneBounds;
+	}
+
 	void Scene::setPath(const std::string& p)
 	{
 		path = p;
@@ -451,22 +456,17 @@ namespace PathTrace
 	{
 		delete sceneBvh;
 		sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
-
 		createTLAS();
 		bvhTranslator.UpdateTLAS(sceneBvh, meshInstances);
-
-
 		for (int i = 0; i < meshInstances.size(); i++)
 			transforms[i] = meshInstances[i].transform;
-
 		instancesModified = true;
 		dirty = true;
 	}
 
 	void Scene::Save()
 	{
-
-
+		//to do:
 	}
 
 	void Scene::ProcessScene()
