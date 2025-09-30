@@ -1,4 +1,4 @@
-<RCC>
+﻿<RCC>
     <qresource prefix="/">
         <file>darkstyle/Ubuntu-R.ttf</file>
         <file>darkstyle/darkstyle.qss</file>
@@ -41,6 +41,12 @@
         <file>icons/root.png</file>
         <file>icons/folder_close.png</file>
         <file>icons/folder_open.png</file>
+		<file>icons/pqXPlus.svg</file>
+		<file>icons/pqXMinus.svg</file>
+		<file>icons/pqYPlus.svg</file>
+		<file>icons/pqYMinus.svg</file>
+		<file>icons/pqZPlus.svg</file>
+		<file>icons/pqZMinus.svg</file>
     </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>

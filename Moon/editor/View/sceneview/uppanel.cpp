@@ -1,22 +1,23 @@
-#include <QVBoxLayout>
-#include "uppanel.h"
+﻿#include "uppanel.h"
 #include "viewerwindow.h"
-#include<iostream>
+#include "titlebar.h"
+#include <QVBoxLayout>
 
 namespace MOON {
 	UpPanel::UpPanel(QWidget* parent, Qt::WindowFlags f) :QWidget(parent)
 	{
-		auto preview_window_ = new ViewerWindow(this);
-
+		auto sceneWindow = new ViewerWindow(this);
+		auto titleBar = new ViewerWindowTitleBar(this);
 		QVBoxLayout* layout = new QVBoxLayout(this);
-		layout->addWidget(preview_window_);
 		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
+		layout->addWidget(titleBar);
+		layout->addWidget(sceneWindow);
+		layout->setStretch(1, 1);
 		// default to strong focus
 		this->setFocusPolicy(Qt::StrongFocus);
 		this->setMouseTracking(true);
 	}
 	void UpPanel::keyPressEvent(QKeyEvent* event) {
-
 	}
-
 }
