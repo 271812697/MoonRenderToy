@@ -1,5 +1,5 @@
 ﻿#include <QMouseEvent>
-#include "viewerwindow.h"
+#include "viewerwidget.h"
 #include "glloader.h"
 #define __glad_h_
 #include "core/callbackManager.h"
@@ -21,18 +21,18 @@ namespace MOON {
 			return (void*)ctx->getProcAddress(name);
 		}
 	};
-	class ViewerWindow::ViewerWindowInternal {
+	class ViewerWidget::ViewerWindowInternal {
 	public:
-		ViewerWindowInternal(ViewerWindow* view) :mSelf(view) {
+		ViewerWindowInternal(ViewerWidget* view) :mSelf(view) {
 
 		}
 		void initializeGL() {
 			auto& tree = OVSERVICE(TreeViewPanel);
-			QObject::connect(mSelf, &ViewerWindow::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
+			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
-			QObject::connect(&tree,&TreeViewPanel::setSelectActor,mSelf,&onActorSelected);
+			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
 			Guizmo::instance().init();
-			mScenePath=QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
+			mScenePath = QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new OvEditor::Panels::SceneView("SceneView");
@@ -78,8 +78,8 @@ namespace MOON {
 			mSwitchScene = true;
 		}
 	private:
-		friend ViewerWindow;
-		ViewerWindow* mSelf = nullptr;
+		friend ViewerWidget;
+		ViewerWidget* mSelf = nullptr;
 		OvEditor::Core::Context* mEditorContext = nullptr;
 		OvEditor::Panels::SceneView* mSceneView = nullptr;
 		ParseScene* parser = nullptr;
@@ -90,7 +90,7 @@ namespace MOON {
 		QString mScenePath = "";
 
 	};
-	ViewerWindow::ViewerWindow(QWidget* parent) :
+	ViewerWidget::ViewerWidget(QWidget* parent) :
 		QOpenGLWidget(parent), mInternal(new ViewerWindowInternal(this))
 	{
 		//设置可以捕获鼠标移动消息
@@ -101,17 +101,17 @@ namespace MOON {
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
-		COPROVITE(ViewerWindow, *this);
+		COPROVITE(ViewerWidget, *this);
 
 
 	}
 
-	ViewerWindow::~ViewerWindow()
+	ViewerWidget::~ViewerWidget()
 	{
 		delete mInternal;
 	}
 
-	void ViewerWindow::initializeGL()
+	void ViewerWidget::initializeGL()
 	{
 		QOpenGLWidget::initializeGL();
 		// opengl funcs
@@ -123,62 +123,62 @@ namespace MOON {
 		mInternal->initializeGL();
 	}
 
-	void ViewerWindow::timerEvent(QTimerEvent* e)
+	void ViewerWidget::timerEvent(QTimerEvent* e)
 	{
 		this->update();
 	}
 
-	void ViewerWindow::paintGL()
+	void ViewerWidget::paintGL()
 	{
 		CallBackManager::instance().exectue();
 		mInternal->paintGL();
 	}
 
-	bool ViewerWindow::event(QEvent* evt)
+	bool ViewerWidget::event(QEvent* evt)
 	{
 		mInternal->event(evt);
 		return QOpenGLWidget::event(evt);
 	}
 
-	void ViewerWindow::leaveEvent(QEvent* event)
+	void ViewerWidget::leaveEvent(QEvent* event)
 	{
 	}
 
-	void ViewerWindow::resizeEvent(QResizeEvent* event)
+	void ViewerWidget::resizeEvent(QResizeEvent* event)
 	{
 		QOpenGLWidget::resizeEvent(event);
 		mInternal->resizeEvent(event);
 	}
 
-	void ViewerWindow::mousePressEvent(QMouseEvent* e)
+	void ViewerWidget::mousePressEvent(QMouseEvent* e)
 	{
 	}
 
-	void ViewerWindow::mouseMoveEvent(QMouseEvent* event)
+	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
 	{
 	}
 
-	void ViewerWindow::mouseReleaseEvent(QMouseEvent* event)
+	void ViewerWidget::mouseReleaseEvent(QMouseEvent* event)
 	{
 	}
 
-	void ViewerWindow::wheelEvent(QWheelEvent* event)
+	void ViewerWidget::wheelEvent(QWheelEvent* event)
 	{
 	}
-	void ViewerWindow::keyPressEvent(QKeyEvent* event)
+	void ViewerWidget::keyPressEvent(QKeyEvent* event)
 	{
 	}
-	void ViewerWindow::keyReleaseEvent(QKeyEvent* event)
+	void ViewerWidget::keyReleaseEvent(QKeyEvent* event)
 	{
 	}
 
-	void ViewerWindow::onSceneChange(const QString& path)
+	void ViewerWidget::onSceneChange(const QString& path)
 	{
 		mInternal->onSwitchScene(path);
 	}
-	void ViewerWindow::onActorSelected(OvCore::ECS::Actor* actor) {
+	void ViewerWidget::onActorSelected(OvCore::ECS::Actor* actor) {
 		if (actor != nullptr) {
-            mInternal->mSceneView->SelectActor(*actor);
+			mInternal->mSceneView->SelectActor(*actor);
 		}
 	}
 }

@@ -6,12 +6,12 @@ namespace OvCore::ECS {
 }
 namespace MOON {
 
-	class ViewerWindow : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
+	class ViewerWidget : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
 		Q_OBJECT
 	public:
-		explicit ViewerWindow(QWidget* parent);
-		~ViewerWindow();
+		explicit ViewerWidget(QWidget* parent);
+		~ViewerWidget();
 		void initializeGL() override;
 		void timerEvent(QTimerEvent* e) override;
 		void paintGL() override;
@@ -30,11 +30,9 @@ namespace MOON {
 		void onSceneChange(const QString& path);
 	signals:
 		void sceneChange();
-		
+
 	private:
 		class ViewerWindowInternal;
 		ViewerWindowInternal* mInternal = nullptr;
-
-
 	};
 }

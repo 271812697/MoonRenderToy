@@ -7,8 +7,8 @@
 #include <QRegExp>
 #include <QApplication>
 #include <QMainWindow>
-#include "editor/View/sceneview/viewerwindow.h"
-#include "editor/View/pathtrace/pathtracePanel.h"
+#include "editor/View/sceneview/viewerwidget.h"
+#include "editor/View/pathtrace/pathtraceWidget.h"
 #include "renderer/Context.h"
 
 #include "OvCore/Global/ServiceLocator.h"
@@ -26,10 +26,10 @@ namespace MOON {
 		: Superclass(parentObject)
 	{
 		this->updateEnableState();
-		auto& viewer = OVSERVICE(ViewerWindow);
-		auto& pathTrace = OVSERVICE(PathTracePanel);
-		connect(this, &pqLoadDataReaction::sceneChange, &viewer, &ViewerWindow::onSceneChange);
-		connect(this, &pqLoadDataReaction::sceneChange, &pathTrace, &PathTracePanel::onSceneChange);
+		auto& viewer = OVSERVICE(ViewerWidget);
+		auto& pathTrace = OVSERVICE(PathTraceWidget);
+		connect(this, &pqLoadDataReaction::sceneChange, &viewer, &ViewerWidget::onSceneChange);
+		connect(this, &pqLoadDataReaction::sceneChange, &pathTrace, &PathTraceWidget::onSceneChange);
 	}
 
 	void pqLoadDataReaction::onTriggered()

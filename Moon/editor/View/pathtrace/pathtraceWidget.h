@@ -1,0 +1,33 @@
+﻿#pragma once
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions_4_5_Core>
+namespace MOON {
+	class PathTraceWidget : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
+	{
+		Q_OBJECT
+	public:
+		explicit PathTraceWidget(QWidget* parent);
+		~PathTraceWidget();
+		void initializeGL() override;
+		void timerEvent(QTimerEvent* e) override;
+		void paintGL() override;
+		void leaveEvent(QEvent* event) override;
+		void resizeEvent(QResizeEvent* event) override;
+		void mousePressEvent(QMouseEvent* event) override;
+		void mouseMoveEvent(QMouseEvent* event) override;
+		void mouseReleaseEvent(QMouseEvent* event) override;
+		void wheelEvent(QWheelEvent* event) override;
+		void keyPressEvent(QKeyEvent* event) override;
+		void keyReleaseEvent(QKeyEvent* event) override;
+
+		bool event(QEvent* e) override;
+	signals:
+		void sceneChange();
+
+	public slots:
+		void onSceneChange(const QString& path);
+		void onUpdateEntityTreeView();
+	private:
+		bool initFlag = false;
+	};
+}

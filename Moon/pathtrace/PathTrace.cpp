@@ -1,5 +1,5 @@
 ﻿#include "editor/UI/TreeViewPanel/treeViewpanel.h"
-#include "editor/View/pathtrace/pathtracePanel.h"
+#include "editor/View/pathtrace/pathtraceWidget.h"
 #include "OvCore/Global/ServiceLocator.h"
 #define __glad_h_
 #include "PathTrace.h"
@@ -65,7 +65,7 @@ namespace PathTrace {
 				switchScene = false;
 				LoadScene(switchSceneName);
 				InitRenderer();
-				OVSERVICE(MOON::PathTracePanel).onUpdateEntityTreeView();
+				OVSERVICE(MOON::PathTraceWidget).onUpdateEntityTreeView();
 			}
 			cameraController->MoveToPivot(0.016);
 			GetRenderer()->Update(0.016);

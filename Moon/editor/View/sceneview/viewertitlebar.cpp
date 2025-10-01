@@ -1,4 +1,4 @@
-﻿#include "titlebar.h"
+﻿#include "viewertitlebar.h"
 #include <QHBoxLayout>
 #include <QToolBar>
 #include <QPointer>
@@ -6,19 +6,19 @@
 namespace MOON {
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {
 	public:
-		ViewerWindowTitleBarInternal(ViewerWindowTitleBar* titleBar) :mSelf(titleBar){
+		ViewerWindowTitleBarInternal(ViewerWindowTitleBar* titleBar) :mSelf(titleBar) {
 			QHBoxLayout* layout = new QHBoxLayout(mSelf);
 			layout->setSpacing(0);
-			layout->setContentsMargins(0,0,0,0);
+			layout->setContentsMargins(0, 0, 0, 0);
 			//auto horizontalSpacer = new QSpacerItem(40, 14, QSizePolicy::Expanding, QSizePolicy::Minimum);
 			//layout->addItem(horizontalSpacer);
 			mToolBar = new QToolBar(mSelf);
-			mToolBar->setIconSize(QSize(30,30));
+			mToolBar->setIconSize(QSize(30, 30));
 			mToolBar->layout()->setSpacing(0);
 			mToolBar->layout()->setContentsMargins(0, 0, 0, 0);
 			//layout->insertWidget(0,mToolBar);
 			layout->addWidget(mToolBar);
-			
+
 
 			xPlus = new QAction(mToolBar);
 			xPlus->setEnabled(true);
@@ -58,6 +58,34 @@ namespace MOON {
 			icon6.addFile(QString::fromUtf8(":/widgets/icons/pqZMinus.svg"), QSize(), QIcon::Normal, QIcon::On);
 			zMinus->setIcon(icon6);
 			mToolBar->addAction(zMinus);
+
+			isometricView = new QAction(mToolBar);
+			isometricView->setEnabled(true);
+			QIcon icon7;
+			icon7.addFile(QString::fromUtf8(":/widgets/icons/pqIsometricView.svg"), QSize(), QIcon::Normal, QIcon::On);
+			isometricView->setIcon(icon7);
+			mToolBar->addAction(isometricView);
+
+			zoomToSelection = new QAction(mToolBar);
+			zoomToSelection->setEnabled(true);
+			QIcon icon8;
+			icon8.addFile(QString::fromUtf8(":/widgets/icons/pqZoomToSelection.svg"), QSize(), QIcon::Normal, QIcon::On);
+			zoomToSelection->setIcon(icon8);
+			mToolBar->addAction(zoomToSelection);
+
+			rotateCameraCW = new QAction(mToolBar);
+			rotateCameraCW->setEnabled(true);
+			QIcon icon9;
+			icon9.addFile(QString::fromUtf8(":/widgets/icons/pqRotateCameraCW.svg"), QSize(), QIcon::Normal, QIcon::On);
+			rotateCameraCW->setIcon(icon9);
+			mToolBar->addAction(rotateCameraCW);
+
+			rotateCameraCCW = new QAction(mToolBar);
+			rotateCameraCCW->setEnabled(true);
+			QIcon icon10;
+			icon10.addFile(QString::fromUtf8(":/widgets/icons/pqRotateCameraCCW.svg"), QSize(), QIcon::Normal, QIcon::On);
+			rotateCameraCCW->setIcon(icon10);
+			mToolBar->addAction(rotateCameraCCW);
 		}
 		~ViewerWindowTitleBarInternal() {
 
@@ -71,8 +99,12 @@ namespace MOON {
 		QAction* yPlus = nullptr;
 		QAction* zMinus = nullptr;
 		QAction* zPlus = nullptr;
+		QAction* isometricView = nullptr;
+		QAction* zoomToSelection = nullptr;
+		QAction* rotateCameraCCW = nullptr;
+		QAction* rotateCameraCW = nullptr;
 	};
-	ViewerWindowTitleBar::ViewerWindowTitleBar(QWidget* parent):QWidget(parent),mInternal(new ViewerWindowTitleBarInternal(this))
+	ViewerWindowTitleBar::ViewerWindowTitleBar(QWidget* parent) :QWidget(parent), mInternal(new ViewerWindowTitleBarInternal(this))
 	{
 
 

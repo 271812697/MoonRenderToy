@@ -1,4 +1,4 @@
-﻿<RCC>
+<RCC>
     <qresource prefix="/">
         <file>darkstyle/Ubuntu-R.ttf</file>
         <file>darkstyle/darkstyle.qss</file>
@@ -25,6 +25,7 @@
         <file>darkstyle/icon_radiobutton_unchecked_pressed.png</file>
         <file>darkstyle/icon_radiobutton_checked_disabled.png</file>
         <file>darkstyle/icon_radiobutton_unchecked_disabled.png</file>
+        <file>icons/pqIsometricView.svg</file>
     </qresource>
     <qresource prefix="/widgets">
         <file>icons/awesomeface.png</file>
@@ -41,12 +42,16 @@
         <file>icons/root.png</file>
         <file>icons/folder_close.png</file>
         <file>icons/folder_open.png</file>
-		<file>icons/pqXPlus.svg</file>
-		<file>icons/pqXMinus.svg</file>
-		<file>icons/pqYPlus.svg</file>
-		<file>icons/pqYMinus.svg</file>
-		<file>icons/pqZPlus.svg</file>
-		<file>icons/pqZMinus.svg</file>
+        <file>icons/pqXPlus.svg</file>
+        <file>icons/pqXMinus.svg</file>
+        <file>icons/pqYPlus.svg</file>
+        <file>icons/pqYMinus.svg</file>
+        <file>icons/pqZPlus.svg</file>
+        <file>icons/pqZMinus.svg</file>
+        <file>icons/pqIsometricView.svg</file>
+        <file>icons/pqRotateCameraCCW.svg</file>
+        <file>icons/pqRotateCameraCW.svg</file>
+        <file>icons/pqZoomToSelection.svg</file>
     </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>
