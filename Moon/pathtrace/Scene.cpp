@@ -284,6 +284,11 @@ namespace PathTrace
 		return meshInstances;
 	}
 
+	MeshInstance Scene::getMeshInstance(int id)
+	{
+		return meshInstances[id];
+	}
+
 	std::vector<std::vector<int>>& Scene::getMeshInstancesTree()
 	{
 		return meshInstancesTree;
@@ -354,6 +359,21 @@ namespace PathTrace
 		return sceneBounds;
 	}
 
+	RadeonRays::bbox Scene::getMeshInstanceBox(int id)
+	{
+		RadeonRays::bbox ret;
+		auto meshBox = meshes[meshInstances[id].meshID]->getBvH()->Bounds();
+
+		ret.grow(meshInstances[id].transform.MulPoint(meshBox.pmin));
+		ret.grow(meshInstances[id].transform.MulPoint(meshBox.pmax));
+		return ret;
+	}
+
+	int Scene::getSelectInstanceId()
+	{
+		return selectMeshInstance;
+	}
+
 	void Scene::setPath(const std::string& p)
 	{
 		path = p;
@@ -384,11 +404,11 @@ namespace PathTrace
 			Mat4 T = meshInstances[i].localform;
 			int id = meshInstances[i].parentID;
 			if (id == -1) {
-				meshInstances[i].transform = meshInstances[i].transform;
+				meshInstances[i].transform = meshInstances[i].localform;
 			}
 			else
 			{
-
+				//it is right?
 				while (id != -1)
 				{
 					T = T * meshInstances[id].localform;

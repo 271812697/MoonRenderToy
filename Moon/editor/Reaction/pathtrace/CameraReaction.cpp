@@ -1,5 +1,7 @@
 ﻿#include "CameraReaction.h"
-
+#include "pathtrace/PathTrace.h"
+#include "pathtrace/Scene.h"
+#include "pathtrace/Camera.h"
 
 namespace MOON {
 	CameraReaction::CameraReaction(QAction* parent, Mode mode) :Superclass(parent)
@@ -9,21 +11,93 @@ namespace MOON {
 	}
 	void CameraReaction::resetPositiveX()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x + Vec3::Length(extent), center.y, center.z), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::resetPositiveY()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x, center.y + Vec3::Length(extent), center.z), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::resetPositiveZ()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x, center.y, center.z + Vec3::Length(extent)), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::resetNegativeX()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x - Vec3::Length(extent), center.y, center.z), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::resetNegativeY()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x, center.y - Vec3::Length(extent), center.z), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::resetNegativeZ()
 	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(Vec3(center.x, center.y, center.z - Vec3::Length(extent)), center);
+			scene->setDirty(true);
+		}
 	}
 	void CameraReaction::updateEnableState() {
 

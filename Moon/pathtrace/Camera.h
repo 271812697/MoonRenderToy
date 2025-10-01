@@ -32,6 +32,7 @@ namespace PathTrace
 		Vec3& getPivoit();
 		Vec3 getPositon();
 		void setPosition(const Vec3& pos);
+		void lookAt(const Vec3& eye, const Vec3& lookat);
 		//相机采用右手坐标系，up right forward表示的是左手坐标系
 		void updateCamera();
 	private:

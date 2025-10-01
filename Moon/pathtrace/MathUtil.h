@@ -20,7 +20,7 @@ namespace PathTrace {
 	inline float TWO_PI = 6.28318530717958648;
 	inline float INV_TWO_PI = 0.15915494309189533;
 	inline float INV_4_PI = 0.07957747154594766;
-	inline float EPS = 0.0003;
+	inline float EPS = 0.000001;
 	inline float INF = 1000000.0;
 	struct Math
 	{

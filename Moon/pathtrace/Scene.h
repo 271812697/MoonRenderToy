@@ -39,6 +39,7 @@ namespace PathTrace
 		Camera* getCamera();
 		// Instances
 		std::vector<MeshInstance>& getMeshInstances();
+		MeshInstance getMeshInstance(int id);
 		std::vector<std::vector<int>>& getMeshInstancesTree();
 		std::vector<int>& getMeshInstancesRoots();
 		std::vector<Light>& getLights();
@@ -50,9 +51,12 @@ namespace PathTrace
 		std::vector<Texture*>& getTextures();
 		std::vector<Material>& getMaterials();
 		std::vector<Mesh*>& getMeshes();
+
 		RenderOptions& getRenderOptions();
 		EnvironmentMap* getEnvironmentMap();
 		RadeonRays::bbox& getBBox();
+		RadeonRays::bbox getMeshInstanceBox(int id);
+		int getSelectInstanceId();
 		void setPath(const std::string& p);
 		void setDirty(bool flag);
 		void ProcessScene();

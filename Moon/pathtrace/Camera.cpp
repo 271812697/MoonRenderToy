@@ -151,7 +151,6 @@ namespace PathTrace
 
 	void Camera::strafe(float dx, float dy)
 	{
-		std::cout << "dx:" << dx << " | dy:" << dy << std::endl;
 		Vec3 translation = lastright * -dx + lastup * dy;
 		pivot = lastpivot + translation;
 		position = pivot - radius * lastforward;
@@ -219,6 +218,25 @@ namespace PathTrace
 	void Camera::setPosition(const Vec3& pos)
 	{
 		position = pos;
+	}
+
+	void Camera::lookAt(const Vec3& eye, const Vec3& lookat)
+	{
+		position = eye;
+		pivot = lookat;
+		radius = Vec3::Distance(eye, lookat);
+		radius = std::max(radius, 0.0000005f);
+		worldUp = Vec3(0, 1, 0);
+
+		forward = Vec3::Normalize(pivot - position);
+		if (Vec3::Length(Vec3::Cross(worldUp, forward)) < EPS) {
+			worldUp = Vec3(1, 0, 0);
+		}
+		float m[16];
+		LookAt(&eye.x, &pivot.x, &worldUp.x, m);
+		up = { m[1],m[5],m[9] };
+		right = { m[0],m[4],m[8] };
+		updateCamera();
 	}
 
 	void Camera::updateCamera()
