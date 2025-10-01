@@ -14,6 +14,7 @@ namespace PathTrace
 	class Mesh;
 	class Texture;
 	class Material;
+	class Renderer;
 	struct Indices
 	{
 		int x, y, z;
@@ -33,20 +34,41 @@ namespace PathTrace
 
 		void AddCamera(Vec3 eye, Vec3 lookat, float fov);
 		void AddEnvMap(const std::string& filename);
-		bool IntersectionByScreen(float x, float y,Vec3&p);
+		bool IntersectionByScreen(float x, float y, Vec3& p);
 		Vec3 PathTrace(Vec3 origin, Vec3 direction);
+		Camera* getCamera();
+		// Instances
+		std::vector<MeshInstance>& getMeshInstances();
+		MeshInstance getMeshInstance(int id);
+		std::vector<std::vector<int>>& getMeshInstancesTree();
+		std::vector<int>& getMeshInstancesRoots();
+		std::vector<Light>& getLights();
+		RadeonRays::BvhTranslator& getBvhTranslator();
+		std::vector<Indices>& getVertIndices();
+		std::vector<Vec4>& getVerticesUVX(); // Vertex + texture Coord (u/s)
+		std::vector<Vec4>& getNormalsUVY(); // Normal + texture Coord (v/t)
+		std::vector<Mat4>& getTransforms();
+		std::vector<Texture*>& getTextures();
+		std::vector<Material>& getMaterials();
+		std::vector<Mesh*>& getMeshes();
 
+		RenderOptions& getRenderOptions();
+		EnvironmentMap* getEnvironmentMap();
+		RadeonRays::bbox& getBBox();
+		RadeonRays::bbox getMeshInstanceBox(int id);
+		int getSelectInstanceId();
+		void setPath(const std::string& p);
+		void setDirty(bool flag);
 		void ProcessScene();
 		void RebuildInstances();
 		void Save();
 
-
+	private:
+		friend Renderer;
 		// Options
 		RenderOptions renderOptions;
-
 		// Meshes
 		std::vector<Mesh*> meshes;
-
 		// Scene Mesh Data 
 		std::vector<Indices> vertIndices;
 		std::vector<Vec4> verticesUVX; // Vertex + texture Coord (u/s)
@@ -59,12 +81,13 @@ namespace PathTrace
 		std::vector<MeshInstance> meshInstances;
 		std::vector<std::vector<int>>meshInstancesTree;
 		std::vector<int>meshInstancesRoots;
+		int selectMeshInstance = -1;
 		// Lights
 		std::vector<Light> lights;
 		// Environment Map
 		EnvironmentMap* envMap;
 		// Camera
-		Camera* camera;
+		Camera* mCamera;
 		// Bvh
 		RadeonRays::BvhTranslator bvhTranslator; // Produces a flat bvh array for GPU consumption
 		RadeonRays::bbox sceneBounds;

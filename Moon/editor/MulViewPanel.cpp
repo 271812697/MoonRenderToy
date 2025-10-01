@@ -1,6 +1,6 @@
 #include "MulViewPanel.h"
-#include "editor/View/sceneview/uppanel.h"
-#include "editor/View/pathtrace/downpanel.h"
+#include "editor/View/sceneview/viewerpanel.h"
+#include "editor/View/pathtrace/pathtracepanel.h"
 #include <QTabWidget>
 #include <QGridLayout>
 namespace MOON {
@@ -20,8 +20,8 @@ namespace MOON {
 		glayout->setContentsMargins(0, 0, 0, 0);
 		glayout->setSpacing(0);
 		glayout->addWidget(impl->tabWidget, 0, 0);
-		impl->tabWidget->addTab(new DownPanel(this), "downpanel");
-		impl->tabWidget->addTab(new UpPanel(this), "uppanel");
+		impl->tabWidget->addTab(new PathTracePanel(this), "downpanel");
+		impl->tabWidget->addTab(new ViewerPanel(this), "viewerpanel");
 
 	}
 

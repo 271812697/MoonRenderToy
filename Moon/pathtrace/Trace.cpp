@@ -146,17 +146,18 @@ namespace PathTrace
 	{
 		if (PathTraceRender::instance().GetRenderOptions().optLight) {
 			// Intersect Emitters
-			for (int i = 0; i < PathTraceRender::instance().GetScene()->lights.size(); i++)
+			auto& lights = PathTraceRender::instance().GetScene()->getLights();
+			for (int i = 0; i < lights.size(); i++)
 			{
 				// Fetch light Data
-				Vec3 position = PathTraceRender::instance().GetScene()->lights[i].position;
-				Vec3 emission = PathTraceRender::instance().GetScene()->lights[i].emission;
-				Vec3 u = PathTraceRender::instance().GetScene()->lights[i].u;
-				Vec3 v = PathTraceRender::instance().GetScene()->lights[i].v;
+				Vec3 position = lights[i].position;
+				Vec3 emission = lights[i].emission;
+				Vec3 u = lights[i].u;
+				Vec3 v = lights[i].v;
 				//Vec3 params = texelFetch(lightsTex, ivec2(i * 5 + 4, 0), 0).xyz;
-				float radius = PathTraceRender::instance().GetScene()->lights[i].radius;
-				float area = PathTraceRender::instance().GetScene()->lights[i].area;
-				float type = PathTraceRender::instance().GetScene()->lights[i].type;
+				float radius = lights[i].radius;
+				float area = lights[i].area;
+				float type = lights[i].type;
 
 				// Intersect rectangular area light
 				if (type == QUAD_LIGHT)
@@ -188,8 +189,8 @@ namespace PathTrace
 		int stack[64];
 		int ptr = 0;
 		stack[ptr++] = -1;
-
-		int index = PathTraceRender::instance().GetScene()->bvhTranslator.topLevelIndex;
+		auto& bvhTranslator = PathTraceRender::instance().GetScene()->getBvhTranslator();
+		int index = bvhTranslator.topLevelIndex;
 		float leftHit = 0.0;
 		float rightHit = 0.0;
 		int currMatID = -1;
@@ -201,10 +202,15 @@ namespace PathTrace
 
 		Ray rTrans = { r.origin,r.direction };
 
-
+		auto& verticesUVX = PathTraceRender::instance().GetScene()->getVerticesUVX();
+		auto& vertIndices = PathTraceRender::instance().GetScene()->getVertIndices();
+		auto& normalsUVY = PathTraceRender::instance().GetScene()->getNormalsUVY();
+		auto& transforms = PathTraceRender::instance().GetScene()->getTransforms();
+		auto& textures = PathTraceRender::instance().GetScene()->getTextures();
+		auto& materials = PathTraceRender::instance().GetScene()->getMaterials();
 		while (index != -1)
 		{
-			Vec3 LRLeaf = PathTraceRender::instance().GetScene()->bvhTranslator.nodes[index].LRLeaf;;
+			Vec3 LRLeaf = bvhTranslator.nodes[index].LRLeaf;;
 
 			int leftIndex = int(LRLeaf.x);
 			int rightIndex = int(LRLeaf.y);
@@ -214,9 +220,9 @@ namespace PathTrace
 			{
 				for (int i = 0; i < rightIndex; i++) // Loop through tris
 				{
-					Vec4 v0 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].x];
-					Vec4 v1 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].y];
-					Vec4 v2 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].z];
+					Vec4 v0 = verticesUVX[vertIndices[leftIndex + i].x];
+					Vec4 v1 = verticesUVX[vertIndices[leftIndex + i].y];
+					Vec4 v2 = verticesUVX[vertIndices[leftIndex + i].z];
 
 					Vec3 e0 = v1.xyz() - v0.xyz();
 					Vec3 e1 = v2.xyz() - v0.xyz();
@@ -238,18 +244,18 @@ namespace PathTrace
 					if (uvt.x >= 0 && uvt.y >= 0 && uvt.z >= 0 && uvt.w >= 0 && uvt.z < maxDist)
 					{
 						if (PathTraceRender::instance().GetRenderOptions().optAlphaTest && !PathTraceRender::instance().GetRenderOptions().optMedium) {
-							Vec2 t0 = Vec2(v0.w, PathTraceRender::instance().GetScene()->normalsUVY[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].x].w);
-							Vec2 t1 = Vec2(v1.w, PathTraceRender::instance().GetScene()->normalsUVY[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].y].w);
-							Vec2 t2 = Vec2(v2.w, PathTraceRender::instance().GetScene()->normalsUVY[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].z].w);
+							Vec2 t0 = Vec2(v0.w, normalsUVY[vertIndices[leftIndex + i].x].w);
+							Vec2 t1 = Vec2(v1.w, normalsUVY[vertIndices[leftIndex + i].y].w);
+							Vec2 t2 = Vec2(v2.w, normalsUVY[vertIndices[leftIndex + i].z].w);
 
 							//clamp
 							Vec2 texCoord = t0 * uvt.w + t1 * uvt.x + t2 * uvt.y;
-							float alpha = PathTraceRender::instance().GetScene()->textures[PathTraceRender::instance().GetScene()->materials[currMatID].baseColorTexId]->Sample(texCoord.x, texCoord.y).w;
+							float alpha = textures[materials[currMatID].baseColorTexId]->Sample(texCoord.x, texCoord.y).w;
 							//float alpha = texture(textureMapsArrayTex, Vec3(texCoord, texIDs.x)).a;
 
-							float opacity = PathTraceRender::instance().GetScene()->materials[currMatID].opacity;
-							int alphaMode = int(PathTraceRender::instance().GetScene()->materials[currMatID].alphaMode);
-							float alphaCutoff = PathTraceRender::instance().GetScene()->materials[currMatID].alphaCutoff;
+							float opacity = materials[currMatID].opacity;
+							int alphaMode = int(materials[currMatID].alphaMode);
+							float alphaCutoff = materials[currMatID].alphaCutoff;
 							opacity *= alpha;
 
 							// Ignore intersection and continue ray based on alpha test
@@ -269,7 +275,7 @@ namespace PathTrace
 			else if (leaf < 0) // Leaf node of TLAS
 			{
 
-				Mat4 transform = PathTraceRender::instance().GetScene()->transforms[-leaf - 1];
+				Mat4 transform = transforms[-leaf - 1];
 
 				auto tempMat = transform.Inverse();
 				rTrans.origin = tempMat.MulPoint(r.origin);
@@ -286,8 +292,8 @@ namespace PathTrace
 			}
 			else
 			{
-				leftHit = AABBIntersect(PathTraceRender::instance().GetScene()->bvhTranslator.nodes[leftIndex].bboxmin, PathTraceRender::instance().GetScene()->bvhTranslator.nodes[leftIndex].bboxmax, rTrans);
-				rightHit = AABBIntersect(PathTraceRender::instance().GetScene()->bvhTranslator.nodes[rightIndex].bboxmin, PathTraceRender::instance().GetScene()->bvhTranslator.nodes[rightIndex].bboxmax, rTrans);
+				leftHit = AABBIntersect(bvhTranslator.nodes[leftIndex].bboxmin, bvhTranslator.nodes[leftIndex].bboxmax, rTrans);
+				rightHit = AABBIntersect(bvhTranslator.nodes[rightIndex].bboxmin, bvhTranslator.nodes[rightIndex].bboxmax, rTrans);
 
 				if (leftHit > 0.0 && rightHit > 0.0)
 				{
@@ -338,15 +344,16 @@ namespace PathTrace
 		float d;
 		if (PathTraceRender::instance().GetRenderOptions().optLight) {
 			if ((PathTraceRender::instance().GetRenderOptions().hideEmitters && state.depth > 0) || !PathTraceRender::instance().GetRenderOptions().hideEmitters) {
-				for (int i = 0; i < PathTraceRender::instance().GetScene()->lights.size(); i++) {
-					Vec3 position = PathTraceRender::instance().GetScene()->lights[i].position;
-					Vec3 emission = PathTraceRender::instance().GetScene()->lights[i].emission;
-					Vec3 u = PathTraceRender::instance().GetScene()->lights[i].u;
-					Vec3 v = PathTraceRender::instance().GetScene()->lights[i].v;
+				auto& lights = PathTraceRender::instance().GetScene()->getLights();
+				for (int i = 0; i < lights.size(); i++) {
+					Vec3 position = lights[i].position;
+					Vec3 emission = lights[i].emission;
+					Vec3 u = lights[i].u;
+					Vec3 v = lights[i].v;
 
-					float radius = PathTraceRender::instance().GetScene()->lights[i].radius;
-					float area = PathTraceRender::instance().GetScene()->lights[i].area;
-					float type = PathTraceRender::instance().GetScene()->lights[i].type;
+					float radius = lights[i].radius;
+					float area = lights[i].area;
+					float type = lights[i].type;
 					if (type == QUAD_LIGHT) {
 
 						Vec3 normal = Vec3::Normalize(Vec3::Cross(u, v));
@@ -392,8 +399,8 @@ namespace PathTrace
 		int stack[64];
 		int ptr = 0;
 		stack[ptr++] = -1;
-
-		int index = PathTraceRender::instance().GetScene()->bvhTranslator.topLevelIndex;
+		auto& bvhTranslator = PathTraceRender::instance().GetScene()->getBvhTranslator();
+		int index = bvhTranslator.topLevelIndex;
 		float leftHit = 0.0;
 		float rightHit = 0.0;
 
@@ -409,10 +416,15 @@ namespace PathTrace
 
 		Ray rTrans = { r.origin,r.direction };
 
-
+		auto& verticesUVX = PathTraceRender::instance().GetScene()->getVerticesUVX();
+		auto& vertIndices = PathTraceRender::instance().GetScene()->getVertIndices();
+		auto& normalsUVY = PathTraceRender::instance().GetScene()->getNormalsUVY();
+		auto& transforms = PathTraceRender::instance().GetScene()->getTransforms();
+		auto& textures = PathTraceRender::instance().GetScene()->getTextures();
+		auto& materials = PathTraceRender::instance().GetScene()->getMaterials();
 		while (index != -1)
 		{
-			Vec3 LRLeaf = PathTraceRender::instance().GetScene()->bvhTranslator.nodes[index].LRLeaf;
+			Vec3 LRLeaf = bvhTranslator.nodes[index].LRLeaf;
 			int leftIndex = int(LRLeaf.x);
 			int rightIndex = int(LRLeaf.y);
 			int leaf = int(LRLeaf.z);
@@ -421,9 +433,9 @@ namespace PathTrace
 				for (int i = 0; i < rightIndex; i++) // Loop through tris
 				{
 
-					Vec4 v0 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].x];
-					Vec4 v1 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].y];
-					Vec4 v2 = PathTraceRender::instance().GetScene()->verticesUVX[PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].z];
+					Vec4 v0 = verticesUVX[vertIndices[leftIndex + i].x];
+					Vec4 v1 = verticesUVX[vertIndices[leftIndex + i].y];
+					Vec4 v2 = verticesUVX[vertIndices[leftIndex + i].z];
 
 					Vec3 e0 = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
 					Vec3 e1 = { v2.x - v0.x,v2.y - v0.y,v2.z - v0.z };
@@ -445,9 +457,9 @@ namespace PathTrace
 					if (uvt.x >= 0 && uvt.y >= 0 && uvt.z >= 0 && uvt.w >= 0 && uvt.z < t)
 					{
 						t = uvt.z;
-						triID.x = PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].x;
-						triID.y = PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].y;
-						triID.z = PathTraceRender::instance().GetScene()->vertIndices[leftIndex + i].z;
+						triID.x = vertIndices[leftIndex + i].x;
+						triID.y = vertIndices[leftIndex + i].y;
+						triID.z = vertIndices[leftIndex + i].z;
 						state.matID = currMatID;
 						bary = { uvt.w ,uvt.x,uvt.y };
 						vert0 = v0, vert1 = v1, vert2 = v2;
@@ -456,7 +468,7 @@ namespace PathTrace
 				}
 			}
 			else if (leaf < 0) {
-				transMat = PathTraceRender::instance().GetScene()->transforms[-leaf - 1];
+				transMat = transforms[-leaf - 1];
 				auto tempMat = transMat.Inverse();
 				rTrans.origin = tempMat.MulPoint(r.origin);
 				rTrans.direction = tempMat.MulDir(r.direction);
@@ -468,8 +480,8 @@ namespace PathTrace
 			}
 			else
 			{
-				leftHit = AABBIntersect(PathTraceRender::instance().GetScene()->bvhTranslator.nodes[leftIndex].bboxmin, PathTraceRender::instance().GetScene()->bvhTranslator.nodes[leftIndex].bboxmax, rTrans);
-				rightHit = AABBIntersect(PathTraceRender::instance().GetScene()->bvhTranslator.nodes[rightIndex].bboxmin, PathTraceRender::instance().GetScene()->bvhTranslator.nodes[rightIndex].bboxmax, rTrans);
+				leftHit = AABBIntersect(bvhTranslator.nodes[leftIndex].bboxmin, bvhTranslator.nodes[leftIndex].bboxmax, rTrans);
+				rightHit = AABBIntersect(bvhTranslator.nodes[rightIndex].bboxmin, bvhTranslator.nodes[rightIndex].bboxmax, rTrans);
 
 				if (leftHit > 0.0 && rightHit > 0.0)
 				{
@@ -526,9 +538,9 @@ namespace PathTrace
 
 			// Normals
 
-			Vec4 n0 = PathTraceRender::instance().GetScene()->normalsUVY[triID.x];
-			Vec4 n1 = PathTraceRender::instance().GetScene()->normalsUVY[triID.y];
-			Vec4 n2 = PathTraceRender::instance().GetScene()->normalsUVY[triID.z];
+			Vec4 n0 = normalsUVY[triID.x];
+			Vec4 n1 = normalsUVY[triID.y];
+			Vec4 n2 = normalsUVY[triID.z];
 
 			// Get texcoords from w coord of vertices and normals
 			Vec2 t0 = Vec2(vert0.w, n0.w);
@@ -592,32 +604,34 @@ namespace PathTrace
 
 	Vec4 EvalEnvMap(const Ray& r) {
 		float theta = acos(clamp(r.direction.y, -1.0, 1.0));
-
+		auto envMap = PathTraceRender::instance().GetScene()->getEnvironmentMap();
 		Vec2 uv = Vec2((PI + atan2(r.direction.z, r.direction.x)) * INV_TWO_PI, theta * INV_PI) + Vec2(PathTraceRender::instance().GetRenderOptions().envMapRot / 360.0f, 0.0);
-		Vec3 color = PathTraceRender::instance().GetScene()->envMap->Sample(uv.x, uv.y);
-		float pdf = Luminance(color.x, color.y, color.z) / PathTraceRender::instance().GetScene()->envMap->totalSum;
-		return Vec4(color, (pdf * PathTraceRender::instance().GetScene()->envMap->width * PathTraceRender::instance().GetScene()->envMap->height) / (TWO_PI * PI * sin(theta)));
+		Vec3 color = envMap->Sample(uv.x, uv.y);
+		float pdf = Luminance(color.x, color.y, color.z) / envMap->totalSum;
+		return Vec4(color, (pdf * envMap->width * envMap->height) / (TWO_PI * PI * sin(theta)));
 	}
 	void GetMaterial(State& state, const Ray& r) {
-		Material mat = PathTraceRender::instance().GetScene()->materials[state.matID];
+		auto& materials = PathTraceRender::instance().GetScene()->getMaterials();
+		auto& textures = PathTraceRender::instance().GetScene()->getTextures();
+		Material mat = materials[state.matID];
 
 		Medium medium;
 		//Base Color Map
 		if (mat.baseColorTexId >= 0) {
-			Vec4 col = PathTraceRender::instance().GetScene()->textures[mat.baseColorTexId]->Sample(state.texCoord.x, state.texCoord.y);
+			Vec4 col = textures[mat.baseColorTexId]->Sample(state.texCoord.x, state.texCoord.y);
 			mat.baseColor *= pow(col.xyz(), Vec3(2.2));;
 			mat.opacity *= col.w;
 		}
 
 		//Metallic Roughness Map
 		if (mat.metallicRoughnessTexID >= 0) {
-			Vec3 matRgh = PathTraceRender::instance().GetScene()->textures[mat.metallicRoughnessTexID]->Sample(state.texCoord.x, state.texCoord.y);
+			Vec3 matRgh = textures[mat.metallicRoughnessTexID]->Sample(state.texCoord.x, state.texCoord.y);
 			mat.metallic = matRgh.z;
 			mat.roughness = std::max(matRgh.y * matRgh.y, 0.001f);
 		}
 
 		if (mat.normalmapTexID >= 0) {
-			Vec3 texNormal = PathTraceRender::instance().GetScene()->textures[mat.normalmapTexID]->Sample(state.texCoord.x, state.texCoord.y).xyz();
+			Vec3 texNormal = textures[mat.normalmapTexID]->Sample(state.texCoord.x, state.texCoord.y).xyz();
 			if (PathTraceRender::instance().GetRenderOptions().openglNormalMap) {
 				texNormal.y = 1.0 - texNormal.y;
 			}
@@ -633,7 +647,7 @@ namespace PathTrace
 		}
 
 		if (mat.emissionmapTexID >= 0) {
-			mat.emission = pow(PathTraceRender::instance().GetScene()->textures[mat.emissionmapTexID]->Sample(state.texCoord.x, state.texCoord.y).xyz(), Vec3(2.2));
+			mat.emission = pow(textures[mat.emissionmapTexID]->Sample(state.texCoord.x, state.texCoord.y).xyz(), Vec3(2.2));
 		}
 
 		float aspect = sqrt(1.0 - mat.anisotropic * 0.9);
@@ -688,17 +702,18 @@ namespace PathTrace
 	}
 	Vec4 SampleEnvMap(Vec3& color) {
 		Vec2 uv;
-		color = PathTraceRender::instance().GetScene()->envMap->Sample(uniform_float(), &uv);
-		float pdf = Luminance(color.x, color.y, color.z) / PathTraceRender::instance().GetScene()->envMap->totalSum;
+		auto envMap = PathTraceRender::instance().GetScene()->getEnvironmentMap();
+		color = envMap->Sample(uniform_float(), &uv);
+		float pdf = Luminance(color.x, color.y, color.z) / envMap->totalSum;
 
-		uv.x -= PathTraceRender::instance().GetScene()->renderOptions.envMapRot / 360.0f;
+		uv.x -= PathTraceRender::instance().GetScene()->getRenderOptions().envMapRot / 360.0f;
 		float phi = uv.x * TWO_PI;
 		float theta = uv.y * PI;
 
 
 		if (sin(theta) == 0.0)
 			pdf = 0.0;
-		return Vec4(-sin(theta) * cos(phi), cos(theta), -sin(theta) * sin(phi), (pdf * PathTraceRender::instance().GetScene()->envMap->width * PathTraceRender::instance().GetScene()->envMap->height) / (TWO_PI * PI * sin(theta)));
+		return Vec4(-sin(theta) * cos(phi), cos(theta), -sin(theta) * sin(phi), (pdf * envMap->width * envMap->height) / (TWO_PI * PI * sin(theta)));
 	}
 	Vec3 DisneyEval(const State& state, Vec3 V, const Vec3& N, Vec3 L, float& pdf);
 	void SampleSphereLight(const Light& light, const Vec3& scatterPos, LightSampleRec& lightSample)
@@ -725,7 +740,7 @@ namespace PathTrace
 
 		lightSample.direction /= lightSample.dist;
 		lightSample.normal = Vec3::Normalize(lightSurfacePos - light.position);
-		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->lights.size());
+		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->getLights().size());
 		lightSample.pdf = distSq / (light.area * 0.5 * abs(Vec3::Dot(lightSample.normal, lightSample.direction)));
 	}
 
@@ -740,7 +755,7 @@ namespace PathTrace
 		float distSq = lightSample.dist * lightSample.dist;
 		lightSample.direction /= lightSample.dist;
 		lightSample.normal = Vec3::Normalize(Vec3::Cross(light.u, light.v));
-		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->lights.size());
+		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->getLights().size());
 		lightSample.pdf = distSq / (light.area * abs(Vec3::Dot(lightSample.normal, lightSample.direction)));
 	}
 
@@ -748,7 +763,7 @@ namespace PathTrace
 	{
 		lightSample.direction = Vec3::Normalize(light.position - Vec3(0.0));
 		lightSample.normal = Vec3::Normalize(scatterPos - light.position);
-		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->lights.size());
+		lightSample.emission = light.emission * float(PathTraceRender::instance().GetScene()->getLights().size());
 		lightSample.dist = INF;
 		lightSample.pdf = 1.0;
 	}
@@ -791,7 +806,7 @@ namespace PathTrace
 				{
 					float misWeight = PowerHeuristic(lightPdf, scatterSample.pdf);
 					if (misWeight > 0.0)
-						Ld += misWeight * Li * scatterSample.f * PathTraceRender::instance().GetScene()->renderOptions.envMapIntensity / lightPdf;
+						Ld += misWeight * Li * scatterSample.f * PathTraceRender::instance().GetScene()->getRenderOptions().envMapIntensity / lightPdf;
 				}
 			}
 			else
@@ -819,12 +834,12 @@ namespace PathTrace
 			Light light;
 
 			//Pick a light to sample
-			int index = int(uniform_float() * float(PathTraceRender::instance().GetScene()->lights.size())) * 5;
+			int index = int(uniform_float() * float(PathTraceRender::instance().GetScene()->getLights().size())) * 5;
 
 			// Fetch light Data
 
 
-			light = PathTraceRender::instance().GetScene()->lights[index];
+			light = PathTraceRender::instance().GetScene()->getLights()[index];
 			SampleOneLight(light, scatterPos, lightSample);
 			Li = lightSample.emission;
 			if (Vec3::Dot(lightSample.direction, lightSample.normal)) {
@@ -1352,6 +1367,7 @@ namespace PathTrace
 		float* sum = imagesum;
 		unsigned char* data = image;
 		static int cnt = 50;
+		auto camera = PathTraceRender::instance().GetScene()->getCamera();
 		for (int k = 0; k < cnt; k++) {
 			for (int i = 0; i < h; i++) {
 				for (int j = 0; j < w; j++) {
@@ -1365,21 +1381,21 @@ namespace PathTrace
 					jitter.y /= 2.0f * h;
 					Vec2 dd = Vec2(i * 2.0f / w - 1.0f, j * 2.0f / h - 1.0f) + jitter;
 
-					float scale = tan(PathTraceRender::instance().GetScene()->camera->fov * 0.5);
+					float scale = tan(camera->getFov() * 0.5);
 					//fov水平方向的张角
 					dd.y *= h * 1.0f / w * scale;
 					dd.x *= scale;
-					Vec3 RayDir = PathTraceRender::instance().GetScene()->camera->right * dd.x + PathTraceRender::instance().GetScene()->camera->up * dd.y + PathTraceRender::instance().GetScene()->camera->forward;
+					Vec3 RayDir = camera->getRight() * dd.x + camera->getUp() * dd.y + camera->getForward();
 					RayDir = Vec3::Normalize(RayDir);
 
-					Vec3 focalPoint = PathTraceRender::instance().GetScene()->camera->focalDist * RayDir;
+					Vec3 focalPoint = camera->getFocalDist() * RayDir;
 					float cam_r1 = uniform_float() * TWO_PI;
-					float cam_r2 = uniform_float() * PathTraceRender::instance().GetScene()->camera->aperture;
-					Vec3 randomAperturePos = (cos(cam_r1) * PathTraceRender::instance().GetScene()->camera->right + sin(cam_r1) * PathTraceRender::instance().GetScene()->camera->up) * sqrt(cam_r2);
+					float cam_r2 = uniform_float() * camera->getAperture();
+					Vec3 randomAperturePos = (cos(cam_r1) * camera->getRight() + sin(cam_r1) * camera->getUp()) * sqrt(cam_r2);
 					Vec3 finalRayDir = Vec3::Normalize(focalPoint - randomAperturePos);
 
 
-					Ray r = { PathTraceRender::instance().GetScene()->camera->position + randomAperturePos ,finalRayDir };
+					Ray r = { camera->getEye() + randomAperturePos ,finalRayDir };
 					Vec3 res = Trace(r).xyz();
 					int index = (i * w + j) * 4;
 					imagesum[index] += res.x;

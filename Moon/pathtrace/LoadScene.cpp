@@ -27,7 +27,8 @@ namespace PathTrace
 
 	bool LoadSceneFromFile(const std::string& filename, Scene* scene, RenderOptions& renderOptions)
 	{
-		scene->path = filename;
+
+		scene->setPath(filename);
 		FILE* file;
 		file = fopen(filename.c_str(), "r");
 
@@ -228,7 +229,7 @@ namespace PathTrace
 						matrixProvided = true;
 				}
 
-				delete scene->camera;
+				delete scene->getCamera();
 
 				if (matrixProvided)
 				{
@@ -238,8 +239,8 @@ namespace PathTrace
 				}
 
 				scene->AddCamera(position, lookAt, fov);
-				scene->camera->aperture = aperture;
-				scene->camera->focalDist = focalDist;
+				scene->getCamera()->setAperture(aperture);
+				scene->getCamera()->setFocalDist(focalDist);
 			}
 
 			//--------------------------------------------
@@ -521,9 +522,9 @@ namespace PathTrace
 	bool LoadSingleModel(const std::string& filename, Scene* scene)
 	{
 		Assimp::Importer importer;
-		const aiScene* ascene=importer.ReadFile(filename,aiProcess_Triangulate|aiProcess_JoinIdenticalVertices| aiProcess_SortByPType| aiProcess_GenSmoothNormals);
-		if (!ascene||ascene->mFlags& AI_SCENE_FLAGS_INCOMPLETE||!ascene->mRootNode) {
-			CORE_ERROR("Assimp parse Error for {0}\n",importer.GetErrorString());
+		const aiScene* ascene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_GenSmoothNormals);
+		if (!ascene || ascene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !ascene->mRootNode) {
+			CORE_ERROR("Assimp parse Error for {0}\n", importer.GetErrorString());
 			return false;
 		}
 		//for (int i = 0;i < ascene->mNumMaterials;i++) {
@@ -536,20 +537,20 @@ namespace PathTrace
 		int mateId = scene->AddMaterial(mate);
 
 		aiMatrix4x4 mat;
-		std::vector<aiMatrix4x4>matStack = {mat};
-		std::vector<aiNode*>nodeStack = {ascene->mRootNode};
+		std::vector<aiMatrix4x4>matStack = { mat };
+		std::vector<aiNode*>nodeStack = { ascene->mRootNode };
 		while (!nodeStack.empty()) {
-			aiNode* node = nodeStack.back();nodeStack.pop_back();
-			aiMatrix4x4 parentMat = matStack.back();matStack.pop_back();
+			aiNode* node = nodeStack.back(); nodeStack.pop_back();
+			aiMatrix4x4 parentMat = matStack.back(); matStack.pop_back();
 			aiMatrix4x4 transMat = parentMat * node->mTransformation;
-			
-			for (int i = 0;i < node->mNumMeshes;i++) {
+
+			for (int i = 0; i < node->mNumMeshes; i++) {
 				aiMesh* mesh = ascene->mMeshes[node->mMeshes[i]];
-				
+
 				Mesh* pathTraceMesh = new Mesh();
 				std::vector<Vec4> posArr;
 				std::vector<Vec4>norArr;
-				for (int k = 0;k < mesh->mNumVertices;k++) {
+				for (int k = 0; k < mesh->mNumVertices; k++) {
 					const aiVector3D pos = mesh->mVertices[k];
 					const aiVector3D nor = mesh->mNormals[k];
 					posArr.push_back({ pos.x,pos.y,pos.z,1.0 });
@@ -563,20 +564,20 @@ namespace PathTrace
 
 					for (size_t indexID = 0; indexID < 3; ++indexID)
 					{
-						pathTraceMesh->verticesUVX.push_back(posArr[face.mIndices[indexID]]);
-						pathTraceMesh->normalsUVY.push_back(norArr[face.mIndices[indexID]]);
+						pathTraceMesh->getPosUvX().push_back(posArr[face.mIndices[indexID]]);
+						pathTraceMesh->getNorUvY().push_back(norArr[face.mIndices[indexID]]);
 					}
-						
+
 				}
 				;
-				int meshId = scene->meshes.size();
-				scene->meshes.push_back(pathTraceMesh);
+				int meshId = scene->getMeshes().size();
+				scene->getMeshes().push_back(pathTraceMesh);
 				Mat4  xform;
-				memcpy(xform.data,&transMat.a1,16*sizeof(float));
-				MeshInstance ins(std::string(mesh->mName.C_Str()),meshId,xform,mateId);
+				memcpy(xform.data, &transMat.a1, 16 * sizeof(float));
+				MeshInstance ins(std::string(mesh->mName.C_Str()), meshId, xform, mateId);
 				scene->AddMeshInstance(ins);
 			}
-			for (int i = 0;i < node->mNumChildren;i++) {
+			for (int i = 0; i < node->mNumChildren; i++) {
 				matStack.push_back(transMat);
 				nodeStack.push_back(node->mChildren[i]);
 			}
@@ -1098,16 +1099,17 @@ namespace PathTrace
 					Vec3 nrm = normals[indices[v]];
 					Vec2 uv = uvs[indices[v]];
 
-					mesh->verticesUVX.push_back(Vec4(pos.x, pos.y, pos.z, uv.x));
-					mesh->normalsUVY.push_back(Vec4(nrm.x, nrm.y, nrm.z, uv.y));
+					mesh->getPosUvX().push_back(Vec4(pos.x, pos.y, pos.z, uv.x));
+					mesh->getNorUvY().push_back(Vec4(nrm.x, nrm.y, nrm.z, uv.y));
 				}
 				mesh->GenVAO();
-				mesh->name = gltfMesh.name;
-				int sceneMeshId = scene->meshes.size();
-				scene->meshes.push_back(mesh);
+				mesh->setName(gltfMesh.name);
+
+				int sceneMeshId = scene->getMeshes().size();
+				scene->getMeshes().push_back(mesh);
 				// Store a mapping for a gltf mesh and the loaded primitive data
 				// This is used for creating instances based on the primitive
-				int sceneMatIdx = prim.material + scene->materials.size();
+				int sceneMatIdx = prim.material + scene->getMaterials().size();
 				meshPrimMap[gltfMeshIdx].push_back(Primitive{ sceneMeshId, sceneMatIdx });
 			}
 		}
@@ -1123,13 +1125,13 @@ namespace PathTrace
 			if (strcmp(gltfTex.name.c_str(), "") == 0)
 				texName = image.uri;
 			Texture* texture = new Texture(texName, image.image.data(), image.width, image.height, image.component);
-			scene->textures.push_back(texture);
+			scene->getTextures().push_back(texture);
 		}
 	}
 
 	void LoadMaterials(Scene* scene, tinygltf::Model& gltfModel)
 	{
-		int sceneTexIdx = scene->textures.size();
+		int sceneTexIdx = scene->getTextures().size();
 		// TODO: Support for KHR extensions
 		for (size_t i = 0; i < gltfModel.materials.size(); i++)
 		{
@@ -1179,10 +1181,10 @@ namespace PathTrace
 		}
 
 		// Default material
-		if (scene->materials.size() == 0)
+		if (scene->getMaterials().size() == 0)
 		{
 			Material defaultMat;
-			scene->materials.push_back(defaultMat);
+			scene->getMaterials().push_back(defaultMat);
 		}
 	}
 

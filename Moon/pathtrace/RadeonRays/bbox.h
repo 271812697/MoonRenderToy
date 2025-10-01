@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef BBOX_H
 #define BBOX_H
@@ -39,6 +39,7 @@ namespace RadeonRays
 
 		Vec3 center()  const;
 		Vec3 extents() const;
+        float diagonalDistance()const;
 
         bool contains(Vec3 const& p) const;
 

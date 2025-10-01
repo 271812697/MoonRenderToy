@@ -1,5 +1,5 @@
 ﻿#include "editor/UI/TreeViewPanel/treeViewpanel.h"
-#include "editor/View/pathtrace/pathtracePanel.h"
+#include "editor/View/pathtrace/pathtraceWidget.h"
 #include "OvCore/Global/ServiceLocator.h"
 #define __glad_h_
 #include "PathTrace.h"
@@ -65,7 +65,7 @@ namespace PathTrace {
 				switchScene = false;
 				LoadScene(switchSceneName);
 				InitRenderer();
-				OVSERVICE(MOON::PathTracePanel).onUpdateEntityTreeView();
+				OVSERVICE(MOON::PathTraceWidget).onUpdateEntityTreeView();
 			}
 			cameraController->MoveToPivot(0.016);
 			GetRenderer()->Update(0.016);
@@ -88,7 +88,7 @@ namespace PathTrace {
 			renderOptions.windowResolution.y = height;
 			if (!renderOptions.independentRenderSize)
 				renderOptions.renderResolution = renderOptions.windowResolution;
-			scene->renderOptions = renderOptions;
+			scene->getRenderOptions() = renderOptions;
 			renderer->ResizeRenderer();
 		}
 		void GetEnvMaps()
@@ -126,7 +126,7 @@ namespace PathTrace {
 			else if (ext == "glb")
 				success = LoadGLTF(sceneName, scene, renderOptions, xform, true);
 			else {
-				success = LoadSingleModel(sceneName,scene);
+				success = LoadSingleModel(sceneName, scene);
 			}
 
 			if (!success)
@@ -138,14 +138,14 @@ namespace PathTrace {
 			selectedInstance = 0;
 			selectedMat = 0;
 			// Add a default HDR if there are no lights in the scene
-			if (!scene->envMap && !envMaps.empty())
+			if (!scene->getEnvironmentMap() && !envMaps.empty())
 			{
 				scene->AddEnvMap(envMaps[envMapIdx]);
 				renderOptions.enableEnvMap = true;
 				renderOptions.envMapIntensity = 1.5f;
 			}
 
-			scene->renderOptions = renderOptions;
+			scene->getRenderOptions() = renderOptions;
 		}
 		void LoadDefaultScene() {
 			LoadScene(sceneFiles[sampleSceneIdx]);
@@ -181,7 +181,10 @@ namespace PathTrace {
 				auto y = e2->y();
 				Qt::MouseButton mb = e2->button();
 				if (mb == Qt::MouseButton::LeftButton) {
-					cameraController->mouseLeftPress(x, y);
+					Vec3 p;
+					if (mSelf->GetScene()->IntersectionByScreen(1.0 * x / mSelf->GetRenderOptions().windowResolution.x, 1.0 - 1.0 * y / mSelf->GetRenderOptions().windowResolution.y, p)) {
+						cameraController->PustCameraDestination(p.x, p.y, p.z);
+					}
 				}
 				else if (mb == Qt::MouseButton::MiddleButton) {
 					cameraController->mouseMiddlePress(x, y);
@@ -217,7 +220,6 @@ namespace PathTrace {
 				QWheelEvent* e2 = static_cast<QWheelEvent*>(event);
 				cameraController->wheelMouseWheel(e2->angleDelta().y());
 			}
-
 		}
 	private:
 		friend CameraController;
@@ -352,14 +354,14 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 		if (mouseMiddle) {
-			render->GetScene()->camera->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
-			render->GetScene()->dirty = true;
+			render->GetScene()->getCamera()->strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
+			render->GetScene()->setDirty(true);
 		}
 		else if (mouseRight)
 		{
 
-			render->GetScene()->camera->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
-			render->GetScene()->dirty = true;
+			render->GetScene()->getCamera()->OffsetRotateByScreen((_x - rx) * 0.5, (ry - _y) * 0.5);
+			render->GetScene()->setDirty(true);
 		}
 		//x = _x;
 		//y = _y;
@@ -367,7 +369,6 @@ namespace PathTrace {
 
 	void CameraController::mouseLeftPress(int x, int y)
 	{
-
 		Vec3 p;
 		if (render->GetScene()->IntersectionByScreen(1.0 * x / render->GetRenderOptions().windowResolution.x, 1.0 - 1.0 * y / render->GetRenderOptions().windowResolution.y, p)) {
 			cameraDestinations.push_back(p);
@@ -378,7 +379,7 @@ namespace PathTrace {
 	{
 		this->tx = x;
 		this->ty = y;
-		render->GetScene()->camera->UpdateCamera();
+		render->GetScene()->getCamera()->updateCamera();
 		mouseMiddle = true;
 	}
 
@@ -386,7 +387,7 @@ namespace PathTrace {
 	{
 		this->rx = x;
 		this->ry = y;
-		render->GetScene()->camera->UpdateCamera();
+		render->GetScene()->getCamera()->updateCamera();
 		mouseRight = true;
 	}
 
@@ -402,18 +403,19 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-		render->GetScene()->camera->SetRadius(delta * 0.0025);
-		render->GetScene()->dirty = true;
+		float dt = delta * 0.000025 * render->GetScene()->getBBox().diagonalDistance();
+		render->GetScene()->getCamera()->offsetRadius(dt);
+		render->GetScene()->setDirty(true);
 	}
 	void CameraController::GetCameraPosition(float eye[3]) {
-		Vec3 p = render->GetScene()->camera->GetEye();
+		Vec3 p = render->GetScene()->getCamera()->getEye();
 		eye[0] = p.x;
 		eye[1] = p.y;
 		eye[2] = p.z;
 	}
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
 		render->GetRenderer()->GetProgress();
-		render->GetScene()->camera->ComputeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
+		render->GetScene()->getCamera()->computeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
 	}
 	void CameraController::MoveToPivot(float deltaTime) {
 		if (!cameraDestinations.empty()) {
@@ -422,16 +424,16 @@ namespace PathTrace {
 			}
 			float t = 5.0f * deltaTime;
 			auto& destion = cameraDestinations[0];
-			auto& piviot = render->GetScene()->camera->GetPivoit();
+			auto& piviot = render->GetScene()->getCamera()->getPivoit();
 			if (Vec3::Length(destion - piviot) < 0.03f) {
-				render->GetScene()->camera->setPivot(destion);
+				render->GetScene()->getCamera()->setPivot(destion);
 				cameraDestinations.pop_back();
 			}
 			else
 			{
-				render->GetScene()->camera->setPivot(destion * t + (1 - t) * piviot);
+				render->GetScene()->getCamera()->setPivot(destion * t + (1 - t) * piviot);
 			}
-			render->GetScene()->dirty = true;
+			render->GetScene()->setDirty(true);
 		}
 	}
 	void CameraController::PustCameraDestination(float x, float y, float z) {

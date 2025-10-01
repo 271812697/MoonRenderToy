@@ -9,7 +9,7 @@
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "Debug/debugPanel.h"
-#include "pqLoadDataReaction.h"
+#include "Reaction/pqLoadDataReaction.h"
 
 namespace MOON {
 	class Editor::EditorInternal {
@@ -28,8 +28,6 @@ namespace MOON {
 			auto centralwidget_layout = new QHBoxLayout(centralwidget);
 			auto middlePanel = new MulViewPanel(centralwidget);
 			QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-			sizePolicy.setHorizontalStretch(120);
-			sizePolicy.setVerticalStretch(1);
 			sizePolicy.setHeightForWidth(middlePanel->sizePolicy().hasHeightForWidth());
 			middlePanel->setSizePolicy(sizePolicy);
 			centralwidget_layout->addWidget(middlePanel);

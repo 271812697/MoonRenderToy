@@ -18,10 +18,10 @@ namespace PathTrace
 		return (p < 0.f) ? p + 2.f * PI : p;
 	}
 	Mesh::Mesh() {
-		bvh = new RadeonRays::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+		mBvh = new RadeonRays::SplitBvh(2.0f, 64, 0, 0.001f, 0);
 	}
 	Mesh::~Mesh() {
-		delete bvh;
+		delete mBvh;
 		if (hasVAO) {
 
 			glDeleteVertexArrays(1, &vao);
@@ -34,7 +34,7 @@ namespace PathTrace
 	}
 	bool Mesh::LoadFromFile(const std::string& filename)
 	{
-		name = filename;
+		mName = filename;
 		tinyobj::attrib_t attrib;
 		//多个有组织的形状(V,I)
 		std::vector<tinyobj::shape_t> shapes;
@@ -117,6 +117,36 @@ namespace PathTrace
 		return res;
 	}
 
+	RadeonRays::Bvh* Mesh::getBvH()
+	{
+		return mBvh;
+	}
+
+	std::vector<Vec4>& Mesh::getPosUvX()
+	{
+		return verticesUVX;
+	}
+
+	std::vector<Vec4>& Mesh::getNorUvY()
+	{
+		return normalsUVY;
+	}
+
+	std::string Mesh::getName()
+	{
+		return mName;
+	}
+
+	void Mesh::setName(const std::string& name)
+	{
+		mName = name;
+	}
+
+	RadeonRays::bbox& Mesh::getBBox()
+	{
+		return meshBounds;
+	}
+
 	void Mesh::GenVAO()
 	{
 
@@ -156,6 +186,8 @@ namespace PathTrace
 			bounds[i].grow(v3);
 		}
 
-		bvh->Build(&bounds[0], numTris);
+		mBvh->Build(&bounds[0], numTris);
+		meshBounds = mBvh->Bounds();
+		//mBBox = { mBvh->Bounds().pmin, mBvh->Bounds().pmax };
 	}
 }

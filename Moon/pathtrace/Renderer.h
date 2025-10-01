@@ -12,17 +12,13 @@ namespace asset {
 }
 namespace PathTrace
 {
-
-
 	class Scene;
 	class Quad;
-
 	class Renderer
 	{
 	protected:
 		Quad* quad;
 		Scene* scene;
-
 		// GPUÊý¾Ý
 		unsigned int BVHBuffer;
 		unsigned int BVHTex;

@@ -556,10 +556,10 @@ namespace PathTrace
 		BRDF_LUT->Bind(19);
 		float viewMatrix[16];
 		float projMatrix[16];
-		scene->camera->ComputeViewProjectionMatrix(viewMatrix, projMatrix, 1.0f * renderSize.x / renderSize.y);
+		scene->mCamera->computeViewProjectionMatrix(viewMatrix, projMatrix, 1.0f * renderSize.x / renderSize.y);
 		glProgramUniformMatrix4fv(pbrShader->ID(), 1001, 1, GL_FALSE, viewMatrix);
 		glProgramUniformMatrix4fv(pbrShader->ID(), 1002, 1, GL_FALSE, projMatrix);
-		glProgramUniform3fv(pbrShader->ID(), 1003, 1, &scene->camera->position.x);
+		glProgramUniform3fv(pbrShader->ID(), 1003, 1, &scene->mCamera->position.x);
 
 		//设置场景中光源的数量
 		glProgramUniform1i(pbrShader->ID(), 932, scene->lights.size());
@@ -911,13 +911,13 @@ namespace PathTrace
 		GLuint shaderObject;
 		pathTraceShader->Bind();
 		shaderObject = pathTraceShader->ID();
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->camera->position.x, scene->camera->position.y, scene->camera->position.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.right"), scene->camera->right.x, scene->camera->right.y, scene->camera->right.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.up"), scene->camera->up.x, scene->camera->up.y, scene->camera->up.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.forward"), scene->camera->forward.x, scene->camera->forward.y, scene->camera->forward.z);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.fov"), scene->camera->fov);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.focalDist"), scene->camera->focalDist);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.aperture"), scene->camera->aperture);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->mCamera->position.x, scene->mCamera->position.y, scene->mCamera->position.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.right"), scene->mCamera->right.x, scene->mCamera->right.y, scene->mCamera->right.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.up"), scene->mCamera->up.x, scene->mCamera->up.y, scene->mCamera->up.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.forward"), scene->mCamera->forward.x, scene->mCamera->forward.y, scene->mCamera->forward.z);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.fov"), scene->mCamera->fov);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.focalDist"), scene->mCamera->focalDist);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.aperture"), scene->mCamera->aperture);
 		glUniform1i(glGetUniformLocation(shaderObject, "enableEnvMap"), scene->envMap == nullptr ? false : scene->renderOptions.enableEnvMap);
 		glUniform1f(glGetUniformLocation(shaderObject, "envMapIntensity"), scene->renderOptions.envMapIntensity);
 		glUniform1f(glGetUniformLocation(shaderObject, "envMapRot"), scene->renderOptions.envMapRot / 360.0f);
@@ -930,18 +930,18 @@ namespace PathTrace
 
 		pathTraceShaderLowRes->Bind();
 		shaderObject = pathTraceShaderLowRes->ID();
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->camera->position.x, scene->camera->position.y, scene->camera->position.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.right"), scene->camera->right.x, scene->camera->right.y, scene->camera->right.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.up"), scene->camera->up.x, scene->camera->up.y, scene->camera->up.z);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.forward"), scene->camera->forward.x, scene->camera->forward.y, scene->camera->forward.z);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.fov"), scene->camera->fov);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.focalDist"), scene->camera->focalDist);
-		glUniform1f(glGetUniformLocation(shaderObject, "camera.aperture"), scene->camera->aperture);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->mCamera->position.x, scene->mCamera->position.y, scene->mCamera->position.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.right"), scene->mCamera->right.x, scene->mCamera->right.y, scene->mCamera->right.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.up"), scene->mCamera->up.x, scene->mCamera->up.y, scene->mCamera->up.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.forward"), scene->mCamera->forward.x, scene->mCamera->forward.y, scene->mCamera->forward.z);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.fov"), scene->mCamera->fov);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.focalDist"), scene->mCamera->focalDist);
+		glUniform1f(glGetUniformLocation(shaderObject, "camera.aperture"), scene->mCamera->aperture);
 		glUniform1i(glGetUniformLocation(shaderObject, "enableEnvMap"), scene->envMap == nullptr ? false : scene->renderOptions.enableEnvMap);
 		glUniform1f(glGetUniformLocation(shaderObject, "envMapIntensity"), scene->renderOptions.envMapIntensity);
 		glUniform1f(glGetUniformLocation(shaderObject, "envMapRot"), scene->renderOptions.envMapRot / 360.0f);
 		glUniform1i(glGetUniformLocation(shaderObject, "maxDepth"), scene->dirty ? 2 : scene->renderOptions.maxDepth);
-		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->camera->position.x, scene->camera->position.y, scene->camera->position.z);
+		glUniform3f(glGetUniformLocation(shaderObject, "camera.position"), scene->mCamera->position.x, scene->mCamera->position.y, scene->mCamera->position.z);
 		glUniform3f(glGetUniformLocation(shaderObject, "uniformLightCol"), scene->renderOptions.uniformLightCol.x, scene->renderOptions.uniformLightCol.y, scene->renderOptions.uniformLightCol.z);
 		glUniform1f(glGetUniformLocation(shaderObject, "roughnessMollificationAmt"), scene->renderOptions.roughnessMollificationAmt);
 		pathTraceShaderLowRes->Unbind();
