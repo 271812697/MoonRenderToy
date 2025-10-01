@@ -239,8 +239,8 @@ namespace PathTrace
 				}
 
 				scene->AddCamera(position, lookAt, fov);
-				scene->getCamera()->aperture = aperture;
-				scene->getCamera()->focalDist = focalDist;
+				scene->getCamera()->setAperture(aperture);
+				scene->getCamera()->setFocalDist(focalDist);
 			}
 
 			//--------------------------------------------

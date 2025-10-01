@@ -6,7 +6,7 @@ namespace PathTrace
 {
 
 	//采用右手坐标系，存的时候转置一下
-	void Frustum(float left, float right, float bottom, float top, float znear, float zfar, float* m16)
+	static void Frustum(float left, float right, float bottom, float top, float znear, float zfar, float* m16)
 	{
 		float temp, temp2, temp3, temp4;
 		temp = 2.0f * znear;
@@ -31,7 +31,7 @@ namespace PathTrace
 		m16[15] = 0.0;
 	}
 
-	void Perspective(float fovyInDegrees, float aspectRatio, float znear, float zfar, float* m16)
+	static void Perspective(float fovyInDegrees, float aspectRatio, float znear, float zfar, float* m16)
 	{
 		float ymax, xmax;
 		ymax = znear * tanf(fovyInDegrees * 3.141592f / 180.0f);
@@ -39,19 +39,19 @@ namespace PathTrace
 		Frustum(-xmax, xmax, -ymax, ymax, znear, zfar, m16);
 	}
 
-	void Cross(const float* a, const float* b, float* r)
+	static void Cross(const float* a, const float* b, float* r)
 	{
 		r[0] = a[1] * b[2] - a[2] * b[1];
 		r[1] = a[2] * b[0] - a[0] * b[2];
 		r[2] = a[0] * b[1] - a[1] * b[0];
 	}
 
-	float Dot(const float* a, const float* b)
+	static float Dot(const float* a, const float* b)
 	{
 		return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 	}
 
-	void Normalize(const float* a, float* r)
+	static void Normalize(const float* a, float* r)
 	{
 		float il = 1.f / (sqrtf(Dot(a, a)) + FLT_EPSILON);
 		r[0] = a[0] * il;
@@ -59,7 +59,7 @@ namespace PathTrace
 		r[2] = a[2] * il;
 	}
 
-	void LookAt(const float* eye, const float* at, const float* up, float* m16)
+	static void LookAt(const float* eye, const float* at, const float* up, float* m16)
 	{
 		float X[3], Y[3], Z[3], tmp[3];
 
@@ -110,7 +110,7 @@ namespace PathTrace
 		forward = Vec3::Normalize(pivot - position);
 		up = { m[1],m[5],m[9] };
 		right = { m[0],m[4],m[8] };
-		UpdateCamera();
+		updateCamera();
 	}
 
 	Camera::Camera(const Camera& other)
@@ -145,11 +145,11 @@ namespace PathTrace
 	{
 		pivot = p;
 		position = pivot - radius * forward;
-		UpdateCamera();
+		updateCamera();
 	}
 
 
-	void Camera::Strafe(float dx, float dy)
+	void Camera::strafe(float dx, float dy)
 	{
 		std::cout << "dx:" << dx << " | dy:" << dy << std::endl;
 		Vec3 translation = lastright * -dx + lastup * dy;
@@ -159,27 +159,69 @@ namespace PathTrace
 	void Camera::setRadius(float r) {
 		radius = std::max(r, 0.000005f);
 	}
-	void Camera::OffsetRadius(float dr)
+	void Camera::offsetRadius(float dr)
 	{
 		radius += dr;
 		radius = std::max(radius, 0.000005f);
 		position = pivot - radius * forward;
-		UpdateCamera();
+		updateCamera();
 	}
 
-	void Camera::SetFov(float val)
+	void Camera::setFov(float val)
 	{
 		fov = Math::Radians(val);
-		UpdateCamera();
+		updateCamera();
 	}
-	Vec3 Camera::GetEye() {
+	float Camera::getFov()
+	{
+		return fov;
+	}
+	float Camera::getFocalDist()
+	{
+		return focalDist;
+	}
+	void Camera::setFocalDist(float val)
+	{
+		focalDist = val;
+	}
+	float Camera::getAperture()
+	{
+		return aperture;
+	}
+	void Camera::setAperture(float val)
+	{
+		aperture = val;
+	}
+	Vec3 Camera::getUp()
+	{
+		return up;
+	}
+	Vec3 Camera::getForward()
+	{
+		return forward;
+	}
+	Vec3 Camera::getRight()
+	{
+		return right;
+	}
+	Vec3 Camera::getEye() {
 		return position;
 	}
-	Vec3& Camera::GetPivoit() {
+	Vec3& Camera::getPivoit() {
 		return pivot;
 	}
 
-	void Camera::UpdateCamera()
+	Vec3 Camera::getPositon()
+	{
+		return position;
+	}
+
+	void Camera::setPosition(const Vec3& pos)
+	{
+		position = pos;
+	}
+
+	void Camera::updateCamera()
 	{
 		lastposition = position;
 		lastup = up;
@@ -189,7 +231,7 @@ namespace PathTrace
 	}
 
 
-	void Camera::ComputeViewProjectionMatrix(float* view, float* projection, float ratio)
+	void Camera::computeViewProjectionMatrix(float* view, float* projection, float ratio)
 	{
 		Vec3 at = position + forward;
 		LookAt(&position.x, &at.x, &up.x, view);

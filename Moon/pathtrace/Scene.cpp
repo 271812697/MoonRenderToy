@@ -122,16 +122,14 @@ namespace PathTrace
 
 	bool Scene::IntersectionByScreen(float x, float y, Vec3& p)
 	{
-
-
 		Vec2 dd = { 2 * x - 1.0f,2 * y - 1.0f };
-		float scale = tan(mCamera->fov * 0.5);
+		float scale = tan(mCamera->getFov() * 0.5);
 		//fov水平方向的张角
 		dd.y *= renderOptions.renderResolution.y * 1.0f / renderOptions.renderResolution.x * scale;
 		dd.x *= scale;
-		Vec3 RayDir = mCamera->right * dd.x + mCamera->up * dd.y + mCamera->forward;
+		Vec3 RayDir = mCamera->getRight() * dd.x + mCamera->getUp() * dd.y + mCamera->getForward();
 		RayDir = Vec3::Normalize(RayDir);
-		Vec3 RayPos = mCamera->position;
+		Vec3 RayPos = mCamera->getEye();
 		Ray r = { RayPos ,RayDir };
 		float t = 9999.0f;
 		float d = 0.0f;
@@ -253,8 +251,6 @@ namespace PathTrace
 				}
 			}
 			index = stack[--ptr];
-
-
 			// If we've traversed the entire BLAS then switch to back to TLAS and resume where we left off
 			if (BLAS && index == -1)
 			{
@@ -270,7 +266,7 @@ namespace PathTrace
 
 			Vec3 pos = (vert0 * bary.x + vert1 * bary.y + vert2 * bary.z).xyz();
 			p = meshInstances[instanceId].transform.MulPoint(pos);
-			//p = pos;
+			selectMeshInstance = instanceId;
 			CORE_INFO("Hit {0} pos ({1},{2},{3})", meshInstances[instanceId].name, p.x, p.y, p.z);
 			return true;
 		}

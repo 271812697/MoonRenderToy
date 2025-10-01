@@ -1381,21 +1381,21 @@ namespace PathTrace
 					jitter.y /= 2.0f * h;
 					Vec2 dd = Vec2(i * 2.0f / w - 1.0f, j * 2.0f / h - 1.0f) + jitter;
 
-					float scale = tan(camera->fov * 0.5);
+					float scale = tan(camera->getFov() * 0.5);
 					//fov水平方向的张角
 					dd.y *= h * 1.0f / w * scale;
 					dd.x *= scale;
-					Vec3 RayDir = camera->right * dd.x + camera->up * dd.y + camera->forward;
+					Vec3 RayDir = camera->getRight() * dd.x + camera->getUp() * dd.y + camera->getForward();
 					RayDir = Vec3::Normalize(RayDir);
 
-					Vec3 focalPoint = camera->focalDist * RayDir;
+					Vec3 focalPoint = camera->getFocalDist() * RayDir;
 					float cam_r1 = uniform_float() * TWO_PI;
-					float cam_r2 = uniform_float() * camera->aperture;
-					Vec3 randomAperturePos = (cos(cam_r1) * camera->right + sin(cam_r1) * camera->up) * sqrt(cam_r2);
+					float cam_r2 = uniform_float() * camera->getAperture();
+					Vec3 randomAperturePos = (cos(cam_r1) * camera->getRight() + sin(cam_r1) * camera->getUp()) * sqrt(cam_r2);
 					Vec3 finalRayDir = Vec3::Normalize(focalPoint - randomAperturePos);
 
 
-					Ray r = { camera->position + randomAperturePos ,finalRayDir };
+					Ray r = { camera->getEye() + randomAperturePos ,finalRayDir };
 					Vec3 res = Trace(r).xyz();
 					int index = (i * w + j) * 4;
 					imagesum[index] += res.x;

@@ -9,7 +9,7 @@
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "Debug/debugPanel.h"
-#include "pqLoadDataReaction.h"
+#include "Reaction/pqLoadDataReaction.h"
 
 namespace MOON {
 	class Editor::EditorInternal {

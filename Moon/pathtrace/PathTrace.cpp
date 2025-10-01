@@ -181,7 +181,10 @@ namespace PathTrace {
 				auto y = e2->y();
 				Qt::MouseButton mb = e2->button();
 				if (mb == Qt::MouseButton::LeftButton) {
-					cameraController->mouseLeftPress(x, y);
+					Vec3 p;
+					if (mSelf->GetScene()->IntersectionByScreen(1.0 * x / mSelf->GetRenderOptions().windowResolution.x, 1.0 - 1.0 * y / mSelf->GetRenderOptions().windowResolution.y, p)) {
+						cameraController->PustCameraDestination(p.x, p.y, p.z);
+					}
 				}
 				else if (mb == Qt::MouseButton::MiddleButton) {
 					cameraController->mouseMiddlePress(x, y);
@@ -217,7 +220,6 @@ namespace PathTrace {
 				QWheelEvent* e2 = static_cast<QWheelEvent*>(event);
 				cameraController->wheelMouseWheel(e2->angleDelta().y());
 			}
-
 		}
 	private:
 		friend CameraController;
@@ -352,7 +354,7 @@ namespace PathTrace {
 	void CameraController::mouseMove(int _x, int _y)
 	{
 		if (mouseMiddle) {
-			render->GetScene()->getCamera()->Strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
+			render->GetScene()->getCamera()->strafe((_x - tx) * 0.1, (_y - ty) * 0.1);
 			render->GetScene()->setDirty(true);
 		}
 		else if (mouseRight)
@@ -377,7 +379,7 @@ namespace PathTrace {
 	{
 		this->tx = x;
 		this->ty = y;
-		render->GetScene()->getCamera()->UpdateCamera();
+		render->GetScene()->getCamera()->updateCamera();
 		mouseMiddle = true;
 	}
 
@@ -385,7 +387,7 @@ namespace PathTrace {
 	{
 		this->rx = x;
 		this->ry = y;
-		render->GetScene()->getCamera()->UpdateCamera();
+		render->GetScene()->getCamera()->updateCamera();
 		mouseRight = true;
 	}
 
@@ -401,20 +403,19 @@ namespace PathTrace {
 
 	void CameraController::wheelMouseWheel(float delta)
 	{
-
 		float dt = delta * 0.000025 * render->GetScene()->getBBox().diagonalDistance();
-		render->GetScene()->getCamera()->OffsetRadius(dt);
+		render->GetScene()->getCamera()->offsetRadius(dt);
 		render->GetScene()->setDirty(true);
 	}
 	void CameraController::GetCameraPosition(float eye[3]) {
-		Vec3 p = render->GetScene()->getCamera()->GetEye();
+		Vec3 p = render->GetScene()->getCamera()->getEye();
 		eye[0] = p.x;
 		eye[1] = p.y;
 		eye[2] = p.z;
 	}
 	void CameraController::GetViewProject(float view[16], float proj[16]) {
 		render->GetRenderer()->GetProgress();
-		render->GetScene()->getCamera()->ComputeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
+		render->GetScene()->getCamera()->computeViewProjectionMatrix(view, proj, 1.0f * render->GetRenderOptions().windowResolution.x / render->GetRenderOptions().windowResolution.y);
 	}
 	void CameraController::MoveToPivot(float deltaTime) {
 		if (!cameraDestinations.empty()) {
@@ -423,7 +424,7 @@ namespace PathTrace {
 			}
 			float t = 5.0f * deltaTime;
 			auto& destion = cameraDestinations[0];
-			auto& piviot = render->GetScene()->getCamera()->GetPivoit();
+			auto& piviot = render->GetScene()->getCamera()->getPivoit();
 			if (Vec3::Length(destion - piviot) < 0.03f) {
 				render->GetScene()->getCamera()->setPivot(destion);
 				cameraDestinations.pop_back();

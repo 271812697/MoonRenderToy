@@ -556,7 +556,7 @@ namespace PathTrace
 		BRDF_LUT->Bind(19);
 		float viewMatrix[16];
 		float projMatrix[16];
-		scene->mCamera->ComputeViewProjectionMatrix(viewMatrix, projMatrix, 1.0f * renderSize.x / renderSize.y);
+		scene->mCamera->computeViewProjectionMatrix(viewMatrix, projMatrix, 1.0f * renderSize.x / renderSize.y);
 		glProgramUniformMatrix4fv(pbrShader->ID(), 1001, 1, GL_FALSE, viewMatrix);
 		glProgramUniformMatrix4fv(pbrShader->ID(), 1002, 1, GL_FALSE, projMatrix);
 		glProgramUniform3fv(pbrShader->ID(), 1003, 1, &scene->mCamera->position.x);

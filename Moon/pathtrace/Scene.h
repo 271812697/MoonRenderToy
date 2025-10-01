@@ -63,10 +63,8 @@ namespace PathTrace
 		friend Renderer;
 		// Options
 		RenderOptions renderOptions;
-
 		// Meshes
 		std::vector<Mesh*> meshes;
-
 		// Scene Mesh Data 
 		std::vector<Indices> vertIndices;
 		std::vector<Vec4> verticesUVX; // Vertex + texture Coord (u/s)
@@ -79,6 +77,7 @@ namespace PathTrace
 		std::vector<MeshInstance> meshInstances;
 		std::vector<std::vector<int>>meshInstancesTree;
 		std::vector<int>meshInstancesRoots;
+		int selectMeshInstance = -1;
 		// Lights
 		std::vector<Light> lights;
 		// Environment Map

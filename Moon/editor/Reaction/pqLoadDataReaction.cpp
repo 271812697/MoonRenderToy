@@ -1,5 +1,10 @@
 ﻿#include "pqLoadDataReaction.h"
-#include "pqFileDialog.h"
+#include "editor/View/sceneview/viewerwidget.h"
+#include "editor/View/pathtrace/pathtraceWidget.h"
+#include "renderer/Context.h"
+#include "OvCore/Global/ServiceLocator.h"
+#include "core/log.h"
+
 #include <QtWidgets/QFileDialog>
 #include <QDebug>
 #include <QInputDialog>
@@ -7,17 +12,12 @@
 #include <QRegExp>
 #include <QApplication>
 #include <QMainWindow>
-#include "editor/View/sceneview/viewerwidget.h"
-#include "editor/View/pathtrace/pathtraceWidget.h"
-#include "renderer/Context.h"
-
-#include "OvCore/Global/ServiceLocator.h"
 #include <algorithm>
 #include <cassert>
 #include <string>
 #include <vector>
 #include <iostream>
-#include "core/log.h"
+
 
 
 namespace MOON {
