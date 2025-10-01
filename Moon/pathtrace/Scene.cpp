@@ -12,12 +12,8 @@
 #include "Renderer.h"
 #include "Trace.h"
 #include "core/log.h"
-
-
 namespace PathTrace
 {
-
-
 	Scene::Scene() : mCamera(nullptr), envMap(nullptr), initialized(false), dirty(true) {
 		sceneBvh = new RadeonRays::Bvh(10.0f, 64, false);
 	}
@@ -468,7 +464,6 @@ namespace PathTrace
 
 	void Scene::ProcessScene()
 	{
-
 		createBLAS();
 		meshInstancesTree.resize(meshInstances.size());
 		for (int i = 0; i < meshInstances.size(); i++) {
@@ -481,12 +476,9 @@ namespace PathTrace
 			}
 		}
 		createTLAS();
-
 		bvhTranslator.Process(sceneBvh, meshes, meshInstances);
-
 		// Copy mesh data
 		int verticesCnt = 0;
-
 		CORE_INFO("Copying Mesh Data\n");
 		for (int i = 0; i < meshes.size(); i++)
 		{
@@ -494,44 +486,34 @@ namespace PathTrace
 			// Required if splitBVH is used as a triangle can be shared by leaf nodes
 			int numIndices = meshes[i]->getBvH()->GetNumIndices();
 			const int* triIndices = meshes[i]->getBvH()->GetIndices();
-
 			for (int j = 0; j < numIndices; j++)
 			{
 				int index = triIndices[j];
 				int v1 = (index * 3 + 0) + verticesCnt;
 				int v2 = (index * 3 + 1) + verticesCnt;
 				int v3 = (index * 3 + 2) + verticesCnt;
-
 				vertIndices.push_back(Indices{ v1, v2, v3 });
 			}
-
 			verticesUVX.insert(verticesUVX.end(), meshes[i]->getPosUvX().begin(), meshes[i]->getPosUvX().end());
 			normalsUVY.insert(normalsUVY.end(), meshes[i]->getNorUvY().begin(), meshes[i]->getNorUvY().end());
-
 			verticesCnt += meshes[i]->getPosUvX().size();
 		}
-
 		// Copy transforms
 		CORE_INFO("Copying transforms\n");
 		transforms.resize(meshInstances.size());
 		for (int i = 0; i < meshInstances.size(); i++)
 			transforms[i] = meshInstances[i].transform;
-
 		// Copy textures
 		if (!textures.empty())
 			CORE_INFO("Copying and resizing textures\n");
-
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
 		int texBytes = reqWidth * reqHeight * 4;
 		textureMapsArray.resize(texBytes * textures.size());
-
-
 		for (int i = 0; i < textures.size(); i++)
 		{
 			int texWidth = textures[i]->width;
 			int texHeight = textures[i]->height;
-
 			// Resize textures to fit 2D texture array
 			if (texWidth != reqWidth || texHeight != reqHeight)
 			{
@@ -543,7 +525,6 @@ namespace PathTrace
 			else
 				std::copy(textures[i]->texData.begin(), textures[i]->texData.end(), &textureMapsArray[i * texBytes]);
 		}
-
 		// Add a default camera
 		if (!mCamera)
 		{
@@ -551,9 +532,7 @@ namespace PathTrace
 			Vec3 extents = bounds.extents();
 			Vec3 center = bounds.center();
 			AddCamera(Vec3(center.x, center.y, center.z + Vec3::Length(extents) * 2.0f), center, 45.0f);
-
 		}
-
 		initialized = true;
 	}
 }
