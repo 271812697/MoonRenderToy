@@ -27,6 +27,8 @@ namespace MOON {
 		void resetNegativeX();
 		void resetNegativeY();
 		void resetNegativeZ();
+		void resetIsometriview();
+		void resetZoomToSelect();
 	public Q_SLOTS: // NOLINT(readability-redundant-access-specifiers)
 		void updateEnableState() override;
 	protected:

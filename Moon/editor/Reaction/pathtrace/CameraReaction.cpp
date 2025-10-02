@@ -99,6 +99,36 @@ namespace MOON {
 			scene->setDirty(true);
 		}
 	}
+	void CameraReaction::resetIsometriview()
+	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			Vec3 center = box.center();
+			Vec3 extent = box.extents();
+			camera->lookAt(center + extent, center);
+			scene->setDirty(true);
+		}
+	}
+	void CameraReaction::resetZoomToSelect()
+	{
+		auto& instance = PathTrace::PathTraceRender::instance();
+		auto scene = instance.GetScene();
+		int selectId = scene->getSelectInstanceId();
+		if (selectId != -1) {
+			auto camera = scene->getCamera();
+			auto box = scene->getMeshInstanceBox(selectId);
+			auto forward = camera->getForward();
+			Vec3 center = box.center();
+			float extent = Vec3::Length(box.extents());
+			camera->lookAt(center - extent * forward, center);
+			scene->setDirty(true);
+		}
+	}
 	void CameraReaction::updateEnableState() {
 
 	}
@@ -128,8 +158,11 @@ namespace MOON {
 			this->resetNegativeZ();
 			break;
 		case APPLY_ISOMETRIC_VIEW:
+			this->resetIsometriview();
 			break;
+
 		case ZOOM_TO_DATA:
+			resetZoomToSelect();
 			break;
 		case ROTATE_CAMERA_CW:
 			break;
