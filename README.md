@@ -1,10 +1,6 @@
-# Use Qt
+# Moon Render Toy
 
-使用Qt写的几个例子
-
-## **Node Graph**
-
-![image-20241108201016934](README.assets/image-20241108201016934.png)
+This is a renderer written based on Qt+Opengl
 
 ## PathTrace
 
@@ -19,3 +15,15 @@
 ![image-20250608134539723](README.assets/image-20250608134539723.png)
 
 ![image-20250926021350327](README.assets/image-20250926021350327.png)
+
+## To Do
+
+### PathTrace
+
+Here are a lot of things to do:
+
+- [ ] Added animation effects to camera perspective adjustment
+- [ ] Render options panel
+- [ ] Materials panel
+- [ ] Visibility Control and Selection Interactions
+
