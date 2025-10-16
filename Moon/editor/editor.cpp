@@ -43,9 +43,9 @@ namespace MOON {
 			self->addDockWidget(Qt::LeftDockWidgetArea, HierarchypanelDock);
 			auto resourcePanelDock = new ResPanel(self);
 			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
-			auto debugWidget = new DebugWidget(self);
-			self->addDockWidget(Qt::LeftDockWidgetArea, debugWidget);
-			self->tabifyDockWidget(HierarchypanelDock, debugWidget);
+			//auto debugWidget = new DebugWidget(self);
+			//self->addDockWidget(Qt::LeftDockWidgetArea, debugWidget);
+			//self->tabifyDockWidget(HierarchypanelDock, debugWidget);
 
 		}
 		void buildMenu() {

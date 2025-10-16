@@ -10,6 +10,7 @@
 #include "OvCore/ECS/Components/CPostProcessStack.h"
 #include "pathtrace/LoadScene.h"
 #include "Settings/DebugSetting.h"
+#include "io/io_occ_step.h"
 
 
 namespace MOON {
@@ -110,6 +111,9 @@ namespace MOON {
 			PathTrace::LoadGLTF(sceneName, scene, xform, false);
 		else if (ext == "glb")
 			PathTrace::LoadGLTF(sceneName, scene, xform, true);
+		else if (ext == "STEP") {
+			IO::ReadSTEP(sceneName.c_str(), scene);
+		}
 		else
 		{
 			auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadResource(sceneName);
