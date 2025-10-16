@@ -63,9 +63,11 @@ void OvCore::ResourceManagement::ModelManager::ReloadResource(OvRendering::Resou
 	OvRendering::Resources::Loaders::ModelLoader::Reload(*p_resource, realPath, GetAssetMetadata(realPath));
 }
 
-OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFromMemory(const std::vector<float>& v, const std::vector<unsigned int>& i)
+OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<float>& v, const std::vector<unsigned int>& i)
 {
-	return OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(v, i);
+	auto model= OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(v, i);
+	RegisterResource(name, model);
+	return model;
 }
 
 OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<OvMaths::FVector3>& normal, const std::vector<OvMaths::FVector2>& uv, const std::vector<unsigned int>& i)
@@ -76,6 +78,13 @@ OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFro
 OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<OvMaths::FVector3>& vertex, const std::vector<OvMaths::FVector3>& normal, const std::vector<OvMaths::FVector2>& uv, const std::vector<unsigned int>& index)
 {
 	auto model = LoadFromMemory(vertex, normal, uv, index);
+	RegisterResource(name, model);
+	return model;
+}
+
+OvRendering::Resources::Model* OvCore::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<OvMaths::FVector3>& vertex, const std::vector<unsigned int>& index)
+{
+	auto model = OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(vertex, index);
 	RegisterResource(name, model);
 	return model;
 }

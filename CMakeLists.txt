@@ -3,7 +3,7 @@ project(UseQt LANGUAGES C CXX)
 
 option(USE_QT6 "Build with Qt6 (Enabled by default)" OFF)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -36,6 +36,121 @@ set(CMAKE_AUTORCC ON)
 option (TRACY_ENABLE "" ON)
 option (TRACY_ON_DEMAND "" ON)
 set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
+
+##########
+# OpenCascade
+##########
+
+if(WIN32)
+    # Can't use find_package(OpenCASCADE) as OpenCASCADEConfig.cmake is broken for Windows platform
+    # See https://dev.opencascade.org/content/3rdparty-hard-coded-paths-when-building-against-opencascade
+    include(${PROJECT_SOURCE_DIR}/cmake/OpenCascadeWin.cmake)
+    if (OpenCASCADE_FOUND)
+        # Add OpenCASCADE include directory
+        list(APPEND Mayo_IncludeDirectories ${OpenCASCADE_INCLUDE_DIR})
+
+        # Add OpenCASCADE library directories
+        # Note: QtCreator option "Run->Add build library search to PATH" will add to PATH env variable
+        #       the contents of MayoCore_LinkDirectories variable. For convenience, let's add also the
+        #       directories containing DLLs
+        list(
+            APPEND MayoCore_LinkDirectories
+            ${OpenCASCADE_BINARY_DIR}
+            ${OpenCASCADE_LIBRARY_DIR}
+            ${OpenCASCADE_3RDPARTY_BINARY_DIRS}
+        )    
+     endif()
+else()
+
+endif()
+
+list(APPEND Mayo_CompileDefinitions OCCT_HANDLE_NOCAST)
+if(UNIX AND NOT APPLE)
+    list(APPEND Mayo_CompileDefinitions OCC_CONVERT_SIGNALS)
+endif()
+
+if(OpenCASCADE_FOUND)
+    message(STATUS "OpenCascade version ${OpenCASCADE_VERSION}")
+
+    # std::iterator class template(used as a base class to provide typedefs) is deprecated in C++17
+    # OpenCascade < 7.7.0 uses std::iterator for NCollection_StlIterator and this is causing many
+    # deprecation warnings
+    if(OpenCASCADE_VERSION VERSION_LESS 7.7.0)
+        if(MSVC)
+            # Silent warnings C4996 and STL4015
+            list(APPEND Mayo_CompileDefinitions _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+        elseif((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12))
+            list(APPEND Mayo_CompileOptions -Wno-deprecated-declarations)
+        endif()
+    endif()
+
+    # Add OpenCASCADE libraries
+    list(
+        APPEND MayoCore_LinkLibraries
+        # FoundationClasses
+        TKernel TKMath
+        # ModelingData
+        TKG2d TKG3d TKGeomBase TKBRep
+        # ModelingAlgorithms
+        TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
+        # Visualization
+        TKMeshVS TKOpenGl TKService TKV3d
+        # ApplicationFramework
+        TKBin TKBinL TKBinXCAF TKCAF TKCDF TKLCAF TKVCAF TKXml TKXmlL
+        # DataExchange
+        TKXCAF TKXmlXCAF TKXSBase
+    )
+
+    if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.8.0)
+        list(APPEND MayoIO_LinkLibraries TKDE)
+        list(APPEND MayoIO_LinkLibraries TKDEIGES)
+        list(APPEND MayoIO_LinkLibraries TKDESTEP)
+        list(APPEND MayoIO_LinkLibraries TKDESTL)
+        list(APPEND MayoIO_LinkLibraries TKDEVRML)
+    else()
+        list(APPEND MayoIO_LinkLibraries TKIGES TKXDEIGES)
+        list(APPEND MayoIO_LinkLibraries TKSTEP TKSTEP209 TKSTEPAttr TKSTEPBase TKXDESTEP)
+        list(APPEND MayoIO_LinkLibraries TKSTL)
+        list(APPEND MayoIO_LinkLibraries TKVRML)
+        if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.7.0)
+            list(APPEND MayoIO_LinkLibraries TKXDE)
+        endif()
+    endif()
+
+    # OBJ/glTF support
+    if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.4.0)
+        list(APPEND MayoIO_LinkLibraries TKRWMesh)
+        if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.8.0)
+            list(APPEND MayoIO_LinkLibraries TKDEOBJ TKDEGLTF)
+        endif()
+    else()
+        list(
+            REMOVE_ITEM MayoIO_SourceFiles
+            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_base_mesh.cpp
+            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_gltf_reader.cpp
+            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_obj_reader.cpp
+        )
+        message(STATUS "glTF reader disabled because OpenCascade < v7.4")
+        message(STATUS "OBJ reader disabled because OpenCascade < v7.4")
+    endif()
+
+    if(OpenCASCADE_VERSION VERSION_LESS 7.5.0)
+        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_gltf_writer.cpp)
+        message(STATUS "glTF writer disabled because OpenCascade < v7.5")
+    endif()
+
+    if(OpenCASCADE_VERSION VERSION_LESS 7.6.0)
+        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_obj_writer.cpp)
+        message(STATUS "OBJ writer disabled because OpenCascade < v7.6")
+    endif()
+
+    # VRML support
+    if(OpenCASCADE_VERSION VERSION_LESS 7.7.0)
+        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_vrml_reader.cpp)
+        message(STATUS "VRML reader disabled because OpenCascade < v7.7")
+    endif()
+endif()
+
 add_subdirectory(Extern)
 add_subdirectory(QtNode)
 add_subdirectory(Moon)

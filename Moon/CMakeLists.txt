@@ -50,12 +50,16 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         assimp
         tinygltf
         core
+        ${MayoCore_LinkLibraries}
+        ${MayoIO_LinkLibraries}
 )
 target_include_directories(${TARGET_NAME} PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${EIGEN3_INCLUDE_DIR}
     ${ThirdPartyDir}
+    ${Mayo_IncludeDirectories}
 )
+
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
 set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
@@ -93,3 +97,18 @@ set(PROJECT_EDITOR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Editor\\")
 file(TO_CMAKE_PATH "${PROJECT_EDITOR_PATH}" PROJECT_EDITOR_PATH_CMAKE)
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_EDITOR_PATH="${PROJECT_EDITOR_PATH_CMAKE}")
 
+# Copy OpenCascade 3rd-party DLLs
+foreach(Occ3rdDLL ${OpenCASCADE_3RDPARTY_DLLS})
+    add_custom_command(
+        TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Occ3rdDLL}" $<TARGET_FILE_DIR:${TARGET_NAME}>
+    )
+endforeach()
+
+# Copy runtime DLLs specified with library IMPORTED_LOCATION property
+add_custom_command(
+    TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
+    COMMAND_EXPAND_LISTS
+)

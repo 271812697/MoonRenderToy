@@ -1,4 +1,4 @@
-
+﻿
 
 #include "OvRendering/Resources/Loaders/ModelLoader.h"
 
@@ -147,26 +147,72 @@ bool OvRendering::Resources::Loaders::ModelLoader::Destroy(Model*& p_modelInstan
 OvRendering::Resources::Model* OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<float>& v, const std::vector<unsigned int>& i)
 {
 	Model* result = new Model("Memory");
-	std::vector<Geometry::Vertex> vertices(v.size() / 8);
-	std::vector<uint32_t> indices = i;
-	for (int k = 0; k < vertices.size(); k++) {
-		vertices[k].position[0] = v[8 * k];
-		vertices[k].position[1] = v[8 * k + 1];
-		vertices[k].position[2] = v[8 * k + 2];
-		vertices[k].normals[0] = v[8 * k + 3];
-		vertices[k].normals[1] = v[8 * k + 4];
-		vertices[k].normals[2] = v[8 * k + 5];
-		vertices[k].texCoords[0] = v[8 * k + 6];
-		vertices[k].texCoords[1] = v[8 * k + 7];
+	int numFaces = i.size() / 3;
+	std::vector<Geometry::Vertex> vertices(numFaces*3);
+	for (int k = 0; k < numFaces; k++) {
+		for (int m = 0; m < 3; m++) {
+            int index = 3 * k+m;
+			vertices[index].position[0] = v[i[index]];
+			vertices[index].position[1] = v[i[index]+1];
+			vertices[index].position[2] = v[i[index]+2];
+		}
+		OvMaths::FVector3 edge1 = OvMaths::FVector3::Substract(OvMaths::FVector3(vertices[3 * k + 1].position[0], vertices[3 * k + 1].position[1], vertices[3 * k + 1].position[2]),
+			OvMaths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+		OvMaths::FVector3 edge2 = OvMaths::FVector3::Substract(OvMaths::FVector3(vertices[3 * k + 2].position[0], vertices[3 * k + 2].position[1], vertices[3 * k + 2].position[2]),
+			OvMaths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+		OvMaths::FVector3 normal = OvMaths::FVector3::Cross(edge1, edge2);
+		normal = OvMaths::FVector3::Normalize(normal);
+		for (int m = 0; m < 3; m++) {
+			int index = 3 * k + m;
+			vertices[index].normals[0] = normal.x;
+			vertices[index].normals[1] = normal.y;
+			vertices[index].normals[2] = normal.z;
+			vertices[index].texCoords[0] = 0.0f;
+			vertices[index].texCoords[1] = 0.0f;
+		}	
 	}
-	GenerateTangents(vertices.data(),sizeof(Geometry::Vertex),indices.data(),4,0,indices.size(),20,12,32);
-	result->m_meshes.push_back(new Mesh(vertices, indices, 0));
+	
+	result->m_meshes.push_back(new Mesh(vertices, i, 0));
 	result->m_materialNames.push_back("Default");
 	result->ComputeBoundingSphere();
 	return result;
 
 }
+OvRendering::Resources::Model* OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<unsigned int>& i)
+{
+	Model* result = new Model("Memory");
+	int numFaces = i.size() / 3;
 
+	std::vector<Geometry::Vertex> vertices(numFaces*3);
+	for (int k = 0; k < numFaces; k++) {
+		for (int m = 0; m < 3; m++) {
+			int index = 3 * k+m;
+			vertices[index].position[0] = vertex[i[index]].x;
+			vertices[index].position[1] = vertex[i[index]].y;
+			vertices[index].position[2] = vertex[i[index]].z;
+		}
+		OvMaths::FVector3 edge1 = OvMaths::FVector3::Substract(OvMaths::FVector3(vertices[3 * k + 1].position[0], vertices[3 * k + 1].position[1], vertices[3 * k + 1].position[2]),
+			OvMaths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+		OvMaths::FVector3 edge2 = OvMaths::FVector3::Substract(OvMaths::FVector3(vertices[3 * k + 2].position[0], vertices[3 * k + 2].position[1], vertices[3 * k + 2].position[2]),
+			OvMaths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+
+		OvMaths::FVector3 normal = OvMaths::FVector3::Cross(edge1, edge2);
+
+		normal = OvMaths::FVector3::Normalize(normal);
+		for (int m = 0; m < 3; m++) {
+			int index = 3 * k + m;
+			vertices[index].normals[0] = normal.x;
+			vertices[index].normals[1] = normal.y;
+			vertices[index].normals[2] = normal.z;
+			vertices[index].texCoords[0] = 0.0f;
+			vertices[index].texCoords[1] = 0.0f;
+		}
+	}
+	result->m_meshes.push_back(new Mesh(vertices, i, 0));
+	result->m_materialNames.push_back("Default");
+	result->ComputeBoundingSphere();
+	return result;
+}
 OvRendering::Resources::Model* OvRendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<OvMaths::FVector3>& normal, const std::vector<OvMaths::FVector2>& uv, const std::vector<unsigned int>& i)
 {
 	Model* result = new Model("Memory");

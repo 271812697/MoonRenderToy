@@ -38,6 +38,7 @@ namespace OvRendering::Resources::Loaders
 		*/
 		static bool Destroy(Model*& p_modelInstance);
 		static Model* LoadFromMemory(const std::vector<float>& v, const std::vector<unsigned int>& i);
+		static Model* LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<unsigned int>& i);
 		static Model* LoadFromMemory(const std::vector<OvMaths::FVector3>& vertex, const std::vector<OvMaths::FVector3>& normal, const std::vector<OvMaths::FVector2>& uv, const std::vector<unsigned int>& i);
 	private:
 		static Parsers::AssimpParser __ASSIMP;
