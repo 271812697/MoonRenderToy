@@ -1,6 +1,6 @@
 ﻿#include "resource/DarkStyle.h"
 #include "core/log.h"
-#include "Platform/Public/Platform.h"
+//#include "Platform/Public/Platform.h"
 #include <QApplication>
 #include <QFontDatabase>
 #include <editor/editor.h>
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
 	int res = QApplication::exec();
 	MOON::Log::Shutdown();
-    PlatformWindows::LoopAllMoudle();
+   // PlatformWindows::LoopAllMoudle();
 	return res;
 	
 

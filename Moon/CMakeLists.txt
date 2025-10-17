@@ -97,6 +97,25 @@ set(PROJECT_EDITOR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Editor\\")
 file(TO_CMAKE_PATH "${PROJECT_EDITOR_PATH}" PROJECT_EDITOR_PATH_CMAKE)
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_EDITOR_PATH="${PROJECT_EDITOR_PATH_CMAKE}")
 
+
+set(QtPluginsDir "${QT_DIR}/../../../plugins")
+file(GLOB QtPluginIconEnginesDLLs  "${QtPluginsDir}/iconengines/qsvgicon*.dll")
+file(GLOB QtPluginImageFormatsDLLs "${QtPluginsDir}/imageformats/qsvg*.dll")
+file(GLOB QtPluginPlatformsDLLs    "${QtPluginsDir}/platforms/qwindows*.dll")
+set(QtPluginsDLLs ${QtPluginIconEnginesDLLs} ${QtPluginImageFormatsDLLs} ${QtPluginPlatformsDLLs})
+foreach(QtPluginDLL ${QtPluginsDLLs})
+    cmake_path(GET QtPluginDLL PARENT_PATH QtPluginDLL_Path)
+    cmake_path(GET QtPluginDLL_Path FILENAME QtPluginDLL_PathName)
+    add_custom_command(
+        TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${TARGET_NAME}>/plugins/${QtPluginDLL_PathName}"
+    )
+    add_custom_command(
+        TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${QtPluginDLL}" "$<TARGET_FILE_DIR:${TARGET_NAME}>/plugins/${QtPluginDLL_PathName}"
+    )
+endforeach()
 # Copy OpenCascade 3rd-party DLLs
 foreach(Occ3rdDLL ${OpenCASCADE_3RDPARTY_DLLS})
     add_custom_command(
@@ -107,7 +126,7 @@ endforeach()
 
 # Copy runtime DLLs specified with library IMPORTED_LOCATION property
 add_custom_command(
-    TARGET ${TARGET_NAME} POST_BUILD
+   TARGET ${TARGET_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
     COMMAND_EXPAND_LISTS

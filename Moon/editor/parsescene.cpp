@@ -111,7 +111,7 @@ namespace MOON {
 			PathTrace::LoadGLTF(sceneName, scene, xform, false);
 		else if (ext == "glb")
 			PathTrace::LoadGLTF(sceneName, scene, xform, true);
-		else if (ext == "STEP") {
+		else if (ext == "STEP"|| ext== "stp" ) {
 			IO::ReadSTEP(sceneName.c_str(), scene);
 		}
 		else
