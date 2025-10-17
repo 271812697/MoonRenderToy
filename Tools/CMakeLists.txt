@@ -4,4 +4,5 @@ add_subdirectory(filaflat)
 add_subdirectory(matc)
 add_subdirectory(resgen)
 add_subdirectory(shadergen)
+add_subdirectory(dumper)
 

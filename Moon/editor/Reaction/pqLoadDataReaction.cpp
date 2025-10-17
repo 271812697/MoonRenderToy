@@ -1,23 +1,9 @@
 ﻿#include "pqLoadDataReaction.h"
 #include "editor/View/sceneview/viewerwidget.h"
 #include "editor/View/pathtrace/pathtraceWidget.h"
-#include "renderer/Context.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "core/log.h"
-
 #include <QtWidgets/QFileDialog>
-#include <QDebug>
-#include <QInputDialog>
-#include <QMap>
-#include <QRegExp>
-#include <QApplication>
-#include <QMainWindow>
-#include <algorithm>
-#include <cassert>
-#include <string>
-#include <vector>
-#include <iostream>
-
 
 
 namespace MOON {
