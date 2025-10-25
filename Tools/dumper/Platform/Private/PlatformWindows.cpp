@@ -387,7 +387,7 @@ void PlatformWindows::LoopAllMoudle()
 		const std::wstring WideModuleName(Entry->BaseDllName.Buffer, Entry->BaseDllName.Length >> 1);
 		const std::string ModuleName = std::string(WideModuleName.begin(), WideModuleName.end());
 		std::cout << ModuleName << std::endl;
-		//if (ModuleName =="Moon.exe")
+		if (ModuleName =="Moon.exe")
 		{
 			std::cout<<"地址区间：[" << reinterpret_cast<uintptr_t>(Entry->DllBase) << "," << (reinterpret_cast<uintptr_t>(Entry->DllBase) + Entry->SizeOfImage) << "]" << std::endl;
 			uintptr_t ModuleBase = reinterpret_cast<uintptr_t>(Entry->DllBase);
