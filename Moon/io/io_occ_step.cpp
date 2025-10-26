@@ -212,7 +212,21 @@ namespace MOON {
 
             std::vector<TopoDS_Face> faces;
             CollectFaces(shape, faces);
+            OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
+            OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
+            tempMat->SetBackfaceCulling(false);
+            tempMat->SetCastShadows(false);
+            tempMat->SetReceiveShadows(false);
 
+            tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+            tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0f, 1.0f, 1.0f, 1.0f });
+
+            tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+            tempMat->SetProperty("u_Roughness", 0.1f);
+            tempMat->SetProperty("u_Metallic", 0.1f);
+            // Emission
+            tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+            tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f, 0.0f, 0.0f });
             int i = 0;
             for (auto& f : faces) {
                 i++;
@@ -247,21 +261,7 @@ namespace MOON {
                 auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(faceName, positions, normals, uvs, indices);
 
                 // 创建并注册默认材质
-                OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-                OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(faceName, tempMat);
-                tempMat->SetBackfaceCulling(false);
-                tempMat->SetCastShadows(false);
-                tempMat->SetReceiveShadows(false);
-
-                tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-                tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0f, 1.0f, 1.0f, 1.0f });
-
-                tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-                tempMat->SetProperty("u_Roughness", 0.1f);
-                tempMat->SetProperty("u_Metallic", 0.1f);
-                // Emission
-                tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-                tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f, 0.0f, 0.0f });
+             
 
                 // 在场景中创建 Actor 并绑定模型/材质
                 auto& actor = scene->CreateActor();
