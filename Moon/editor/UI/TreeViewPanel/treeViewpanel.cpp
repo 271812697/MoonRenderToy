@@ -184,7 +184,7 @@ namespace MOON {
 	};
 	TreeViewPanel::TreeViewPanel(QWidget* parent) :QTreeView(parent), mInternal(new TreeViewPanelInternal(this))
 	{
-		COPROVITE(TreeViewPanel, *this);
+		RegService(TreeViewPanel, *this);
 		QSizePolicy sizePolicy8(QSizePolicy::Preferred, QSizePolicy::Expanding);
 		sizePolicy8.setHorizontalStretch(0);
 		sizePolicy8.setVerticalStretch(0);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "AView.h"
 #include "CameraController.h"
 
@@ -57,6 +57,8 @@ namespace OvEditor {
 			* Set the camera clear color
 			*/
 			void ResetClearColor();
+
+			void setCameraMode(OvRendering::Settings::EProjectionMode mode);
 
 		protected:
 			OvMaths::FVector3 m_gridColor;

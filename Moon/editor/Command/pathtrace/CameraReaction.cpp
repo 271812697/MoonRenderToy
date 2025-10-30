@@ -4,10 +4,12 @@
 #include "pathtrace/Camera.h"
 
 namespace MOON {
-	CameraReaction::CameraReaction(QAction* parent, Mode mode) :Superclass(parent)
+	CameraReaction::CameraReaction(QObject* parent, Mode mode) :Command(parent)
 	{
 		this->ReactionMode = mode;
-		this->updateEnableState();
+		auto action = new QAction(this);
+		setAction(action);
+			
 	}
 	void CameraReaction::resetPositiveX()
 	{
@@ -129,10 +131,7 @@ namespace MOON {
 			scene->setDirty(true);
 		}
 	}
-	void CameraReaction::updateEnableState() {
-
-	}
-	void CameraReaction::onTriggered()
+	void CameraReaction::execute()
 	{
 		switch (this->ReactionMode)
 		{

@@ -94,8 +94,8 @@ namespace MOON {
 
 	void ParseScene::ParsePathTraceScene(const std::string& path) {
 
-		OVSERVICE(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
-		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		GetService(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
+		OvCore::SceneSystem::Scene* scene = GetService(OvEditor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}
@@ -111,7 +111,7 @@ namespace MOON {
 			PathTrace::LoadGLTF(sceneName, scene, xform, false);
 		else if (ext == "glb")
 			PathTrace::LoadGLTF(sceneName, scene, xform, true);
-		else if (ext == "STEP") {
+		else if (ext == "STEP"|| ext== "stp" ) {
 			IO::ReadSTEP(sceneName.c_str(), scene);
 		}
 		else

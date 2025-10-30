@@ -1,54 +1,26 @@
-#pragma once
+﻿#pragma once
 #include "GizmoBehaviour.h"
 #include "AViewControllable.h"
 #include "PickingRenderPass.h"
 
-
 namespace OvEditor::Panels
 {
-
 
 	class SceneView : public OvEditor::Panels::AViewControllable
 	{
 	public:
-		/**
-		* Constructor
-		* @param p_title
-		* @param p_opened
-		* @param p_windowSettings
-		*/
 		SceneView(
 			const std::string& p_title
 		);
 
-		/**
-		* Update the scene view
-		*/
 		virtual void Update(float p_deltaTime) override;
-
-		/**
-		* Prepare the renderer for rendering
-		*/
 		virtual void InitFrame() override;
-
-		/**
-		* Returns the scene used by this view
-		*/
 		virtual OvCore::SceneSystem::Scene* GetScene();
-
-		/**
-		* Set the gizmo operation
-		* @param p_operation
-		*/
+		void FitToSelectedActor(const OvMaths::FVector3& dir);
+		void FitToScene(const OvMaths::FVector3& dir);
 		void SetGizmoOperation(Core::EGizmoOperation p_operation);
-
-		/**
-		* Returns the current gizmo operation
-		*/
 		Core::EGizmoOperation GetGizmoOperation() const;
 		void ReceiveEvent(QEvent* e);
-
-
 	protected:
 		virtual OvCore::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 

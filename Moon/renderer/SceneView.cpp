@@ -1,4 +1,5 @@
-#include <OvCore/ECS/Components/CMaterialRenderer.h>
+﻿#include <OvCore/ECS/Components/CMaterialRenderer.h>
+#include <OvCore/ECS/Components/CModelRenderer.h>
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "OvCore/Global/ServiceLocator.h"
@@ -58,6 +59,7 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
+		float pi = 3.14159265359f;
 		auto& ac = GetSelectedActor();
 		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
 		auto target = ac.transform.GetWorldPosition();
@@ -66,7 +68,7 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 		OvMaths::FMatrix4 transMat = OvMaths::FMatrix4::Translation(target - cp);
 		OvMaths::FVector3 forward = OvMaths::FVector3::Normalize(cp - target);
 		float angle = OvMaths::FVector3::AngleBetween(forward, { 0,1,0 });
-		OvMaths::FVector3 worldUp = (angle < FLT_EPSILON || abs(angle - 3.14159274) < FLT_EPSILON) ? OvMaths::FVector3(1, 0, 0) : OvMaths::FVector3(0, 1, 0);
+		OvMaths::FVector3 worldUp = (angle < FLT_EPSILON || abs(angle - pi) < FLT_EPSILON) ? OvMaths::FVector3(1, 0, 0) : OvMaths::FVector3(0, 1, 0);
 		OvMaths::FMatrix4 view = OvMaths::FMatrix4::CreateCameraView(cp, target, worldUp);
 		view = OvMaths::FMatrix4::Inverse(view);
 
@@ -113,6 +115,33 @@ void OvEditor::Panels::SceneView::InitFrame()
 OvCore::SceneSystem::Scene* OvEditor::Panels::SceneView::GetScene()
 {
 	return m_sceneManager.GetCurrentScene();
+}
+
+void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& dir)
+{
+	if (mTargetActor) {
+		auto transform=mTargetActor->GetComponent<OvCore::ECS::Components::CTransform>();
+		auto modelRenderer = mTargetActor->GetComponent<OvCore::ECS::Components::CModelRenderer>();
+		auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
+		sphere.position=OvMaths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
+		m_camera.FitToSphere(sphere,dir);
+		
+	}
+}
+
+
+void OvEditor::Panels::SceneView::FitToScene(const OvMaths::FVector3& dir)
+{
+	auto& models = GetScene()->GetFastAccessComponents().modelRenderers;
+	if (models.size()>0) {
+		OvRendering::Geometry::BoundingSphere sphere=models[0]->GetModel()->GetBoundingSphere();
+		for (size_t i = 1; i < models.size(); i++)
+		{
+			sphere.merge(models[i]->GetModel()->GetBoundingSphere());
+		}	
+		m_camera.FitToSphere(sphere, dir);
+	}
+
 }
 
 void OvEditor::Panels::SceneView::SetGizmoOperation(OvEditor::Core::EGizmoOperation p_operation)

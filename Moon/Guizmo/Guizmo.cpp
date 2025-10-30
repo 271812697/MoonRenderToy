@@ -1177,7 +1177,7 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
-		return;
+		//return;
 		//params to control
 		float halflen = 3.0f;
 		float shift = 0.6f;
@@ -4437,7 +4437,7 @@ namespace MOON
 		runDrawTask();
 		drawWidgets();
 
-		test();
+		//test();
 		assert(!endFrameCalled);
 		endFrameCalled = true;
 

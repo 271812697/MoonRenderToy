@@ -1,38 +1,34 @@
-﻿#include "pqLoadDataReaction.h"
+﻿#include "openFile.h"
 #include "editor/View/sceneview/viewerwidget.h"
 #include "editor/View/pathtrace/pathtraceWidget.h"
-#include "renderer/Context.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "core/log.h"
-
 #include <QtWidgets/QFileDialog>
-#include <QDebug>
-#include <QInputDialog>
-#include <QMap>
-#include <QRegExp>
-#include <QApplication>
-#include <QMainWindow>
-#include <algorithm>
-#include <cassert>
-#include <string>
-#include <vector>
-#include <iostream>
-
+#include <QCoreApplication>
 
 
 namespace MOON {
 	//-----------------------------------------------------------------------------
-	pqLoadDataReaction::pqLoadDataReaction(QAction* parentObject)
-		: Superclass(parentObject)
+	OpenFileCommand::OpenFileCommand(QObject* parentObject)
+		: Command(parentObject)
 	{
-		this->updateEnableState();
-		auto& viewer = OVSERVICE(ViewerWidget);
-		auto& pathTrace = OVSERVICE(PathTraceWidget);
-		connect(this, &pqLoadDataReaction::sceneChange, &viewer, &ViewerWidget::onSceneChange);
-		connect(this, &pqLoadDataReaction::sceneChange, &pathTrace, &PathTraceWidget::onSceneChange);
+		
+		auto& viewer = GetService(ViewerWidget);
+		auto& pathTrace = GetService(PathTraceWidget);
+		connect(this, &OpenFileCommand::sceneChange, &viewer, &ViewerWidget::onSceneChange);
+		connect(this, &OpenFileCommand::sceneChange, &pathTrace, &PathTraceWidget::onSceneChange);
+		auto openfile=new QAction(this);
+		setAction(openfile);
+		openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
+		openfile->setText("&Open");
+		openfile->setStatusTip("Open");
+		openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
+		QIcon icon9;
+		icon9.addFile(QString::fromUtf8(":/widgets/icons/pqOpen.svg"), QSize(), QIcon::Normal, QIcon::Off);
+		openfile->setIcon(icon9);
 	}
 
-	void pqLoadDataReaction::onTriggered()
+	void OpenFileCommand::execute()
 	{
 		/*
 		QWidget* mainwidget = nullptr;
@@ -63,12 +59,6 @@ namespace MOON {
 			return;
 		CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 		emit sceneChange(fileName);
-	}
-
-	//-----------------------------------------------------------------------------
-	void pqLoadDataReaction::updateEnableState()
-	{
-
 	}
 
 

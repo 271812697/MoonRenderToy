@@ -52,6 +52,7 @@
         <file>icons/pqRotateCameraCCW.svg</file>
         <file>icons/pqRotateCameraCW.svg</file>
         <file>icons/pqZoomToSelection.svg</file>
+        <file>icons/pqCamera.svg</file>
     </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>

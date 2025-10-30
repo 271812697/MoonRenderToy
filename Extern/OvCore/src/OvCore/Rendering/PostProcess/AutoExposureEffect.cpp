@@ -1,4 +1,4 @@
-
+﻿
 
 
 #include <OvCore/Global/ServiceLocator.h>
@@ -34,9 +34,9 @@ OvCore::Rendering::PostProcess::AutoExposureEffect::AutoExposureEffect(
 		true // <-- use mipmaps
 	);
 
-	m_luminanceMaterial.SetShader(OVSERVICE(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Luminance.ovfx"]);
-	m_exposureMaterial.SetShader(OVSERVICE(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\AutoExposure.ovfx"]);
-	m_compensationMaterial.SetShader(OVSERVICE(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\ApplyExposure.ovfx"]);
+	m_luminanceMaterial.SetShader(GetService(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Luminance.ovfx"]);
+	m_exposureMaterial.SetShader(GetService(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\AutoExposure.ovfx"]);
+	m_compensationMaterial.SetShader(GetService(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\ApplyExposure.ovfx"]);
 }
 
 void OvCore::Rendering::PostProcess::AutoExposureEffect::Draw(

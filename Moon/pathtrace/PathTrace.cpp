@@ -65,7 +65,7 @@ namespace PathTrace {
 				switchScene = false;
 				LoadScene(switchSceneName);
 				InitRenderer();
-				OVSERVICE(MOON::PathTraceWidget).onUpdateEntityTreeView();
+				GetService(MOON::PathTraceWidget).onUpdateEntityTreeView();
 			}
 			cameraController->MoveToPivot(0.016);
 			GetRenderer()->Update(0.016);

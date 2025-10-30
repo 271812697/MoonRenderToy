@@ -1,11 +1,13 @@
+﻿#include "resource/DarkStyle.h"
+#include "core/log.h"
+#include "Platform/Public/Platform.h"
 #include <QApplication>
 #include <QFontDatabase>
 #include <editor/editor.h>
-#include "resource/DarkStyle.h"
-#include "core/log.h"
 
 int main(int argc, char* argv[])
 {
+	
 	QApplication app(argc, argv);
 	app.setStyle(new DarkStyle);
 	const int font_id = QFontDatabase::addApplicationFont(
@@ -19,7 +21,12 @@ int main(int argc, char* argv[])
 	editor.setWindowTitle("MOON");
 	editor.resize(1920, 1080);
 	editor.show();
+
 	int res = QApplication::exec();
 	MOON::Log::Shutdown();
-	return res;
+    PlatformWindows::LoopAllMoudle();
+	return 0;
+	
+
+	
 }
