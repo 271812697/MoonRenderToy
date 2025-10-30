@@ -1,4 +1,4 @@
-
+﻿
 
 #include <OvCore/Global/ServiceLocator.h>
 #include <OvCore/Rendering/PostProcess/TonemappingEffect.h>
@@ -7,7 +7,7 @@
 
 OvCore::Rendering::PostProcess::TonemappingEffect::TonemappingEffect(OvRendering::Core::CompositeRenderer& p_renderer) : AEffect(p_renderer)
 {
-	m_tonemappingMaterial.SetShader(OVSERVICE(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Tonemapping.ovfx"]);
+	m_tonemappingMaterial.SetShader(GetService(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Tonemapping.ovfx"]);
 }
 
 void OvCore::Rendering::PostProcess::TonemappingEffect::Draw(

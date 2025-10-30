@@ -1,4 +1,4 @@
-
+﻿
 
 #include <tracy/Tracy.hpp>
 
@@ -23,7 +23,7 @@ OvCore::Rendering::PostProcessRenderPass::PostProcessRenderPass(OvRendering::Cor
 		);
 	}
 
-	m_blitMaterial.SetShader(OVSERVICE(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Blit.ovfx"]);
+	m_blitMaterial.SetShader(GetService(OvCore::ResourceManagement::ShaderManager)[":Shaders\\PostProcess\\Blit.ovfx"]);
 
 	// Instantiate available effects
 	m_effects.reserve(4);

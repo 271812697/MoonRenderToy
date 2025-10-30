@@ -27,7 +27,7 @@ namespace MOON {
 
 		}
 		void initializeGL() {
-			auto& tree = OVSERVICE(TreeViewPanel);
+			auto& tree = GetService(TreeViewPanel);
 			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
@@ -36,6 +36,7 @@ namespace MOON {
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new OvEditor::Panels::SceneView("SceneView");
+			RegService(OvEditor::Panels::SceneView, *mSceneView);
 			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
 
@@ -46,7 +47,7 @@ namespace MOON {
 		}
 		void paintGL() {
 			mSceneView->Update(0.01);
-			Guizmo::instance().newFrame(mSceneView);
+			
 			if (mSwitchScene) {
 				mSwitchScene = false;
 				parser->ParsePathTraceScene(mScenePath.toStdString());
@@ -57,6 +58,7 @@ namespace MOON {
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
+			Guizmo::instance().newFrame(mSceneView);
 			Guizmo::instance().endFrame();
 		}
 		bool event(QEvent* evt)
@@ -101,7 +103,7 @@ namespace MOON {
 		QSurfaceFormat format;
 		format.setSamples(4);
 		this->setFormat(format);
-		COPROVITE(ViewerWidget, *this);
+		RegService(ViewerWidget, *this);
 
 
 	}

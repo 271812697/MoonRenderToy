@@ -1,4 +1,4 @@
-
+﻿
 
 #include "OvMaths/FTransform.h"
 
@@ -136,6 +136,22 @@ void OvMaths::FTransform::SetLocalScale(FVector3 p_newScale)
 void OvMaths::FTransform::SetWorldPosition(FVector3 p_newPosition)
 {
 	GenerateMatricesWorld(p_newPosition, m_worldRotation, m_worldScale);
+}
+
+void OvMaths::FTransform::LookAt(const FVector3& eye, const FVector3& center)
+{
+	FVector3 forward = FVector3::Normalize(center - eye);
+	FVector3 up = FVector3::Up;
+	FVector3 right = FVector3::Normalize(FVector3::Cross(forward, up));
+	up = FVector3::Cross(right, forward);
+	FMatrix3 rotationMatrix
+	(
+		right.x, up.x, forward.x,
+		right.y, up.y, forward.y,
+		right.z, up.z, forward.z
+	);
+	FQuaternion rotationQuat = FQuaternion(rotationMatrix);
+	GenerateMatricesWorld(eye, rotationQuat, m_worldScale);
 }
 
 void OvMaths::FTransform::SetWorldRotation(FQuaternion p_newRotation)

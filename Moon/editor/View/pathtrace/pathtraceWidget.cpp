@@ -27,7 +27,7 @@ namespace MOON {
 		this->setFormat(format);
 		setFocusPolicy(Qt::StrongFocus);  // 允许通过点击或Tab键获取焦点
 		setFocus();                      // 主动获取焦点（可选）
-		COPROVITE(PathTraceWidget, *this);
+		RegService(PathTraceWidget, *this);
 	}
 	PathTraceWidget::~PathTraceWidget()
 	{
@@ -52,7 +52,7 @@ namespace MOON {
 		}
 		initFlag = true;
 
-		auto& tree = OVSERVICE(TreeViewPanel);
+		auto& tree = GetService(TreeViewPanel);
 		connect(this, &PathTraceWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewPathRoot);
 		emit sceneChange();
 	}

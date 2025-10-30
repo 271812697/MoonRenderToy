@@ -41,7 +41,7 @@ namespace MOON {
 		QStandardItemModel(parent), mInternl(new EntityTreeModelInternal(this, parent))
 	{
 		mInternl->init();
-		COPROVITE(EntityTreeModel, *this);
+		RegService(EntityTreeModel, *this);
 		connect(this, &QStandardItemModel::itemChanged, this, &EntityTreeModel::onCheckStageChange);
 	}
 	EntityTreeModel::~EntityTreeModel()
@@ -50,7 +50,7 @@ namespace MOON {
 	}
 	void EntityTreeModel::onSceneRootChange()
 	{
-		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		OvCore::SceneSystem::Scene* scene = GetService(OvEditor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}

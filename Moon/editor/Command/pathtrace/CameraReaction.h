@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include "editor/Reaction/pqReaction.h"
+#include "editor/Command/command.h"
 namespace MOON {
-	class  CameraReaction : public pqReaction
+	class  CameraReaction : public Command
 	{
 		Q_OBJECT
-			typedef pqReaction Superclass;
+
 	public:
 		enum Mode
 		{
@@ -20,7 +20,7 @@ namespace MOON {
 			ROTATE_CAMERA_CW,
 			ROTATE_CAMERA_CCW,
 		};
-		CameraReaction(QAction* parent, Mode mode);
+		CameraReaction(QObject* parent, Mode mode);
 		void resetPositiveX();
 		void resetPositiveY();
 		void resetPositiveZ();
@@ -29,10 +29,9 @@ namespace MOON {
 		void resetNegativeZ();
 		void resetIsometriview();
 		void resetZoomToSelect();
-	public Q_SLOTS: // NOLINT(readability-redundant-access-specifiers)
-		void updateEnableState() override;
+
 	protected:
-		void onTriggered() override;
+		virtual void execute()override;
 	private:
 		Q_DISABLE_COPY(CameraReaction)
 			Mode ReactionMode;

@@ -1,4 +1,5 @@
-#include <OvCore/ECS/Components/CMaterialRenderer.h>
+﻿#include <OvCore/ECS/Components/CMaterialRenderer.h>
+#include <OvCore/ECS/Components/CModelRenderer.h>
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "OvCore/Global/ServiceLocator.h"
@@ -113,6 +114,31 @@ void OvEditor::Panels::SceneView::InitFrame()
 OvCore::SceneSystem::Scene* OvEditor::Panels::SceneView::GetScene()
 {
 	return m_sceneManager.GetCurrentScene();
+}
+
+void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& dir)
+{
+	if (mTargetActor) {
+		auto modelRenderer = mTargetActor->GetComponent<OvCore::ECS::Components::CModelRenderer>();
+		auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
+		m_camera.FitToSphere(sphere,dir);
+		
+	}
+}
+
+
+void OvEditor::Panels::SceneView::FitToScene(const OvMaths::FVector3& dir)
+{
+	auto& models = GetScene()->GetFastAccessComponents().modelRenderers;
+	if (models.size()>0) {
+		OvRendering::Geometry::BoundingSphere sphere=models[0]->GetModel()->GetBoundingSphere();
+		for (size_t i = 1; i < models.size(); i++)
+		{
+			sphere.merge(models[i]->GetModel()->GetBoundingSphere());
+		}	
+		m_camera.FitToSphere(sphere, dir);
+	}
+
 }
 
 void OvEditor::Panels::SceneView::SetGizmoOperation(OvEditor::Core::EGizmoOperation p_operation)

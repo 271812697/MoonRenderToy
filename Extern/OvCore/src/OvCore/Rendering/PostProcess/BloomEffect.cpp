@@ -1,4 +1,4 @@
-
+﻿
 
 #include <OvCore/Global/ServiceLocator.h>
 #include <OvCore/Rendering/FramebufferUtil.h>
@@ -65,7 +65,7 @@ OvCore::Rendering::PostProcess::BloomEffect::BloomEffect(OvRendering::Core::Comp
 	// Prepare bloom output buffer.
 	FramebufferUtil::SetupFramebuffer(m_bloomOutputBuffer, kBloomTextureDesc, false, false);
 
-	auto& shaderManager = OVSERVICE(OvCore::ResourceManagement::ShaderManager);
+	auto& shaderManager = GetService(OvCore::ResourceManagement::ShaderManager);
 
 	m_downsamplingMaterial.SetShader(shaderManager[":Shaders\\PostProcess\\BloomDownsampling.ovfx"]);
 	m_upsamplingMaterial.SetShader(shaderManager[":Shaders\\PostProcess\\BloomUpsampling.ovfx"]);

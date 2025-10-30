@@ -39,6 +39,7 @@ else()
 
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::OpenGL
+        Qt${QT_VERSION_MAJOR}::Svg
         QtNodes
     )
 endif()

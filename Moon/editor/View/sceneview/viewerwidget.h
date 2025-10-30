@@ -5,7 +5,7 @@ namespace OvCore::ECS {
 	class Actor;
 }
 namespace MOON {
-
+	
 	class ViewerWidget : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
 	{
 		Q_OBJECT

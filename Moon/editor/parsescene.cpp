@@ -94,8 +94,8 @@ namespace MOON {
 
 	void ParseScene::ParsePathTraceScene(const std::string& path) {
 
-		OVSERVICE(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
-		OvCore::SceneSystem::Scene* scene = OVSERVICE(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		GetService(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
+		OvCore::SceneSystem::Scene* scene = GetService(OvEditor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}

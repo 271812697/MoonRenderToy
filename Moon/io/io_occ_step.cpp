@@ -130,15 +130,12 @@ namespace MOON {
         static void GeneratePlanarUVs(const std::vector<gp_Pnt>& vertices,
             const std::vector<gp_Dir>& normals,
             std::vector<OvMaths::FVector2>& outUVs) {
-            outUVs.clear();
             if (vertices.empty()) return;
-
             // 1. 计算中心点
             gp_Vec center(0, 0, 0);
             for (const auto& p : vertices) center += gp_Vec(p.X(), p.Y(), p.Z());
             center /= static_cast<double>(vertices.size());
             gp_Pnt centerP(center.X(), center.Y(), center.Z());
-
             // 2. 计算平均法线（作为投影平面法线）
             gp_Vec avgN(0, 0, 0);
             for (const auto& n : normals) avgN += gp_Vec(n.X(), n.Y(), n.Z());
@@ -146,14 +143,11 @@ namespace MOON {
             avgN.Normalize();
             gp_Vec ref(0, 0, 1);
             if (std::fabs(avgN.Dot(ref)) > 0.9) ref = gp_Vec(0, 1, 0); // 若接近同向，改参考向量
-
             gp_Vec axisU = avgN.Crossed(ref);
             if (axisU.Magnitude() < Precision::Confusion()) axisU = gp_Vec(1, 0, 0);
             axisU.Normalize();
-
             gp_Vec axisV = avgN.Crossed(axisU);
             axisV.Normalize();
-
             // 3. 计算投影坐标并找 min/max
             double minU = 1e308, maxU = -1e308, minV = 1e308, maxV = -1e308;
             std::vector<std::pair<double, double>> tmp;
@@ -166,17 +160,14 @@ namespace MOON {
                 minU = std::min(minU, u); maxU = std::max(maxU, u);
                 minV = std::min(minV, v); maxV = std::max(maxV, v);
             }
-
             double spanU = maxU - minU;
             double spanV = maxV - minV;
             if (spanU < 1e-9) spanU = 1.0;
             if (spanV < 1e-9) spanV = 1.0;
-
-            outUVs.resize(tmp.size());
             for (size_t i = 0; i < tmp.size(); ++i) {
                 float uu = static_cast<float>((tmp[i].first - minU) / spanU);
                 float vv = static_cast<float>((tmp[i].second - minV) / spanV);
-                outUVs[i] = OvMaths::FVector2{ uu, vv };
+                outUVs.push_back(OvMaths::FVector2{uu, vv});
             }
         }
 
@@ -212,6 +203,38 @@ namespace MOON {
 
             std::vector<TopoDS_Face> faces;
             CollectFaces(shape, faces);
+            size_t vertexOffset = 0;
+            std::vector<OvMaths::FVector3> positions;
+            std::vector<OvMaths::FVector3> normals;
+            std::vector<OvMaths::FVector2> uvs;
+            std::vector<unsigned int> indices;
+            for (auto& f : faces) {
+                std::vector<gp_Pnt> vertices;
+                std::vector<unsigned int> tempIndices;
+                DiscretizeFace(f, vertices, tempIndices);
+               
+                if (vertices.empty() || tempIndices.empty()) {
+                    continue;
+                }
+                // 计算并转换法线
+                std::vector<gp_Dir> occNormals;
+                ComputeNormals(vertices, tempIndices, occNormals);
+                // 转换为引擎类型：positions, normals, uvs
+                for (const auto& p : vertices) positions.push_back(OvMaths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
+                for (const auto& n : occNormals) normals.push_back(OvMaths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
+                // 生成简单的平面 UV（可选）
+                GeneratePlanarUVs(vertices, occNormals, uvs);
+                for (const auto& id : tempIndices) {
+                    indices.push_back(id+vertexOffset);
+                }
+                vertexOffset += vertices.size();
+
+            }
+
+            // 使用 ModelManager 把 mesh 注册到资源系统（使用与 glTF 加载处相同的重载）
+            auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
+
+            // 创建并注册默认材质
             OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
             OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
             tempMat->SetBackfaceCulling(false);
@@ -219,57 +242,21 @@ namespace MOON {
             tempMat->SetReceiveShadows(false);
 
             tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-            tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0f, 1.0f, 1.0f, 1.0f });
+            tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
 
             tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-            tempMat->SetProperty("u_Roughness", 0.1f);
-            tempMat->SetProperty("u_Metallic", 0.1f);
+            tempMat->SetProperty("u_Roughness", 1.f);
+            tempMat->SetProperty("u_Metallic", 0.0f);
             // Emission
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
             tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f, 0.0f, 0.0f });
-            int i = 0;
-            for (auto& f : faces) {
-                i++;
 
-                std::string faceName = std::string(filePath) + std::string("_face_") + std::to_string(i);
-                std::vector<gp_Pnt> vertices;
-                std::vector<unsigned int> indices;
-                DiscretizeFace(f, vertices, indices);
-
-                if (vertices.empty() || indices.empty()) {
-                    continue;
-                }
-
-                // 计算并转换法线
-                std::vector<gp_Dir> occNormals;
-                ComputeNormals(vertices, indices, occNormals);
-
-                // 转换为引擎类型：positions, normals, uvs
-                std::vector<OvMaths::FVector3> positions;
-                positions.reserve(vertices.size());
-                for (const auto& p : vertices) positions.push_back(OvMaths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });
-
-                std::vector<OvMaths::FVector3> normals;
-                normals.reserve(occNormals.size());
-                for (const auto& n : occNormals) normals.push_back(OvMaths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
-
-                // 生成简单的平面 UV（可选）
-                std::vector<OvMaths::FVector2> uvs;
-                GeneratePlanarUVs(vertices, occNormals, uvs);
-
-                // 使用 ModelManager 把 mesh 注册到资源系统（使用与 glTF 加载处相同的重载）
-                auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(faceName, positions, normals, uvs, indices);
-
-                // 创建并注册默认材质
-             
-
-                // 在场景中创建 Actor 并绑定模型/材质
-                auto& actor = scene->CreateActor();
-                actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
-                auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-                materilaRener.SetMaterialAtIndex(0, *tempMat);
-                materilaRener.UpdateMaterialList();
-            }
+            // 在场景中创建 Actor 并绑定模型/材质
+            auto& actor = scene->CreateActor();
+            actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
+            auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+            materilaRener.SetMaterialAtIndex(0, *tempMat);
+            materilaRener.UpdateMaterialList();
         }
     }
 }

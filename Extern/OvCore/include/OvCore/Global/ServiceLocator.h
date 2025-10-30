@@ -1,14 +1,8 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <any>
 #include <unordered_map>
-
-
-
-#define OVSERVICE(Type) OvCore::Global::ServiceLocator::Get<Type>()
-#define COPROVITE(Type,T) OvCore::Global::ServiceLocator::Provide<Type>(T)
+#define GetService(Type)  OvCore::Global::ServiceLocator::Get<Type>()
+#define RegService(Type,T) OvCore::Global::ServiceLocator::Provide<Type>(T)
 namespace OvCore::Global
 {
 	/**

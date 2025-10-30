@@ -1,4 +1,4 @@
-
+﻿
 
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
 #include <OvCore/Global/ServiceLocator.h>
@@ -15,7 +15,7 @@ constexpr uint8_t kMaxShadowMaps = 1;
 OvCore::Rendering::ShadowRenderPass::ShadowRenderPass(OvRendering::Core::CompositeRenderer& p_renderer) :
 	OvRendering::Core::ARenderPass(p_renderer)
 {
-	const auto shadowShader = OVSERVICE(OvCore::ResourceManagement::ShaderManager).GetResource(":Shaders\\ShadowFallback.ovfx");
+	const auto shadowShader = GetService(OvCore::ResourceManagement::ShaderManager).GetResource(":Shaders\\ShadowFallback.ovfx");
 	OVASSERT(shadowShader, "Cannot find the shadow shader");
 
 	m_shadowMaterial.SetShader(shadowShader);

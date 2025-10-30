@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -114,6 +114,7 @@ namespace OvMaths
 		* @param p_newPosition
 		*/
 		void SetWorldPosition(FVector3 p_newPosition);
+		void LookAt(const FVector3& eye, const FVector3&center);
 
 		/**
 		* Set the rotation of the transform in world space

@@ -9,7 +9,8 @@
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "Debug/debugPanel.h"
-#include "Reaction/pqLoadDataReaction.h"
+#include "Command/menubar/openFile.h"
+#include "Command/menubar/cameraMode.h"
 
 namespace MOON {
 	class Editor::EditorInternal {
@@ -48,6 +49,16 @@ namespace MOON {
 			//self->tabifyDockWidget(HierarchypanelDock, debugWidget);
 
 		}
+		void buildFileMenu() {
+			auto openFileCommand=new OpenFileCommand(self);
+			menu_File->addAction(openFileCommand->action());
+		
+		
+		}
+		void buildDisplayMenu() {
+			auto cameraModeCommand = new CameraModeComand(self);
+			menu_Display->addAction(cameraModeCommand->action());
+		}
 		void buildMenu() {
 			mMenubar = new QMenuBar(self);
 			mMenubar->setObjectName(QString::fromUtf8("menubar"));
@@ -55,29 +66,31 @@ namespace MOON {
 
 			self->setMenuBar(mMenubar);
 			menu_File = new QMenu(mMenubar);
+			menu_Display = new QMenu(mMenubar);
+			menu_View = new QMenu(mMenubar);
 			mMenubar->addAction(menu_File->menuAction());
-			openfile = new QAction(menu_File);
-			menu_File->addAction(openfile);
-			QIcon icon9;
-			icon9.addFile(QString::fromUtf8(":/widgets/icons/pqOpen.svg"), QSize(), QIcon::Normal, QIcon::Off);
-			openfile->setIcon(icon9);
-			new pqLoadDataReaction(openfile);
+			mMenubar->addAction(menu_Display->menuAction());
+			mMenubar->addAction(menu_View->menuAction());
+			buildFileMenu();
+			buildDisplayMenu();
+
+	
 		}
 		void retranslateUi() {
-			openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
+			
 			self->setWindowTitle(QCoreApplication::translate("Editor", "MainWindow", nullptr));
 			menu_File->setTitle("&File");
-			openfile->setText("&Open");
-			openfile->setStatusTip("Open");
-			openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
-
+			menu_Display->setTitle("&Display");
+			menu_View->setTitle("&View");
+		
 		}
 	private:
 		Editor* self = nullptr;
 		QSplitter* vert_splitter_ = nullptr;
 		QMenuBar* mMenubar;
 		QMenu* menu_File;
-		QAction* openfile;
+		QMenu* menu_Display;
+		QMenu* menu_View;
 	};
 	Editor::Editor() :mInternal(new EditorInternal(this))
 	{

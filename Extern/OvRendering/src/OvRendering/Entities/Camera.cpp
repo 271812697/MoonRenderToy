@@ -1,10 +1,6 @@
-
-
-#include <cmath>
-
+﻿#include <cmath>
 #include "OvRendering/Entities/Camera.h"
 #include "OvMaths/FMatrix4.h"
-
 OvRendering::Entities::Camera::Camera(OvTools::Utils::OptRef<OvMaths::FTransform> p_transform) :
 	Entity{ p_transform },
 	m_projectionMode(Settings::EProjectionMode::PERSPECTIVE),
@@ -103,7 +99,10 @@ const OvMaths::FMatrix4& OvRendering::Entities::Camera::GetViewMatrix() const
 {
 	return m_viewMatrix;
 }
-
+const OvMaths::FTransform& OvRendering::Entities::Camera::GetTransform()
+{
+	return transform;
+}
 const OvRendering::Data::Frustum& OvRendering::Entities::Camera::GetFrustum() const
 {
 	return m_frustum;
@@ -207,6 +206,23 @@ void OvRendering::Entities::Camera::SetFrustumLightCulling(bool p_enable)
 void OvRendering::Entities::Camera::SetProjectionMode(OvRendering::Settings::EProjectionMode p_projectionMode)
 {
     m_projectionMode = p_projectionMode;
+}
+
+void OvRendering::Entities::Camera::FitToSphere(OvRendering::Geometry::BoundingSphere& sphere, const OvMaths::FVector3& dir)
+{
+	using namespace OvMaths;
+	using namespace OvRendering::Settings;
+	if (m_projectionMode== EProjectionMode::ORTHOGRAPHIC) {
+		m_size = 2*sphere.radius;
+		transform->LookAt(sphere.position-dir* m_size,sphere.position);
+
+	}
+	else if (m_projectionMode == EProjectionMode::PERSPECTIVE) {
+		//float distance = sphere.radius / std::sin(OvMath::DegreesToRadians(m_fov) / 2.0f);
+		//OvMaths::FVector3 direction = transform->GetWorldForward();
+		//OvMaths::FVector3 newPosition = sphere.position - direction * distance;
+		//transform->SetWorldPosition(newPosition);
+	}
 }
 
 OvMaths::FMatrix4 OvRendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) const

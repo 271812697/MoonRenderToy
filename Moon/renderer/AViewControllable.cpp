@@ -1,4 +1,4 @@
-#include "AViewControllable.h"
+﻿#include "AViewControllable.h"
 #include "DebugSceneRenderer.h"
 #include "GridRenderPass.h"
 
@@ -68,4 +68,9 @@ void OvEditor::Panels::AViewControllable::ResetGridColor()
 void OvEditor::Panels::AViewControllable::ResetClearColor()
 {
 	m_camera.SetClearColor(kDefaultClearColor);
+}
+
+void OvEditor::Panels::AViewControllable::setCameraMode(OvRendering::Settings::EProjectionMode mode)
+{
+	m_camera.SetProjectionMode(mode);
 }
