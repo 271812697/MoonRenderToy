@@ -2,7 +2,6 @@
 
 #include "OvCore/Global/ServiceLocator.h"
 #include "core/log.h"
-#include "core/ServiceLocator.h"
 #include "renderer/SceneView.h"
 
 #include <QMenu>
@@ -48,6 +47,7 @@ namespace MOON {
 			else
 			{
 				view.setCameraMode(OvRendering::Settings::EProjectionMode::PERSPECTIVE);
+				view.FitToSelectedActor({ 1,0,0 });
 			}
 
 			});
@@ -57,11 +57,7 @@ namespace MOON {
 	void CameraModeComand::execute()
 	{
 		CORE_INFO("Switch to Camera Mode");
-		
-
 	}
-
-
 }
 
 

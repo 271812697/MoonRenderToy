@@ -1,7 +1,8 @@
-#include "resourcePanel.h"
+﻿#include "resourcePanel.h"
 #include "QDirectoryModel.h"
 #include "QPreviewHelper.h"
 #include "QResListView.h"
+#include "OvCore/Global/ServiceLocator.h"
 #include <QMenuBar>
 #include <QDesktopServices>
 #include <qurl.h>
@@ -181,6 +182,8 @@ namespace MOON {
 	};
 	ResPanel::ResPanel(QWidget* parent) : QDockWidget(parent)
 	{
+		RegService(ResPanel,*this);
+		
 		internal = new ResPanel::ResPanelInternal();
 		internal->ui->setupUi(this);
 		internal->m_dirModel = new QDirectoryModel();
@@ -338,10 +341,10 @@ namespace MOON {
 			std::string path = internal->m_menuEditItem->data(Qt::UserRole).toString().toStdString().c_str();
 
 			if (std::filesystem::is_directory(path)) {
-				std::filesystem::remove_all(path); // ɾ���ǿ�Ŀ¼
+				std::filesystem::remove_all(path); // 删除非空目录
 			}
 			else {
-				std::filesystem::remove(path);     // ɾ���ļ�
+				std::filesystem::remove(path);     // 删除文件
 			}
 			reselectCurrentDir();
 		}

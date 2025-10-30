@@ -11,6 +11,7 @@
 #include "Debug/debugPanel.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
+#include "Command/menubar/visibleview.h"
 
 namespace MOON {
 	class Editor::EditorInternal {
@@ -52,12 +53,14 @@ namespace MOON {
 		void buildFileMenu() {
 			auto openFileCommand=new OpenFileCommand(self);
 			menu_File->addAction(openFileCommand->action());
-		
-		
 		}
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
 			menu_Display->addAction(cameraModeCommand->action());
+		}
+		void buildViewMenu() {
+			auto visible=new VisibleViewCommand(menu_View);
+			visible->setUp(menu_View);
 		}
 		void buildMenu() {
 			mMenubar = new QMenuBar(self);
@@ -73,7 +76,7 @@ namespace MOON {
 			mMenubar->addAction(menu_View->menuAction());
 			buildFileMenu();
 			buildDisplayMenu();
-
+			buildViewMenu();
 	
 		}
 		void retranslateUi() {

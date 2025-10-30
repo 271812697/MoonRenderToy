@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "hierarchypanel.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "OvCore/Global/ServiceLocator.h"
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QListWidget>
@@ -10,6 +11,7 @@ namespace MOON {
 
 	Hierarchypanel::Hierarchypanel(QWidget* parent) : QWidget(parent)
 	{
+		RegService(Hierarchypanel,*this);
 		QVBoxLayout* layout = new QVBoxLayout(this);
 
 		QWidget* ui = new QWidget(this);

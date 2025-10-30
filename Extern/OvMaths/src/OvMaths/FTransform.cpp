@@ -140,18 +140,15 @@ void OvMaths::FTransform::SetWorldPosition(FVector3 p_newPosition)
 
 void OvMaths::FTransform::LookAt(const FVector3& eye, const FVector3& center)
 {
+	float pi = 3.14159265359f;
 	FVector3 forward = FVector3::Normalize(center - eye);
-	FVector3 up = FVector3::Up;
-	FVector3 right = FVector3::Normalize(FVector3::Cross(forward, up));
-	up = FVector3::Cross(right, forward);
-	FMatrix3 rotationMatrix
-	(
-		right.x, up.x, forward.x,
-		right.y, up.y, forward.y,
-		right.z, up.z, forward.z
-	);
-	FQuaternion rotationQuat = FQuaternion(rotationMatrix);
-	GenerateMatricesWorld(eye, rotationQuat, m_worldScale);
+	float angle = OvMaths::FVector3::AngleBetween(forward, { 0,1,0 });
+	FVector3 up = (angle < FLT_EPSILON || abs(angle - pi) < FLT_EPSILON) ? OvMaths::FVector3(1, 0, 0) : OvMaths::FVector3(0, 1, 0);
+
+	m_worldPosition = eye;
+	m_worldRotation = FQuaternion::LookAt(forward,up);
+	m_worldMatrix = FMatrix4::Translation(eye) * FQuaternion::ToMatrix4(FQuaternion::Normalize(m_worldRotation)) * FMatrix4::Scaling(m_worldScale);
+	UpdateLocalMatrix();
 }
 
 void OvMaths::FTransform::SetWorldRotation(FQuaternion p_newRotation)

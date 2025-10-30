@@ -213,15 +213,14 @@ void OvRendering::Entities::Camera::FitToSphere(OvRendering::Geometry::BoundingS
 	using namespace OvMaths;
 	using namespace OvRendering::Settings;
 	if (m_projectionMode== EProjectionMode::ORTHOGRAPHIC) {
-		m_size = 2*sphere.radius;
+		m_size = sphere.radius;
 		transform->LookAt(sphere.position-dir* m_size,sphere.position);
 
 	}
 	else if (m_projectionMode == EProjectionMode::PERSPECTIVE) {
-		//float distance = sphere.radius / std::sin(OvMath::DegreesToRadians(m_fov) / 2.0f);
-		//OvMaths::FVector3 direction = transform->GetWorldForward();
-		//OvMaths::FVector3 newPosition = sphere.position - direction * distance;
-		//transform->SetWorldPosition(newPosition);
+		float eff = 3.14159265359f/180.0;
+		float distance = sphere.radius / std::sin(eff*m_fov / 2.0f);
+		transform->LookAt(sphere.position - dir * distance, sphere.position);
 	}
 }
 
