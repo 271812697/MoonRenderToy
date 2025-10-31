@@ -1,6 +1,6 @@
 ﻿#include "visibleview.h"
 #include "editor/UI/ReousrcePanel/resourcePanel.h"
-#include "editor/hierarchypanel.h"
+#include "editor/UI/TreeViewPanel/hierarchypanel.h"
 #include "OvCore/Global/ServiceLocator.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
