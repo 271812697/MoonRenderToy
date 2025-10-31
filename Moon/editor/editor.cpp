@@ -42,7 +42,7 @@ namespace MOON {
 			
 			auto settingPanel = new SettingPanel(self);
 			settingPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
-			settingPanel->setWindowTitle(QApplication::translate("Hierarchypanel", "Hierarchy", nullptr));
+			settingPanel->setWindowTitle(QApplication::translate("Settingpanel", "Setting", nullptr));
 			
 			self->addDockWidget(Qt::LeftDockWidgetArea, hierarchypanel);
 			self->addDockWidget(Qt::LeftDockWidgetArea, settingPanel);
@@ -60,6 +60,17 @@ namespace MOON {
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
 			menu_Display->addAction(cameraModeCommand->action());
+		/*	QIcon icon;
+			icon.addFile(QString::fromUtf8(":/widgets/icons/points.png"), QSize(), QIcon::Normal, QIcon::On);
+			auto openfile = new QAction(self);
+			
+			openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
+			openfile->setText("Open");
+			openfile->setStatusTip("Open");
+			openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
+		
+			openfile->setIcon(icon);
+			menu_Display->addAction(openfile);*/
 		}
 		void buildViewMenu() {
 			auto visible=new VisibleViewCommand(menu_View);

@@ -8,6 +8,7 @@
 
 
 namespace MOON {
+
 	class EntityTreeModel::EntityTreeModelInternal {
 	public:
 		EntityTreeModelInternal(EntityTreeModel* model, TreeViewPanel* tree) :self(model), mTreeView(tree) {
@@ -58,16 +59,18 @@ namespace MOON {
 		auto& actors = scene->GetActors();
 		for (int i = 0; i < actors.size(); i++) {
 			if (!actors[i]->HasParent()) {
-				std::vector < QStandardItem*> root = { mInternl->sceneRoot };
+				std::vector <QStandardItem*> root = { mInternl->sceneRoot };
 				std::vector<OvCore::ECS::Actor*> s = { actors[i] };
 				while (!s.empty()) {
 					OvCore::ECS::Actor* cur = s.back(); s.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
 					QStandardItem* temp = new QStandardItem;
-					temp->setText(QString::fromStdString(cur->GetName()));
+					auto name = cur->GetName();
+					temp->setText(QString::fromStdString(name));
+					
 					//temp->setIcon(mInternl->mIconMaps["eyeOpen"]);
 					temp->setCheckable(true);
-					temp->setCheckState(Qt::CheckState::Checked);
+					temp->setCheckState(Qt::Checked);
 					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->setChild(parent->rowCount(), temp);
 

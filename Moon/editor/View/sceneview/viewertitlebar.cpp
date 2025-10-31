@@ -5,6 +5,37 @@
 #include <QPointer>
 
 namespace MOON {
+
+	class  WireCommand : public Command
+	{
+	public:
+		WireCommand(QObject* parent) :Command(parent) {
+			auto action = new QAction(this);
+			action->setCheckable(true);
+		
+			setAction(action);
+			setIcon(QString::fromUtf8(":/widgets/icons/wire.png"));
+		}
+	protected:
+		virtual void execute()override {
+
+		}
+	};
+	class  PointsCommand : public Command
+	{
+	public:
+		PointsCommand(QObject* parent) :Command(parent) {
+			auto action = new QAction(this);
+			action->setCheckable(true);
+			setAction(action);
+			setIcon(QString::fromUtf8(":/widgets/icons/points.png"));
+			
+		}
+	protected:
+		virtual void execute()override {
+
+		}
+	};
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {
 	public:
 		ViewerWindowTitleBarInternal(ViewerWindowTitleBar* titleBar) :mSelf(titleBar) {
@@ -34,6 +65,7 @@ namespace MOON {
 
 			xPlus->setIcon(QString::fromUtf8(":/widgets/icons/pqXPlus.svg"));
 			mToolBar->addAction(xPlus->action());
+			
 			xMinus->setIcon(QString::fromUtf8(":/widgets/icons/pqXMinus.svg"));
 			mToolBar->addAction(xMinus->action());
 			yPlus->setIcon(QString::fromUtf8(":/widgets/icons/pqYPlus.svg"));
@@ -52,7 +84,13 @@ namespace MOON {
 			mToolBar->addAction(rotateCameraCW->action());
 			rotateCameraCCW->setIcon(QString::fromUtf8(":/widgets/icons/pqRotateCameraCCW.svg"));
 			mToolBar->addAction(rotateCameraCCW->action());
-		
+
+			wire = new WireCommand(mSelf);
+			mToolBar->addAction(wire->action());
+
+			points = new PointsCommand(mSelf);
+			mToolBar->addAction(points->action());
+
 		
 		}
 		~ViewerWindowTitleBarInternal() {
@@ -72,6 +110,8 @@ namespace MOON {
 		CameraFitCommand* zoomToSelection = nullptr;
 		CameraFitCommand* rotateCameraCCW = nullptr;
 		CameraFitCommand* rotateCameraCW = nullptr;
+		WireCommand* wire = nullptr;
+		PointsCommand* points = nullptr;
 	};
 	ViewerWindowTitleBar::ViewerWindowTitleBar(QWidget* parent) :QWidget(parent), mInternal(new ViewerWindowTitleBarInternal(this))
 	{

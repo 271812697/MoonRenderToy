@@ -1,8 +1,6 @@
 ﻿#include "CameraFitCommand.h"
-
 #include "OvCore/Global/ServiceLocator.h"
 #include "core/log.h"
-
 #include "renderer/SceneView.h"
 namespace MOON {
 	CameraFitCommand::CameraFitCommand(QObject* parent, Mode mode) :Command(parent)
