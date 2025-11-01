@@ -1,11 +1,7 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <string>
 #include <array>
 #include <memory>
-
 #include "OvRendering/Settings/DriverSettings.h"
 #include "OvRendering/Settings/ERenderingCapability.h"
 #include "OvRendering/Settings/EPrimitiveMode.h"

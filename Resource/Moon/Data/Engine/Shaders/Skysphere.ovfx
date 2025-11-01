@@ -20,7 +20,9 @@ void main()
 {
     vs_out.FragPos = geo_Pos;
     vs_out.TexCoords = geo_TexCoords;
-    gl_Position = ubo_Projection * ubo_View * vec4(ubo_ViewPos + vs_out.FragPos, 1.0);
+    //Perspective(const float p_fov, const float p_aspectRatio, const float p_zNear, const float p_zFar)
+    mat4 p=Perspective(60.0,1.5,0.1,1000.0);
+    gl_Position = p *ubo_View  * vec4(ubo_ViewPos + vs_out.FragPos, 1.0);
 }
 
 #shader fragment

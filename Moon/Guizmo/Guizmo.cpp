@@ -334,15 +334,6 @@ namespace MOON
 	}
 	void Guizmo::preStoreMesh()
 	{
-		//std::string auxMeshFolder = Engine::instance()->getAssetPath() + "EditorAuxiliaryMesh\\";
-		////MeshBuilder builder;
-		////intrusive_ptr<Mesh> mesh = builder.build(auxMeshFolder+ "Sph.json");
-		//mPreStoredMesh["Sphere"] = MeshManager::Ptr->getOrCreateMesh("Sphere");
-		//mPreStoredMesh["Sphere"]->updateDrawData();
-		//mPreStoredMesh["ClipCone"] = MeshManager::Ptr->getOrCreateMesh("ClipCone");
-		//mPreStoredMesh["ClipCone"]->updateDrawData();
-		//mPreStoredMesh["XCone"] = MeshManager::Ptr->getOrCreateMesh("XCone");
-		//mPreStoredMesh["XCone"]->updateDrawData();
 
 	}
 	void Guizmo::prepareGl()

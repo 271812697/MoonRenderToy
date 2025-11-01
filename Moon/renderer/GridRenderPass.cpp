@@ -1,4 +1,4 @@
-
+﻿
 
 
 #include <OvDebug/Assertion.h>
@@ -8,7 +8,7 @@
 #include "DebugModelRenderFeature.h"
 #include "GridRenderPass.h"
 #include "OvCore/Global/ServiceLocator.h"
-
+#include "Settings/DebugSetting.h"
 #include <OvRendering/Features/DebugShapeRenderFeature.h>
 #include <OvRendering/HAL/Profiling.h>
 
@@ -21,10 +21,17 @@ OvEditor::Rendering::GridRenderPass::GridRenderPass(OvRendering::Core::Composite
 	m_gridMaterial.SetBackfaceCulling(false);
 	m_gridMaterial.SetDepthWriting(false);
 	m_gridMaterial.SetDepthTest(true);
+
+	auto node = MOON::DebugSettings::instance().getNode("showGrid");
+	MOON::DebugSettings::instance().addCallBack("showGrid", [node,this]() {
+		bool value = node->getData<bool>();
+		this->SetEnabled(value);
+		});
 }
 
 void OvEditor::Rendering::GridRenderPass::Draw(OvRendering::Data::PipelineState p_pso)
 {
+	
 	ZoneScoped;
 	TracyGpuZone("GridRenderPass");
 

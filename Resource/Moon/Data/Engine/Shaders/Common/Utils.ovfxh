@@ -26,6 +26,28 @@ float DistanceFadeAlpha(vec3 fragPos, vec3 viewPos, float fadeStart, float fadeL
     return alphaBasedOnDistance;
 }
 
+
+mat4 Perspective(const float p_fov, const float p_aspectRatio, const float p_zNear, const float p_zFar)
+{
+
+    const float tangent = tan(p_fov / 2.0f * 3.14159265359f/ 180.0f);
+	const float h = p_zNear * tangent;
+	const float w = h * p_aspectRatio;
+
+    const float maxView = 2.0f * p_zNear;
+    const float width = 2.0f* w;
+    const float height = 2.0f*h;
+    const float zRange = p_zFar - p_zNear;
+
+    mat4 m=mat4(
+        maxView / width,  0.0, 0.0, 0.0,
+        0.0,  maxView / height, 0.0,  0.0,
+        0.0, 0.0, (-p_zFar - p_zNear) / zRange, (-maxView * p_zFar) / zRange,
+        0.0, 0.0, -1.0, 0.0
+    );
+   return transpose(m);
+
+}
 float Dithering(float alpha, vec2 fragCoord)
 {
     const mat4 kThresholdMatrix = mat4(
