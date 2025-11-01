@@ -10,6 +10,7 @@ namespace MOON {
 		if (mAction) {
 			QIcon icon;
 			icon.addFile(path, QSize(), QIcon::Normal, on?QIcon::On: QIcon::Off);
+			
 			mAction->setIcon(icon);
 		}
 	}

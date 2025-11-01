@@ -120,12 +120,16 @@ OvCore::SceneSystem::Scene* OvEditor::Panels::SceneView::GetScene()
 void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& dir)
 {
 	if (mTargetActor) {
-		auto transform=mTargetActor->GetComponent<OvCore::ECS::Components::CTransform>();
 		auto modelRenderer = mTargetActor->GetComponent<OvCore::ECS::Components::CModelRenderer>();
-		auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
-		sphere.position=OvMaths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
-		m_camera.FitToSphere(sphere,dir);
-		
+		if (modelRenderer) {
+			auto model=modelRenderer->GetModel();
+			if (model) {
+				auto transform=mTargetActor->GetComponent<OvCore::ECS::Components::CTransform>();
+				auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
+				sphere.position=OvMaths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
+				m_camera.FitToSphere(sphere,dir);
+			}
+		}
 	}
 }
 

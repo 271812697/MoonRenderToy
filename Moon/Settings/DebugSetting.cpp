@@ -2,13 +2,30 @@
 #include "dataDispatcher.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "core/callbackManager.h"
+#include "qtWidgets/checkbox.h"
+#include <QSlider>
 namespace MOON {
+
+	static std::unordered_map<size_t,std::string >mHashCode;
+	class NodeBoolWidget:public SlidingCheckBox {
+	public:
+		NodeBoolWidget(NodeBase* node ,QWidget* parent = nullptr, const QString& text = "") :SlidingCheckBox(parent,text),mNode(node){
+			connect(this, &SlidingCheckBox::clicked, [this](bool value) {
+				mNode->setData<bool>(value);
+			});
+		}
+	private:
+		NodeBase* mNode = nullptr;
+	};
 	class DragFloat :public NodeData<float> {
 	public:
 		DragFloat(float v,float a,float b,const char* n) :NodeData(v,n),mMinValue(a),mMaxValue(b){
 		}
-		virtual void draw() override {
-			ImGui::SliderFloat(mName.c_str(),&data,mMinValue,mMaxValue);
+		virtual QWidget* createWidget(QWidget* parent)override
+		{
+			QSlider* slider = new QSlider(Qt::Horizontal, parent);
+			slider->setRange(0, 100); // 整数范围
+			return slider;
 		}
 	private:
 		float mMinValue;
@@ -18,24 +35,6 @@ namespace MOON {
 	public:
 		InputString(const std::string& s, const char* n) :NodeData(s, n) {
 			mValueChange = false;
-		}
-		virtual void draw()override {
-			char str[200];
-			strcpy(str,data.c_str());
-			mValueChange = ImGui::InputText(mName.c_str(),str,200,ImGuiInputTextFlags_EnterReturnsTrue);
-			data = str;
-			if (ImGui::BeginDragDropTarget()) {
-				auto filePath = ImGui::AcceptDragDropPayload("FilePath",ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
-				if (filePath) {
-					data = *(std::string*)filePath->Data;
-					mValueChange = true;
-
-				}
-				ImGui::EndDragDropTarget();
-			}
-			if (mValueChange) {
-				submitCallBack();
-			}
 		}
 		virtual bool valueChange() {
 			return mValueChange;
@@ -66,13 +65,6 @@ namespace MOON {
 		BoolSetting(bool& value, const char* name) :DataSetting(value, name) {
 
 		}
-		virtual void draw() override{
-			data = dispatcher.Gather();
-			if(ImGui::Checkbox(mName.c_str(),&data)){
-				dispatcher.NotifyChange();
-			}
-			dispatcher.Provide(data);
-		}
 	};
 	template<typename T>
 	class RangeSetting :public DataSetting<T> {
@@ -92,35 +84,21 @@ namespace MOON {
 		RangeFLoat(float& v, float minV, float maxV, const char* n):RangeSetting(v,minV,maxV,n) {
 
 		}
-		virtual void draw() override{
-			data = dispatcher.Gather();
-			if (ImGui::SliderFloat(mName.c_str(), &data,minValue,maxValue)) {
-				dispatcher.NotifyChange();
-			}
-			dispatcher.Provide(data);
-		}
+
 	};
 	class RangeDouble :public RangeSetting<double> {
 	public:
 		RangeDouble(double& v, double minV, double maxV, const char* n) :RangeSetting(v, minV, maxV, n) {
 
 		}
-		virtual void draw() override {
-			data = dispatcher.Gather();
-			if (ImGui::SliderScalar(mName.c_str(),ImGuiDataType_::ImGuiDataType_Double ,&data, &minValue, &maxValue)) {
-				dispatcher.NotifyChange();
-			}
-			dispatcher.Provide(data);
-		}
+
 	};
 	class DragInt :public NodeData<int> {
 	public:
 		DragInt(int v, int a, int b, const char* n):NodeData(v,n),mMinValue(a),mMaxValue(b) {
 			
 		}
-		virtual void draw() override{
-			ImGui::SliderInt(mName.c_str(),&data,mMinValue,mMaxValue);
-		}
+
 	private:
 		int mMinValue;
 		int mMaxValue;
@@ -161,9 +139,7 @@ namespace MOON {
 		ColorSetting(float col[3],const char* n) :NodeData(col,n){
 
 		}
-		virtual void draw()override {
-			ImGui::ColorEdit3(mName.c_str(),data);
-		}
+
 	};
 	DebugSettings& DebugSettings::instance()
 	{
@@ -247,43 +223,49 @@ namespace MOON {
 			delete item;
 		}
 	}
-	void DebugSettings::drawImgui()
+
+	std::unordered_map<std::string, std::vector<int>>& DebugSettings::getGroup()
 	{
-		if (ImGui::Begin("DebugOptions")) {
-			for (auto& g : mGroup) {
-				if (ImGui::CollapsingHeader(g.first.c_str())) {
-					ImGui::Columns(2,g.first.c_str());
-					for (int& i : g.second) {
-						mRegistry[i]->draw();
-						ImGui::NextColumn();
-					}
-					ImGui::Columns(1);
-				}
-			}
-		}
-		ImGui::End();
+		return mGroup;
+	}
+	std::vector<NodeBase*>& DebugSettings::getRegistry()
+	{
+		return mRegistry;
 	}
 	DebugSettings::DebugSettings()
 	{
-		mHashCode["bool"] = typeid(bool).hash_code();
-		mHashCode["int"] = typeid(int).hash_code();
-		mHashCode["float"] = typeid(float).hash_code();
+		mHashCode[typeid(bool).hash_code()] = "bool";
+		mHashCode[typeid(int).hash_code()] = "int";
+		mHashCode[typeid(float).hash_code()] = "float";
 		add("View","showLight",false);
-
+		add("View", "showGrid", false);
+		add("Line",new DragFloat(0.5,0.5,1.0,"linewidth"));
 		add("Batch",new InputString("path","path"));
+		
 	}
 	bool NodeBase::valueChange()
 	{
 		return true;
 	}
-	void NodeBase::draw()
+
+	QWidget* NodeBase::createWidget(QWidget* parent)
 	{
-		size_t type = getType();
-		if (type == typeid(bool).hash_code()) {
-			if (ImGui::Checkbox(getName().c_str(), getPtrFast<bool>())) {
-				submitCallBack();
-			}
+		std::string type = getType();
+		if (type == "bool") {
+			return new NodeBoolWidget(this,parent);
 		}
+		else if (type=="int") {
+
+		}
+		else if (type == "float") {
+
+		}
+		return nullptr;
+	}
+
+	std::string NodeBase::getType()
+	{
+		return mHashCode[mType];
 	}
 	void NodeBase::submitCallBack()
 	{

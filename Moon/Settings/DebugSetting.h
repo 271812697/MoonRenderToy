@@ -4,6 +4,7 @@
 #include <functional>
 #include <unordered_map>
 #include <typeinfo>
+class QWidget;
 namespace MOON {
 class NodeBase {
 public:
@@ -18,13 +19,11 @@ public:
 	virtual ~NodeBase() {
 	}
 	virtual bool valueChange();
-	virtual void draw();
+	virtual QWidget* createWidget(QWidget*parent);
 	std::string& getName() {
 		return mName;
 	}
-	size_t getType() {
-		return mType;
-	}
+	std::string getType();
 	template<typename T>
 	T* getPtr() {
 		if (typeid(T).hash_code() == mType && mData) {
@@ -58,7 +57,11 @@ public:
 	void setData(const T&data) {
 		if (typeid(T).hash_code() == mType) {
 			if (mData) {
-				*(reinterpret_cast<T*>(mData)) = data;
+				T old=*(reinterpret_cast<T*>(mData));
+				if (old != data) {
+                   *(reinterpret_cast<T*>(mData)) = data;
+				   submitCallBack();
+				}
 			}
 		}
 	}
@@ -167,7 +170,9 @@ public:
 	bool addCallBack(const std::string& key, std::function<void()>fn);
 	NodeBase* getNode(const std::string& key);
 	~DebugSettings();
-	void drawImgui();
+
+	std::unordered_map<std::string, std::vector<int>>& getGroup();
+	std::vector<NodeBase*>& getRegistry();
 
 private:
 	DebugSettings();
@@ -175,8 +180,7 @@ private:
 	int mNextIndex = 0;
 	std::vector<NodeBase*>mRegistry;
 	std::unordered_map<std::string, int>mIndexMap;
-	std::unordered_map<std::string, size_t>mHashCode;
+	
 	std::unordered_map<std::string, std::vector<int>>mGroup;
-
 };
 }

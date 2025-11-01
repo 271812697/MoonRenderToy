@@ -10,9 +10,6 @@ namespace MOON {
 	public slots:
 		void updateTreeViewSceneRoot();
 		void updateTreeViewPathRoot();
-
-
-
 	};
 
 }

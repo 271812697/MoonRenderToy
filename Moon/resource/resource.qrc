@@ -1,4 +1,4 @@
-<RCC>
+﻿<RCC>
     <qresource prefix="/">
         <file>darkstyle/Ubuntu-R.ttf</file>
         <file>darkstyle/darkstyle.qss</file>
@@ -53,6 +53,8 @@
         <file>icons/pqRotateCameraCW.svg</file>
         <file>icons/pqZoomToSelection.svg</file>
         <file>icons/pqCamera.svg</file>
+        <file>icons/points.png</file>
+        <file>icons/wire.png</file>
     </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>

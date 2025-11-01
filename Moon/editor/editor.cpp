@@ -5,7 +5,8 @@
 #include <QSplitter>
 #include <QtWidgets/QDockWidget>
 #include "editor.h"
-#include "hierarchypanel.h"
+#include "UI/TreeViewPanel/hierarchypanel.h"
+#include "UI/SettingPanel/SettingPanel.h"
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "Debug/debugPanel.h"
@@ -33,16 +34,18 @@ namespace MOON {
 			sizePolicy.setHeightForWidth(middlePanel->sizePolicy().hasHeightForWidth());
 			middlePanel->setSizePolicy(sizePolicy);
 			centralwidget_layout->addWidget(middlePanel);
-			centralwidget_layout->setContentsMargins(0, 0, 0, 0);
+			centralwidget_layout->setContentsMargins(0, 0, 0, 0);	
 
-
-			auto HierarchypanelDock = new QDockWidget(self);
-			HierarchypanelDock->setAllowedAreas(Qt::AllDockWidgetAreas);
-			auto hierarchypanel = new Hierarchypanel(HierarchypanelDock);
-			HierarchypanelDock->setWidget(hierarchypanel);
-			HierarchypanelDock->setWindowTitle(QApplication::translate("Hierarchypanel", "Hierarchy", nullptr));
-
-			self->addDockWidget(Qt::LeftDockWidgetArea, HierarchypanelDock);
+			auto hierarchypanel = new Hierarchypanel(self);
+			hierarchypanel->setAllowedAreas(Qt::AllDockWidgetAreas);
+			hierarchypanel->setWindowTitle(QApplication::translate("Hierarchypanel", "Hierarchy", nullptr));
+			
+			auto settingPanel = new SettingPanel(self);
+			settingPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
+			settingPanel->setWindowTitle(QApplication::translate("Settingpanel", "Setting", nullptr));
+			
+			self->addDockWidget(Qt::LeftDockWidgetArea, hierarchypanel);
+			self->addDockWidget(Qt::LeftDockWidgetArea, settingPanel);
 			auto resourcePanelDock = new ResPanel(self);
 			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
 			//auto debugWidget = new DebugWidget(self);
@@ -57,6 +60,17 @@ namespace MOON {
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
 			menu_Display->addAction(cameraModeCommand->action());
+		/*	QIcon icon;
+			icon.addFile(QString::fromUtf8(":/widgets/icons/points.png"), QSize(), QIcon::Normal, QIcon::On);
+			auto openfile = new QAction(self);
+			
+			openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
+			openfile->setText("Open");
+			openfile->setStatusTip("Open");
+			openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
+		
+			openfile->setIcon(icon);
+			menu_Display->addAction(openfile);*/
 		}
 		void buildViewMenu() {
 			auto visible=new VisibleViewCommand(menu_View);

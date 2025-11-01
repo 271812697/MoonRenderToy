@@ -19,8 +19,8 @@ QMenuBar::item{
 }
 QMenuBar::item:selected{
   background-color:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(106,106,106,255),stop:1 rgba(106,106,106,75));
-  border-left:1px solid rgba(106,106,106,127);
-  border-right:1px solid rgba(106,106,106,127);
+  border-left:1px solid rgba(255,106,106,127);
+  border-right:1px solid rgba(255,106,106,127);
 }
 QMenuBar::item:pressed{
   background-color:palette(highlight);
