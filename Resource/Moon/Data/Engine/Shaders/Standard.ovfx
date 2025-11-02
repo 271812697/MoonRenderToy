@@ -185,6 +185,10 @@ void main()
     vec3 normal = normalize(fs_in.Normal);
 #endif
     vec3 VD=normalize(ubo_ViewPos-fs_in.FragPos);
+    if(ubo_CameraType==0){
+       VD=vec3(ubo_View[0][2],ubo_View[1][2],ubo_View[2][2]);
+    }
+   
     if(dot(VD,normal)<0.0f){
         normal=-normal;
     }
@@ -207,7 +211,7 @@ void main()
         roughness,
         ao,
         normal,
-        ubo_ViewPos,
+        VD,
         fs_in.FragPos,
         _ShadowMap,
         _LightSpaceMatrix,

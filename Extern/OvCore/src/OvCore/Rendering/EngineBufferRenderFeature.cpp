@@ -1,4 +1,4 @@
-
+﻿
 
 #include <tracy/Tracy.hpp>
 
@@ -14,6 +14,7 @@ namespace
 		sizeof(OvMaths::FMatrix4) +	// Projection matrix
 		sizeof(OvMaths::FVector3) +	// Camera position
 		sizeof(float) +				// Elapsed time
+		sizeof(OvMaths::FVector4)+  // cameraType +pad
 		sizeof(OvMaths::FMatrix4);	// User matrix
 }
 
@@ -35,10 +36,12 @@ void OvCore::Rendering::EngineBufferRenderFeature::SetCamera(const OvRendering::
 		OvMaths::FMatrix4 viewMatrix;
 		OvMaths::FMatrix4 projectionMatrix;
 		OvMaths::FVector3 cameraPosition;
+		int cameraType;
 	} uboDataPage{
 		.viewMatrix = OvMaths::FMatrix4::Transpose(p_camera.GetViewMatrix()),
 		.projectionMatrix = OvMaths::FMatrix4::Transpose(p_camera.GetProjectionMatrix()),
-		.cameraPosition = p_camera.GetPosition()
+		.cameraPosition = p_camera.GetPosition(),
+		.cameraType = p_camera.GetProjectionMode() == OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC ? 0 : 1
 	};
 
 	m_engineBuffer->Upload(&uboDataPage, OvRendering::HAL::BufferMemoryRange{
@@ -59,11 +62,15 @@ void OvCore::Rendering::EngineBufferRenderFeature::OnBeginFrame(const OvRenderin
 		OvMaths::FMatrix4 viewMatrix;
 		OvMaths::FMatrix4 projectionMatrix;
 		OvMaths::FVector3 cameraPosition;
+		int cameraType;
 		float elapsedTime;
+		OvMaths::FVector3 pad;
+
 	} uboDataPage{
 		.viewMatrix = OvMaths::FMatrix4::Transpose(p_frameDescriptor.camera->GetViewMatrix()),
 		.projectionMatrix = OvMaths::FMatrix4::Transpose(p_frameDescriptor.camera->GetProjectionMatrix()),
 		.cameraPosition = p_frameDescriptor.camera->GetPosition(),
+		.cameraType= p_frameDescriptor.camera->GetProjectionMode()== OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC?0:1,
 		.elapsedTime = elapsedTime.count()
 	};
 

@@ -62,9 +62,10 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 		float pi = 3.14159265359f;
 		auto& ac = GetSelectedActor();
 		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
+		//ac.GetComponent<:Core::ECS::Components::>();
 		auto target = ac.transform.GetWorldPosition();
 		auto cp = m_camera.GetPosition();
-		float radius = OvMaths::FVector3::Length(target - cp) * 0.5;
+		float radius = OvMaths::FVector3::Length(target - cp) ;
 		OvMaths::FMatrix4 transMat = OvMaths::FMatrix4::Translation(target - cp);
 		OvMaths::FVector3 forward = OvMaths::FVector3::Normalize(cp - target);
 		float angle = OvMaths::FVector3::AngleBetween(forward, { 0,1,0 });

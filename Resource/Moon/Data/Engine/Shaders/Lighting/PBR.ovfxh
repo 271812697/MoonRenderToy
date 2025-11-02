@@ -78,7 +78,7 @@ vec3 PBRLightingModel(
     float roughness,
     float ao,
     vec3 normal,
-    vec3 viewPos,
+    vec3 viewDir,
     vec3 fragPos,
     sampler2D shadowMap,
     mat4 lightSpaceMatrix,
@@ -97,7 +97,7 @@ vec3 PBRLightingModel(
     albedo = pow(albedo, vec3(2.2));
 
     const vec3 N = normalize(normal);
-    const vec3 V = normalize(viewPos - fragPos);
+    const vec3 V = viewDir;
     const float NdotV = max(dot(N, V), 0.0);
     const vec3 F0 = mix(vec3(0.04), albedo, metallic); 
 
