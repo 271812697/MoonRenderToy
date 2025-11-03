@@ -1168,6 +1168,37 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
+		struct Cell
+		{
+			std::vector<Eigen::Vector3f>vertex;
+			Eigen::Vector3f n;
+			Eigen::Vector4<uint8_t> color = {255,0,255,255};
+			void addPoint(const Eigen::Vector3f&v) {
+				vertex.push_back(v);
+			}
+			void addPointArray(const std::vector<Eigen::Vector3f>&v) {
+				vertex = v;
+			}
+			void drawLine(Guizmo* renderer) {
+				for (int i = 0; i < vertex.size(); i++) {
+					int j = (i + 1) % vertex.size();
+					renderer->drawLine(vertex[i],vertex[j]);
+				}
+			}
+			void drawFace(Guizmo* renderer) {
+				for (int i = 2; i < vertex.size(); i++) {
+					renderer->drawTriangle(vertex[0],vertex[i-1],vertex[i],color);
+				}
+			}
+			Cell transform(const Eigen::Matrix4f& mat) {
+				Cell res;
+				for (auto& v : vertex) {
+					res.addPoint(MatrixMulPoint(mat, v));
+				}
+				res.n = MatrixMulDir(mat,n);
+				return res;
+			}
+		};
 		//return;
 		//params to control
 		float halflen = 3.0f;
@@ -1191,219 +1222,77 @@ namespace MOON
 		Eigen::Vector3f F4 = F3 + Eigen::Vector3f(shift, -shift, 0);
 		Eigen::Vector3f F5 = F4 + Eigen::Vector3f(0, -shift, +shift);
 		Eigen::Vector3f F6 = B2;
+		Eigen::Vector3f F7 = { halflen - 2 * shift, halflen , halflen-shift };
+		Eigen::Vector3f F8 = { -halflen + 2 * shift, halflen , halflen-shift };
+		Eigen::Vector3f F9 = { halflen , -halflen + 2 * shift, halflen-shift };
+		Eigen::Vector3f F10 = { halflen, halflen - 2 * shift, halflen-shift };
+		Eigen::Vector3f F11 = { -halflen + 2 * shift, -halflen , halflen-shift };
+		Eigen::Vector3f F12 = { halflen - 2 * shift, -halflen , halflen - shift };
+		
+		Cell cell;
+		cell.addPoint(A1);
+		cell.addPoint(A2);
+		cell.addPoint(D2);
+		cell.addPoint(D1);
+		cell.addPoint(C1);
+		cell.addPoint(C2);
+		cell.addPoint(B2);
+		cell.addPoint(B1);
+		cell.n = n;
+        std::vector<Cell>cellArr;
+		cellArr.push_back(cell);
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 
+		cell.vertex.clear();
+		cell.n = Eigen::Vector3f(1, 1, 1).normalized();
+		cell.addPointArray({ F1,F2,F3,F4,F5,F6 });
+		cellArr.push_back(cell);
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
+		cell.vertex.clear();
+		cell.n = Eigen::Vector3f(0, 1, 1).normalized();
+		cell.addPointArray({A1,B1,F7,F8});
+		cellArr.push_back(cell);
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+		cell.vertex.clear();
+		cell.n = Eigen::Vector3f(1, 0, 1).normalized();
+		cell.addPointArray({ C2,F9,F10,B2 });
+		cellArr.push_back(cell);
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+		cell.vertex.clear();
+		cell.n = Eigen::Vector3f(0, -1, -1).normalized();
+		cell.addPointArray({ D1,F11,F12,C1 });
+		cellArr.push_back(cell);
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 180, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 270, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 90, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 270, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		{
-			Eigen::Vector3f nn = Eigen::Vector3f(1, 1, 1).normalized();
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 90, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 180, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 270, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, 0, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 180, 0, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, -90, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, -180, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 0, 0 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 90, 0 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 270, 0 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 0, 90 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 90 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 90 })));
+		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 90 })));
+		for (int i = 0; i < cellArr.size(); i++) {
+			cellArr[i].drawLine(this);
+			cellArr[i].drawFace(this);
 		}
 
-		setEnableLit(true);
-
-
-		setEnableLit(false);
 	}
 
 	void Guizmo::drawRayHitScreenPoint()
@@ -4194,19 +4083,19 @@ namespace MOON
 	void Guizmo::test()
 	{
 		drawViewCube();
-		colorStack.push_back(Color_Gold);
-		drawPoint({ 0,0,0 }, 40);
-		colorStack.push_back(Color_Red);
-		drawPoint({ 1,1,1 }, 40);
-		colorStack.pop_back();
-		colorStack.pop_back();
-		drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
-		drawSphere({ 2,2,2 }, 2);
-		static Eigen::Vector3f t = { 0,0,0 };
-		static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
-		static Eigen::Vector3f scale = { 1,1,1 };
+		//colorStack.push_back(Color_Gold);
+		//drawPoint({ 0,0,0 }, 40);
+		//colorStack.push_back(Color_Red);
+		//drawPoint({ 1,1,1 }, 40);
+		//colorStack.pop_back();
+		//colorStack.pop_back();
+		//drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
+		//drawSphere({ 2,2,2 }, 2);
+		//static Eigen::Vector3f t = { 0,0,0 };
+		//static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
+		//static Eigen::Vector3f scale = { 1,1,1 };
 
-		boxEdit(makeId("box edit"), t, rotation, scale);
+		//boxEdit(makeId("box edit"), t, rotation, scale);
 	}
 
 	void Guizmo::drawUnsort()
@@ -4227,7 +4116,7 @@ namespace MOON
 		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
 		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
 		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::ALWAYS;
-		///p_pso.culling = ;
+		p_pso.culling = 0;
 		p_pso.depthTest = true;
 
 		drawLists.clear();
@@ -4320,8 +4209,10 @@ namespace MOON
 		p_pso.colorWriting.mask = 0xFF;
 		p_pso.blending = true;
 		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
-		///p_pso.culling = ;
+		
 		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.culling = 0;
+		p_pso.cullFace = OvRendering::Settings::ECullFace::FRONT_AND_BACK;
 		p_pso.blendingDestFactor = OvRendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
 		p_pso.depthTest = true;
 		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
@@ -4428,7 +4319,7 @@ namespace MOON
 		runDrawTask();
 		drawWidgets();
 
-		//test();
+		test();
 		assert(!endFrameCalled);
 		endFrameCalled = true;
 
