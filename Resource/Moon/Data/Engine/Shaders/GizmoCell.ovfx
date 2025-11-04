@@ -36,9 +36,12 @@ in VSOutPut{
     vec2 uv;
 }vData;
 layout(location=0) out vec4 fResult;
+uniform sampler2D u_AlbedoMap;
 void main() 
 {
+    vec4 albedo = texture(u_AlbedoMap, vData.uv)*vData.color;
     vec3 col=normalize(vData.normal+1.0)/2.0;
-    fResult = vec4(col*vData.color.rgb,1.0);	
+    fResult = vec4(albedo.rgb*col,1.0);	
+    //fResult = vec4(albedo.rgb,1.0);	
     //fResult = vec4(vData.normal,1.0);	
 }

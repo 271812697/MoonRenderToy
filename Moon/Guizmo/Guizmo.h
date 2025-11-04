@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <vector>
 #include <unordered_map>
+#include "OvRendering/Resources/Texture.h"
 #include "backend/Driver.h"
 #include "backend/CircularBuffer.h"
 #include "backend/CommandBufferQueue.h"
@@ -395,7 +396,9 @@ namespace MOON
 		std::vector<std::string> cancelList;
 		std::unordered_map<std::string, std::function<void()>> mDrawTaskMap;
 
-		//intrusive_ptr<RHI::ShaderInstance> mShader = nullptr;
+		
+		OvRendering::HAL::Texture mEmptyTexture2D;
+		OvRendering::HAL::Texture mEmptyTextureCube;
 		OvRendering::Data::Material* mLineMaterial = nullptr;
 		OvRendering::Data::Material* mPointMaterial = nullptr;
 		OvRendering::Data::Material* mTriangleMaterial = nullptr;

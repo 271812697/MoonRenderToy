@@ -15,13 +15,20 @@ namespace MOON
 	{
 
 		std::vector<Eigen::Vector3f>vertex;
+		std::vector<Eigen::Vector2f>uv;
 		Eigen::Vector3f n;
-		Eigen::Vector4<uint8_t> color = { 255,0,255,255 };
-		void addPoint(const Eigen::Vector3f& v) {
-			vertex.push_back(v);
+		Eigen::Vector4<uint8_t> color = { 255,255,255,255 };
+		void clear() {
+			vertex.clear();
+			uv.clear();
 		}
-		void addPointArray(const std::vector<Eigen::Vector3f>& v) {
+		void addPoint(const Eigen::Vector3f& v, const Eigen::Vector2f& tex ) {
+			vertex.push_back(v);
+			uv.push_back(tex);
+		}
+		void addPointArray(const std::vector<Eigen::Vector3f>& v, const std::vector<Eigen::Vector2f>& tex) {
 			vertex = v;
+			uv = tex;
 		}
 		void drawLine(Guizmo* renderer) {
 			for (int i = 0; i < vertex.size(); i++) {
@@ -34,13 +41,20 @@ namespace MOON
 				renderer->drawTriangle(vertex[0], vertex[i - 1], vertex[i], color);
 			}
 		}
-		Cell transform(const Eigen::Matrix4f& mat) {
+		Cell transform(const Eigen::Matrix4f& mat,float offsetX=0.0f,float offsetY=0.0f) {
 			Cell res;
-			for (auto& v : vertex) {
-				res.addPoint(MatrixMulPoint(mat, v));
+
+			for (int i = 0; i < vertex.size();i++) {
+				res.addPoint(MatrixMulPoint(mat, vertex[i]), { uv[i].x()+offsetX,uv[i].y()+offsetY});
 			}
 			res.n = MatrixMulDir(mat, n);
 			return res;
+		}
+		void tranformUV(float u,float v) {
+			for (int i = 0; i < vertex.size(); i++) {
+				uv[i].x() += u;
+				uv[i].y() += v;
+			}
 		}
 	};
 	struct Polygon {
@@ -49,6 +63,7 @@ namespace MOON
 		unsigned int vbo=0;
 		unsigned int numVertex = 0;
 		bool isDirty = false;
+		OvRendering::Resources::Texture* texture=nullptr;
 		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color) {
 			for (int i = 0;i < cellArray.size();i++) {
@@ -57,7 +72,7 @@ namespace MOON
 				}
 				else
 				{
-					cellArray[i].color = {255,0,0,255};
+					cellArray[i].color = {255,150,150,150};
 				}
 			}
 			
@@ -69,9 +84,9 @@ namespace MOON
 			for (int i = 0;i < cellArray.size();i++) {
 				Cell& cell = cellArray[i];
 				for (int j = 2;j < cell.vertex.size();j++) {
-					VertexData vd1(cell.vertex[0], cell.color, cell.n, { 0,0 });
-					VertexData vd2(cell.vertex[j - 1], cell.color, cell.n, { 0,0 });
-					VertexData vd3(cell.vertex[j], cell.color, cell.n, { 0,0 });
+					VertexData vd1(cell.vertex[0], cell.color, cell.n, cell.uv[0]);
+					VertexData vd2(cell.vertex[j - 1], cell.color, cell.n, cell.uv[j-1]);
+					VertexData vd3(cell.vertex[j], cell.color, cell.n, cell.uv[j]);
 					vData.push_back(vd1);
 					vData.push_back(vd2);
 					vData.push_back(vd3);
@@ -158,6 +173,7 @@ namespace MOON
 		if (viewCube.cellArray.size()==0) {
 			float halflen = 3.0f;
 			float shift = 0.6f;
+			float ratio = 0.5*shift / halflen;
 			Eigen::Vector3f n = { 0, 0, 1 };
 			Eigen::Vector3f A = { -halflen + shift,halflen - shift, halflen };
 			Eigen::Vector3f A1 = { -halflen + 2 * shift, halflen - shift, halflen };
@@ -185,26 +201,27 @@ namespace MOON
 			Eigen::Vector3f F12 = { halflen - 2 * shift, -halflen , halflen - shift };
 
 			Cell cell;
-			cell.addPoint(A1);
-			cell.addPoint(A2);
-			cell.addPoint(D2);
-			cell.addPoint(D1);
-			cell.addPoint(C1);
-			cell.addPoint(C2);
-			cell.addPoint(B2);
-			cell.addPoint(B1);
+			cell.addPoint(A1,{(2*ratio)/3,(1-ratio)/2});
+			cell.addPoint(A2,{(ratio)/3,(1-2*ratio)/2});
+			cell.addPoint(D2, {(ratio)/3,(2*ratio)/2});
+			cell.addPoint(D1,{(2*ratio)/3,(ratio)/2});
+			cell.addPoint(C1, {(1-2*ratio)/3,(ratio)/2});
+			cell.addPoint(C2,{(1-ratio)/3,(2*ratio)/2});
+			cell.addPoint(B2, {(1-ratio)/3,(1-2*ratio)/2});
+			cell.addPoint(B1, {(1-2*ratio)/3,(1-ratio)/2});
 			cell.n = n;
+			cell.tranformUV(2.0/3,0.0);
 			auto& cellArr = viewCube.cellArray;
 			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 }),-1.0/3.0,0.5));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 }),0.0,0.5));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 }),-1.0/3.0,0));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 }),-2.0/3.0,0.0));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 }),-2.0/3.0,0.5));
 
-			cell.vertex.clear();
+			cell.clear();
 			cell.n = Eigen::Vector3f(1, 1, 1).normalized();
-			cell.addPointArray({ F1,F2,F3,F4,F5,F6 });
+			cell.addPointArray({ F1,F2,F3,F4,F5,F6 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 } });
 			cellArr.push_back(cell);
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
@@ -213,29 +230,32 @@ namespace MOON
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
-			cell.vertex.clear();
+			cell.clear();
 			cell.n = Eigen::Vector3f(0, 1, 1).normalized();
-			cell.addPointArray({ A1,B1,F7,F8 });
+			cell.addPointArray({ A1,B1,F7,F8 }, { {0,0},{0,0 },{0,0} ,{0,0} });
 			cellArr.push_back(cell);
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cell.vertex.clear();
+			cell.clear();
 			cell.n = Eigen::Vector3f(1, 0, 1).normalized();
-			cell.addPointArray({ C2,F9,F10,B2 });
+			cell.addPointArray({ C2,F9,F10,B2 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
 			cellArr.push_back(cell);
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cell.vertex.clear();
+			cell.clear();
 			cell.n = Eigen::Vector3f(0, -1, -1).normalized();
-			cell.addPointArray({ D1,F11,F12,C1 });
+			cell.addPointArray({ D1,F11,F12,C1 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
 			cellArr.push_back(cell);
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 
 			viewCube.initGpuBuffer();
+			
+			viewCube.texture = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png",true);
+
 		}
 
 		return viewCube;
@@ -272,10 +292,31 @@ namespace MOON
 	static unsigned int VertexArray;
 	static unsigned int VertexBuffer;
 	static constexpr const size_t MiB = 1024u * 1024u;
+	constexpr auto kWhite = std::to_array<uint8_t>({ 255, 255, 255, 255 });
+	constexpr auto kBlack = std::to_array<uint8_t, 6 * 4>({ 0 });
 	Guizmo::Guizmo()
 		: buffer(9 * MiB, 27 * MiB, false)
-		, command(driver, buffer.getCircularBuffer())
+		, command(driver, buffer.getCircularBuffer()), 
+		mEmptyTexture2D{ OvRendering::Settings::ETextureType::TEXTURE_2D },
+		mEmptyTextureCube{ OvRendering::Settings::ETextureType::TEXTURE_CUBE }
 	{
+		const auto kEmptyTextureDesc = OvRendering::Settings::TextureDesc{
+	.width = 1,
+	.height = 1,
+	.minFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
+	.magFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
+	.horizontalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
+	.verticalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
+	.internalFormat = OvRendering::Settings::EInternalFormat::RGBA8,
+	.useMipMaps = false
+		};
+
+		mEmptyTexture2D.Allocate(kEmptyTextureDesc);
+		mEmptyTexture2D.Upload(kWhite.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+
+		mEmptyTextureCube.Allocate(kEmptyTextureDesc);
+		mEmptyTextureCube.Upload(kBlack.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+
 		command.test(8);
 		command.queueCommand([]() {
 			// std::cout << "say hello" << std::endl;
@@ -4182,14 +4223,18 @@ namespace MOON
 			
 			int res=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
 			if (res != -1) {
-				viewCube.setCellColor(res,{255,255,255,0});
+				viewCube.setCellColor(res,{255,100,255,255});
 			}
 			
 			 
 			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
 			mLitMaterial->SetProperty("uViewMatrix", view);
 			mLitMaterial->SetProperty("uVProjMatrix", proj);
-			mLitMaterial->Bind();
+			mLitMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
+
+			mLitMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			
+			
 			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
 			
 			viewCube.bind();
