@@ -31,7 +31,7 @@ namespace MOON {
 			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
-			Guizmo::instance().init();
+			
 			mScenePath = QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
 			mEditorContext = new OvEditor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
@@ -39,6 +39,7 @@ namespace MOON {
 			RegService(OvEditor::Panels::SceneView, *mSceneView);
 			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
+			Guizmo::instance().init();
 
 		}
 		~ViewerWindowInternal() {

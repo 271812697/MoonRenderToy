@@ -100,34 +100,48 @@ namespace MOON
 			t1_ = (s - q * r) / d;
 		}
 	}
+
 	bool Intersect(const Ray& ray, const Eigen::Vector3f& _a, const Eigen::Vector3f& _b,
 		const Eigen::Vector3f& _c, float& tr)
 	{
-		Eigen::Vector3f edge1(_b - _a);
-		Eigen::Vector3f edge2(_c - _a);
 
-		Eigen::Vector3f p = ray.m_direction.cross(edge2);
-		float det = edge1.dot(p);
-		if (det >= FLT_EPSILON)
-		{
-			Eigen::Vector3f t(ray.m_origin - _a);
-			float u = t.dot(p);
-			if (u >= 0.0f && u <= det)
-			{
-				Eigen::Vector3f q = t.cross(edge1);
-				float v = ray.m_direction.dot(q);
-				if (v >= 0.0f && u + v <= det)
-				{
-					float distance = edge2.dot(q) / det;
+		const Eigen::Vector3f edge1 = _b - _a;
+		const Eigen::Vector3f edge2 = _c - _a;
+		const Eigen::Vector3f h = ray.m_direction.cross(edge2);
+		const float a = edge1.dot(h);
 
-					if (distance >= 0.0f)
-					{
-						tr = distance;
-						return true;
-					}
-				}
-			}
+		// 射线与三角形平行或共面（无交点）
+		if (std::fabs(a) < 1e-6f) {
+			return false;
 		}
+
+		const float f = 1.0f / a;
+		const Eigen::Vector3f s = ray.m_origin - _a;
+		const float u = f * s.dot(h);
+
+		// u不在[0,1]范围内，交点在三角形外
+		if (u < 0.0f || u > 1.0f) {
+			return false;
+		}
+
+		const Eigen::Vector3f q = s.cross(edge1);
+		const float v = f * ray.m_direction.dot(q);
+
+		// v不在[0,1]或u+v>1，交点在三角形外
+		if (v < 0.0f || u + v > 1.0f) {
+			return false;
+		}
+
+		// 计算射线参数t（距离）
+		const float t = f * edge2.dot(q);
+
+		// t>0表示交点在射线方向上（有效距离）
+		if (t > 1e-6f) {
+			tr = t; // 传出距离
+			return true;
+		}
+
+		// 交点在射线反方向（无效）
 		return false;
 	}
 	bool Intersect(const Plane& plane, const Eigen::Vector3f& v0, const Eigen::Vector3f& v1, Eigen::Vector3f& res)

@@ -8,9 +8,239 @@
 #include <OvRendering/Resources/Loaders/ShaderLoader.h>
 #include <OvMaths/FMatrix4.h>
 #include <glad/glad.h>
+#include <iostream>
 namespace MOON
 {
+	struct Cell
+	{
 
+		std::vector<Eigen::Vector3f>vertex;
+		Eigen::Vector3f n;
+		Eigen::Vector4<uint8_t> color = { 255,0,255,255 };
+		void addPoint(const Eigen::Vector3f& v) {
+			vertex.push_back(v);
+		}
+		void addPointArray(const std::vector<Eigen::Vector3f>& v) {
+			vertex = v;
+		}
+		void drawLine(Guizmo* renderer) {
+			for (int i = 0; i < vertex.size(); i++) {
+				int j = (i + 1) % vertex.size();
+				renderer->drawLine(vertex[i], vertex[j]);
+			}
+		}
+		void drawFace(Guizmo* renderer) {
+			for (int i = 2; i < vertex.size(); i++) {
+				renderer->drawTriangle(vertex[0], vertex[i - 1], vertex[i], color);
+			}
+		}
+		Cell transform(const Eigen::Matrix4f& mat) {
+			Cell res;
+			for (auto& v : vertex) {
+				res.addPoint(MatrixMulPoint(mat, v));
+			}
+			res.n = MatrixMulDir(mat, n);
+			return res;
+		}
+	};
+	struct Polygon {
+		std::vector<Cell>cellArray;
+		unsigned int vao=0;
+		unsigned int vbo=0;
+		unsigned int numVertex = 0;
+		bool isDirty = false;
+		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color) {
+			for (int i = 0;i < cellArray.size();i++) {
+				if (i == index) {
+                    cellArray[index].color = color;
+				}
+				else
+				{
+					cellArray[i].color = {255,0,0,255};
+				}
+			}
+			
+
+			isDirty = true;
+		}
+		void submit() {
+			std::vector<VertexData> vData;
+			for (int i = 0;i < cellArray.size();i++) {
+				Cell& cell = cellArray[i];
+				for (int j = 2;j < cell.vertex.size();j++) {
+					VertexData vd1(cell.vertex[0], cell.color, cell.n, { 0,0 });
+					VertexData vd2(cell.vertex[j - 1], cell.color, cell.n, { 0,0 });
+					VertexData vd3(cell.vertex[j], cell.color, cell.n, { 0,0 });
+					vData.push_back(vd1);
+					vData.push_back(vd2);
+					vData.push_back(vd3);
+				}
+			}
+			numVertex = vData.size();
+			glBindVertexArray(vao);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vData.size() * sizeof(VertexData), (GLvoid*)vData.data(), GL_STREAM_DRAW);
+		}
+		void bind() {
+			if (isDirty) {
+				isDirty = false;
+				submit();
+			}
+			glBindVertexArray(vao);
+		}
+		Polygon() = default;
+		Polygon(const std::vector<Cell>& cells):cellArray(cells) {
+			vao = 0;
+			vbo = 0;
+			initGpuBuffer();
+		}
+		Polygon(const std::vector<Cell>&& cells) :cellArray(std::move(cells)) {
+			vao = 0;
+			vbo = 0;
+			initGpuBuffer();
+		}
+		~Polygon() {
+			glDeleteBuffers(1,&vbo);
+			glDeleteVertexArrays(1, &vao);
+		}
+		void initGpuBuffer() {
+			glGenVertexArrays(1, &vao);
+			glGenBuffers(1, &vbo);
+			glBindVertexArray(vao);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, positionSize));
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, color));
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, normal));
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, uv));
+			submit();
+			glBindVertexArray(0);
+		}
+	
+		int hit(const Eigen::Matrix4f& viewProj,float u,float v) {
+			int res = -1;
+			float minDist = 100000.0f;
+			Ray ray;
+			ray.m_origin = { u,v,-2 };
+			std::cout << "u v " << u << " " << v << std::endl;
+			if (abs(u) < 0.2 && abs(v) < 0.2) {
+				std::cout << "center hit\n";
+			}
+			ray.m_direction = { 0,0,1.0 };
+			for (int i = 0; i < cellArray.size(); i++) {
+				Cell& cell = cellArray[i];
+				std::vector<Eigen::Vector3f>ndcPos(cell.vertex.size());
+				for (int j = 0;j < cell.vertex.size();j++) {
+					ndcPos[j] = MatrixMulPoint(viewProj, cell.vertex[j]);
+				}
+			    
+				for (int j = 2; j < cell.vertex.size(); j++) {
+					float tr;
+					if (Intersect(ray, ndcPos[0], ndcPos[j - 1], ndcPos[j], tr)) {
+						if (tr < minDist) {
+							minDist = tr;
+							res = i;
+							
+						}
+					}
+				}
+			}
+			return res;
+		}
+	};
+	Polygon& makeViewCube() {
+	
+		static Polygon viewCube;
+		if (viewCube.cellArray.size()==0) {
+			float halflen = 3.0f;
+			float shift = 0.6f;
+			Eigen::Vector3f n = { 0, 0, 1 };
+			Eigen::Vector3f A = { -halflen + shift,halflen - shift, halflen };
+			Eigen::Vector3f A1 = { -halflen + 2 * shift, halflen - shift, halflen };
+			Eigen::Vector3f A2 = { -halflen + shift, halflen - 2 * shift, halflen };
+			Eigen::Vector3f B = { halflen - shift, halflen - shift, halflen };
+			Eigen::Vector3f B1 = { halflen - 2 * shift, halflen - shift, halflen };
+			Eigen::Vector3f B2 = { halflen - shift, halflen - 2 * shift, halflen };
+			Eigen::Vector3f C = { halflen - shift, -halflen + shift, halflen };
+			Eigen::Vector3f C1 = { halflen - 2 * shift, -halflen + shift, halflen };
+			Eigen::Vector3f C2 = { halflen - shift, -halflen + 2 * shift, halflen };
+			Eigen::Vector3f D = { -halflen + shift, -halflen + shift, halflen };
+			Eigen::Vector3f D1 = { -halflen + 2 * shift, -halflen + shift, halflen };
+			Eigen::Vector3f D2 = { -halflen + shift, -halflen + 2 * shift, halflen };
+			Eigen::Vector3f F1 = B1;
+			Eigen::Vector3f F2 = F1 + Eigen::Vector3f(0, shift, -shift);
+			Eigen::Vector3f F3 = F2 + Eigen::Vector3f(shift, 0, -shift);
+			Eigen::Vector3f F4 = F3 + Eigen::Vector3f(shift, -shift, 0);
+			Eigen::Vector3f F5 = F4 + Eigen::Vector3f(0, -shift, +shift);
+			Eigen::Vector3f F6 = B2;
+			Eigen::Vector3f F7 = { halflen - 2 * shift, halflen , halflen - shift };
+			Eigen::Vector3f F8 = { -halflen + 2 * shift, halflen , halflen - shift };
+			Eigen::Vector3f F9 = { halflen , -halflen + 2 * shift, halflen - shift };
+			Eigen::Vector3f F10 = { halflen, halflen - 2 * shift, halflen - shift };
+			Eigen::Vector3f F11 = { -halflen + 2 * shift, -halflen , halflen - shift };
+			Eigen::Vector3f F12 = { halflen - 2 * shift, -halflen , halflen - shift };
+
+			Cell cell;
+			cell.addPoint(A1);
+			cell.addPoint(A2);
+			cell.addPoint(D2);
+			cell.addPoint(D1);
+			cell.addPoint(C1);
+			cell.addPoint(C2);
+			cell.addPoint(B2);
+			cell.addPoint(B1);
+			cell.n = n;
+			auto& cellArr = viewCube.cellArray;
+			cellArr.push_back(cell);
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+
+			cell.vertex.clear();
+			cell.n = Eigen::Vector3f(1, 1, 1).normalized();
+			cell.addPointArray({ F1,F2,F3,F4,F5,F6 });
+			cellArr.push_back(cell);
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
+			cell.vertex.clear();
+			cell.n = Eigen::Vector3f(0, 1, 1).normalized();
+			cell.addPointArray({ A1,B1,F7,F8 });
+			cellArr.push_back(cell);
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			cell.vertex.clear();
+			cell.n = Eigen::Vector3f(1, 0, 1).normalized();
+			cell.addPointArray({ C2,F9,F10,B2 });
+			cellArr.push_back(cell);
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			cell.vertex.clear();
+			cell.n = Eigen::Vector3f(0, -1, -1).normalized();
+			cell.addPointArray({ D1,F11,F12,C1 });
+			cellArr.push_back(cell);
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+
+			viewCube.initGpuBuffer();
+		}
+
+		return viewCube;
+	
+	};
 	static OvMaths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
 		temp.transposeInPlace();
@@ -18,249 +248,14 @@ namespace MOON
 		memcpy(ret.data, temp.data(), 16 * sizeof(float));
 		return ret;
 	}
-	class GL2DRender
-	{
-	public:
-		GL2DRender()
-		{
-		}
-		virtual void init()
-		{
-		}
-		virtual ~GL2DRender()
-		{
-			destory();
-		}
-		void Vertex(const Eigen::Vector2f& v, const Eigen::Vector4f& c)
-		{
-			vertices.push_back(v);
-			color.push_back(c);
-		}
-		virtual void create(const char* V, const char* F)
-		{
-			unsigned vP = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(vP, 1, &V, NULL);
-			unsigned fP = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(fP, 1, &F, NULL);
-			char infolog[512];
-			int success;
-			glCompileShader(vP);
-			glGetShaderiv(vP, GL_COMPILE_STATUS, &success);
-			if (!success)
-			{
-				glGetShaderInfoLog(vP, 512, NULL, infolog);
-				assert(false);
-			}
-			glCompileShader(fP);
-			glGetShaderiv(fP, GL_COMPILE_STATUS, &success);
-			if (!success)
-			{
-				glGetShaderInfoLog(fP, 512, NULL, infolog);
-				assert(false);
-			}
-			shader = glCreateProgram();
-			glAttachShader(shader, vP);
-			glAttachShader(shader, fP);
-			glLinkProgram(shader);
-			glGetProgramiv(shader, GL_LINK_STATUS, &success);
-			if (!success)
-			{
-				glGetProgramInfoLog(shader, 512, NULL, infolog);
-				assert(false);
-			}
-			glDeleteShader(vP);
-			glDeleteShader(fP);
-			projection = glGetUniformLocation(shader, "projectionMatrix");
-			glGenVertexArrays(1, &vaoId);
-			glBindVertexArray(vaoId);
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-			glGenBuffers(2, bufferId);
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, vertices.size() * 8, vertices.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
-			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, color.size() * 16, color.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-		virtual void destory()
-		{
-			glDeleteBuffers(2, bufferId);
-			glDeleteVertexArrays(1, &vaoId);
-			glDeleteProgram(shader);
-		}
-		virtual void draw()
-		{
-		}
-		virtual void fflush()
-		{
-			if (vertices.size() == 0)
-				return;
-			glUseProgram(shader);
-			float p[16] = { 0.0 };
-			glUniformMatrix4fv(projection, 1, GL_FALSE, p);
-			glBindVertexArray(vaoId);
+	static Eigen::Matrix4f ToEigenMatrix4f(const OvMaths::FMatrix4& mat) {
+		Eigen::Matrix4f ret(mat.data);
+		
+		//memcpy(ret.data(), mat.data, 16 * sizeof(float));
+		ret.transposeInPlace();
+		return ret;
+	}
 
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * 8, vertices.data());
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, color.size() * 16, color.data());
-			draw();
-			glBindVertexArray(0);
-			glUseProgram(0);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
-	protected:
-		unsigned int vaoId;
-		unsigned int bufferId[2];
-		unsigned int shader;
-		std::vector<Eigen::Vector2f> vertices;
-		std::vector<Eigen::Vector4f> color;
-		int projection;
-	};
-
-	class GLRenderPoints : public GL2DRender
-	{
-	public:
-		GLRenderPoints()
-			: GL2DRender()
-		{
-		}
-		virtual ~GLRenderPoints() override
-		{
-			glDeleteBuffers(1, &sizeBuffer);
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"layout(location = 2) in float v_size;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position = projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-				"   gl_PointSize = v_size;\n"
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void create(const char* V, const char* F) override
-		{
-			GL2DRender::create(V, F);
-			glBindVertexArray(vaoId);
-			glEnableVertexAttribArray(2);
-			glGenBuffers(1, &sizeBuffer);
-			glBindBuffer(GL_ARRAY_BUFFER, sizeBuffer);
-			glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, size.size() * 4, size.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-		void Vertex(const Eigen::Vector2f& v, const Eigen::Vector4f& c, float s)
-		{
-			size.push_back(s);
-			GL2DRender::Vertex(v, c);
-		}
-		virtual void draw() override
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, sizeBuffer);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, size.size() * 4, size.data());
-
-			glEnable(GL_PROGRAM_POINT_SIZE);
-			glDrawArrays(GL_POINTS, 0, vertices.size());
-			glDisable(GL_PROGRAM_POINT_SIZE);
-		}
-
-	private:
-		std::vector<float> size; // ��С
-		unsigned int sizeBuffer;
-	};
-
-	class GLRenderLines : public GL2DRender
-	{
-	public:
-		GLRenderLines()
-		{
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position =projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void draw() override
-		{
-			glDrawArrays(GL_LINES, 0, vertices.size());
-		}
-	};
-
-	class GLRenderTriangles : public GL2DRender
-	{
-	public:
-		GLRenderTriangles()
-			: GL2DRender()
-		{
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position = projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void draw() override
-		{
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-			glDisable(GL_BLEND);
-		}
-	};
 
 
 	static constexpr unsigned int IdInvalid = 0;
@@ -338,10 +333,12 @@ namespace MOON
 	}
 	void Guizmo::prepareGl()
 	{
+		//shader leak
 		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
 		mLineMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
+		mLitMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoCell.ovfx"));
 
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
@@ -356,7 +353,7 @@ namespace MOON
 		glEnableVertexAttribArray(3);
 		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, uv));
 		glBindVertexArray(0);
-		create2DRender();
+		
 		preStoreMesh();
 	}
 	void Guizmo::registerDebugSettings()
@@ -366,12 +363,11 @@ namespace MOON
 	void Guizmo::terminate()
 	{
 		// free resource
-		delete m_lines;
-		delete m_points;
-		delete m_triangles;
+
 		delete mLineMaterial;
 		delete mPointMaterial;
 		delete mTriangleMaterial;
+		delete mLitMaterial;
 	}
 	void Guizmo::begin(PrimitiveMode _mode)
 	{
@@ -1168,130 +1164,16 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
-		struct Cell
-		{
-			std::vector<Eigen::Vector3f>vertex;
-			Eigen::Vector3f n;
-			Eigen::Vector4<uint8_t> color = {255,0,255,255};
-			void addPoint(const Eigen::Vector3f&v) {
-				vertex.push_back(v);
-			}
-			void addPointArray(const std::vector<Eigen::Vector3f>&v) {
-				vertex = v;
-			}
-			void drawLine(Guizmo* renderer) {
-				for (int i = 0; i < vertex.size(); i++) {
-					int j = (i + 1) % vertex.size();
-					renderer->drawLine(vertex[i],vertex[j]);
-				}
-			}
-			void drawFace(Guizmo* renderer) {
-				for (int i = 2; i < vertex.size(); i++) {
-					renderer->drawTriangle(vertex[0],vertex[i-1],vertex[i],color);
-				}
-			}
-			Cell transform(const Eigen::Matrix4f& mat) {
-				Cell res;
-				for (auto& v : vertex) {
-					res.addPoint(MatrixMulPoint(mat, v));
-				}
-				res.n = MatrixMulDir(mat,n);
-				return res;
-			}
-		};
+
 		//return;
 		//params to control
-		float halflen = 3.0f;
-		float shift = 0.6f;
-		Eigen::Vector3f n = { 0, 0, 1 };
-		Eigen::Vector3f A = { -halflen + shift,halflen - shift, halflen };
-		Eigen::Vector3f A1 = { -halflen + 2 * shift, halflen - shift, halflen };
-		Eigen::Vector3f A2 = { -halflen + shift, halflen - 2 * shift, halflen };
-		Eigen::Vector3f B = { halflen - shift, halflen - shift, halflen };
-		Eigen::Vector3f B1 = { halflen - 2 * shift, halflen - shift, halflen };
-		Eigen::Vector3f B2 = { halflen - shift, halflen - 2 * shift, halflen };
-		Eigen::Vector3f C = { halflen - shift, -halflen + shift, halflen };
-		Eigen::Vector3f C1 = { halflen - 2 * shift, -halflen + shift, halflen };
-		Eigen::Vector3f C2 = { halflen - shift, -halflen + 2 * shift, halflen };
-		Eigen::Vector3f D = { -halflen + shift, -halflen + shift, halflen };
-		Eigen::Vector3f D1 = { -halflen + 2 * shift, -halflen + shift, halflen };
-		Eigen::Vector3f D2 = { -halflen + shift, -halflen + 2 * shift, halflen };
-		Eigen::Vector3f F1 = B1;
-		Eigen::Vector3f F2 = F1 + Eigen::Vector3f(0, shift, -shift);
-		Eigen::Vector3f F3 = F2 + Eigen::Vector3f(shift, 0, -shift);
-		Eigen::Vector3f F4 = F3 + Eigen::Vector3f(shift, -shift, 0);
-		Eigen::Vector3f F5 = F4 + Eigen::Vector3f(0, -shift, +shift);
-		Eigen::Vector3f F6 = B2;
-		Eigen::Vector3f F7 = { halflen - 2 * shift, halflen , halflen-shift };
-		Eigen::Vector3f F8 = { -halflen + 2 * shift, halflen , halflen-shift };
-		Eigen::Vector3f F9 = { halflen , -halflen + 2 * shift, halflen-shift };
-		Eigen::Vector3f F10 = { halflen, halflen - 2 * shift, halflen-shift };
-		Eigen::Vector3f F11 = { -halflen + 2 * shift, -halflen , halflen-shift };
-		Eigen::Vector3f F12 = { halflen - 2 * shift, -halflen , halflen - shift };
 		
-		Cell cell;
-		cell.addPoint(A1);
-		cell.addPoint(A2);
-		cell.addPoint(D2);
-		cell.addPoint(D1);
-		cell.addPoint(C1);
-		cell.addPoint(C2);
-		cell.addPoint(B2);
-		cell.addPoint(B1);
-		cell.n = n;
-        std::vector<Cell>cellArr;
-		cellArr.push_back(cell);
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+		//for (int i = 0; i < viewCube.cellArray.size(); i++) {
+		//	viewCube.cellArray[i].drawLine(this);
+		//	viewCube.cellArray[i].drawFace(this);
+		//}
+		auto& viewCube = makeViewCube();
 
-		cell.vertex.clear();
-		cell.n = Eigen::Vector3f(1, 1, 1).normalized();
-		cell.addPointArray({ F1,F2,F3,F4,F5,F6 });
-		cellArr.push_back(cell);
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
-		cell.vertex.clear();
-		cell.n = Eigen::Vector3f(0, 1, 1).normalized();
-		cell.addPointArray({A1,B1,F7,F8});
-		cellArr.push_back(cell);
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-		cell.vertex.clear();
-		cell.n = Eigen::Vector3f(1, 0, 1).normalized();
-		cell.addPointArray({ C2,F9,F10,B2 });
-		cellArr.push_back(cell);
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-		cell.vertex.clear();
-		cell.n = Eigen::Vector3f(0, -1, -1).normalized();
-		cell.addPointArray({ D1,F11,F12,C1 });
-		cellArr.push_back(cell);
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-		cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 0, 0 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 90, 0 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ -90, 270, 0 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 0, 90 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 90 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 90 })));
-		//cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 90 })));
-		for (int i = 0; i < cellArr.size(); i++) {
-			cellArr[i].drawLine(this);
-			cellArr[i].drawFace(this);
-		}
 
 	}
 
@@ -4168,7 +4050,6 @@ namespace MOON
 				prim = GL_TRIANGLES;
 				passTag = "triangle";
 				mat = mTriangleMaterial;
-				// glEnable(GL_CULL_FACE); // culling valid for triangles, but optional
 				break;
 			default:
 				assert(false);
@@ -4218,12 +4099,6 @@ namespace MOON
 		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
 		driver->SetPipelineState(p_pso);
 		// Enable Depth Test
-		//glEnable(GL_DEPTH_TEST);
-		//glEnable(GL_POINT_SPRITE);
-		//glEnable(GL_BLEND);
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		//glDepthFunc(GL_LEQUAL);
 		for (int i = 0; i < vertexData[1].size(); ++i)
 		{
 			if (vertexData[1][i]->size() > 0)
@@ -4282,14 +4157,44 @@ namespace MOON
 
 		//draw lit vertex data
 		{
-			//glBindVertexArray(VertexArray);
-			//glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-			//glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW);
+			auto& viewCube = makeViewCube();
 
-			////mShader->setActiveVariant("Lit", {});
-			////mShader->bindActiveProgram();
-			//glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size());
-			////mShader->unBindActiveProgram();
+			float size = 3.0f;
+			int viewPortSize = 150;
+			int viewPortX = cameraParam.viewportWidth - viewPortSize;
+			int viewPortY = cameraParam.viewportHeight-viewPortSize;
+
+			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewPortSize-1;
+			float v = 2*(cameraParam.viewportHeight -cameraParam.cursor.y() - viewPortY) / (float)viewPortSize-1;
+
+			auto transform=renderView->GetCamera()->GetTransform();
+			auto forward=transform.GetWorldForward();
+			auto position = -forward * size * 2.0f;
+			auto up = transform.GetWorldUp();
+			auto view = OvMaths::FMatrix4::CreateView(
+				position.x, position.y, position.z,
+				position.x+forward.x, position.y+forward.y, position.z+forward.z,
+				up.x, up.y, up.z
+			);
+		
+			auto proj=OvMaths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
+			
+			
+			int res=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
+			if (res != -1) {
+				viewCube.setCellColor(res,{255,255,255,0});
+			}
+			
+			 
+			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
+			mLitMaterial->SetProperty("uViewMatrix", view);
+			mLitMaterial->SetProperty("uVProjMatrix", proj);
+			mLitMaterial->Bind();
+			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
+			
+			viewCube.bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
+			//mShader->unBindActiveProgram();
 		}
 
 	}
@@ -4492,15 +4397,7 @@ namespace MOON
 	{
 		cancelList.push_back(name);
 	}
-	void Guizmo::create2DRender()
-	{
-		this->m_points = new GLRenderPoints();
-		this->m_lines = new GLRenderLines();
-		this->m_triangles = new GLRenderTriangles();
-		this->m_points->init();
-		this->m_lines->init();
-		this->m_triangles->init();
-	}
+
 	int Guizmo::findLayerIndex(unsigned int _id) const
 	{
 		for (int i = 0; i < (int)layerIdMap.size(); ++i)

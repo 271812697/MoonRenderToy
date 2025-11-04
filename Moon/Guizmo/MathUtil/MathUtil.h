@@ -9,7 +9,6 @@ namespace MOON
 	{
 		Eigen::Vector3f m_origin;
 		Eigen::Vector3f m_direction; // unit length
-
 		Line()
 		{
 		}
@@ -37,7 +36,6 @@ namespace MOON
 	{
 		Eigen::Vector3f m_start;
 		Eigen::Vector3f m_end;
-
 		LineSegment()
 		{
 		}

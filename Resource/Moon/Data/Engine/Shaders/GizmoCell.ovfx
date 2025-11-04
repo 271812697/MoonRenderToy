@@ -1,0 +1,44 @@
+#shader vertex
+#version 450 core
+layout(location=0) in vec4 aPositionSize;
+layout(location=1) in vec4 aColor;
+layout(location=2) in vec3 aNormal;
+layout(location=3) in vec2 aUv; 
+uniform mat4 uModelMatrix;
+uniform mat4 uViewMatrix;
+uniform mat4 uVProjMatrix;
+uniform mat4 uViewProjMatrix;
+
+
+out VSOutPut{
+    vec3 pos;
+    vec3 normal;
+    vec4 color;
+    vec2 uv;
+}vData;
+
+void main() 
+{
+    vData.color = aColor.abgr; // swizzle to correct endianness
+    vData.pos= aPositionSize.xyz;
+    vData.normal=aNormal;
+    vData.uv=aUv;
+    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(aPositionSize.xyz, 1.0);
+
+}
+#shader fragment
+#version 450 core
+
+in VSOutPut{
+    vec3 pos;
+    vec3 normal;
+    vec4 color;
+    vec2 uv;
+}vData;
+layout(location=0) out vec4 fResult;
+void main() 
+{
+    vec3 col=normalize(vData.normal+1.0)/2.0;
+    fResult = vec4(col*vData.color.rgb,1.0);	
+    //fResult = vec4(vData.normal,1.0);	
+}

@@ -25,10 +25,7 @@ namespace OvRendering::Data
 namespace MOON
 {
 	class Behaviour;
-	class GL2DRender;
-	class GLRenderPoints;
-	class GLRenderLines;
-	class GLRenderTriangles;
+
 	struct VertexData
 	{
 		Eigen::Vector4<float> positionSize; // xyz = position, w = size
@@ -390,7 +387,7 @@ namespace MOON
 		void drawWidgets();
 		void placeDrawTask(const std::string& name, std::function<void()> task);
 		void cancleDrawTask(const std::string& name);
-		void create2DRender();
+	
 	private:
 		OvEditor::Panels::SceneView* renderView = nullptr;
 
@@ -402,6 +399,7 @@ namespace MOON
 		OvRendering::Data::Material* mLineMaterial = nullptr;
 		OvRendering::Data::Material* mPointMaterial = nullptr;
 		OvRendering::Data::Material* mTriangleMaterial = nullptr;
+		OvRendering::Data::Material* mLitMaterial = nullptr;
 
 		std::vector<Eigen::Vector4<uint8_t>> colorStack;
 		std::vector<float> alphaStack;
@@ -480,9 +478,7 @@ namespace MOON
 		bool sortCalled;
 		bool endFrameCalled;
 
-		GL2DRender* m_points = nullptr;
-		GL2DRender* m_lines = nullptr;
-		GL2DRender* m_triangles = nullptr;
+
 
 		int findLayerIndex(unsigned int id) const;
 		VertexList* getCurrentVertexList();
