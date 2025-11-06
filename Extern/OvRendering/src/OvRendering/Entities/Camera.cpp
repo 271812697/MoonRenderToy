@@ -208,19 +208,21 @@ void OvRendering::Entities::Camera::SetProjectionMode(OvRendering::Settings::EPr
     m_projectionMode = p_projectionMode;
 }
 
-void OvRendering::Entities::Camera::FitToSphere(OvRendering::Geometry::BoundingSphere& sphere, const OvMaths::FVector3& dir)
+void OvRendering::Entities::Camera::ProjectionFitToSphere(OvRendering::Geometry::BoundingSphere& sphere, const OvMaths::FVector3& dir)
 {
 	using namespace OvMaths;
 	using namespace OvRendering::Settings;
 	if (m_projectionMode== EProjectionMode::ORTHOGRAPHIC) {
 		m_size = sphere.radius;
-		transform->LookAt(sphere.position-dir* m_size,sphere.position);
+		m_far = std::max(sphere.radius * 2,m_far);
+		//transform->LookAt(sphere.position-dir* m_size,sphere.position);
 
 	}
 	else if (m_projectionMode == EProjectionMode::PERSPECTIVE) {
 		float eff = 3.14159265359f/180.0;
 		float distance = sphere.radius / std::sin(eff*m_fov / 2.0f);
-		transform->LookAt(sphere.position - dir * distance, sphere.position);
+		m_far = std::max(sphere.radius * 2, m_far);
+		//transform->LookAt(sphere.position - dir * distance, sphere.position);
 	}
 }
 

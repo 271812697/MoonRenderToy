@@ -11,256 +11,7 @@
 #include <iostream>
 namespace MOON
 {
-	struct Cell
-	{
 
-		std::vector<Eigen::Vector3f>vertex;
-		std::vector<Eigen::Vector2f>uv;
-		Eigen::Vector3f n;
-		Eigen::Vector4<uint8_t> color = { 255,255,255,255 };
-		void clear() {
-			vertex.clear();
-			uv.clear();
-		}
-		void addPoint(const Eigen::Vector3f& v, const Eigen::Vector2f& tex ) {
-			vertex.push_back(v);
-			uv.push_back(tex);
-		}
-		void addPointArray(const std::vector<Eigen::Vector3f>& v, const std::vector<Eigen::Vector2f>& tex) {
-			vertex = v;
-			uv = tex;
-		}
-		void drawLine(Guizmo* renderer) {
-			for (int i = 0; i < vertex.size(); i++) {
-				int j = (i + 1) % vertex.size();
-				renderer->drawLine(vertex[i], vertex[j]);
-			}
-		}
-		void drawFace(Guizmo* renderer) {
-			for (int i = 2; i < vertex.size(); i++) {
-				renderer->drawTriangle(vertex[0], vertex[i - 1], vertex[i], color);
-			}
-		}
-		Cell transform(const Eigen::Matrix4f& mat,float offsetX=0.0f,float offsetY=0.0f) {
-			Cell res;
-
-			for (int i = 0; i < vertex.size();i++) {
-				res.addPoint(MatrixMulPoint(mat, vertex[i]), { uv[i].x()+offsetX,uv[i].y()+offsetY});
-			}
-			res.n = MatrixMulDir(mat, n);
-			return res;
-		}
-		void tranformUV(float u,float v) {
-			for (int i = 0; i < vertex.size(); i++) {
-				uv[i].x() += u;
-				uv[i].y() += v;
-			}
-		}
-	};
-	struct Polygon {
-		std::vector<Cell>cellArray;
-		unsigned int vao=0;
-		unsigned int vbo=0;
-		unsigned int numVertex = 0;
-		bool isDirty = false;
-		OvRendering::Resources::Texture* texture=nullptr;
-		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color) {
-			for (int i = 0;i < cellArray.size();i++) {
-				if (i == index) {
-                    cellArray[index].color = color;
-				}
-				else
-				{
-					cellArray[i].color = {255,150,150,150};
-				}
-			}
-			
-
-			isDirty = true;
-		}
-		void submit() {
-			std::vector<VertexData> vData;
-			for (int i = 0;i < cellArray.size();i++) {
-				Cell& cell = cellArray[i];
-				for (int j = 2;j < cell.vertex.size();j++) {
-					VertexData vd1(cell.vertex[0], cell.color, cell.n, cell.uv[0]);
-					VertexData vd2(cell.vertex[j - 1], cell.color, cell.n, cell.uv[j-1]);
-					VertexData vd3(cell.vertex[j], cell.color, cell.n, cell.uv[j]);
-					vData.push_back(vd1);
-					vData.push_back(vd2);
-					vData.push_back(vd3);
-				}
-			}
-			numVertex = vData.size();
-			glBindVertexArray(vao);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vData.size() * sizeof(VertexData), (GLvoid*)vData.data(), GL_STREAM_DRAW);
-		}
-		void bind() {
-			if (isDirty) {
-				isDirty = false;
-				submit();
-			}
-			glBindVertexArray(vao);
-		}
-		Polygon() = default;
-		Polygon(const std::vector<Cell>& cells):cellArray(cells) {
-			vao = 0;
-			vbo = 0;
-			initGpuBuffer();
-		}
-		Polygon(const std::vector<Cell>&& cells) :cellArray(std::move(cells)) {
-			vao = 0;
-			vbo = 0;
-			initGpuBuffer();
-		}
-		~Polygon() {
-			glDeleteBuffers(1,&vbo);
-			glDeleteVertexArrays(1, &vao);
-		}
-		void initGpuBuffer() {
-			glGenVertexArrays(1, &vao);
-			glGenBuffers(1, &vbo);
-			glBindVertexArray(vao);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, positionSize));
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, color));
-			glEnableVertexAttribArray(2);
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, normal));
-			glEnableVertexAttribArray(3);
-			glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, uv));
-			submit();
-			glBindVertexArray(0);
-		}
-	
-		int hit(const Eigen::Matrix4f& viewProj,float u,float v) {
-			int res = -1;
-			float minDist = 100000.0f;
-			Ray ray;
-			ray.m_origin = { u,v,-2 };
-			std::cout << "u v " << u << " " << v << std::endl;
-			if (abs(u) < 0.2 && abs(v) < 0.2) {
-				std::cout << "center hit\n";
-			}
-			ray.m_direction = { 0,0,1.0 };
-			for (int i = 0; i < cellArray.size(); i++) {
-				Cell& cell = cellArray[i];
-				std::vector<Eigen::Vector3f>ndcPos(cell.vertex.size());
-				for (int j = 0;j < cell.vertex.size();j++) {
-					ndcPos[j] = MatrixMulPoint(viewProj, cell.vertex[j]);
-				}
-			    
-				for (int j = 2; j < cell.vertex.size(); j++) {
-					float tr;
-					if (Intersect(ray, ndcPos[0], ndcPos[j - 1], ndcPos[j], tr)) {
-						if (tr < minDist) {
-							minDist = tr;
-							res = i;
-							
-						}
-					}
-				}
-			}
-			return res;
-		}
-	};
-	Polygon& makeViewCube() {
-	
-		static Polygon viewCube;
-		if (viewCube.cellArray.size()==0) {
-			float halflen = 3.0f;
-			float shift = 0.6f;
-			float ratio = 0.5*shift / halflen;
-			Eigen::Vector3f n = { 0, 0, 1 };
-			Eigen::Vector3f A = { -halflen + shift,halflen - shift, halflen };
-			Eigen::Vector3f A1 = { -halflen + 2 * shift, halflen - shift, halflen };
-			Eigen::Vector3f A2 = { -halflen + shift, halflen - 2 * shift, halflen };
-			Eigen::Vector3f B = { halflen - shift, halflen - shift, halflen };
-			Eigen::Vector3f B1 = { halflen - 2 * shift, halflen - shift, halflen };
-			Eigen::Vector3f B2 = { halflen - shift, halflen - 2 * shift, halflen };
-			Eigen::Vector3f C = { halflen - shift, -halflen + shift, halflen };
-			Eigen::Vector3f C1 = { halflen - 2 * shift, -halflen + shift, halflen };
-			Eigen::Vector3f C2 = { halflen - shift, -halflen + 2 * shift, halflen };
-			Eigen::Vector3f D = { -halflen + shift, -halflen + shift, halflen };
-			Eigen::Vector3f D1 = { -halflen + 2 * shift, -halflen + shift, halflen };
-			Eigen::Vector3f D2 = { -halflen + shift, -halflen + 2 * shift, halflen };
-			Eigen::Vector3f F1 = B1;
-			Eigen::Vector3f F2 = F1 + Eigen::Vector3f(0, shift, -shift);
-			Eigen::Vector3f F3 = F2 + Eigen::Vector3f(shift, 0, -shift);
-			Eigen::Vector3f F4 = F3 + Eigen::Vector3f(shift, -shift, 0);
-			Eigen::Vector3f F5 = F4 + Eigen::Vector3f(0, -shift, +shift);
-			Eigen::Vector3f F6 = B2;
-			Eigen::Vector3f F7 = { halflen - 2 * shift, halflen , halflen - shift };
-			Eigen::Vector3f F8 = { -halflen + 2 * shift, halflen , halflen - shift };
-			Eigen::Vector3f F9 = { halflen , -halflen + 2 * shift, halflen - shift };
-			Eigen::Vector3f F10 = { halflen, halflen - 2 * shift, halflen - shift };
-			Eigen::Vector3f F11 = { -halflen + 2 * shift, -halflen , halflen - shift };
-			Eigen::Vector3f F12 = { halflen - 2 * shift, -halflen , halflen - shift };
-
-			Cell cell;
-			cell.addPoint(A1,{(2*ratio)/3,(1-ratio)/2});
-			cell.addPoint(A2,{(ratio)/3,(1-2*ratio)/2});
-			cell.addPoint(D2, {(ratio)/3,(2*ratio)/2});
-			cell.addPoint(D1,{(2*ratio)/3,(ratio)/2});
-			cell.addPoint(C1, {(1-2*ratio)/3,(ratio)/2});
-			cell.addPoint(C2,{(1-ratio)/3,(2*ratio)/2});
-			cell.addPoint(B2, {(1-ratio)/3,(1-2*ratio)/2});
-			cell.addPoint(B1, {(1-2*ratio)/3,(1-ratio)/2});
-			cell.n = n;
-			cell.tranformUV(2.0/3,0.0);
-			auto& cellArr = viewCube.cellArray;
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 }),-1.0/3.0,0.5));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 }),0.0,0.5));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 }),-1.0/3.0,0));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 }),-2.0/3.0,0.0));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 }),-2.0/3.0,0.5));
-
-			cell.clear();
-			cell.n = Eigen::Vector3f(1, 1, 1).normalized();
-			cell.addPointArray({ F1,F2,F3,F4,F5,F6 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
-			cell.clear();
-			cell.n = Eigen::Vector3f(0, 1, 1).normalized();
-			cell.addPointArray({ A1,B1,F7,F8 }, { {0,0},{0,0 },{0,0} ,{0,0} });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cell.clear();
-			cell.n = Eigen::Vector3f(1, 0, 1).normalized();
-			cell.addPointArray({ C2,F9,F10,B2 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cell.clear();
-			cell.n = Eigen::Vector3f(0, -1, -1).normalized();
-			cell.addPointArray({ D1,F11,F12,C1 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-
-			viewCube.initGpuBuffer();
-			
-			viewCube.texture = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png",true);
-
-		}
-
-		return viewCube;
-	
-	};
 	static OvMaths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
 		temp.transposeInPlace();
@@ -1213,7 +964,7 @@ namespace MOON
 		//	viewCube.cellArray[i].drawLine(this);
 		//	viewCube.cellArray[i].drawFace(this);
 		//}
-		auto& viewCube = makeViewCube();
+		auto& viewCube = ViewCube();
 
 
 	}
@@ -3900,7 +3651,7 @@ namespace MOON
 
 		// copy keydown array internally so that we can make a delta to detect key presses
 		memcpy(keyDownPrev, keyDownCurr, KeyCount); // \todo avoid this copy, use an index
-		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
+		
 
 		// update gizmo modes
 		if (wasKeyPressed(ActionGizmoTranslation))
@@ -3990,6 +3741,8 @@ namespace MOON
 		bool ctrlDown = inputState.IsKeyPressed(OvEditor::Panels::Control);
 
 		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_LEFT);
+		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_MIDDLE);
+		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_RIGHT);
 		cameraParam.keyDown[ActionControl] = ctrlDown;
 
 		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYL);
@@ -4001,6 +3754,7 @@ namespace MOON
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
+		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
 	}
 
 	void Guizmo::test()
@@ -4198,10 +3952,9 @@ namespace MOON
 
 		//draw lit vertex data
 		{
-			auto& viewCube = makeViewCube();
-
+			auto& viewCube = ViewCube();
 			float size = 3.0f;
-			int viewPortSize = 150;
+			int viewPortSize = 175;
 			int viewPortX = cameraParam.viewportWidth - viewPortSize;
 			int viewPortY = cameraParam.viewportHeight-viewPortSize;
 
@@ -4221,12 +3974,17 @@ namespace MOON
 			auto proj=OvMaths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
 			
 			
-			int res=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
-			if (res != -1) {
-				viewCube.setCellColor(res,{255,100,255,255});
+			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
+			if (faceIndex != -1) {
+				viewCube.setCellColor(faceIndex,{255,0,255,255});
+				if (wasKeyReleased(MouseMiddle)) {
+
+					auto nor=-viewCube.getCellNormal(faceIndex).normalized();
+					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
+				}
 			}
 			
-			 
+			//mLitMaterial->SetProperty("uViewPos", renderView->GetCamera()->GetPosition());
 			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
 			mLitMaterial->SetProperty("uViewMatrix", view);
 			mLitMaterial->SetProperty("uVProjMatrix", proj);
@@ -4239,15 +3997,10 @@ namespace MOON
 			
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
-			//mShader->unBindActiveProgram();
 		}
-
 	}
-
 	void Guizmo::drawMesh()
 	{
-
-
 	}
 	void Guizmo::executeCommand()
 	{

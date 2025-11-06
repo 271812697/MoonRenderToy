@@ -128,7 +128,30 @@ void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& di
 				auto transform=mTargetActor->GetComponent<OvCore::ECS::Components::CTransform>();
 				auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
 				sphere.position=OvMaths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
-				m_camera.FitToSphere(sphere,dir);
+				m_camera.ProjectionFitToSphere(sphere,dir);
+
+				float pi = 3.14159265359f;
+				OvMaths::FVector3 forward = dir;
+				float angle = OvMaths::FVector3::AngleBetween(forward, { 0,1,0 });
+				OvMaths::FVector3 up = (angle < FLT_EPSILON || abs(angle - pi) < FLT_EPSILON) ? OvMaths::FVector3(1, 0, 0) : OvMaths::FVector3(0, 1, 0);
+				OvMaths::FQuaternion quat=  OvMaths::FQuaternion::LookAt(forward, up);
+				float eff = pi/ 180.0;
+				
+				if (m_camera.GetProjectionMode() == OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC) {
+					this->GetCameraController().MoveToPose(sphere.position - dir * sphere.radius,quat);
+				}
+				else
+				{
+					
+					float distance = sphere.radius / std::sin(eff * m_camera.GetFov() / 2.0f);
+				    this->GetCameraController().MoveToPose(sphere.position - dir * distance,quat);
+				}
+				
+
+
+
+
+				
 			}
 		}
 	}
@@ -137,6 +160,7 @@ void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& di
 
 void OvEditor::Panels::SceneView::FitToScene(const OvMaths::FVector3& dir)
 {
+	//m_camera.ProjectionFitToSphere->the code make no sence
 	auto& models = GetScene()->GetFastAccessComponents().modelRenderers;
 	if (models.size()>0) {
 		OvRendering::Geometry::BoundingSphere sphere=models[0]->GetModel()->GetBoundingSphere();
@@ -144,7 +168,7 @@ void OvEditor::Panels::SceneView::FitToScene(const OvMaths::FVector3& dir)
 		{
 			sphere.merge(models[i]->GetModel()->GetBoundingSphere());
 		}	
-		m_camera.FitToSphere(sphere, dir);
+		//m_camera.ProjectionFitToSphere(sphere, dir);
 	}
 
 }

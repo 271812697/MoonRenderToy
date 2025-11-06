@@ -1,4 +1,4 @@
-#include <OvCore/ECS/Components/CAmbientBoxLight.h>
+﻿#include <OvCore/ECS/Components/CAmbientBoxLight.h>
 #include <OvCore/ECS/Components/CAmbientSphereLight.h>
 #include "CameraController.h"
 #include <iostream>
@@ -170,6 +170,11 @@ void OvEditor::Core::CameraController::MoveToTarget(OvCore::ECS::Actor& p_target
 		GetActorFocusDist(p_target),
 		m_camera.GetRotation()
 		});
+}
+
+void OvEditor::Core::CameraController::MoveToPose(const OvMaths::FVector3& pos, const OvMaths::FQuaternion& quat)
+{
+	m_cameraDestinations.push({pos,quat});
 }
 
 void OvEditor::Core::CameraController::SetSpeed(float p_speed)
