@@ -1,6 +1,4 @@
-
-
-#include <OvCore/ECS/Components/CCamera.h>
+﻿#include <OvCore/ECS/Components/CCamera.h>
 #include <OvCore/ECS/Components/CDirectionalLight.h>
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
 

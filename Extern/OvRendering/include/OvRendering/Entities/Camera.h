@@ -52,7 +52,7 @@ namespace OvRendering::Entities
 		void SetFrustumGeometryCulling(bool p_enable);
 		void SetFrustumLightCulling(bool p_enable);
 		void SetProjectionMode(OvRendering::Settings::EProjectionMode p_projectionMode);
-		void FitToSphere(OvRendering::Geometry::BoundingSphere& sphere,const OvMaths::FVector3& dir);
+		void ProjectionFitToSphere(OvRendering::Geometry::BoundingSphere& sphere,const OvMaths::FVector3& dir);
 	private:
 		OvMaths::FMatrix4 CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) const;
 		OvMaths::FMatrix4 CalculateViewMatrix() const;

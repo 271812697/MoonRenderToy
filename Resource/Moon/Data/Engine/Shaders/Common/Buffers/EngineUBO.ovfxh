@@ -4,6 +4,10 @@ layout (std140, binding = 0) uniform EngineUBO
     mat4    ubo_View;
     mat4    ubo_Projection;
     vec3    ubo_ViewPos;
+    int     ubo_CameraType; //0 orth,1 pers
     float   ubo_Time;
+    int     ubo_ScreenWidth;
+    int     ubo_ScreenHeight;
+    float   ubo_pad;
     mat4    ubo_UserMatrix;
 };

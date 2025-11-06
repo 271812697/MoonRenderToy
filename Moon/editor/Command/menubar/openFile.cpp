@@ -5,8 +5,6 @@
 #include "core/log.h"
 #include <QtWidgets/QFileDialog>
 #include <QCoreApplication>
-
-
 namespace MOON {
 	//-----------------------------------------------------------------------------
 	OpenFileCommand::OpenFileCommand(QObject* parentObject)

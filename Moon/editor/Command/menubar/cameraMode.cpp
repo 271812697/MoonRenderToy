@@ -41,15 +41,11 @@ namespace MOON {
 			auto& view=GetService(OvEditor::Panels::SceneView);
 			if (action == mActionOrtho) {
 				view.setCameraMode(OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC);
-				const auto& forward=view.GetCamera()->GetTransform().GetWorldForward();
-				view.FitToSelectedActor({1,0,0});
 			}
 			else
 			{
 				view.setCameraMode(OvRendering::Settings::EProjectionMode::PERSPECTIVE);
-				view.FitToSelectedActor({ 1,0,0 });
 			}
-
 			});
 
 	}

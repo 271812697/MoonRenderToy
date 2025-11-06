@@ -2,6 +2,10 @@
 
 This is a renderer written based on Qt+Opengl
 
+## Viewer
+
+![image-20251104222642971](README.assets/image-20251104222642971.png)
+
 ## PathTrace
 
 ![image-20250511193104742](README.assets/image-20250511193104742.png)

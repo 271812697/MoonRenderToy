@@ -1,0 +1,54 @@
+#shader vertex
+#version 450 core
+layout(location=0) in vec4 aPositionSize;
+layout(location=1) in vec4 aColor;
+layout(location=2) in vec3 aNormal;
+layout(location=3) in vec2 aUv; 
+
+uniform mat4 uModelMatrix;
+uniform mat4 uViewMatrix;
+uniform mat4 uVProjMatrix;
+
+out VSOutPut{
+    vec3 pos;
+    vec3 normal;
+    vec4 color;
+    vec2 uv;
+}vData;
+
+void main() 
+{
+    vData.color = aColor.abgr; // swizzle to correct endianness
+    vData.pos= aPositionSize.xyz;
+    vData.normal=aNormal;
+    vData.uv=aUv;
+    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(aPositionSize.xyz, 1.0);
+
+}
+#shader fragment
+#version 450 core
+
+in VSOutPut{
+    vec3 pos;
+    vec3 normal;
+    vec4 color;
+    vec2 uv;
+}vData;
+layout(location=0) out vec4 fResult;
+uniform mat4 uViewMatrix;
+uniform sampler2D u_AlbedoMap;
+void main() 
+{
+    vec4 albedo = texture(u_AlbedoMap, vData.uv)*vData.color;
+    vec3 viewDir=vec3(uViewMatrix[0][2],uViewMatrix[1][2],uViewMatrix[2][2]);
+    vec3 lightDir=viewDir;
+    vec3 N=vData.normal;
+    if(dot(N,vData.normal)<0){
+        N=-N;
+    }
+
+    float diff=max(dot(lightDir,vData.normal),0);
+    vec3 diffuse=diff*albedo.rgb;
+    vec3 specular=sign(diffuse)*pow(max(dot(vData.normal,lightDir),0),100)*0.1*albedo.rgb;
+    fResult = vec4(diffuse+specular+vec3(0.1,0.1,0.1),1.0);	
+}

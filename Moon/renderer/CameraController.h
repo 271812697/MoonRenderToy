@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -38,6 +38,7 @@ namespace OvEditor::Core
 		* @param p_target
 		*/
 		void MoveToTarget(OvCore::ECS::Actor& p_target);
+		void MoveToPose(const OvMaths::FVector3& pos, const OvMaths::FQuaternion& quat);
 
 		/**
 		* Defines the speed of the camera

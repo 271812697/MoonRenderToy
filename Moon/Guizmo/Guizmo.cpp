@@ -8,6 +8,7 @@
 #include <OvRendering/Resources/Loaders/ShaderLoader.h>
 #include <OvMaths/FMatrix4.h>
 #include <glad/glad.h>
+#include <iostream>
 namespace MOON
 {
 
@@ -18,249 +19,14 @@ namespace MOON
 		memcpy(ret.data, temp.data(), 16 * sizeof(float));
 		return ret;
 	}
-	class GL2DRender
-	{
-	public:
-		GL2DRender()
-		{
-		}
-		virtual void init()
-		{
-		}
-		virtual ~GL2DRender()
-		{
-			destory();
-		}
-		void Vertex(const Eigen::Vector2f& v, const Eigen::Vector4f& c)
-		{
-			vertices.push_back(v);
-			color.push_back(c);
-		}
-		virtual void create(const char* V, const char* F)
-		{
-			unsigned vP = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(vP, 1, &V, NULL);
-			unsigned fP = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(fP, 1, &F, NULL);
-			char infolog[512];
-			int success;
-			glCompileShader(vP);
-			glGetShaderiv(vP, GL_COMPILE_STATUS, &success);
-			if (!success)
-			{
-				glGetShaderInfoLog(vP, 512, NULL, infolog);
-				assert(false);
-			}
-			glCompileShader(fP);
-			glGetShaderiv(fP, GL_COMPILE_STATUS, &success);
-			if (!success)
-			{
-				glGetShaderInfoLog(fP, 512, NULL, infolog);
-				assert(false);
-			}
-			shader = glCreateProgram();
-			glAttachShader(shader, vP);
-			glAttachShader(shader, fP);
-			glLinkProgram(shader);
-			glGetProgramiv(shader, GL_LINK_STATUS, &success);
-			if (!success)
-			{
-				glGetProgramInfoLog(shader, 512, NULL, infolog);
-				assert(false);
-			}
-			glDeleteShader(vP);
-			glDeleteShader(fP);
-			projection = glGetUniformLocation(shader, "projectionMatrix");
-			glGenVertexArrays(1, &vaoId);
-			glBindVertexArray(vaoId);
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-			glGenBuffers(2, bufferId);
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, vertices.size() * 8, vertices.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
-			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, color.size() * 16, color.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-		virtual void destory()
-		{
-			glDeleteBuffers(2, bufferId);
-			glDeleteVertexArrays(1, &vaoId);
-			glDeleteProgram(shader);
-		}
-		virtual void draw()
-		{
-		}
-		virtual void fflush()
-		{
-			if (vertices.size() == 0)
-				return;
-			glUseProgram(shader);
-			float p[16] = { 0.0 };
-			glUniformMatrix4fv(projection, 1, GL_FALSE, p);
-			glBindVertexArray(vaoId);
+	static Eigen::Matrix4f ToEigenMatrix4f(const OvMaths::FMatrix4& mat) {
+		Eigen::Matrix4f ret(mat.data);
+		
+		//memcpy(ret.data(), mat.data, 16 * sizeof(float));
+		ret.transposeInPlace();
+		return ret;
+	}
 
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[0]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * 8, vertices.data());
-			glBindBuffer(GL_ARRAY_BUFFER, bufferId[1]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, color.size() * 16, color.data());
-			draw();
-			glBindVertexArray(0);
-			glUseProgram(0);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
-	protected:
-		unsigned int vaoId;
-		unsigned int bufferId[2];
-		unsigned int shader;
-		std::vector<Eigen::Vector2f> vertices;
-		std::vector<Eigen::Vector4f> color;
-		int projection;
-	};
-
-	class GLRenderPoints : public GL2DRender
-	{
-	public:
-		GLRenderPoints()
-			: GL2DRender()
-		{
-		}
-		virtual ~GLRenderPoints() override
-		{
-			glDeleteBuffers(1, &sizeBuffer);
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"layout(location = 2) in float v_size;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position = projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-				"   gl_PointSize = v_size;\n"
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void create(const char* V, const char* F) override
-		{
-			GL2DRender::create(V, F);
-			glBindVertexArray(vaoId);
-			glEnableVertexAttribArray(2);
-			glGenBuffers(1, &sizeBuffer);
-			glBindBuffer(GL_ARRAY_BUFFER, sizeBuffer);
-			glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glBufferData(GL_ARRAY_BUFFER, size.size() * 4, size.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-		void Vertex(const Eigen::Vector2f& v, const Eigen::Vector4f& c, float s)
-		{
-			size.push_back(s);
-			GL2DRender::Vertex(v, c);
-		}
-		virtual void draw() override
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, sizeBuffer);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, size.size() * 4, size.data());
-
-			glEnable(GL_PROGRAM_POINT_SIZE);
-			glDrawArrays(GL_POINTS, 0, vertices.size());
-			glDisable(GL_PROGRAM_POINT_SIZE);
-		}
-
-	private:
-		std::vector<float> size; // ��С
-		unsigned int sizeBuffer;
-	};
-
-	class GLRenderLines : public GL2DRender
-	{
-	public:
-		GLRenderLines()
-		{
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position =projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void draw() override
-		{
-			glDrawArrays(GL_LINES, 0, vertices.size());
-		}
-	};
-
-	class GLRenderTriangles : public GL2DRender
-	{
-	public:
-		GLRenderTriangles()
-			: GL2DRender()
-		{
-		}
-		virtual void init() override
-		{
-			const char* V = "#version 330\n"
-				"uniform mat4 projectionMatrix;\n"
-				"layout(location = 0) in vec2 v_position;\n"
-				"layout(location = 1) in vec4 v_color;\n"
-				"out vec4 f_color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	f_color = v_color;\n"
-				"	gl_Position = projectionMatrix*vec4(v_position, 0.0f, 1.0f);\n"
-
-				"}\n";
-
-			const char* F = "#version 330\n"
-				"in vec4 f_color;\n"
-				"out vec4 color;\n"
-				"void main(void)\n"
-				"{\n"
-				"	color = f_color;\n"
-				"}\n";
-			create(V, F);
-		}
-		virtual void draw() override
-		{
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-			glDisable(GL_BLEND);
-		}
-	};
 
 
 	static constexpr unsigned int IdInvalid = 0;
@@ -277,10 +43,31 @@ namespace MOON
 	static unsigned int VertexArray;
 	static unsigned int VertexBuffer;
 	static constexpr const size_t MiB = 1024u * 1024u;
+	constexpr auto kWhite = std::to_array<uint8_t>({ 255, 255, 255, 255 });
+	constexpr auto kBlack = std::to_array<uint8_t, 6 * 4>({ 0 });
 	Guizmo::Guizmo()
 		: buffer(9 * MiB, 27 * MiB, false)
-		, command(driver, buffer.getCircularBuffer())
+		, command(driver, buffer.getCircularBuffer()), 
+		mEmptyTexture2D{ OvRendering::Settings::ETextureType::TEXTURE_2D },
+		mEmptyTextureCube{ OvRendering::Settings::ETextureType::TEXTURE_CUBE }
 	{
+		const auto kEmptyTextureDesc = OvRendering::Settings::TextureDesc{
+	.width = 1,
+	.height = 1,
+	.minFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
+	.magFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
+	.horizontalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
+	.verticalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
+	.internalFormat = OvRendering::Settings::EInternalFormat::RGBA8,
+	.useMipMaps = false
+		};
+
+		mEmptyTexture2D.Allocate(kEmptyTextureDesc);
+		mEmptyTexture2D.Upload(kWhite.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+
+		mEmptyTextureCube.Allocate(kEmptyTextureDesc);
+		mEmptyTextureCube.Upload(kBlack.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+
 		command.test(8);
 		command.queueCommand([]() {
 			// std::cout << "say hello" << std::endl;
@@ -338,10 +125,12 @@ namespace MOON
 	}
 	void Guizmo::prepareGl()
 	{
+		//shader leak
 		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
 		mLineMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
+		mLitMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoCell.ovfx"));
 
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
@@ -356,7 +145,7 @@ namespace MOON
 		glEnableVertexAttribArray(3);
 		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, uv));
 		glBindVertexArray(0);
-		create2DRender();
+		
 		preStoreMesh();
 	}
 	void Guizmo::registerDebugSettings()
@@ -366,12 +155,11 @@ namespace MOON
 	void Guizmo::terminate()
 	{
 		// free resource
-		delete m_lines;
-		delete m_points;
-		delete m_triangles;
+
 		delete mLineMaterial;
 		delete mPointMaterial;
 		delete mTriangleMaterial;
+		delete mLitMaterial;
 	}
 	void Guizmo::begin(PrimitiveMode _mode)
 	{
@@ -1168,242 +956,17 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
+
 		//return;
 		//params to control
-		float halflen = 3.0f;
-		float shift = 0.6f;
-		Eigen::Vector3f n = { 0, 0, 1 };
-		Eigen::Vector3f A = { -halflen + shift,halflen - shift, halflen };
-		Eigen::Vector3f A1 = { -halflen + 2 * shift, halflen - shift, halflen };
-		Eigen::Vector3f A2 = { -halflen + shift, halflen - 2 * shift, halflen };
-		Eigen::Vector3f B = { halflen - shift, halflen - shift, halflen };
-		Eigen::Vector3f B1 = { halflen - 2 * shift, halflen - shift, halflen };
-		Eigen::Vector3f B2 = { halflen - shift, halflen - 2 * shift, halflen };
-		Eigen::Vector3f C = { halflen - shift, -halflen + shift, halflen };
-		Eigen::Vector3f C1 = { halflen - 2 * shift, -halflen + shift, halflen };
-		Eigen::Vector3f C2 = { halflen - shift, -halflen + 2 * shift, halflen };
-		Eigen::Vector3f D = { -halflen + shift, -halflen + shift, halflen };
-		Eigen::Vector3f D1 = { -halflen + 2 * shift, -halflen + shift, halflen };
-		Eigen::Vector3f D2 = { -halflen + shift, -halflen + 2 * shift, halflen };
-		Eigen::Vector3f F1 = B1;
-		Eigen::Vector3f F2 = F1 + Eigen::Vector3f(0, shift, -shift);
-		Eigen::Vector3f F3 = F2 + Eigen::Vector3f(shift, 0, -shift);
-		Eigen::Vector3f F4 = F3 + Eigen::Vector3f(shift, -shift, 0);
-		Eigen::Vector3f F5 = F4 + Eigen::Vector3f(0, -shift, +shift);
-		Eigen::Vector3f F6 = B2;
+		
+		//for (int i = 0; i < viewCube.cellArray.size(); i++) {
+		//	viewCube.cellArray[i].drawLine(this);
+		//	viewCube.cellArray[i].drawFace(this);
+		//}
+		auto& viewCube = ViewCube();
 
 
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 180, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 270, 0, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 90, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-
-		matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 270, 0 }));
-		drawLine(A1, A2);
-		drawLine(B1, B2);
-		drawLine(C1, C2);
-		drawLine(D1, D2);
-		drawLine(A1, B1);
-		drawLine(A2, D2);
-		drawLine(C2, B2);
-		drawLine(D1, C1);
-		drawTriangle(A2, A1, B1, n);
-		drawTriangle(A2, B1, B2, n);
-		drawTriangle(A2, B2, C2, n);
-		drawTriangle(A2, C2, C1, n);
-		drawTriangle(A2, C1, D1, n);
-		drawTriangle(A2, D1, D2, n);
-		matrixStack.pop_back();
-
-		{
-			Eigen::Vector3f nn = Eigen::Vector3f(1, 1, 1).normalized();
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 90, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 180, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 0, 270, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, 0, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 180, 0, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, -90, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-			matrixStack.push_back(EulerXYZToMatrix4Degree({ 90, -180, 0 }));
-			drawLine(F1, F2);
-			drawLine(F2, F3);
-			drawLine(F3, F4);
-			drawLine(F4, F5);
-			drawLine(F5, F6);
-			drawLine(F6, F1);
-			drawTriangle(F1, F2, F3, nn);
-			drawTriangle(F1, F3, F4, nn);
-			drawTriangle(F1, F4, F5, nn);
-			drawTriangle(F1, F5, F6, nn);
-			matrixStack.pop_back();
-
-		}
-
-		setEnableLit(true);
-
-
-		setEnableLit(false);
 	}
 
 	void Guizmo::drawRayHitScreenPoint()
@@ -4088,7 +3651,7 @@ namespace MOON
 
 		// copy keydown array internally so that we can make a delta to detect key presses
 		memcpy(keyDownPrev, keyDownCurr, KeyCount); // \todo avoid this copy, use an index
-		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
+		
 
 		// update gizmo modes
 		if (wasKeyPressed(ActionGizmoTranslation))
@@ -4178,6 +3741,8 @@ namespace MOON
 		bool ctrlDown = inputState.IsKeyPressed(OvEditor::Panels::Control);
 
 		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_LEFT);
+		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_MIDDLE);
+		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_RIGHT);
 		cameraParam.keyDown[ActionControl] = ctrlDown;
 
 		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYL);
@@ -4189,24 +3754,25 @@ namespace MOON
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
+		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
 	}
 
 	void Guizmo::test()
 	{
 		drawViewCube();
-		colorStack.push_back(Color_Gold);
-		drawPoint({ 0,0,0 }, 40);
-		colorStack.push_back(Color_Red);
-		drawPoint({ 1,1,1 }, 40);
-		colorStack.pop_back();
-		colorStack.pop_back();
-		drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
-		drawSphere({ 2,2,2 }, 2);
-		static Eigen::Vector3f t = { 0,0,0 };
-		static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
-		static Eigen::Vector3f scale = { 1,1,1 };
+		//colorStack.push_back(Color_Gold);
+		//drawPoint({ 0,0,0 }, 40);
+		//colorStack.push_back(Color_Red);
+		//drawPoint({ 1,1,1 }, 40);
+		//colorStack.pop_back();
+		//colorStack.pop_back();
+		//drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
+		//drawSphere({ 2,2,2 }, 2);
+		//static Eigen::Vector3f t = { 0,0,0 };
+		//static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
+		//static Eigen::Vector3f scale = { 1,1,1 };
 
-		boxEdit(makeId("box edit"), t, rotation, scale);
+		//boxEdit(makeId("box edit"), t, rotation, scale);
 	}
 
 	void Guizmo::drawUnsort()
@@ -4227,7 +3793,7 @@ namespace MOON
 		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
 		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
 		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::ALWAYS;
-		///p_pso.culling = ;
+		p_pso.culling = 0;
 		p_pso.depthTest = true;
 
 		drawLists.clear();
@@ -4279,7 +3845,6 @@ namespace MOON
 				prim = GL_TRIANGLES;
 				passTag = "triangle";
 				mat = mTriangleMaterial;
-				// glEnable(GL_CULL_FACE); // culling valid for triangles, but optional
 				break;
 			default:
 				assert(false);
@@ -4320,19 +3885,15 @@ namespace MOON
 		p_pso.colorWriting.mask = 0xFF;
 		p_pso.blending = true;
 		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
-		///p_pso.culling = ;
+		
 		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.culling = 0;
+		p_pso.cullFace = OvRendering::Settings::ECullFace::FRONT_AND_BACK;
 		p_pso.blendingDestFactor = OvRendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
 		p_pso.depthTest = true;
 		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
 		driver->SetPipelineState(p_pso);
 		// Enable Depth Test
-		//glEnable(GL_DEPTH_TEST);
-		//glEnable(GL_POINT_SPRITE);
-		//glEnable(GL_BLEND);
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		//glDepthFunc(GL_LEQUAL);
 		for (int i = 0; i < vertexData[1].size(); ++i)
 		{
 			if (vertexData[1][i]->size() > 0)
@@ -4391,22 +3952,54 @@ namespace MOON
 
 		//draw lit vertex data
 		{
-			//glBindVertexArray(VertexArray);
-			//glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-			//glBufferData(GL_ARRAY_BUFFER, litVertexArray.size() * sizeof(VertexData), (GLvoid*)litVertexArray.data(), GL_STREAM_DRAW);
+			auto& viewCube = ViewCube();
+			float size = 3.0f;
+			int viewPortSize = 175;
+			int viewPortX = cameraParam.viewportWidth - viewPortSize;
+			int viewPortY = cameraParam.viewportHeight-viewPortSize;
 
-			////mShader->setActiveVariant("Lit", {});
-			////mShader->bindActiveProgram();
-			//glDrawArrays(GL_TRIANGLES, 0, (GLsizei)litVertexArray.size());
-			////mShader->unBindActiveProgram();
+			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewPortSize-1;
+			float v = 2*(cameraParam.viewportHeight -cameraParam.cursor.y() - viewPortY) / (float)viewPortSize-1;
+
+			auto transform=renderView->GetCamera()->GetTransform();
+			auto forward=transform.GetWorldForward();
+			auto position = -forward * size * 2.0f;
+			auto up = transform.GetWorldUp();
+			auto view = OvMaths::FMatrix4::CreateView(
+				position.x, position.y, position.z,
+				position.x+forward.x, position.y+forward.y, position.z+forward.z,
+				up.x, up.y, up.z
+			);
+		
+			auto proj=OvMaths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
+			
+			
+			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
+			if (faceIndex != -1) {
+				viewCube.setCellColor(faceIndex,{255,0,255,255});
+				if (wasKeyReleased(MouseMiddle)) {
+					auto nor=-viewCube.getCellNormal(faceIndex);
+					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
+				}
+			}
+			
+			//mLitMaterial->SetProperty("uViewPos", renderView->GetCamera()->GetPosition());
+			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
+			mLitMaterial->SetProperty("uViewMatrix", view);
+			mLitMaterial->SetProperty("uVProjMatrix", proj);
+			mLitMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
+
+			mLitMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			
+			
+			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
+			
+			viewCube.bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
 		}
-
 	}
-
 	void Guizmo::drawMesh()
 	{
-
-
 	}
 	void Guizmo::executeCommand()
 	{
@@ -4428,7 +4021,7 @@ namespace MOON
 		runDrawTask();
 		drawWidgets();
 
-		//test();
+		test();
 		assert(!endFrameCalled);
 		endFrameCalled = true;
 
@@ -4601,15 +4194,7 @@ namespace MOON
 	{
 		cancelList.push_back(name);
 	}
-	void Guizmo::create2DRender()
-	{
-		this->m_points = new GLRenderPoints();
-		this->m_lines = new GLRenderLines();
-		this->m_triangles = new GLRenderTriangles();
-		this->m_points->init();
-		this->m_lines->init();
-		this->m_triangles->init();
-	}
+
 	int Guizmo::findLayerIndex(unsigned int _id) const
 	{
 		for (int i = 0; i < (int)layerIdMap.size(); ++i)

@@ -1,7 +1,4 @@
-
-
-#include <ranges>
-
+﻿#include <ranges>
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
 #include <OvCore/Global/ServiceLocator.h>
 #include <OvCore/Rendering/EngineBufferRenderFeature.h>

@@ -35,7 +35,7 @@ namespace MOON {
 		auto& ac1 = scene->CreateActor("PointLight1");
 		auto& pointLight1 = ac1.AddComponent<OvCore::ECS::Components::CPointLight>();
 		float kI = 0.50;
-		float kB = kI / 3.0;
+		float kB = kI / 1.5;
 		float kC = kI / 3.5;
 
 		pointLight1.SetIntensity(kI);
