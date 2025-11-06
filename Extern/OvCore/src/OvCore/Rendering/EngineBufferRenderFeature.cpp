@@ -8,14 +8,21 @@
 
 namespace
 {
-	constexpr size_t kUBOSize =
-		sizeof(OvMaths::FMatrix4) +	// Model matrix
-		sizeof(OvMaths::FMatrix4) +	// View matrix
-		sizeof(OvMaths::FMatrix4) +	// Projection matrix
-		sizeof(OvMaths::FVector3) +	// Camera position
-		sizeof(float) +				// Elapsed time
-		sizeof(OvMaths::FVector4)+  // cameraType +pad
-		sizeof(OvMaths::FMatrix4);	// User matrix
+	struct EngineUBO{
+		OvMaths::FMatrix4    ubo_Model;
+		OvMaths::FMatrix4    ubo_View;
+		OvMaths::FMatrix4    ubo_Projection;
+		OvMaths::FVector3    ubo_ViewPos;
+		int     ubo_CameraType; //0 orth,1 pers
+		float   ubo_Time;
+		int ubo_screenWidth;
+		int ubo_screenHeigh;
+		float ubo_pad;
+		OvMaths::FMatrix4    ubo_UserMatrix;
+
+	};
+	constexpr size_t kUBOSize = sizeof(EngineUBO);
+
 }
 
 OvCore::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
@@ -64,16 +71,20 @@ void OvCore::Rendering::EngineBufferRenderFeature::OnBeginFrame(const OvRenderin
 		OvMaths::FVector3 cameraPosition;
 		int cameraType;
 		float elapsedTime;
-		OvMaths::FVector3 pad;
+		int screenWidth;
+		int screenHeight;
+		float pad;
 
 	} uboDataPage{
 		.viewMatrix = OvMaths::FMatrix4::Transpose(p_frameDescriptor.camera->GetViewMatrix()),
 		.projectionMatrix = OvMaths::FMatrix4::Transpose(p_frameDescriptor.camera->GetProjectionMatrix()),
 		.cameraPosition = p_frameDescriptor.camera->GetPosition(),
 		.cameraType= p_frameDescriptor.camera->GetProjectionMode()== OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC?0:1,
-		.elapsedTime = elapsedTime.count()
+		.elapsedTime = elapsedTime.count(),
+		.screenWidth=p_frameDescriptor.renderWidth,
+		.screenHeight= p_frameDescriptor.renderHeight
 	};
-
+	
 	m_engineBuffer->Upload(&uboDataPage, OvRendering::HAL::BufferMemoryRange{
 		.offset = sizeof(OvMaths::FMatrix4), // Skip uploading the first matrix (Model matrix)
 		.size = sizeof(uboDataPage)

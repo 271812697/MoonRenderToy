@@ -47,6 +47,97 @@ void main()
     gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
 }
 
+#shader geomerty
+#version 450 core
+#include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
+
+in VS_OUT
+{
+    vec3 FragPos;
+    vec2 TexCoords;
+    vec3 Normal;
+    mat3 TBN;
+#if defined(PARALLAX_MAPPING)
+    vec3 TangentViewPos;
+    vec3 TangentFragPos;
+#endif
+}gs_in[];
+out GS_OUT{
+    vec3 FragPos;
+    vec2 TexCoords;
+    vec3 Normal;
+    mat3 TBN;
+#if defined(PARALLAX_MAPPING)
+    vec3 TangentViewPos;
+    vec3 TangentFragPos;
+#endif
+    noperspective vec3 distance;
+} gs_out;
+//in VS_OUT gs_in [];
+//out GS_OUT gs_out;
+
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
+
+vec3 ComputeTriangleHeight(const vec2 p0, const vec2 p1, const vec2 p2) {
+    // triangle sides
+    float a = length(p1 - p2);
+    float b = length(p2 - p0);
+    float c = length(p1 - p0);
+
+    // triangle angles
+    float alpha = acos((b * b + c * c - a * a) / (2.0 * b * c));
+    float beta  = acos((a * a + c * c - b * b) / (2.0 * a * c));
+
+    // triangle height (altitude) on each side
+    float ha = abs(c * sin(beta));
+    float hb = abs(c * sin(alpha));
+    float hc = abs(b * sin(alpha));
+
+    return vec3(ha, hb, hc);
+}
+
+void main() 
+{
+    vec2 pos[4];
+
+    for (int i = 0; i < 3; i++)
+    {
+        pos[i] = gl_in[i].gl_Position.xy/gl_in[i].gl_Position.w;
+        pos[i] = pos[i]*vec2(0.5) + vec2(0.5);
+        pos[i] = pos[i]*vec2(ubo_ScreenWidth,ubo_ScreenHeight);
+    }
+    vec3 h = ComputeTriangleHeight(pos[0], pos[1], pos[2]);
+
+    float ccw = sign(cross(vec3(pos[1] - pos[0], 0.0), vec3(pos[2] - pos[0], 0.0)).z);
+
+
+
+    for (int i = 0; i < 3; i++)
+    {
+        gl_PrimitiveID = gl_PrimitiveIDIn;
+
+        gs_out.FragPos=gs_in[i].FragPos;
+        gs_out.TexCoords=gs_in[i].TexCoords;
+        gs_out.Normal=gs_in[i].Normal;
+        gs_out.TBN=gs_in[i].TBN;
+        #if defined(PARALLAX_MAPPING)
+          gs_out.TangentViewPos=gs_in[i].TangentViewPos;
+          gs_out.TangentFragPos=gs_in[i].TangentFragPos;
+        #endif
+        switch (i) {
+            case 0: gs_out.distance = vec3(h.x, 0, 0); break;
+            case 1: gs_out.distance = vec3(0, h.y, 0); break;
+            case 2: gs_out.distance = vec3(0, 0, h.z); break;
+        }
+
+        gl_Position = gl_in[i].gl_Position;
+
+        EmitVertex();
+    }
+    EndPrimitive();
+}
+
 #shader fragment
 #version 450 core
 
@@ -60,7 +151,7 @@ void main()
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 #include ":Shaders/Lighting/PBR.ovfxh"
 
-in VS_OUT
+in GS_OUT
 {
     vec3 FragPos;
     vec2 TexCoords;
@@ -70,7 +161,13 @@ in VS_OUT
     vec3 TangentViewPos;
     vec3 TangentFragPos;
 #endif
+    noperspective vec3 distance;
 } fs_in;
+// surface with edges
+
+//uniform float lineWidth;
+//uniform vec3 edgeColor;
+//uniform float edgeOpacity;
 
 uniform sampler2D u_AlbedoMap;
 uniform vec4 u_Albedo = vec4(1.0);
@@ -205,6 +302,9 @@ void main()
 
     const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
 
+
+    float emix = clamp(0.5 + 0.5*1.5 - min( min( fs_in.distance.x, fs_in.distance.y), fs_in.distance.z), 0.0, 1.0);
+    albedo.rgb = mix(albedo.rgb, vec3(0.0), emix);
     vec3 pbr = PBRLightingModel(
         albedo.rgb,
         metallic,
@@ -232,3 +332,4 @@ void main()
     FRAGMENT_COLOR = vec4(pbr, albedo.a);
 #endif
 }
+

@@ -3978,8 +3978,7 @@ namespace MOON
 			if (faceIndex != -1) {
 				viewCube.setCellColor(faceIndex,{255,0,255,255});
 				if (wasKeyReleased(MouseMiddle)) {
-
-					auto nor=-viewCube.getCellNormal(faceIndex).normalized();
+					auto nor=-viewCube.getCellNormal(faceIndex);
 					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
 				}
 			}
