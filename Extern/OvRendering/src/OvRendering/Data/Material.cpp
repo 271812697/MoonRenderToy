@@ -1,6 +1,4 @@
-
-
-#include <format>
+﻿#include <format>
 #include <ranges>
 
 #include <tracy/Tracy.hpp>

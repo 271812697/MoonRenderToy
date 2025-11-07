@@ -5,6 +5,7 @@
 #feature NORMAL_MAPPING
 #feature DISTANCE_FADE
 #feature SPECULAR_WORKFLOW
+#feature WITH_EDGE
 
 #shader vertex
 #version 450 core
@@ -48,7 +49,9 @@ void main()
 }
 
 #shader geomerty
+
 #version 450 core
+#if defined(WITH_EDGE)
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 
 in VS_OUT
@@ -137,6 +140,8 @@ void main()
     }
     EndPrimitive();
 }
+#endif
+
 
 #shader fragment
 #version 450 core
@@ -151,6 +156,7 @@ void main()
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 #include ":Shaders/Lighting/PBR.ovfxh"
 
+#if defined(WITH_EDGE)
 in GS_OUT
 {
     vec3 FragPos;
@@ -163,11 +169,26 @@ in GS_OUT
 #endif
     noperspective vec3 distance;
 } fs_in;
+
 // surface with edges
 
 //uniform float lineWidth;
 //uniform vec3 edgeColor;
 //uniform float edgeOpacity;
+#else 
+in VS_OUT
+{
+    vec3 FragPos;
+    vec2 TexCoords;
+    vec3 Normal;
+    mat3 TBN;
+#if defined(PARALLAX_MAPPING)
+    vec3 TangentViewPos;
+    vec3 TangentFragPos;
+#endif
+} fs_in;
+#endif
+
 
 uniform sampler2D u_AlbedoMap;
 uniform vec4 u_Albedo = vec4(1.0);
@@ -302,10 +323,11 @@ void main()
 
     const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
 
-
+#if defined(WITH_EDGE)
     float emix = clamp(0.5 + 0.5*1.5 - min( min( fs_in.distance.x, fs_in.distance.y), fs_in.distance.z), 0.0, 1.0);
     albedo.rgb = mix(albedo.rgb, vec3(0.0), emix);
-    vec3 pbr = PBRLightingModel(
+#endif
+   vec3 pbr = PBRLightingModel(
         albedo.rgb,
         metallic,
         roughness,

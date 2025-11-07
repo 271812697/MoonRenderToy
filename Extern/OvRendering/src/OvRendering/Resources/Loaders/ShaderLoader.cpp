@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <format>
@@ -167,11 +167,76 @@ namespace
 
 		for (const auto& stageInput : p_stages)
 		{
+			if (stageInput.type == OvRendering::Settings::EShaderType::GEOMERTY) {
+				int i = 0;
+				bool startWithIf = false;
+				std::string define = "";
+				// Find insertion point after version directive if it exists
+				const size_t versionPos = stageInput.source.find(Grammar::kVersionToken);
+	
+				// Find end of version line
+				const size_t endOfLine = stageInput.source.find('\n', versionPos);
+				if (endOfLine != std::string::npos)
+				{
+					// Version directive is on the last line (unusual case)
+					i = endOfLine+1;
+				}
+				while (i<stageInput.source.size())
+				{
+					char ch = stageInput.source[i];
+					if (ch == ' ' || ch == '\n' || ch == '\r') {
+						i++;
+					}
+					else
+					{
+						if (ch == '#') {
+							if (i + 2 < stageInput.source.size()) {
+								if (stageInput.source[i + 1] == 'i' && stageInput.source[i + 2] == 'f') {
+									startWithIf = true;
+									int offset=stageInput.source.find("defined");
+									int a=stageInput.source.find('(',offset );
+									int b= stageInput.source.find( ')',offset);
+									while (stageInput.source[a]==' ' || stageInput.source[a] == '(')
+									{
+										a++;
+									}
+									while (a<b)
+									{
+										if (stageInput.source[a] != ' ') {
+											define += stageInput.source[a];
+											a++;
+										}
+										else
+										{
+											break;
+										}
+									}
+									break;
+								}
+								else
+								{
+									break;
+								}
+
+							}
+							break;
+						}
+						else
+						{
+							break;
+						}
+					}
+				}
+				
+				if (startWithIf&& !p_features.contains(define)) {
+					continue;
+			    }
+			}
 			const auto& processedStage = processedStages.emplace_back(stageInput.type);
 
 			std::unordered_set<std::string_view> defines(p_features.begin(), p_features.end());
 			defines.insert(p_pass);
-			const auto source = AddDefinesToShaderCode(stageInput.source, defines);
+			const auto source =  AddDefinesToShaderCode(stageInput.source, defines);
 			processedStage.stage.Upload(source);
 
 			if (const auto result = processedStage.stage.Compile(); !result.success)
@@ -484,9 +549,6 @@ void main()
 						featureSet.insert(*std::next(p_parseResult.features.begin(), j));
 					}
 				}
-
-
-
 				auto program = CreateProgram(
 					p_parseResult.inputInfo,
 					stages,
