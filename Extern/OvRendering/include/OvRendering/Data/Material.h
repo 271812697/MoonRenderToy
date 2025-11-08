@@ -324,6 +324,8 @@ namespace OvRendering::Data
 		*/
 		void RemoveFeature(const std::string& p_feature);
 
+		void EnableFeature(const std::string& feature,bool flag);
+
 		/**
 		* Returns true if the material has a feature
 		* @param p_feature

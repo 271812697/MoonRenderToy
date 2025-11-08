@@ -1,6 +1,4 @@
-
-
-#include <glad/glad.h>
+﻿#include <glad/glad.h>
 
 #include <OvDebug/Assertion.h>
 #include <OvRendering/HAL/OpenGL/GLBuffer.h>

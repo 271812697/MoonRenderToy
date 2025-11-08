@@ -1,4 +1,7 @@
 ﻿#include "viewertitlebar.h"
+#include "OvCore/Global/ServiceLocator.h"
+#include "renderer/SceneView.h"
+#include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "editor/Command/viewer/CameraFitCommand.h"
 #include <QHBoxLayout>
 #include <QToolBar>
@@ -18,7 +21,17 @@ namespace MOON {
 		}
 	protected:
 		virtual void execute()override {
-
+			bool value=action()->isChecked();
+			auto& view = GetService(OvEditor::Panels::SceneView);
+			if (view.IsSelectActor()) {
+				auto matList=view.GetSelectedActor().GetComponent<OvCore::ECS::Components::CMaterialRenderer>();
+				if (matList) {
+					auto mat = matList->GetMaterialAtIndex(0);
+					if (mat&&mat->SupportsFeature("WITH_EDGE")) {
+						mat->EnableFeature("WITH_EDGE",value);
+					}
+				}
+			}
 		}
 	};
 	class  PointsCommand : public Command

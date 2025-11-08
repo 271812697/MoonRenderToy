@@ -1,6 +1,4 @@
-﻿
-
-#include "OvRendering/Resources/Loaders/ModelLoader.h"
+﻿#include "OvRendering/Resources/Loaders/ModelLoader.h"
 
 OvRendering::Resources::Parsers::AssimpParser OvRendering::Resources::Loaders::ModelLoader::__ASSIMP;
 

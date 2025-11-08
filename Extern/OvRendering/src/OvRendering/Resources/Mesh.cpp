@@ -53,6 +53,16 @@ void OvRendering::Resources::Mesh::AddMaterial(int materialIndex)
 	m_materialIndex.push_back(materialIndex);
 }
 
+OvRendering::HAL::VertexArray& OvRendering::Resources::Mesh::getVertexArray()
+{
+	return m_vertexArray;
+}
+
+OvRendering::HAL::VertexBuffer& OvRendering::Resources::Mesh::getVertexBuffer()
+{
+	return m_vertexBuffer;
+}
+
 void OvRendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices)
 {
 	if (m_vertexBuffer.Allocate(p_vertices.size_bytes()))

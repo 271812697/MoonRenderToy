@@ -58,6 +58,8 @@ namespace OvRendering::Resources
 		*/
 		std::vector<uint32_t> GetMaterialIndex() const;
 		void AddMaterial(int materialIndex);
+		HAL::VertexArray& getVertexArray();
+		HAL::VertexBuffer& getVertexBuffer();
 
 	private:
 		void Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices);
@@ -71,6 +73,7 @@ namespace OvRendering::Resources
 		HAL::VertexArray m_vertexArray;
 		HAL::VertexBuffer m_vertexBuffer;
 		HAL::IndexBuffer m_indexBuffer;
+		
 
 		Geometry::BoundingSphere m_boundingSphere;
 	};

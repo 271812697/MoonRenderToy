@@ -19,6 +19,5 @@ void OvCore::Rendering::PostProcess::FXAAEffect::Draw(
 {
 	ZoneScoped;
 	TracyGpuZone("FXAAEffect");
-
 	m_renderer.Blit(p_pso, p_src, p_dst, m_material);
 }
