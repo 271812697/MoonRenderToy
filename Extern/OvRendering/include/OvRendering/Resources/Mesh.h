@@ -56,7 +56,10 @@ namespace OvRendering::Resources
 		/**
 		* Returns the material index of the mesh
 		*/
-		uint32_t GetMaterialIndex() const;
+		std::vector<uint32_t> GetMaterialIndex() const;
+		void AddMaterial(int materialIndex);
+		HAL::VertexArray& getVertexArray();
+		HAL::VertexBuffer& getVertexBuffer();
 
 	private:
 		void Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices);
@@ -65,11 +68,12 @@ namespace OvRendering::Resources
 	private:
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
-		const uint32_t m_materialIndex;
-
+		std::vector<uint32_t>m_materialIndex;
+		
 		HAL::VertexArray m_vertexArray;
 		HAL::VertexBuffer m_vertexBuffer;
 		HAL::IndexBuffer m_indexBuffer;
+		
 
 		Geometry::BoundingSphere m_boundingSphere;
 	};

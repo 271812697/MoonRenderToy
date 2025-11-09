@@ -1,4 +1,5 @@
 ﻿#include <cmath>
+#include <iostream>
 #include "OvRendering/Entities/Camera.h"
 #include "OvMaths/FMatrix4.h"
 OvRendering::Entities::Camera::Camera(OvTools::Utils::OptRef<OvMaths::FTransform> p_transform) :
@@ -226,20 +227,41 @@ void OvRendering::Entities::Camera::ProjectionFitToSphere(OvRendering::Geometry:
 	}
 }
 
-OvMaths::FMatrix4 OvRendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) const
+void OvRendering::Entities::Camera::PersertiveZoom(float delta)
+{
+	constexpr float kUnitsPerScroll = 1.0f;
+	SetPosition(GetPosition() + transform->GetWorldForward() * kUnitsPerScroll * delta
+	);
+
+}
+
+void OvRendering::Entities::Camera::OrthZoom(float delta, int x, int y)
+{
+	float decreaseRatio = 0.1 * delta * m_size;
+	m_size -= decreaseRatio;
+	float xRatio = (x / static_cast<float>(m_windowWidth))-0.5f;
+	float yRatio = (1.0f-y / static_cast<float>(m_windowHeight)) - 0.5f;
+	
+	auto offset = GetPosition() - transform->GetWorldRight() *2* decreaseRatio * m_ratio * xRatio +transform->GetWorldUp() *2* decreaseRatio * yRatio;
+	SetPosition(offset);
+	
+}
+
+OvMaths::FMatrix4 OvRendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) 
 {
     using namespace OvMaths;
     using namespace OvRendering::Settings;
-
-    const auto ratio = p_windowWidth / static_cast<float>(p_windowHeight);
+	m_windowWidth = p_windowWidth;
+	m_windowHeight = p_windowHeight;
+	m_ratio = p_windowWidth / static_cast<float>(p_windowHeight);
 
     switch (m_projectionMode)
     {
     case EProjectionMode::ORTHOGRAPHIC:
-        return FMatrix4::CreateOrthographic(m_size, ratio, m_near, m_far);
+        return FMatrix4::CreateOrthographic(m_size, m_ratio, m_near, m_far);
 
     case EProjectionMode::PERSPECTIVE: 
-        return FMatrix4::CreatePerspective(m_fov, ratio, m_near, m_far);
+        return FMatrix4::CreatePerspective(m_fov, m_ratio, m_near, m_far);
 
     default:
         return FMatrix4::Identity;

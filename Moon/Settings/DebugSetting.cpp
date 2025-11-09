@@ -239,6 +239,7 @@ namespace MOON {
 		mHashCode[typeid(float).hash_code()] = "float";
 		add("View","showLight",false);
 		add("View", "showGrid", false);
+		add("View", new DragFloat(0.5, 0.5, 10.0, "zoom speed"));
 		add("Line",new DragFloat(0.5,0.5,1.0,"linewidth"));
 		add("Batch",new InputString("path","path"));
 		

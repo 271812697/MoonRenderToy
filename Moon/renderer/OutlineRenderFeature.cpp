@@ -1,4 +1,4 @@
-
+﻿
 
 #include <OvCore/ECS/Components/CMaterialRenderer.h>
 #include <OvCore/Rendering/EngineDrawableDescriptor.h>
@@ -177,7 +177,7 @@ void OvEditor::Rendering::OutlineRenderFeature::DrawModelToStencil(
 	for (auto mesh : p_model.GetMeshes())
 	{
 		auto getStencilMaterial = [&]() -> OvCore::Resources::Material& {
-			auto material = p_materials.has_value() ? p_materials->at(mesh->GetMaterialIndex()) : nullptr;
+			auto material = p_materials.has_value() ? p_materials->at(mesh->GetMaterialIndex()[0]) : nullptr;
 			if (material && material->IsValid() && material->HasPass(outlinePassName))
 			{
 				return *material;
@@ -221,7 +221,7 @@ void OvEditor::Rendering::OutlineRenderFeature::DrawModelOutline(
 	for (auto mesh : p_model.GetMeshes())
 	{
 		auto getStencilMaterial = [&]() -> OvCore::Resources::Material& {
-			auto material = p_materials.has_value() ? p_materials->at(mesh->GetMaterialIndex()) : nullptr;
+			auto material = p_materials.has_value() ? p_materials->at(mesh->GetMaterialIndex()[0]) : nullptr;
 			if (material && material->IsValid() && material->HasPass(outlinePassName))
 			{
 				return *material;

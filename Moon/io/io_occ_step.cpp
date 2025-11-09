@@ -241,7 +241,7 @@ namespace MOON {
             tempMat->SetCastShadows(false);
             tempMat->SetReceiveShadows(false);
 
-            tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+            tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
             tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
 
             tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
@@ -250,7 +250,7 @@ namespace MOON {
             // Emission
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
             tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f, 0.0f, 0.0f });
-
+            tempMat->AddFeature("WITH_EDGE");
             // 在场景中创建 Actor 并绑定模型/材质
             auto& actor = scene->CreateActor();
             actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);

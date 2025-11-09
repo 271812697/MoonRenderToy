@@ -15,6 +15,7 @@
 
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
+#include "PointRenderPass.h"
 #include "GizmoRenderFeature.h"
 #include "GridRenderPass.h"
 #include "OutlineRenderFeature.h"
@@ -309,7 +310,7 @@ protected:
 	{
 		ZoneScoped;
 		TracyGpuZone("DebugActorRenderPass");
-
+		
 		// Clear stencil buffer for outline rendering
 		m_renderer.Clear(false, false, true);
 
@@ -676,4 +677,5 @@ OvEditor::Rendering::DebugSceneRenderer::DebugSceneRenderer(OvRendering::Context
 	AddPass<DebugLightsRenderPass>("Debug Lights", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugActorRenderPass>("Debug Actor", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PickingRenderPass>("Picking", OvRendering::Settings::ERenderPassOrder::Debug);
+	AddPass<PointRenderPass>("PointDraw", OvRendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
 }

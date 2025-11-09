@@ -1,4 +1,4 @@
-#include <ranges>
+﻿#include <ranges>
 #include <tracy/Tracy.hpp>
 
 #include <OvCore/ECS/Components/CModelRenderer.h>
@@ -271,42 +271,45 @@ SceneRenderer::SceneDrawablesDescriptor OvCore::Rendering::SceneRenderer::ParseS
 
 		for (auto& mesh : model->GetMeshes())
 		{
-			OvTools::Utils::OptRef<OvRendering::Data::Material> material;
+			for (auto& materialIndex : mesh->GetMaterialIndex()) {
+				OvTools::Utils::OptRef<OvRendering::Data::Material> material;
 
-			if (mesh->GetMaterialIndex() < kMaxMaterialCount)
-			{
-				material = materials.at(mesh->GetMaterialIndex());
-			}
-
-			OvRendering::Entities::Drawable drawable{
-				.mesh = *mesh,
-				.material = material,
-				.stateMask = material.has_value() ? material->GenerateStateMask() : OvRendering::Data::StateMask{},
-			};
-
-			auto bounds = [&]() -> std::optional<OvRendering::Geometry::BoundingSphere> {
-				using enum CModelRenderer::EFrustumBehaviour;
-				switch (modelRenderer->GetFrustumBehaviour())
+				if (materialIndex < kMaxMaterialCount)
 				{
-				case MESH_BOUNDS: return mesh->GetBoundingSphere();
-				case DEPRECATED_MODEL_BOUNDS: return model->GetBoundingSphere();
-				case CUSTOM_BOUNDS: return modelRenderer->GetCustomBoundingSphere();
+					material = materials.at(materialIndex);
 				}
-				return std::nullopt;
-				}();
 
-				drawable.AddDescriptor<SceneDrawableDescriptor>({
-					.actor = modelRenderer->owner,
-					.visibilityFlags = materialRenderer->GetVisibilityFlags(),
-					.bounds = bounds,
-					});
+				OvRendering::Entities::Drawable drawable{
+					.mesh = *mesh,
+					.material = material,
+					.stateMask = material.has_value() ? material->GenerateStateMask() : OvRendering::Data::StateMask{},
+				};
 
-				drawable.AddDescriptor<EngineDrawableDescriptor>({
-					transform.GetWorldMatrix(),
-					materialRenderer->GetUserMatrix()
-					});
+				auto bounds = [&]() -> std::optional<OvRendering::Geometry::BoundingSphere> {
+					using enum CModelRenderer::EFrustumBehaviour;
+					switch (modelRenderer->GetFrustumBehaviour())
+					{
+					case MESH_BOUNDS: return mesh->GetBoundingSphere();
+					case DEPRECATED_MODEL_BOUNDS: return model->GetBoundingSphere();
+					case CUSTOM_BOUNDS: return modelRenderer->GetCustomBoundingSphere();
+					}
+					return std::nullopt;
+					}();
 
-				result.drawables.push_back(drawable);
+					drawable.AddDescriptor<SceneDrawableDescriptor>({
+						.actor = modelRenderer->owner,
+						.visibilityFlags = materialRenderer->GetVisibilityFlags(),
+						.bounds = bounds,
+						});
+
+					drawable.AddDescriptor<EngineDrawableDescriptor>({
+						transform.GetWorldMatrix(),
+						materialRenderer->GetUserMatrix()
+						});
+
+					result.drawables.push_back(drawable);
+			}
+	
 		}
 	}
 

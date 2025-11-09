@@ -107,7 +107,7 @@ void OvCore::Rendering::ShadowRenderPass::_DrawShadows(
 
 					for (auto mesh : model->GetMeshes())
 					{
-						if (auto material = materials.at(mesh->GetMaterialIndex()); material && material->IsValid() && material->IsShadowCaster())
+						if (auto material = materials.at(mesh->GetMaterialIndex()[0]); material && material->IsValid() && material->IsShadowCaster())
 						{
 							const std::string shadowPassName = "SHADOW_PASS";
 

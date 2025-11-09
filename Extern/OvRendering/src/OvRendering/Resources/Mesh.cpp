@@ -1,4 +1,4 @@
-
+﻿
 
 #include <array>
 
@@ -11,9 +11,9 @@ OvRendering::Resources::Mesh::Mesh(
 	uint32_t p_materialIndex
 ) :
 	m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
-	m_indicesCount(static_cast<uint32_t>(p_indices.size())),
-	m_materialIndex(p_materialIndex)
+	m_indicesCount(static_cast<uint32_t>(p_indices.size()))
 {
+	m_materialIndex.push_back(p_materialIndex);
 	Upload(p_vertices, p_indices);
 	ComputeBoundingSphere(p_vertices);
 }
@@ -43,9 +43,24 @@ const OvRendering::Geometry::BoundingSphere& OvRendering::Resources::Mesh::GetBo
 	return m_boundingSphere;
 }
 
-uint32_t OvRendering::Resources::Mesh::GetMaterialIndex() const
+std::vector<uint32_t> OvRendering::Resources::Mesh::GetMaterialIndex() const
 {
 	return m_materialIndex;
+}
+
+void OvRendering::Resources::Mesh::AddMaterial(int materialIndex)
+{
+	m_materialIndex.push_back(materialIndex);
+}
+
+OvRendering::HAL::VertexArray& OvRendering::Resources::Mesh::getVertexArray()
+{
+	return m_vertexArray;
+}
+
+OvRendering::HAL::VertexBuffer& OvRendering::Resources::Mesh::getVertexBuffer()
+{
+	return m_vertexBuffer;
 }
 
 void OvRendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices)

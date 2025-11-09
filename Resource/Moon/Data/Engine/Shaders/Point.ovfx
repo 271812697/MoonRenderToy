@@ -1,0 +1,63 @@
+#shader vertex
+#version 450 core
+
+#include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
+#include ":Shaders/Common/Utils.ovfxh"
+
+layout (location = 0) in vec3 geo_Pos;
+layout (location = 1) in vec2 geo_TexCoords;
+layout (location = 2) in vec3 geo_Normal;
+layout (location = 3) in vec3 geo_Tangent;
+layout (location = 4) in vec3 geo_Bitangent;
+//instance data
+layout (location = 5) in vec3 aInstanceOffset;
+layout (location = 6) in vec3 aInstanceColor;
+
+out VS_OUT
+{
+    vec3 FragPos;
+    vec2 TexCoords;
+    vec3 Normal;
+    vec3 Color;
+} vs_out;
+
+void main()
+{ 
+    float projectY=2/ubo_Projection[1][1];
+    float pixels=2;
+    float ratio= (pixels / ubo_ScreenHeight);
+    
+    if(ubo_CameraType==0){
+       vs_out.FragPos = vec3(ubo_Model * vec4(normalize(geo_Pos)*projectY *ratio+aInstanceOffset, 1.0));
+    }
+    else{
+       float d = length(geo_Pos - ubo_ViewPos);
+        vs_out.FragPos = vec3(ubo_Model * vec4(normalize(geo_Pos)*projectY *d*ratio+aInstanceOffset, 1.0));
+
+    }
+
+    vs_out.TexCoords = geo_TexCoords;
+    vs_out.Color = aInstanceColor;
+    vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
+
+    gl_Position = ubo_Projection * ubo_View *vec4(vs_out.FragPos, 1.0);
+}
+
+
+#shader fragment
+#version 450 core
+in VS_OUT
+{
+    vec3 FragPos;
+    vec2 TexCoords;
+    vec3 Normal;
+    vec3 Color;
+} fs_in;
+
+out vec4 FRAGMENT_COLOR;
+
+void main()
+{
+    //fs_in.(Normal+1.0)/2.0
+    FRAGMENT_COLOR=vec4((fs_in.Normal+1.0)/2.0,1.0);
+}

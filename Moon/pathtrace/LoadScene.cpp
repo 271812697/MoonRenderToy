@@ -736,7 +736,7 @@ namespace PathTrace
 				}
 				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
 				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
-				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
 				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColorR, material.baseColorG, material.baseColorB, material.opacity });
 				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ material.emissionR, material.emissionG, material.emissionB });
 				tempMat->SetProperty("u_Metallic", material.metallic);
@@ -759,8 +759,6 @@ namespace PathTrace
 				tempMat->SetProperty("u_EmissiveMap", roughness);
 				auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_MetallicMap", metallicMap);
-
-
 				// Normal Map Texture
 				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
 				tempMat->SetProperty("u_NormalMap", normalTex);

@@ -1,6 +1,4 @@
-
-
-#include <format>
+﻿#include <format>
 #include <ranges>
 
 #include <tracy/Tracy.hpp>
@@ -460,6 +458,17 @@ void OvRendering::Data::Material::AddFeature(const std::string& p_feature)
 void OvRendering::Data::Material::RemoveFeature(const std::string& p_feature)
 {
 	m_features.erase(p_feature);
+}
+void OvRendering::Data::Material::EnableFeature(const std::string& p_feature,bool flag)
+{
+	if (flag) {
+		m_features.insert(p_feature);
+	}
+	else
+	{
+		m_features.erase(p_feature);
+	}
+
 }
 
 bool OvRendering::Data::Material::HasFeature(const std::string& p_feature) const
