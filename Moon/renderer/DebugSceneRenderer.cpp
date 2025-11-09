@@ -677,5 +677,5 @@ OvEditor::Rendering::DebugSceneRenderer::DebugSceneRenderer(OvRendering::Context
 	AddPass<DebugLightsRenderPass>("Debug Lights", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugActorRenderPass>("Debug Actor", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PickingRenderPass>("Picking", OvRendering::Settings::ERenderPassOrder::Debug);
-	AddPass<PointRenderPass>("PointDraw", OvRendering::Settings::ERenderPassOrder::Opaque);
+	AddPass<PointRenderPass>("PointDraw", OvRendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
 }

@@ -22,9 +22,20 @@ out VS_OUT
 } vs_out;
 
 void main()
-{
-    vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos*0.02+aInstanceOffset, 1.0));
-    //vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos*0.02+vec3(1,1,1), 1.0));
+{ 
+    float projectY=2/ubo_Projection[1][1];
+    float pixels=2;
+    float ratio= (pixels / ubo_ScreenHeight);
+    
+    if(ubo_CameraType==0){
+       vs_out.FragPos = vec3(ubo_Model * vec4(normalize(geo_Pos)*projectY *ratio+aInstanceOffset, 1.0));
+    }
+    else{
+       float d = length(geo_Pos - ubo_ViewPos);
+        vs_out.FragPos = vec3(ubo_Model * vec4(normalize(geo_Pos)*projectY *d*ratio+aInstanceOffset, 1.0));
+
+    }
+
     vs_out.TexCoords = geo_TexCoords;
     vs_out.Color = aInstanceColor;
     vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);

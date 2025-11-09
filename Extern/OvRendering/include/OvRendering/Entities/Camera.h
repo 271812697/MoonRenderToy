@@ -53,14 +53,19 @@ namespace OvRendering::Entities
 		void SetFrustumLightCulling(bool p_enable);
 		void SetProjectionMode(OvRendering::Settings::EProjectionMode p_projectionMode);
 		void ProjectionFitToSphere(OvRendering::Geometry::BoundingSphere& sphere,const OvMaths::FVector3& dir);
+		void PersertiveZoom(float delta);
+		void OrthZoom(float delta, int x, int y);
 	private:
-		OvMaths::FMatrix4 CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) const;
+		OvMaths::FMatrix4 CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
 		OvMaths::FMatrix4 CalculateViewMatrix() const;
 	private:
 		OvRendering::Data::Frustum m_frustum;
 		OvMaths::FMatrix4 m_viewMatrix;
 		OvMaths::FMatrix4 m_projectionMatrix;
 		OvRendering::Settings::EProjectionMode m_projectionMode;
+		float m_ratio;
+		int m_windowHeight;
+		int m_windowWidth;
 		float m_fov;
 		float m_size;
 		float m_near;

@@ -1,4 +1,4 @@
-#include <tracy/Tracy.hpp>
+﻿#include <tracy/Tracy.hpp>
 #include <OvCore/Rendering/FramebufferUtil.h>
 #include "AView.h"
 #include <OvRendering/HAL/Profiling.h>
@@ -25,6 +25,7 @@ OvEditor::Panels::AView::AView
 
 void OvEditor::Panels::AView::Update(float p_deltaTime)
 {
+
 }
 
 

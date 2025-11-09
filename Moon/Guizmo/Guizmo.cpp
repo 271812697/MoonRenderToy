@@ -2973,7 +2973,7 @@ namespace MOON
 		float worldHeight = pixelsToWorldSize(drawAt, 40);
 		float worldSize = pixelsToWorldSize(drawAt, 5);
 		idStack.push_back(_id);
-
+		
 		appId = _id;
 		unsigned int topArrow = makeId("topArrow");
 		unsigned int bottomArrow = makeId("bottomArrow");

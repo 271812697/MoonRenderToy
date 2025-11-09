@@ -95,13 +95,12 @@ void OvEditor::Core::CameraController::HandleInputs(float p_deltaTime)
 		}
 	}
 	else
-	{
+	{   
+		auto [xPos, yPos] = input.GetMousePosition();
 		if (m_rightMousePressed || m_middleMousePressed || m_leftMousePressed)
 		{
-			auto [xPos, yPos] = input.GetMousePosition();
 
 			bool wasFirstMouse = m_firstMouse;
-
 			if (m_firstMouse)
 			{
 				m_lastMousePosX = xPos;
@@ -109,7 +108,6 @@ void OvEditor::Core::CameraController::HandleInputs(float p_deltaTime)
 				HandleFirstMouse();
 				m_firstMouse = false;
 			}
-
 			OvMaths::FVector2 mouseOffset
 			{
 				static_cast<float>(xPos - m_lastMousePosX),
@@ -118,31 +116,24 @@ void OvEditor::Core::CameraController::HandleInputs(float p_deltaTime)
 
 			m_lastMousePosX = xPos;
 			m_lastMousePosY = yPos;
-
 			if (m_rightMousePressed)
-			{
-				HandleCameraFPSMouse(mouseOffset, wasFirstMouse);
+			{	
+				if (m_view.IsSelectActor())
+				{
+					auto& target = m_view.GetSelectedActor();
+					HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
+				}
+				
 			}
 			else if (m_middleMousePressed)
 			{
-				if (input.IsKeyPressed(OvEditor::Panels::ALTA))
-				{
-					if (m_view.IsSelectActor())
-					{
-						auto& target = m_view.GetSelectedActor();
-						HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
-					}
-				}
-				else
-				{
-					HandleCameraPanning(mouseOffset, wasFirstMouse);
-				}
-
+                HandleCameraPanning(mouseOffset, wasFirstMouse);
 			}
-
+			else
+			{
+				//HandleCameraFPSMouse(mouseOffset, wasFirstMouse);
+			}
 		}
-
-
 		HandleCameraZoom();
 		HandleCameraFPSKeyboard(p_deltaTime);
 	}
@@ -285,13 +276,20 @@ void OvEditor::Core::CameraController::HandleCameraOrbit(
 
 void OvEditor::Core::CameraController::HandleCameraZoom()
 {
-	constexpr float kUnitsPerScroll = 1.0f;
-
 	const auto verticalScroll = m_view.getInutState().GetMouseScroll().second;
-	m_camera.SetPosition(
-		m_camera.GetPosition() +
-		m_camera.transform->GetWorldForward() * kUnitsPerScroll * verticalScroll
-	);
+	auto& input = m_view.getInutState();
+	auto [x, y] = input.GetMousePosition();
+
+	if (m_camera.GetProjectionMode() == OvRendering::Settings::EProjectionMode::PERSPECTIVE)
+	{
+		
+		m_camera.PersertiveZoom(verticalScroll);
+	}
+	else
+	{
+		m_camera.OrthZoom(verticalScroll,x,y);
+	}
+
 }
 
 void OvEditor::Core::CameraController::HandleCameraFPSMouse(const OvMaths::FVector2& p_mouseOffset, bool p_firstMouse)

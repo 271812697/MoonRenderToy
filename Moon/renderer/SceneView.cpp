@@ -53,6 +53,7 @@ OvEditor::Panels::SceneView::SceneView
 void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 {
 	AViewControllable::Update(p_deltaTime);
+	input.ClearEvents();
 	auto headLight = GetScene()->FindActorByName("HeadLight");
 	if (!headLight) {
 		return;
@@ -84,8 +85,6 @@ void OvEditor::Panels::SceneView::Update(float p_deltaTime)
 		GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
 		GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
 	}
-	input.ClearEvents();
-
 }
 
 void OvEditor::Panels::SceneView::InitFrame()
@@ -142,16 +141,9 @@ void OvEditor::Panels::SceneView::FitToSelectedActor(const OvMaths::FVector3& di
 				}
 				else
 				{
-					
 					float distance = sphere.radius / std::sin(eff * m_camera.GetFov() / 2.0f);
 				    this->GetCameraController().MoveToPose(sphere.position - dir * distance,quat);
 				}
-				
-
-
-
-
-				
 			}
 		}
 	}

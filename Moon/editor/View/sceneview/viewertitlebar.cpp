@@ -3,6 +3,7 @@
 #include "renderer/SceneView.h"
 #include "OvCore/ECS/Components/CMaterialRenderer.h"
 #include "editor/Command/viewer/CameraFitCommand.h"
+#include "renderer/PointRenderPass.h"
 #include <QHBoxLayout>
 #include <QToolBar>
 #include <QPointer>
@@ -46,7 +47,9 @@ namespace MOON {
 		}
 	protected:
 		virtual void execute()override {
-
+			bool value = action()->isChecked();
+			auto& view = GetService(OvEditor::Panels::SceneView);
+			view.GetRenderer().GetPass<OvEditor::Rendering::PointRenderPass>("PointDraw").SetEnabled(value);
 		}
 	};
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {
