@@ -1,7 +1,4 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <OvRendering/HAL/Common/TRenderbuffer.h>
 
 namespace OvRendering::HAL

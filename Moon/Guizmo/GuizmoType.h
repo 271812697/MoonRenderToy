@@ -182,11 +182,13 @@ namespace MOON
 
 	struct Polygon {
 		std::vector<Cell>cellArray;
+		std::vector<uint8_t>edgeValue;
 		unsigned int vao = 0;
 		unsigned int vbo = 0;
 		unsigned int numVertex = 0;
 		bool isDirty = false;
 		OvRendering::Resources::Texture* texture = nullptr;
+		OvRendering::Resources::Texture* edgeTexture = nullptr;
 		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color);
 		void submit();

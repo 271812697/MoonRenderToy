@@ -1,4 +1,4 @@
-
+﻿
 
 #include <glad/glad.h>
 
@@ -39,6 +39,9 @@ OvRendering::HAL::GLTexture::TTexture(Settings::ETextureType p_type, std::string
 template<>
 OvRendering::HAL::GLTexture::~TTexture()
 {
+	if (m_textureContext.desc.isTextureBuffer&& m_textureContext.desc.texBufferId!=0) {
+		glDeleteBuffers(1, &m_textureContext.desc.texBufferId);
+	}
 	glDeleteTextures(1, &m_context.id);
 	DestructionEvent.Invoke(*this);
 }
@@ -47,54 +50,99 @@ template<>
 void OvRendering::HAL::GLTexture::Allocate(const Settings::TextureDesc& p_desc)
 {
 	auto& desc = m_textureContext.desc;
+	
+	if (!p_desc.isTextureBuffer) {
+		desc = p_desc;
+		desc.width = std::max(1u, desc.width);
+		desc.height = std::max(1u, desc.height);
 
-	desc = p_desc;
-	desc.width = std::max(1u, desc.width);
-	desc.height = std::max(1u, desc.height);
+		if(desc.mutableDesc.has_value())
+		{
+			const auto& mutableDesc = desc.mutableDesc.value();
 
-	if (desc.mutableDesc.has_value())
-	{
-		const auto& mutableDesc = desc.mutableDesc.value();
+			OVASSERT(m_context.type != GL_TEXTURE_CUBE_MAP, "Mutable textures are only supported for 2D textures");
 
-		OVASSERT(m_context.type == GL_TEXTURE_2D, "Mutable textures are only supported for 2D textures");
+			// No DSA version for glTexImage2D (mutable texture),
+			// so we need to Bind/Unbind the texture.
+			Bind();
+			if (m_context.type == GL_TEXTURE_2D) {
+				glTexImage2D(
+					m_context.type,
+					0,
+					EnumToValue<GLenum>(desc.internalFormat),
+					desc.width,
+					desc.height,
+					0,
+					EnumToValue<GLenum>(mutableDesc.format),
+					EnumToValue<GLenum>(mutableDesc.type),
+					mutableDesc.data
+				);
+			}
+			else
+			{
+				glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, EnumToValue<GLenum>(desc.internalFormat), desc.width, desc.height, GL_TRUE);
+				//glTextureStorage2DMultisample(
+				//	m_context.id,
+				//	4,
+				//	EnumToValue<GLenum>(desc.internalFormat),
+				//	desc.width,
+				//	desc.height,
+				//	GL_TRUE);
+			}
 
-		// No DSA version for glTexImage2D (mutable texture),
-		// so we need to Bind/Unbind the texture.
-		Bind();
-		glTexImage2D(
-			m_context.type,
-			0,
-			EnumToValue<GLenum>(desc.internalFormat),
-			desc.width,
-			desc.height,
-			0,
-			EnumToValue<GLenum>(mutableDesc.format),
-			EnumToValue<GLenum>(mutableDesc.type),
-			mutableDesc.data
-		);
-		Unbind();
+			Unbind();
+		}
+		else
+		{
+			// If the underlying texture is a cube map, this will allocate all 6 sides.
+			// No need to iterate over each side.
+			if (m_context.type != GL_TEXTURE_2D_MULTISAMPLE) {
+				glTextureStorage2D(
+					m_context.id,
+					desc.useMipMaps ? CalculateMipMapLevels(desc.width, desc.height) : 1,
+					EnumToValue<GLenum>(desc.internalFormat),
+					desc.width,
+					desc.height
+				);
+			}
+			else
+			{
+				glTextureStorage2DMultisample(
+					m_context.id, 
+					4,
+					EnumToValue<GLenum>(desc.internalFormat),
+					desc.width,
+					desc.height,
+					GL_TRUE);
+			}
+
+		}
+
+		// Once the texture is allocated, we don't need to set the parameters again
+		if (!m_textureContext.allocated&& m_context.type != GL_TEXTURE_2D_MULTISAMPLE)
+		{
+			glTextureParameteri(m_context.id, GL_TEXTURE_WRAP_S, EnumToValue<GLenum>(p_desc.horizontalWrap));
+			glTextureParameteri(m_context.id, GL_TEXTURE_WRAP_T, EnumToValue<GLenum>(p_desc.verticalWrap));
+			glTextureParameteri(m_context.id, GL_TEXTURE_MIN_FILTER, EnumToValue<GLenum>(p_desc.minFilter));
+			glTextureParameteri(m_context.id, GL_TEXTURE_MAG_FILTER, EnumToValue<GLenum>(p_desc.magFilter));
+		}
 	}
 	else
 	{
-		// If the underlying texture is a cube map, this will allocate all 6 sides.
-		// No need to iterate over each side.
-		glTextureStorage2D(
-			m_context.id,
-			desc.useMipMaps ? CalculateMipMapLevels(desc.width, desc.height) : 1,
-			EnumToValue<GLenum>(desc.internalFormat),
-			desc.width,
-			desc.height
-		);
+		if (desc.isTextureBuffer&&desc.texBufferId!=0) {
+			glDeleteBuffers(1, &desc.texBufferId);
+		}
+		desc = p_desc;
+		//顶点索引
+
+		glGenBuffers(1, &desc.texBufferId);
+		glBindBuffer(GL_TEXTURE_BUFFER, desc.texBufferId);
+		glBufferData(GL_TEXTURE_BUFFER, desc.buffetLen, desc.mutableDesc.value().data, GL_STATIC_DRAW);
+	
+		glBindTexture(GL_TEXTURE_BUFFER, m_context.id);
+		glTexBuffer(GL_TEXTURE_BUFFER, EnumToValue<GLenum>(desc.internalFormat), desc.texBufferId);
 	}
 
-	// Once the texture is allocated, we don't need to set the parameters again
-	if (!m_textureContext.allocated)
-	{
-		glTextureParameteri(m_context.id, GL_TEXTURE_WRAP_S, EnumToValue<GLenum>(p_desc.horizontalWrap));
-		glTextureParameteri(m_context.id, GL_TEXTURE_WRAP_T, EnumToValue<GLenum>(p_desc.verticalWrap));
-		glTextureParameteri(m_context.id, GL_TEXTURE_MIN_FILTER, EnumToValue<GLenum>(p_desc.minFilter));
-		glTextureParameteri(m_context.id, GL_TEXTURE_MAG_FILTER, EnumToValue<GLenum>(p_desc.magFilter));
-	}
 
 	m_textureContext.allocated = true;
 }
@@ -169,7 +217,7 @@ void OvRendering::HAL::GLTexture::Resize(uint32_t p_width, uint32_t p_height)
 
 	auto& desc = m_textureContext.desc;
 
-	if (p_width != desc.width || p_height != desc.width)
+	if (p_width != desc.width || p_height != desc.height)
 	{
 		desc.width = p_width;
 		desc.height = p_height;

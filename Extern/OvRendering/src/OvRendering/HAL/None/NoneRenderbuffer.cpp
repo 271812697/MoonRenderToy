@@ -1,10 +1,10 @@
-
+﻿
 
 #include <OvDebug/Assertion.h>
 #include <OvRendering/HAL/None/NoneRenderbuffer.h>
 
 template<>
-OvRendering::HAL::NoneRenderbuffer::TRenderbuffer()
+OvRendering::HAL::NoneRenderbuffer::TRenderbuffer(bool isMulSample)
 {
 }
 

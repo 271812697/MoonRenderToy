@@ -16,6 +16,7 @@
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
 #include "PointRenderPass.h"
+#include "GizmoRenderPass.h"
 #include "GizmoRenderFeature.h"
 #include "GridRenderPass.h"
 #include "OutlineRenderFeature.h"
@@ -678,4 +679,5 @@ OvEditor::Rendering::DebugSceneRenderer::DebugSceneRenderer(OvRendering::Context
 	AddPass<DebugActorRenderPass>("Debug Actor", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PickingRenderPass>("Picking", OvRendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PointRenderPass>("PointDraw", OvRendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
+	AddPass<GizmoRenderPass>("Gizmo", OvRendering::Settings::ERenderPassOrder::Opaque);
 }

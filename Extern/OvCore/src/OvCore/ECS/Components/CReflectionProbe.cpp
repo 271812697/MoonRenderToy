@@ -1,4 +1,4 @@
-
+﻿
 
 #include <format>
 #include <tinyxml2.h>
@@ -282,7 +282,7 @@ void OvCore::ECS::Components::CReflectionProbe::_AllocateResources()
 		}
 
 		// Depth buffer
-		const auto renderbuffer = std::make_shared<OvRendering::HAL::Renderbuffer>();
+		const auto renderbuffer = std::make_shared<OvRendering::HAL::Renderbuffer>(false);
 		const auto internalFormat = OvRendering::Settings::EInternalFormat::DEPTH_COMPONENT;
 		renderbuffer->Allocate(m_resolution, m_resolution, internalFormat);
 		m_framebuffers[i].Attach(renderbuffer, OvRendering::Settings::EFramebufferAttachment::DEPTH);

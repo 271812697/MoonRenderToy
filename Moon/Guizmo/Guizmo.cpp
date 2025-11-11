@@ -130,8 +130,8 @@ namespace MOON
 		mLineMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
-		mLitMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoCell.ovfx"));
-
+		mLitMaterial = new OvRendering::Data::Material(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
+		mLitMaterial->AddFeature("WITH_EDGE");
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
 		glBindVertexArray(VertexArray);
@@ -3947,6 +3947,7 @@ namespace MOON
 			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));;
 			mat->Bind();
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
+			mat->Unbind();
 
 		}
 
@@ -3988,6 +3989,8 @@ namespace MOON
 			mLitMaterial->SetProperty("uViewMatrix", view);
 			mLitMaterial->SetProperty("uVProjMatrix", proj);
 			mLitMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
+			mLitMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
+			mLitMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
 
 			mLitMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			

@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -25,11 +25,12 @@ namespace OvRendering::Resources
 		* Returns the associated HAL::Texture instance
 		*/
 		HAL::Texture& GetTexture();
-
-	private:
+		Texture() = default;
 		Texture(const std::string p_path, std::unique_ptr<HAL::Texture>&& p_texture);
 		~Texture() = default;
 		void SetTexture(std::unique_ptr<HAL::Texture>&& p_texture);
+	private:
+
 
 	public:
 		const std::string path;

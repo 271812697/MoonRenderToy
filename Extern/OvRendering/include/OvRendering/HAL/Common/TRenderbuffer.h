@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -17,7 +17,7 @@ namespace OvRendering::HAL
 		/**
 		* Create the render buffer
 		*/
-		TRenderbuffer();
+		TRenderbuffer(bool multisample);
 
 		/**
 		* Destructor
@@ -70,6 +70,7 @@ namespace OvRendering::HAL
 		uint16_t GetHeight() const;
 
 	private:
+		bool isMultisample = false;
 		Context m_context;
 	};
 }

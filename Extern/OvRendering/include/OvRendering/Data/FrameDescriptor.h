@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -17,7 +17,8 @@ namespace OvRendering::Data
 		uint16_t renderWidth = 0;
 		uint16_t renderHeight = 0;
 		OvTools::Utils::OptRef<OvRendering::Entities::Camera> camera;
-		OvTools::Utils::OptRef<HAL::Framebuffer> outputBuffer;
+		OvTools::Utils::OptRef<HAL::Framebuffer> outputMsaaBuffer;
+		OvTools::Utils::OptRef<HAL::Framebuffer> presentBuffer;
 
 		/**
 		* Ensures that the data provided in the frame descriptor is valid

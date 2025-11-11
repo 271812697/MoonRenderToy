@@ -175,6 +175,7 @@ OvCore::Rendering::SceneRenderer::SceneRenderer(OvRendering::Context::Driver& p_
 	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
+	
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);
 	AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
