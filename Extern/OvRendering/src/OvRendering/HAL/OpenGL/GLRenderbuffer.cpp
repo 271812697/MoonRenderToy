@@ -1,4 +1,4 @@
-
+﻿
 
 #include <glad/glad.h>
 
@@ -7,9 +7,10 @@
 #include <OvRendering/HAL/OpenGL/GLTypes.h>
 
 template<>
-OvRendering::HAL::GLRenderbuffer::TRenderbuffer()
+OvRendering::HAL::GLRenderbuffer::TRenderbuffer(bool flag)
 {
 	glCreateRenderbuffers(1, &m_context.id);
+	isMultisample = flag;
 }
 
 template<>
@@ -42,8 +43,14 @@ void OvRendering::HAL::GLRenderbuffer::Allocate(uint16_t p_width, uint16_t p_hei
 	m_context.width = p_width;
 	m_context.height = p_height;
 	m_context.format = p_format;
+	if (isMultisample) {
 
-	glNamedRenderbufferStorage(m_context.id, EnumToValue<GLenum>(m_context.format), m_context.width, m_context.height);
+		glNamedRenderbufferStorageMultisample(m_context.id,4, EnumToValue<GLenum>(m_context.format), m_context.width, m_context.height);
+	}
+	else {
+		glNamedRenderbufferStorage(m_context.id, EnumToValue<GLenum>(m_context.format), m_context.width, m_context.height);
+	}
+	
 
 	m_context.allocated = true;
 }

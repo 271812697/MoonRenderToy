@@ -1,4 +1,4 @@
-
+﻿
 
 #include <glad/glad.h>
 
@@ -21,6 +21,7 @@ void OvRendering::HAL::GLFramebuffer::Attach(
 	OVASSERT(!p_layer.has_value(), "Renderbuffer cannot use layers");
 
 	const auto attachmentIndex = EnumToValue<GLenum>(p_attachment) + static_cast<GLenum>(p_index);
+	p_toAttach->Bind();
 	glNamedFramebufferRenderbuffer(m_context.id, attachmentIndex, GL_RENDERBUFFER, p_toAttach->GetID());
 	m_context.attachments[attachmentIndex] = p_toAttach;
 }
@@ -45,6 +46,7 @@ void OvRendering::HAL::GLFramebuffer::Attach(
 	}
 	else
 	{
+		
 		glNamedFramebufferTexture(m_context.id, attachmentIndex, p_toAttach->GetID(), kMipMapLevel);
 	}
 

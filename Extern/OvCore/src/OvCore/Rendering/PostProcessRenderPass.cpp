@@ -9,6 +9,7 @@
 #include <OvCore/Rendering/SceneRenderer.h>
 #include <OvCore/ResourceManagement/ShaderManager.h>
 
+
 #include <OvRendering/Core/CompositeRenderer.h>
 #include <OvRendering/HAL/Profiling.h>
 
@@ -58,9 +59,12 @@ void OvCore::Rendering::PostProcessRenderPass::Draw(OvRendering::Data::PipelineS
 
 	if (auto stack = FindPostProcessStack(scene))
 	{
-		auto& framebuffer = m_renderer.GetFrameDescriptor().outputBuffer.value();
-
-		m_renderer.Blit(p_pso, framebuffer, m_pingPongBuffers[0], m_blitMaterial);
+		auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+		auto& presentbuffer = m_renderer.GetFrameDescriptor().presentBuffer.value();
+		//msaa is not permitted to sample !so we turn to presentbuffer
+		OvCore::Rendering::FramebufferUtil::CopyFramebufferColor(mssaaframebuffer, 0, presentbuffer, 0);
+		//OvCore::Rendering::FramebufferUtil::CopyFramebufferColor(framebuffer,0, m_pingPongBuffers[0],0);
+		m_renderer.Blit(p_pso, presentbuffer, m_pingPongBuffers[0], m_blitMaterial);
 
 		for (auto& effect : m_effects)
 		{
@@ -79,6 +83,6 @@ void OvCore::Rendering::PostProcessRenderPass::Draw(OvRendering::Data::PipelineS
 			}
 		}
 
-		m_renderer.Blit(p_pso, m_pingPongBuffers[0], framebuffer, m_blitMaterial);
+		m_renderer.Blit(p_pso, m_pingPongBuffers[0], mssaaframebuffer, m_blitMaterial);
 	}
 }

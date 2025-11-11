@@ -19,7 +19,13 @@ OvEditor::Panels::AView::AView
 		m_framebuffer,
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),
-		true, true, false
+		true, true, false,false
+	);
+	OvCore::Rendering::FramebufferUtil::SetupFramebuffer(
+		m_msaaframebuffer,
+		static_cast<uint32_t>(1),
+		static_cast<uint32_t>(1),
+		true, true, false, true
 	);
 }
 
@@ -48,6 +54,7 @@ void OvEditor::Panels::AView::Render()
 		FrameMarkStart(name.c_str());
 
 		m_framebuffer.Resize(winWidth, winHeight);
+		m_msaaframebuffer.Resize(winWidth,winHeight);
 
 		InitFrame();
 
@@ -55,11 +62,13 @@ void OvEditor::Panels::AView::Render()
 		frameDescriptor.renderWidth = winWidth;
 		frameDescriptor.renderHeight = winHeight;
 		frameDescriptor.camera = camera;
-		frameDescriptor.outputBuffer = m_framebuffer;
+		frameDescriptor.outputMsaaBuffer = m_msaaframebuffer;
+		frameDescriptor.presentBuffer = m_framebuffer;
 
 		m_renderer->BeginFrame(frameDescriptor);
 		DrawFrame();
 		m_renderer->EndFrame();
+		OvCore::Rendering::FramebufferUtil::CopyFramebufferColor(m_msaaframebuffer, 0, m_framebuffer, 0);
 		FrameMarkEnd(name.c_str());
 		OvCore::Global::ServiceLocator::Get<::OvEditor::Core::Context>().driver->OnFrameCompleted();
 	}

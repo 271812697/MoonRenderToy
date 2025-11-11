@@ -1,4 +1,4 @@
-#include <functional>
+﻿#include <functional>
 #include <ranges>
 #include <tracy/Tracy.hpp>
 
@@ -47,7 +47,7 @@ void OvRendering::Core::CompositeRenderer::DrawFrame()
 	{
 		m_currentPass = pass.second.get();
 
-		m_frameDescriptor.outputBuffer.value().Bind();
+		m_frameDescriptor.outputMsaaBuffer.value().Bind();
 		SetViewport(0, 0, m_frameDescriptor.renderWidth, m_frameDescriptor.renderHeight);
 
 		if (m_currentPass->IsEnabled())

@@ -197,7 +197,7 @@ void OvRendering::Data::Material::Bind(
 		{
 			program.SetUniform<FMatrix4>(name, std::get<FMatrix4>(value));
 		}
-		else if (uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE)
+		else if (uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE|| uniformType ==SAMPLER_BUFFER ||uniformType==UINTSAMPLER_BUFFER)
 		{
 			HAL::TextureHandle* handle = nullptr;
 			if (auto textureHandle = std::get_if<HAL::TextureHandle*>(&value))

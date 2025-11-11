@@ -1,7 +1,4 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <OvRendering/Entities/Camera.h>
 #include <OvRendering/Features/DebugShapeRenderFeature.h>
 

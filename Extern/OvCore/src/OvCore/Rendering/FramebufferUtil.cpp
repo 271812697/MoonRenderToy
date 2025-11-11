@@ -1,4 +1,4 @@
-
+﻿
 
 #include<format>
 
@@ -6,21 +6,32 @@
 #include <OvRendering/HAL/Framebuffer.h>
 #include <OvRendering/HAL/Renderbuffer.h>
 #include <OvRendering/HAL/Texture.h>
+#include <glad/glad.h>
 
 namespace OvCore::Rendering::FramebufferUtil
 {
+	void CopyFramebufferColor(OvRendering::HAL::Framebuffer& src_framebuffer,int src, OvRendering::HAL::Framebuffer& dst_framebuffer,int dst) {
+		auto s = src_framebuffer.GetAttachment<OvRendering::HAL::GLTexture>(OvRendering::Settings::EFramebufferAttachment::COLOR,src);
+		auto d = dst_framebuffer.GetAttachment<OvRendering::HAL::GLTexture>(OvRendering::Settings::EFramebufferAttachment::COLOR,dst);
+		auto[sw,sh]=src_framebuffer.GetSize();
+		auto [dw, dh] = dst_framebuffer.GetSize();
+		glNamedFramebufferReadBuffer(src_framebuffer.GetID(), GL_COLOR_ATTACHMENT0 + src);
+		glNamedFramebufferDrawBuffer(dst_framebuffer.GetID(), GL_COLOR_ATTACHMENT0 + dst);
+		glBlitNamedFramebuffer(src_framebuffer.GetID(), dst_framebuffer.GetID(), 0, 0, sw, sh, 0, 0, dw, dh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
 	void SetupFramebuffer(
 		OvRendering::HAL::Framebuffer& p_framebuffer,
 		const OvRendering::Settings::TextureDesc& p_textureDesc,
 		bool p_useDepth,
-		bool p_useStencil
+		bool p_useStencil,
+		bool useMulSample
 	)
 	{
 		using namespace OvRendering::HAL;
 		using namespace OvRendering::Settings;
 
 		const auto renderTexture = std::make_shared<Texture>(
-			ETextureType::TEXTURE_2D,
+			useMulSample? ETextureType::TEXTURE_2DMULSAMPLE:ETextureType::TEXTURE_2D,
 			std::format(
 				"{}/Color",
 				p_framebuffer.GetDebugName()
@@ -32,14 +43,14 @@ namespace OvCore::Rendering::FramebufferUtil
 
 		if (p_useDepth || p_useStencil)
 		{
-			const auto renderbuffer = std::make_shared<Renderbuffer>();
+			const auto renderbuffer = std::make_shared<Renderbuffer>(useMulSample);
 			const auto internalFormat = p_useStencil ? EInternalFormat::DEPTH_STENCIL : EInternalFormat::DEPTH_COMPONENT;
 			renderbuffer->Allocate(p_textureDesc.width, p_textureDesc.height, internalFormat);
 			if (p_useStencil)
 			{
-				p_framebuffer.Attach(renderbuffer, EFramebufferAttachment::STENCIL);
+				p_framebuffer.Attach(renderbuffer, EFramebufferAttachment::DEPTH_STENCIL);
 			}
-			if (p_useDepth)
+			else if (p_useDepth)
 			{
 				p_framebuffer.Attach(renderbuffer, EFramebufferAttachment::DEPTH);
 			}
@@ -54,7 +65,8 @@ namespace OvCore::Rendering::FramebufferUtil
 		uint32_t p_height,
 		bool p_useDepth,
 		bool p_useStencil,
-		bool p_useMipMaps
+		bool p_useMipMaps,
+		bool useMulSample
 	)
 	{
 		using namespace OvRendering::HAL;
@@ -76,13 +88,15 @@ namespace OvCore::Rendering::FramebufferUtil
 				.format = EFormat::RGBA,
 				.type = EPixelDataType::FLOAT
 			}
+			
 		};
 
 		SetupFramebuffer(
 			p_framebuffer,
 			renderTextureDesc,
 			p_useDepth,
-			p_useStencil
+			p_useStencil,
+			useMulSample
 		);
 	}
 }

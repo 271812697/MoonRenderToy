@@ -52,6 +52,7 @@ namespace MOON {
 	void Polygon::submit()
 	{
 		std::vector<VertexData> vData;
+		edgeValue.clear();
 		for (int i = 0;i < cellArray.size();i++) {
 			Cell& cell = cellArray[i];
 			for (int j = 2;j < cell.vertex.size();j++) {
@@ -61,12 +62,36 @@ namespace MOON {
 				vData.push_back(vd1);
 				vData.push_back(vd2);
 				vData.push_back(vd3);
+				if (j == 2) {
+					edgeValue.push_back(6);
+				}
+				else if (j == cell.vertex.size() - 1) {
+					edgeValue.push_back(3);
+				}
+				else
+				{
+					edgeValue.push_back(2);
+				}
 			}
 		}
 		numVertex = vData.size();
+
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vData.size() * sizeof(VertexData), (GLvoid*)vData.data(), GL_STREAM_DRAW);
+		
+		//
+		OvRendering::Settings::TextureDesc desc;
+		desc.isTextureBuffer = true;
+		desc.internalFormat = OvRendering::Settings::EInternalFormat::R8UI;
+		desc.buffetLen = edgeValue.size() * sizeof(uint8_t);
+		desc.mutableDesc= OvRendering::Settings::MutableTextureDesc{
+				.data=edgeValue.data()
+		};
+		edgeTexture = new OvRendering::Resources::Texture();;//new  OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER, "tbo");
+		auto gltexture=new OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER);
+		gltexture->Allocate(desc);
+		edgeTexture->SetTexture(std::unique_ptr<OvRendering::HAL::Texture>(gltexture));
 	}
 	void Polygon::bind()
 	{

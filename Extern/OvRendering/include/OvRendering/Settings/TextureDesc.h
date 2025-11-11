@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -18,6 +18,7 @@ namespace OvRendering::Settings
 		EFormat format = EFormat::RGBA;
 		EPixelDataType type = EPixelDataType::UNSIGNED_BYTE;
 		const void* data = nullptr;
+
 	};
 
 	/**
@@ -33,6 +34,9 @@ namespace OvRendering::Settings
 		ETextureWrapMode verticalWrap = ETextureWrapMode::REPEAT;
 		EInternalFormat internalFormat = EInternalFormat::RGBA;
 		bool useMipMaps = true;
+		bool isTextureBuffer = false;
+		unsigned int buffetLen = 0;
+		unsigned int texBufferId=0;
 		std::optional<MutableTextureDesc> mutableDesc = std::nullopt;
 	};
 }

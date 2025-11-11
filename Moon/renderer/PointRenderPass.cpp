@@ -37,17 +37,11 @@ void OvEditor::Rendering::PointRenderPass::Draw(OvRendering::Data::PipelineState
 			auto& sphereVao=sphere->GetMeshes()[0]->getVertexArray();
 			auto& instanceVBO = selectMesh->getVertexBuffer();
 			
-			//sphereVao.Bind();
-			glBindVertexArray(sphereVao.GetID());
+			sphereVao.Bind();
 			instanceVBO.Bind();
-			//std::vector<OvMaths::FVector3>pos = { {0,0,0},{10,10,10},{20,20,20} };
-			//vbo.Allocate(pos.size()*sizeof(OvMaths::FVector3));
-			//vbo.Upload(pos.data());
-			//vbo.Bind();
 			// 设置实例化属性指针（3D偏移量）
 			glEnableVertexAttribArray(5);
 			glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
-			
 			glVertexAttribDivisor(5, 1);  // 每个实例更新一次
 			sphereVao.Unbind();
 			instanceVBO.Unbind();
@@ -59,9 +53,6 @@ void OvEditor::Rendering::PointRenderPass::Draw(OvRendering::Data::PipelineState
 			element.stateMask = stateMask;
 			element.AddDescriptor(engineDrawableDescriptor);
 			m_renderer.DrawEntity(p_pso, element);
-		
 		}
-	
-
 	}
 }

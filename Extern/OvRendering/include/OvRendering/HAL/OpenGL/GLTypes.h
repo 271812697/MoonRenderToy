@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -315,6 +315,8 @@ struct OvTools::Utils::MappingFor<OvRendering::Settings::EUniformType, GLenum>
 		EnumValuePair<EnumType::FLOAT_MAT4, GL_FLOAT_MAT4>,
 		EnumValuePair<EnumType::DOUBLE_MAT4, GL_DOUBLE_MAT4>,
 		EnumValuePair<EnumType::SAMPLER_2D, GL_SAMPLER_2D>,
+		EnumValuePair<EnumType::SAMPLER_BUFFER, GL_SAMPLER_BUFFER>,
+		EnumValuePair<EnumType::UINTSAMPLER_BUFFER, GL_UNSIGNED_INT_SAMPLER_BUFFER>,
 		EnumValuePair<EnumType::SAMPLER_CUBE, GL_SAMPLER_CUBE>
 	>;
 };
@@ -449,6 +451,8 @@ struct OvTools::Utils::MappingFor<OvRendering::Settings::ETextureType, GLenum>
 	using EnumType = OvRendering::Settings::ETextureType;
 	using type = std::tuple<
 		EnumValuePair<EnumType::TEXTURE_2D, GL_TEXTURE_2D>,
+		EnumValuePair<EnumType::TEXTURE_BUFFER, GL_TEXTURE_BUFFER>,
+		EnumValuePair<EnumType::TEXTURE_2DMULSAMPLE, GL_TEXTURE_2D_MULTISAMPLE>,
 		EnumValuePair<EnumType::TEXTURE_CUBE, GL_TEXTURE_CUBE_MAP>
 	>;
 };

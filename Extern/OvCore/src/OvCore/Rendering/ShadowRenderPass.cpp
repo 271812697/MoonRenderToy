@@ -74,7 +74,7 @@ void OvCore::Rendering::ShadowRenderPass::Draw(OvRendering::Data::PipelineState 
 		}
 	}
 
-	if (auto output = frameDescriptor.outputBuffer)
+	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
 		output.value().Bind();
 	}

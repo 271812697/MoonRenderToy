@@ -92,7 +92,7 @@ void OvCore::Rendering::ReflectionRenderPass::Draw(OvRendering::Data::PipelineSt
 	// and reset the viewport.
 	engineBufferRenderFeature.SetCamera(frameDescriptor.camera.value());
 
-	if (auto output = frameDescriptor.outputBuffer)
+	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
 		output.value().Bind();
 	}

@@ -59,8 +59,7 @@ namespace MOON {
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
-			Guizmo::instance().newFrame(mSceneView);
-			Guizmo::instance().endFrame();
+
 		}
 		bool event(QEvent* evt)
 		{

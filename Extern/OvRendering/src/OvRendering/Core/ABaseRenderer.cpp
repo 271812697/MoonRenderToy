@@ -1,4 +1,4 @@
-#include <functional>
+﻿#include <functional>
 #include <tracy/Tracy.hpp>
 #include <OvRendering/Core/ABaseRenderer.h>
 #include <OvRendering/HAL/TextureHandle.h>
@@ -90,9 +90,9 @@ void OvRendering::Core::ABaseRenderer::BeginFrame(const Data::FrameDescriptor& p
 
 	m_frameDescriptor = p_frameDescriptor;
 
-	if (p_frameDescriptor.outputBuffer)
+	if (p_frameDescriptor.outputMsaaBuffer)
 	{
-		p_frameDescriptor.outputBuffer.value().Bind();
+		p_frameDescriptor.outputMsaaBuffer.value().Bind();
 	}
 
 	m_basePipelineState = m_driver.CreatePipelineState();
@@ -117,9 +117,9 @@ void OvRendering::Core::ABaseRenderer::EndFrame()
 
 	OVASSERT(s_isDrawing, "Cannot call EndFrame() before calling BeginFrame()");
 
-	if (m_frameDescriptor.outputBuffer)
+	if (m_frameDescriptor.outputMsaaBuffer)
 	{
-		m_frameDescriptor.outputBuffer.value().Unbind();
+		m_frameDescriptor.outputMsaaBuffer.value().Unbind();
 	}
 
 	m_isDrawing = false;

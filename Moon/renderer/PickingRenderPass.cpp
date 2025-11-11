@@ -1,4 +1,4 @@
-
+﻿
 
 #include <ranges>
 
@@ -141,7 +141,7 @@ void OvEditor::Rendering::PickingRenderPass::Draw(OvRendering::Data::PipelineSta
 
 	m_actorPickingFramebuffer.Unbind();
 
-	if (auto output = frameDescriptor.outputBuffer)
+	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
 		output.value().Bind();
 	}

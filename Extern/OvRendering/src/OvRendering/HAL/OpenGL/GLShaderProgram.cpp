@@ -1,4 +1,4 @@
-
+﻿
 
 #include <array>
 
@@ -197,6 +197,8 @@ void OvRendering::HAL::GLShaderProgram::QueryUniforms()
 			case FLOAT_MAT4: return GetUniform<OvMaths::FMatrix4>(name);
 			case SAMPLER_2D: return std::make_any<Resources::Texture*>(nullptr);
 			case SAMPLER_CUBE: return std::make_any<Resources::Texture*>(nullptr);
+			case SAMPLER_BUFFER: return std::make_any<Resources::Texture*>(nullptr);
+			case UINTSAMPLER_BUFFER: return std::make_any<Resources::Texture*>(nullptr);
 			default: return std::nullopt;
 			}
 			}();

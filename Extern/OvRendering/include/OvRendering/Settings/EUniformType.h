@@ -1,4 +1,4 @@
-
+﻿
 
 #pragma once
 
@@ -21,6 +21,8 @@ namespace OvRendering::Settings
 		FLOAT_MAT4,
 		DOUBLE_MAT4,
 		SAMPLER_2D,
+		SAMPLER_BUFFER,
+		UINTSAMPLER_BUFFER,
 		SAMPLER_CUBE
 	};
 }

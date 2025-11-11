@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <OvCore/Rendering/SceneRenderer.h>
 #include <OvRendering/HAL/UniformBuffer.h>
 #include <OvRendering/Entities/Camera.h>
@@ -77,6 +77,7 @@ namespace OvEditor {
 
 			OvMaths::FVector3 m_gridColor = OvMaths::FVector3{ 0.176f, 0.176f, 0.176f };
 
+			OvRendering::HAL::Framebuffer m_msaaframebuffer;
 			OvRendering::HAL::Framebuffer m_framebuffer;
 			std::unique_ptr<OvCore::Rendering::SceneRenderer> m_renderer;
 			int mWidth = 1;

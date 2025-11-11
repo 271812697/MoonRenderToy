@@ -24,7 +24,7 @@ out VS_OUT
 void main()
 { 
     float projectY=2/ubo_Projection[1][1];
-    float pixels=2;
+    float pixels=5;
     float ratio= (pixels / ubo_ScreenHeight);
     
     if(ubo_CameraType==0){
