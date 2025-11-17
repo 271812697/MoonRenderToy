@@ -104,8 +104,6 @@ namespace MOON {
 		format.setSamples(4);
 		this->setFormat(format);
 		RegService(ViewerWidget, *this);
-
-
 	}
 
 	ViewerWidget::~ViewerWidget()
@@ -158,6 +156,7 @@ namespace MOON {
 
 	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
 	{
+		event->pos();
 	}
 
 	void ViewerWidget::mouseReleaseEvent(QMouseEvent* event)

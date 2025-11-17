@@ -147,7 +147,5 @@ void main()
     vec3 diffuse=diff*albedo.rgb;
     vec3 specular=sign(diffuse)*pow(max(dot(N,lightDir),0),100)*0.03*albedo.rgb;
     vec3 col=diffuse+specular;
-   
-    col=pow(col, vec3(2.2));
     fResult = vec4(col,1.0);	
 }

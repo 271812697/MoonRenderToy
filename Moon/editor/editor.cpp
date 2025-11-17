@@ -9,6 +9,7 @@
 #include "UI/SettingPanel/SettingPanel.h"
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
+#include "UI/LogPanel/LogPanel.h"
 #include "Debug/debugPanel.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
@@ -48,6 +49,8 @@ namespace MOON {
 			self->addDockWidget(Qt::LeftDockWidgetArea, settingPanel);
 			auto resourcePanelDock = new ResPanel(self);
 			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
+			auto logPanelDock = new LogPanel(self);
+			self->addDockWidget(Qt::BottomDockWidgetArea, logPanelDock);
 			//auto debugWidget = new DebugWidget(self);
 			//self->addDockWidget(Qt::LeftDockWidgetArea, debugWidget);
 			//self->tabifyDockWidget(HierarchypanelDock, debugWidget);

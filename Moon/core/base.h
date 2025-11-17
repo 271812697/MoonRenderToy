@@ -1,7 +1,5 @@
-#pragma once
+﻿#pragma once
 #include <memory>
-
-
 template<typename T>
 inline constexpr bool const_false = false;
 

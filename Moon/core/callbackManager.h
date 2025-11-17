@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #include <utility>
 #include <atomic>
 #include <functional>
@@ -18,8 +17,6 @@ namespace MOON {
             CallBack() noexcept {}
             //CallBack(const CallBack&) = delete;
             //CallBack(CallBack&&) = delete;
-            
-
         private:
             friend CallBackManager;
             void* storage[8];
