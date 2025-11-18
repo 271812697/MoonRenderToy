@@ -1,6 +1,4 @@
-
-
-#include <utility>
+﻿#include <utility>
 #include <stdexcept>
 #include <cmath>
 
@@ -11,7 +9,11 @@ const OvMaths::FVector3 OvMaths::FVector3::Zero(0.0f, 0.0f, 0.0f);
 const OvMaths::FVector3 OvMaths::FVector3::Forward(0.0f, 0.0f, 1.0f);
 const OvMaths::FVector3 OvMaths::FVector3::Right(1.0f, 0.0f, 0.0f);
 const OvMaths::FVector3 OvMaths::FVector3::Up(0.0f, 1.0f, 0.0f);
-
+static float clamp(float t, float a, float b) {
+	if (t < a)return a;
+	if (t > b)return b;
+	return t;
+}
 OvMaths::FVector3::FVector3(float p_x, float p_y, float p_z) : x(p_x), y(p_y), z(p_z)
 {
 }
@@ -33,7 +35,25 @@ OvMaths::FVector3 OvMaths::FVector3::operator=(const FVector3& p_other)
 
 	return *this;
 }
+float OvMaths::FVector3::operator[](int i) const
+{
+	if (i == 0)
+		return x;
+	else if (i == 1)
+		return y;
+	else
+		return z;
+}
 
+float& OvMaths::FVector3::operator[](int i)
+{
+	if (i == 0)
+		return x;
+	else if (i == 1)
+		return y;
+	else
+		return z;
+}
 OvMaths::FVector3 OvMaths::FVector3::operator+(const FVector3& p_other) const
 {
 	return Add(*this, p_other);
@@ -185,6 +205,24 @@ OvMaths::FVector3 OvMaths::FVector3::Cross(const FVector3 & p_left, const FVecto
 		p_left.x * p_right.y - p_left.y * p_right.x
 	);
 }
+OvMaths::FVector3 OvMaths::FVector3::Min(const FVector3& p_left, const FVector3& p_right)
+{
+	return FVector3
+	(
+		std::min(p_left.x,p_right.x),
+		std::min(p_left.y, p_right.y),
+		std::min(p_left.z, p_right.z)
+	);
+}
+OvMaths::FVector3 OvMaths::FVector3::Max(const FVector3& p_left, const FVector3& p_right)
+{
+	return FVector3
+	(
+		std::max(p_left.x, p_right.x),
+		std::max(p_left.y, p_right.y),
+		std::max(p_left.z, p_right.z)
+	);
+}
 
 OvMaths::FVector3 OvMaths::FVector3::Normalize(const FVector3 & p_target)
 {
@@ -211,7 +249,9 @@ OvMaths::FVector3 OvMaths::FVector3::Lerp(const FVector3& p_start, const FVector
 {
 	return (p_start + (p_end - p_start) * p_alpha);
 }
-
+OvMaths::FVector3 OvMaths::FVector3::Clamp(const FVector3& a, const FVector3& min, const FVector3& max) {
+	return OvMaths::FVector3(clamp(a.x, min.x, max.x), clamp(a.y, min.y, max.y), clamp(a.z, min.z, max.z));
+}
 float OvMaths::FVector3::AngleBetween(const FVector3& p_from, const FVector3& p_to)
 {
 	float lengthProduct = Length(p_from) * Length(p_to);

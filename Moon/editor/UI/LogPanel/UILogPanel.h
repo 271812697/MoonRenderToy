@@ -46,7 +46,11 @@ public:
         m_logList = new QListWidget(dockWidgetContents);
         m_logList->setObjectName(QStringLiteral("m_logList"));
         m_logList->setContextMenuPolicy(Qt::CustomContextMenu);
-
+        m_logList->setStyleSheet("QListWidget::item { "
+            "height: 40px;"
+            "vertical-align: middle; "
+            "text-align: left;"
+            "}");
         horizontalLayout->addWidget(m_logList);
 
         verticalLayout_3 = new QVBoxLayout();

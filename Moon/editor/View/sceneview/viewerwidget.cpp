@@ -13,6 +13,7 @@
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "Guizmo/Guizmo.h"
+#include "core/log.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -156,7 +157,8 @@ namespace MOON {
 
 	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
 	{
-		event->pos();
+		LOG_INFO("%d %d", event->pos().x(), event->pos().y());
+
 	}
 
 	void ViewerWidget::mouseReleaseEvent(QMouseEvent* event)
