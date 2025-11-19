@@ -1,26 +1,21 @@
-
-
-#pragma once
-
-#include <OvRendering/Entities/Camera.h>
-#include <OvRendering/Features/DebugShapeRenderFeature.h>
-
-#include <OvCore/ECS/Actor.h>
-#include <OvCore/SceneSystem/SceneManager.h>
-#include <OvCore/ECS/Components/CModelRenderer.h>
-#include <OvCore/Resources/Material.h>
-#include <OvCore/ECS/Components/CAmbientBoxLight.h>
-#include <OvCore/ECS/Components/CAmbientSphereLight.h>
-#include <OvCore/Rendering/SceneRenderer.h>
-
+﻿#pragma once
+#include <Rendering/Entities/Camera.h>
+#include <Rendering/Features/DebugShapeRenderFeature.h>
+#include <Core/ECS/Actor.h>
+#include <Core/SceneSystem/SceneManager.h>
+#include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/Resources/Material.h>
+#include <Core/ECS/Components/CAmbientBoxLight.h>
+#include <Core/ECS/Components/CAmbientSphereLight.h>
+#include <Core/Rendering/SceneRenderer.h>
 #include "Context.h"
 
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 	/**
 	* Draw a gizmo
 	*/
-	class GizmoRenderFeature : public OvRendering::Features::ARenderFeature
+	class GizmoRenderFeature : public ::Rendering::Features::ARenderFeature
 	{
 	public:
 		/**
@@ -29,8 +24,8 @@ namespace OvEditor::Rendering
 		* @param p_executionPolicy
 		*/
 		GizmoRenderFeature(
-			OvRendering::Core::CompositeRenderer& p_renderer,
-			OvRendering::Features::EFeatureExecutionPolicy p_executionPolicy
+			::Rendering::Core::CompositeRenderer& p_renderer,
+			::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 		);
 
 		/**
@@ -42,15 +37,15 @@ namespace OvEditor::Rendering
 		* @param p_highlightedDirection
 		*/
 		void DrawGizmo(
-			const OvMaths::FVector3& p_position,
-			const OvMaths::FQuaternion& p_rotation,
-			OvEditor::Core::EGizmoOperation p_operation,
+			const Maths::FVector3& p_position,
+			const Maths::FQuaternion& p_rotation,
+			Editor::Core::EGizmoOperation p_operation,
 			bool p_pickable,
-			std::optional<OvEditor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
+			std::optional<Editor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
 		);
 
 	private:
-		OvCore::Resources::Material m_gizmoArrowMaterial;
-		OvCore::Resources::Material m_gizmoBallMaterial;
+		::Core::Resources::Material m_gizmoArrowMaterial;
+		::Core::Resources::Material m_gizmoBallMaterial;
 	};
 }

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "SettingWidget.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "Settings/DebugSetting.h"
 #include "QtWidgets/checkbox.h"
 #include <QTreeWidget>

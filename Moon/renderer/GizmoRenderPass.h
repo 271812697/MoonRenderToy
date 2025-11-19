@@ -1,19 +1,19 @@
 ﻿#pragma once
-#include <OvCore/ECS/Actor.h>
+#include <Core/ECS/Actor.h>
 
-#include <OvCore/Resources/Material.h>
-#include <OvCore/Rendering/SceneRenderer.h>
-#include <OvCore/SceneSystem/SceneManager.h>
+#include <Core/Resources/Material.h>
+#include <Core/Rendering/SceneRenderer.h>
+#include <Core/SceneSystem/SceneManager.h>
 
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 
-	class GizmoRenderPass : public OvRendering::Core::ARenderPass
+	class GizmoRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
-		GizmoRenderPass(OvRendering::Core::CompositeRenderer& p_renderer);
+		GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
 	private:
-		virtual void Draw(OvRendering::Data::PipelineState p_pso) override;
+		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 
 	};
 }

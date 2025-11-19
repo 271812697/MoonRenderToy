@@ -1,36 +1,36 @@
 ﻿#include <ranges>
-#include <OvCore/ECS/Components/CMaterialRenderer.h>
-#include <OvCore/Rendering/EngineDrawableDescriptor.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
+#include <Core/Rendering/EngineDrawableDescriptor.h>
 
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "PointRenderPass.h"
 #include "renderer/DebugSceneRenderer.h"
 #include <glad/glad.h>
-static OvRendering::Resources::Model* sphere = nullptr;
+static ::Rendering::Resources::Model* sphere = nullptr;
 
-OvEditor::Rendering::PointRenderPass::PointRenderPass(OvRendering::Core::CompositeRenderer& p_renderer)
-	:OvRendering::Core::ARenderPass(p_renderer)
+Editor::Rendering::PointRenderPass::PointRenderPass(::Rendering::Core::CompositeRenderer& p_renderer)
+	: ::Rendering::Core::ARenderPass(p_renderer)
 {
-	m_PointMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Point.ovfx"]);
+	m_PointMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Point.ovfx"]);
 	m_PointMaterial.SetDepthTest(true);
-	sphere=OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().modelManager[":Models/Sphere.fbx"];
+	sphere= ::Core::Global::ServiceLocator::Get<Editor::Core::Context>().modelManager[":Models/Sphere.fbx"];
 
 }
 
-void OvEditor::Rendering::PointRenderPass::Draw(OvRendering::Data::PipelineState p_pso)
+void Editor::Rendering::PointRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
 
-	auto& debugSceneDescriptor = m_renderer.GetDescriptor<OvEditor::Rendering::DebugSceneRenderer::DebugSceneDescriptor>();
+	auto& debugSceneDescriptor = m_renderer.GetDescriptor<Editor::Rendering::DebugSceneRenderer::DebugSceneDescriptor>();
 	//m_renderer.Clear(false, true, false);
 	if (debugSceneDescriptor.selectedActor)
 	{
 		auto& selectedActor = debugSceneDescriptor.selectedActor.value();
-		if (auto selectModel = selectedActor.GetComponent<OvCore::ECS::Components::CModelRenderer>(); selectModel) {
-			auto engineDrawableDescriptor = OvCore::Rendering::EngineDrawableDescriptor{
+		if (auto selectModel = selectedActor.GetComponent<::Core::ECS::Components::CModelRenderer>(); selectModel) {
+			auto engineDrawableDescriptor = ::Core::Rendering::EngineDrawableDescriptor{
 			selectedActor.transform.GetWorldMatrix(),
-	        OvMaths::FMatrix4::Identity
+	        Maths::FMatrix4::Identity
 			};
-			//OvMaths::FMatrix4::Scale(selectedActor.transform.GetWorldMatrix(),{0.1,0.1,0.1});
+			//Maths::FMatrix4::Scale(selectedActor.transform.GetWorldMatrix(),{0.1,0.1,0.1});
 			//selectMode.
 			
 			auto selectMesh=selectModel->GetModel()->GetMeshes()[0];
@@ -47,7 +47,7 @@ void OvEditor::Rendering::PointRenderPass::Draw(OvRendering::Data::PipelineState
 			instanceVBO.Unbind();
 			m_PointMaterial.SetGPUInstances(selectMesh->GetVertexCount());
 			auto stateMask = m_PointMaterial.GenerateStateMask();
-			OvRendering::Entities::Drawable element;
+			::Rendering::Entities::Drawable element;
 			element.mesh = *sphere->GetMeshes()[0];
 			element.material = m_PointMaterial;
 			element.stateMask = stateMask;

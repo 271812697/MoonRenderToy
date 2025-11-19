@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <string>
-namespace OvCore {
+namespace Core {
 	namespace SceneSystem {
 		class Scene;
 	}
@@ -14,6 +14,6 @@ namespace PathTrace
 	bool LoadSceneFromFile(const std::string& filename, Scene* scene, RenderOptions& renderOptions);
 	bool LoadSingleModel(const std::string& filename,Scene* scene);
 
-	bool LoadSceneFromFile(const std::string& filename, OvCore::SceneSystem::Scene* scene);
-	bool LoadGLTF(const std::string& filename, OvCore::SceneSystem::Scene* scene, Mat4 xform, bool binary);
+	bool LoadSceneFromFile(const std::string& filename, Core::SceneSystem::Scene* scene);
+	bool LoadGLTF(const std::string& filename, Core::SceneSystem::Scene* scene, Mat4 xform, bool binary);
 }

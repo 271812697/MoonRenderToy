@@ -1,0 +1,157 @@
+﻿#include <array>
+#include <Rendering/Resources/Mesh.h>
+
+Rendering::Resources::Mesh::Mesh(
+	std::span<const Geometry::Vertex> p_vertices,
+	std::span<const uint32_t> p_indices,
+	uint32_t p_materialIndex
+) :
+	m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
+	m_indicesCount(static_cast<uint32_t>(p_indices.size()))
+{
+	for (int i = 0;i < p_vertices.size();i++) {
+
+	}
+	m_materialIndex.push_back(p_materialIndex);
+	Upload(p_vertices, p_indices);
+	ComputeBoundingSphere(p_vertices);
+}
+Rendering::Resources::Mesh::~Mesh()
+{
+	delete m_bvh;
+}
+	
+void Rendering::Resources::Mesh::Bind() const
+{
+	m_vertexArray.Bind();
+}
+
+void Rendering::Resources::Mesh::Unbind() const
+{
+	m_vertexArray.Unbind();
+}
+
+uint32_t Rendering::Resources::Mesh::GetVertexCount() const
+{
+	return m_vertexCount;
+}
+
+uint32_t Rendering::Resources::Mesh::GetIndexCount() const
+{
+	return m_indicesCount;
+}
+
+const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere() const
+{
+	return m_boundingSphere;
+}
+
+std::vector<uint32_t> Rendering::Resources::Mesh::GetMaterialIndex() const
+{
+	return m_materialIndex;
+}
+
+void Rendering::Resources::Mesh::AddMaterial(int materialIndex)
+{
+	m_materialIndex.push_back(materialIndex);
+}
+
+Rendering::HAL::VertexArray& Rendering::Resources::Mesh::getVertexArray()
+{
+	return m_vertexArray;
+}
+
+Rendering::HAL::VertexBuffer& Rendering::Resources::Mesh::getVertexBuffer()
+{
+	return m_vertexBuffer;
+}
+
+void Rendering::Resources::Mesh::BuildBvh()
+{
+	if (m_bvh) {
+		delete m_bvh;
+	}
+	const int numTris = verticesUVX.size() / 3;
+	//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
+	std::vector<RadeonRays::bbox> bounds(numTris);
+
+	for (int i = 0; i < numTris; ++i)
+	{
+		const Vec3 v1 = Vec3(verticesUVX[i * 3 + 0]);
+		const Vec3 v2 = Vec3(verticesUVX[i * 3 + 1]);
+		const Vec3 v3 = Vec3(verticesUVX[i * 3 + 2]);
+
+		bounds[i].grow(v1);
+		bounds[i].grow(v2);
+		bounds[i].grow(v3);
+	}
+
+	mBvh->Build(&bounds[0], numTris);
+	meshBounds = mBvh->Bounds();
+}
+
+void Rendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices)
+{
+	if (m_vertexBuffer.Allocate(p_vertices.size_bytes()))
+	{
+		m_vertexBuffer.Upload(p_vertices.data());
+
+		if (m_indexBuffer.Allocate(p_indices.size_bytes()))
+		{
+			m_indexBuffer.Upload(p_indices.data());
+		}
+		else
+		{
+			("Empty index buffer!");
+		}
+		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+			{ Settings::EDataType::FLOAT, 3 }, // position
+			{ Settings::EDataType::FLOAT, 2 }, // texCoords
+			{ Settings::EDataType::FLOAT, 3 }, // normal
+			{ Settings::EDataType::FLOAT, 3 }, // tangent
+			{ Settings::EDataType::FLOAT, 3 }  // bitangent
+			}), m_vertexBuffer, m_indexBuffer);
+	}
+	else
+	{
+		//("Empty vertex buffer!");
+	}
+}
+
+void Rendering::Resources::Mesh::ComputeBoundingSphere(std::span<const Geometry::Vertex> p_vertices)
+{
+	m_boundingSphere.position = Maths::FVector3::Zero;
+	m_boundingSphere.radius = 0.0f;
+	
+
+	if (!p_vertices.empty())
+	{
+		float minX = std::numeric_limits<float>::max();
+		float minY = std::numeric_limits<float>::max();
+		float minZ = std::numeric_limits<float>::max();
+
+		float maxX = std::numeric_limits<float>::min();
+		float maxY = std::numeric_limits<float>::min();
+		float maxZ = std::numeric_limits<float>::min();
+
+		for (const auto& vertex : p_vertices)
+		{
+			minX = std::min(minX, vertex.position[0]);
+			minY = std::min(minY, vertex.position[1]);
+			minZ = std::min(minZ, vertex.position[2]);
+
+			maxX = std::max(maxX, vertex.position[0]);
+			maxY = std::max(maxY, vertex.position[1]);
+			maxZ = std::max(maxZ, vertex.position[2]);
+		}
+
+		m_boundingSphere.position = Maths::FVector3{ minX + maxX, minY + maxY, minZ + maxZ } / 2.0f;
+		m_boundingBox = Geometry::bbox(Maths::FVector3{ minX , minY , minZ  }, Maths::FVector3{  maxX,  maxY, maxZ });
+		for (const auto& vertex : p_vertices)
+		{
+			const auto& position = reinterpret_cast<const Maths::FVector3&>(vertex.position);
+			m_boundingSphere.radius = std::max(m_boundingSphere.radius, Maths::FVector3::Distance(m_boundingSphere.position, position));
+		}
+	}
+	m_bvh
+}

@@ -1,6 +1,6 @@
 ﻿#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "editor/View/pathtrace/pathtraceWidget.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #define __glad_h_
 #include "PathTrace.h"
 #include "LoadScene.h"

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <Eigen/Core>
-namespace OvRendering {
+namespace Rendering {
 	namespace Resources {
 		class Texture;
 	}
@@ -187,8 +187,8 @@ namespace MOON
 		unsigned int vbo = 0;
 		unsigned int numVertex = 0;
 		bool isDirty = false;
-		OvRendering::Resources::Texture* texture = nullptr;
-		OvRendering::Resources::Texture* edgeTexture = nullptr;
+		Rendering::Resources::Texture* texture = nullptr;
+		Rendering::Resources::Texture* edgeTexture = nullptr;
 		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color);
 		void submit();

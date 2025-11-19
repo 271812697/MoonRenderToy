@@ -1,5 +1,5 @@
 ﻿#include "CameraFitCommand.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
 namespace MOON {
@@ -13,9 +13,9 @@ namespace MOON {
 
 	void CameraFitCommand::execute()
 	{
-		auto& view = GetService(OvEditor::Panels::SceneView);
+		auto& view = GetService(Editor::Panels::SceneView);
 	
-		OvMaths::FVector3 dir = { 0,1,0 };
+		Maths::FVector3 dir = { 0,1,0 };
 		switch (this->ReactionMode)
 		{
 		case RESET_CAMERA:
@@ -41,7 +41,7 @@ namespace MOON {
 			break;
 		case APPLY_ISOMETRIC_VIEW:
 			dir = { 1,1,1 };
-			dir = OvMaths::FVector3::Normalize(dir);
+			dir = Maths::FVector3::Normalize(dir);
 			break;
 
 		case ZOOM_TO_DATA:

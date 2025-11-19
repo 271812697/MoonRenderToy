@@ -1,47 +1,41 @@
+﻿#include <Core/ECS/Components/CCamera.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
+#include <Core/ECS/Components/CPointLight.h>
+#include <Core/ECS/Components/CDirectionalLight.h>
+#include <Core/ECS/Components/CSpotLight.h>
 
-
-#include <OvCore/ECS/Components/CCamera.h>
-
-#include <OvCore/ECS/Components/CMaterialRenderer.h>
-#include <OvCore/ECS/Components/CPointLight.h>
-#include <OvCore/ECS/Components/CDirectionalLight.h>
-#include <OvCore/ECS/Components/CSpotLight.h>
-
-#include <OvRendering/Features/DebugShapeRenderFeature.h>
-
-#include <OvDebug/Assertion.h>
-
+#include <Rendering/Features/DebugShapeRenderFeature.h>
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
 #include "EditorResources.h"
 #include "AView.h"
 //#include "EditorSettings.h"
 #include "GizmoBehaviour.h"
-//#include "OvEditor/Core/EditorActions.h"
-#include "OvCore/Global/ServiceLocator.h"
+//#include "Editor/Core/EditorActions.h"
+#include "Core/Global/ServiceLocator.h"
 #include "GizmoRenderFeature.h"
 
-OvEditor::Rendering::GizmoRenderFeature::GizmoRenderFeature(
-	OvRendering::Core::CompositeRenderer& p_renderer,
-	OvRendering::Features::EFeatureExecutionPolicy p_executionPolicy
+Editor::Rendering::GizmoRenderFeature::GizmoRenderFeature(
+	::Rendering::Core::CompositeRenderer& p_renderer,
+	::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 ) :
-	OvRendering::Features::ARenderFeature(p_renderer, p_executionPolicy)
+	::Rendering::Features::ARenderFeature(p_renderer, p_executionPolicy)
 {
 	/* Gizmo Arrow Material */
-	m_gizmoArrowMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetShader("Gizmo"));
+	m_gizmoArrowMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Gizmo"));
 	m_gizmoArrowMaterial.SetGPUInstances(3);
 	m_gizmoArrowMaterial.SetProperty("u_IsBall", false);
 	m_gizmoArrowMaterial.SetProperty("u_IsPickable", false);
 
 	/* Gizmo Ball Material */
-	m_gizmoBallMaterial.SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetShader("Gizmo"));
+	m_gizmoBallMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Gizmo"));
 	m_gizmoBallMaterial.SetProperty("u_IsBall", true);
 	m_gizmoBallMaterial.SetProperty("u_IsPickable", false);
 }
 
-std::string GetArrowModelName(OvEditor::Core::EGizmoOperation p_operation)
+std::string GetArrowModelName(Editor::Core::EGizmoOperation p_operation)
 {
-	using namespace OvEditor::Core;
+	using namespace Editor::Core;
 
 	switch (p_operation)
 	{
@@ -52,28 +46,28 @@ std::string GetArrowModelName(OvEditor::Core::EGizmoOperation p_operation)
 	}
 }
 
-int GetAxisIndexFromDirection(std::optional<OvEditor::Core::GizmoBehaviour::EDirection> p_direction)
+int GetAxisIndexFromDirection(std::optional<Editor::Core::GizmoBehaviour::EDirection> p_direction)
 {
 	return p_direction ? static_cast<int>(p_direction.value()) : -1;
 }
 
-void OvEditor::Rendering::GizmoRenderFeature::DrawGizmo(
-	const OvMaths::FVector3& p_position,
-	const OvMaths::FQuaternion& p_rotation,
-	OvEditor::Core::EGizmoOperation p_operation,
+void Editor::Rendering::GizmoRenderFeature::DrawGizmo(
+	const Maths::FVector3& p_position,
+	const Maths::FQuaternion& p_rotation,
+	Editor::Core::EGizmoOperation p_operation,
 	bool p_pickable,
-	std::optional<OvEditor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
+	std::optional<Editor::Core::GizmoBehaviour::EDirection> p_highlightedDirection
 )
 {
 	auto pso = m_renderer.CreatePipelineState();
 
 	auto modelMatrix =
-		OvMaths::FMatrix4::Translation(p_position) *
-		OvMaths::FQuaternion::ToMatrix4(OvMaths::FQuaternion::Normalize(p_rotation));
+		Maths::FMatrix4::Translation(p_position) *
+		Maths::FQuaternion::ToMatrix4(Maths::FQuaternion::Normalize(p_rotation));
 
-	if (auto sphereModel = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetModel("Sphere"))
+	if (auto sphereModel = ::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Sphere"))
 	{
-		auto sphereModelMatrix = modelMatrix * OvMaths::FMatrix4::Scaling({ 0.1f, 0.1f, 0.1f });
+		auto sphereModelMatrix = modelMatrix * Maths::FMatrix4::Scaling({ 0.1f, 0.1f, 0.1f });
 
 		m_renderer.GetFeature<DebugModelRenderFeature>()
 			.DrawModelWithSingleMaterial(
@@ -86,7 +80,7 @@ void OvEditor::Rendering::GizmoRenderFeature::DrawGizmo(
 
 	auto arrowModelName = GetArrowModelName(p_operation);
 
-	if (auto arrowModel = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().editorResources->GetModel(arrowModelName))
+	if (auto arrowModel = ::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel(arrowModelName))
 	{
 		const auto axisIndex = GetAxisIndexFromDirection(p_highlightedDirection);
 		m_gizmoArrowMaterial.SetProperty("u_HighlightedAxis", axisIndex);

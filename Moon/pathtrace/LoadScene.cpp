@@ -8,14 +8,14 @@
 #include "Material.h"
 #include "Renderer.h"
 #include "renderer/Context.h"
-#include "OvCore/Global/ServiceLocator.h"
-#include "OvCore/ECS/Components/CMaterialRenderer.h"
-#include <OvCore/ResourceManagement/MaterialManager.h>
-#include <OvCore/ResourceManagement/ModelManager.h>
-#include <OvCore/ResourceManagement/ShaderManager.h>
+#include "Core/Global/ServiceLocator.h"
+#include "Core/ECS/Components/CMaterialRenderer.h"
+#include <Core/ResourceManagement/MaterialManager.h>
+#include <Core/ResourceManagement/ModelManager.h>
+#include <Core/ResourceManagement/ShaderManager.h>
 
-#include <OvCore/ResourceManagement/TextureManager.h>
-#include <OvCore/SceneSystem/SceneManager.h>
+#include <Core/ResourceManagement/TextureManager.h>
+#include <Core/SceneSystem/SceneManager.h>
 #include <tinygltf/include/tiny_gltf.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -206,7 +206,7 @@ namespace PathTrace
 				Vec3 lookAt;
 				float fov;
 				float aperture = 0, focalDist = 1;
-				bool matrixProvided = false;
+				bool matrixPrided = false;
 
 				while (fgets(line, kMaxLineLength, file))
 				{
@@ -226,12 +226,12 @@ namespace PathTrace
 						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
 						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
 					) != 0)
-						matrixProvided = true;
+						matrixPrided = true;
 				}
 
 				delete scene->getCamera();
 
-				if (matrixProvided)
+				if (matrixPrided)
 				{
 					Vec3 forward = Vec3(xform[2][0], xform[2][1], xform[2][2]);
 					position = Vec3(xform[3][0], xform[3][1], xform[3][2]);
@@ -376,7 +376,7 @@ namespace PathTrace
 				int parentid = -1;
 				char meshName[200] = "none";
 				char parentName[200] = "none";
-				bool matrixProvided = false;
+				bool matrixPrided = false;
 
 				while (fgets(line, kMaxLineLength, file))
 				{
@@ -412,7 +412,7 @@ namespace PathTrace
 						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
 						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
 					) != 0)
-						matrixProvided = true;
+						matrixPrided = true;
 
 					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
 					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
@@ -438,7 +438,7 @@ namespace PathTrace
 
 						Mat4 transformMat;
 
-						if (matrixProvided)
+						if (matrixPrided)
 							transformMat = xform;
 						else
 							transformMat = scale * rot * translate;
@@ -459,7 +459,7 @@ namespace PathTrace
 				std::string filename;
 				Vec4 rotQuat;
 				Mat4 xform, translate, rot, scale;
-				bool matrixProvided = false;
+				bool matrixPrided = false;
 
 				while (fgets(line, kMaxLineLength, file))
 				{
@@ -478,7 +478,7 @@ namespace PathTrace
 						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
 						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
 					) != 0)
-						matrixProvided = true;
+						matrixPrided = true;
 
 					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
 					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
@@ -493,7 +493,7 @@ namespace PathTrace
 					bool success = false;
 					Mat4 transformMat;
 
-					if (matrixProvided)
+					if (matrixPrided)
 						transformMat = xform;
 					else
 						transformMat = scale * rot * translate;
@@ -587,7 +587,7 @@ namespace PathTrace
 		return true;
 	}
 
-	bool LoadSceneFromFile(const std::string& filename, OvCore::SceneSystem::Scene* scene)
+	bool LoadSceneFromFile(const std::string& filename, Core::SceneSystem::Scene* scene)
 	{
 		FILE* file;
 		file = fopen(filename.c_str(), "r");
@@ -734,11 +734,11 @@ namespace PathTrace
 					sscanf(line, " mediumcolor %f %f %f", &material.mediumColor.x, &material.mediumColor.y, &material.mediumColor.z);
 					sscanf(line, " mediumanisotropy %f", &material.mediumAnisotropy);
 				}
-				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
-				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
-				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ material.baseColorR, material.baseColorG, material.baseColorB, material.opacity });
-				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ material.emissionR, material.emissionG, material.emissionB });
+				Core::Resources::Material* tempMat = new Core::Resources::Material();
+				Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(name, tempMat);
+				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
+				tempMat->SetProperty("u_Albedo", Maths::FVector4{ material.baseColorR, material.baseColorG, material.baseColorB, material.opacity });
+				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ material.emissionR, material.emissionG, material.emissionB });
 				tempMat->SetProperty("u_Metallic", material.metallic);
 				tempMat->SetProperty("u_Roughness", material.roughness);
 				tempMat->SetProperty("u_RefractionIndex", material.ior);
@@ -748,19 +748,19 @@ namespace PathTrace
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				// Albedo Texture
-				auto albedo = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + albedoTexName, true);
+				auto albedo = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + albedoTexName, true);
 				tempMat->SetProperty("u_AlbedoMap", albedo);
 
 
 				// MetallicRoughness Texture
-				auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+				auto roughness = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_RoughnessMap", roughness);
-				auto emission = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + emissionTexName, true);
+				auto emission = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + emissionTexName, true);
 				tempMat->SetProperty("u_EmissiveMap", roughness);
-				auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+				auto metallicMap = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_MetallicMap", metallicMap);
 				// Normal Map Texture
-				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
+				auto normalTex = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
 				tempMat->SetProperty("u_NormalMap", normalTex);
 				if (normalTex)
 					tempMat->AddFeature("NORMAL_MAPPING");
@@ -798,7 +798,7 @@ namespace PathTrace
 				int parentid = -1;
 				char meshName[200] = "none";
 				char parentName[200] = "none";
-				bool matrixProvided = false;
+				bool matrixPrided = false;
 				char matName[100];
 				while (fgets(line, kMaxLineLength, file))
 				{
@@ -830,7 +830,7 @@ namespace PathTrace
 						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
 						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
 					) != 0)
-						matrixProvided = true;
+						matrixPrided = true;
 
 					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
 					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
@@ -845,17 +845,17 @@ namespace PathTrace
 					{
 						actor.SetName(meshName);
 					}
-					auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(filename);
-					actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
+					auto mesh = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().GetResource(filename);
+					actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(mesh);
 					Mat4 transformMat;
 
-					if (matrixProvided)
+					if (matrixPrided)
 						transformMat = xform;
 					else
 						transformMat = scale * rot * translate;
-					actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(transformMat.data);
-					auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
-					auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(matName);
+					actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(transformMat.data);
+					auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+					auto mat = Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().GetResource(matName);
 					materilaRener.SetMaterialAtIndex(0, *mat);
 					materilaRener.UpdateMaterialList();
 
@@ -867,7 +867,7 @@ namespace PathTrace
 				std::string filename;
 				Vec4 rotQuat;
 				Mat4 xform, translate, rot, scale;
-				bool matrixProvided = false;
+				bool matrixPrided = false;
 
 				while (fgets(line, kMaxLineLength, file))
 				{
@@ -886,7 +886,7 @@ namespace PathTrace
 						&xform[0][2], &xform[1][2], &xform[2][2], &xform[3][2],
 						&xform[0][3], &xform[1][3], &xform[2][3], &xform[3][3]
 					) != 0)
-						matrixProvided = true;
+						matrixPrided = true;
 
 					sscanf(line, " position %f %f %f", &translate.data[3][0], &translate.data[3][1], &translate.data[3][2]);
 					sscanf(line, " scale %f %f %f", &scale.data[0][0], &scale.data[1][1], &scale.data[2][2]);
@@ -901,7 +901,7 @@ namespace PathTrace
 					bool success = false;
 					Mat4 transformMat;
 
-					if (matrixProvided)
+					if (matrixPrided)
 						transformMat = xform;
 					else
 						transformMat = scale * rot * translate;
@@ -1395,7 +1395,7 @@ namespace PathTrace
 		return true;
 	}
 
-	bool LoadGLTF(const std::string& filename, OvCore::SceneSystem::Scene* scene, Mat4 formaa, bool binary)
+	bool LoadGLTF(const std::string& filename, Core::SceneSystem::Scene* scene, Mat4 formaa, bool binary)
 	{
 		tinygltf::Model gltfModel;
 		tinygltf::TinyGLTF loader;
@@ -1509,15 +1509,15 @@ namespace PathTrace
 							uv0Stride = uv0BufferView.byteStride;
 					}
 
-					std::vector<OvMaths::FVector3> vertices;
-					std::vector<OvMaths::FVector3> normals;
-					std::vector<OvMaths::FVector2> uvs;
+					std::vector<Maths::FVector3> vertices;
+					std::vector<Maths::FVector3> normals;
+					std::vector<Maths::FVector2> uvs;
 
 					// Get vertex data
 					for (size_t vertexIndex = 0; vertexIndex < positionAccessor.count; vertexIndex++)
 					{
-						OvMaths::FVector3 vertex, normal;
-						OvMaths::FVector2 uv;
+						Maths::FVector3 vertex, normal;
+						Maths::FVector2 uv;
 
 						{
 							const uint8_t* address = positionBufferAddress + positionBufferView.byteOffset + positionAccessor.byteOffset + (vertexIndex * positionStride);
@@ -1575,7 +1575,7 @@ namespace PathTrace
 						memcpy(indices.data(), baseAddress, (indexAccessor.count * indexStride));
 					}
 					std::string modelname = filename + std::to_string(gltfMeshIdx) + "#" + std::to_string(gltfPrimIdx);
-					OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(modelname, vertices, normals, uvs, indices);
+					Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(modelname, vertices, normals, uvs, indices);
 
 					meshPrimMap[gltfMeshIdx].push_back(primIndex{ modelname, prim.material });
 				}
@@ -1590,7 +1590,7 @@ namespace PathTrace
 				std::string texName = gltfTex.name;
 				if (strcmp(gltfTex.name.c_str(), "") == 0)
 					texName = image.uri;
-				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().CreateFromMemory(texName, image.image.data(), image.width, image.height);
+				Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().CreateFromMemory(texName, image.image.data(), image.width, image.height);
 				textureMap[i] = texName;
 			}
 		}
@@ -1610,17 +1610,17 @@ namespace PathTrace
 					materilaMap[i] = filename + "::material " + std::to_string(i);
 				}
 
-				OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-				OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(materilaMap[i], tempMat);
+				Core::Resources::Material* tempMat = new Core::Resources::Material();
+				Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(materilaMap[i], tempMat);
 				tempMat->SetBackfaceCulling(false);;
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				tempMat->AddFeature("NORMAL_MAPPING");
-				tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-				tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ (float)pbr.baseColorFactor[0], (float)pbr.baseColorFactor[1], (float)pbr.baseColorFactor[2], (float)pbr.baseColorFactor[3] });
+				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.fx"]);
+				tempMat->SetProperty("u_Albedo", Maths::FVector4{ (float)pbr.baseColorFactor[0], (float)pbr.baseColorFactor[1], (float)pbr.baseColorFactor[2], (float)pbr.baseColorFactor[3] });
 				// Albedo Texture
 				if (pbr.baseColorTexture.index > -1) {
-					auto albedo = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.baseColorTexture.index], true);
+					auto albedo = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.baseColorTexture.index], true);
 					tempMat->SetProperty("u_AlbedoMap", albedo);
 				}
 				tempMat->SetProperty("u_AlphaClippingThreshold", static_cast<float>(gltfMaterial.alphaCutoff));
@@ -1632,22 +1632,22 @@ namespace PathTrace
 
 				// MetallicRoughness Texture
 				if (pbr.metallicRoughnessTexture.index > -1) {
-					auto roughness = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
+					auto roughness = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
 					tempMat->SetProperty("u_RoughnessMap", roughness);
 
-					auto metallicMap = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
+					auto metallicMap = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(textureMap[pbr.metallicRoughnessTexture.index], true);
 					tempMat->SetProperty("u_MetallicMap", metallicMap);
 				}
 				if (gltfMaterial.emissiveTexture.index > -1) {
-					auto emission = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.emissiveTexture.index], true);
+					auto emission = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.emissiveTexture.index], true);
 					tempMat->SetProperty("u_EmissiveMap", emission);
 				}
 				// Normal Map Texture
-				auto normalTex = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.normalTexture.index], true);
+				auto normalTex = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(textureMap[gltfMaterial.normalTexture.index], true);
 				tempMat->SetProperty("u_NormalMap", normalTex);
 				// Emission
 				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-				tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ (float)gltfMaterial.emissiveFactor[0], (float)gltfMaterial.emissiveFactor[1], (float)gltfMaterial.emissiveFactor[2] });
+				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ (float)gltfMaterial.emissiveFactor[0], (float)gltfMaterial.emissiveFactor[1], (float)gltfMaterial.emissiveFactor[2] });
 				// KHR_materials_transmission
 				if (gltfMaterial.extensions.find("KHR_materials_transmission") != gltfMaterial.extensions.end())
 				{
@@ -1749,16 +1749,16 @@ namespace PathTrace
 							actor.SetParent(*scene->FindActorByID(parentActorIdx));
 							actor.SetName(name);
 
-							auto mesh = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().GetResource(prims[i].path);
-							actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(mesh);
+							auto mesh = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().GetResource(prims[i].path);
+							actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(mesh);
 
-							actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(localMat.data);
-							auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+							actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(localMat.data);
+							auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 							if (prims[i].materialIndex < 0) {
 								assert(false);
 							}
 
-							auto mat = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
+							auto mat = Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().GetResource(materilaMap[prims[i].materialIndex < 0 ? 0 : prims[i].materialIndex]);
 							materilaRener.SetMaterialAtIndex(0, *mat);
 							materilaRener.UpdateMaterialList();
 
@@ -1772,7 +1772,7 @@ namespace PathTrace
 						auto& actor = scene->CreateActor();
 						actor.SetParent(*scene->FindActorByID(parentActorIdx));
 						actor.SetName(name);
-						actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(localMat.data);
+						actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(localMat.data);
 						for (size_t i = 0; i < gltfNode.children.size(); i++)
 						{
 							indexStack.push_back(gltfNode.children[i]);

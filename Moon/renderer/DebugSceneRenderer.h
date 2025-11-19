@@ -1,41 +1,41 @@
 ﻿#pragma once
-#include <OvRendering/Entities/Camera.h>
-#include <OvRendering/Features/DebugShapeRenderFeature.h>
+#include <Rendering/Entities/Camera.h>
+#include <Rendering/Features/DebugShapeRenderFeature.h>
 
-#include <OvCore/ECS/Actor.h>
-#include <OvCore/SceneSystem/SceneManager.h>
-#include <OvCore/ECS/Components/CModelRenderer.h>
-#include <OvCore/Resources/Material.h>
-#include <OvCore/ECS/Components/CAmbientBoxLight.h>
-#include <OvCore/ECS/Components/CAmbientSphereLight.h>
-#include <OvCore/Rendering/SceneRenderer.h>
+#include <Core/ECS/Actor.h>
+#include <Core/SceneSystem/SceneManager.h>
+#include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/Resources/Material.h>
+#include <Core/ECS/Components/CAmbientBoxLight.h>
+#include <Core/ECS/Components/CAmbientSphereLight.h>
+#include <Core/Rendering/SceneRenderer.h>
 #include "GizmoBehaviour.h"
 
 #include "Context.h"
 
-namespace OvEditor::Panels { class AView; }
+namespace Editor::Panels { class AView; }
 
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 	/**
-	* Provide a debug layer on top of the default scene renderer to see "invisible" entities such as
+	* Pride a debug layer on top of the default scene renderer to see "invisible" entities such as
 	* lights, cameras,
 	*/
-	class DebugSceneRenderer : public OvCore::Rendering::SceneRenderer
+	class DebugSceneRenderer : public ::Core::Rendering::SceneRenderer
 	{
 	public:
 		struct DebugSceneDescriptor
 		{
-			OvEditor::Core::EGizmoOperation gizmoOperation;
-			OvTools::Utils::OptRef<OvCore::ECS::Actor> highlightedActor;
-			OvTools::Utils::OptRef<OvCore::ECS::Actor> selectedActor;
-			std::optional<OvEditor::Core::GizmoBehaviour::EDirection> highlightedGizmoDirection;
+			Editor::Core::EGizmoOperation gizmoOperation;
+			Tools::Utils::OptRef<::Core::ECS::Actor> highlightedActor;
+			Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
+			std::optional<Editor::Core::GizmoBehaviour::EDirection> highlightedGizmoDirection;
 		};
 
 		/**
 		* Constructor of the Renderer
 		* @param p_driver
 		*/
-		DebugSceneRenderer(OvRendering::Context::Driver& p_driver);
+		DebugSceneRenderer(::Rendering::Context::Driver& p_driver);
 	};
 }

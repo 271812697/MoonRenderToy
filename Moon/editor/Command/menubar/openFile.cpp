@@ -1,7 +1,7 @@
 ﻿#include "openFile.h"
 #include "editor/View/sceneview/viewerwidget.h"
 #include "editor/View/pathtrace/pathtraceWidget.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include <QtWidgets/QFileDialog>
 #include <QCoreApplication>

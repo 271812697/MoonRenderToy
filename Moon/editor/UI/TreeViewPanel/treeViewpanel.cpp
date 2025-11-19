@@ -2,8 +2,8 @@
 #include "treeViewpanel.h"
 #include "editor/UI/TreeViewPanel/EntityTreeModel.h"
 #include "editor/UI/TreeViewPanel/EntityTreeStyle.h"
-#include "OvCore/Global/ServiceLocator.h"
-#include "OvCore/SceneSystem/SceneManager.h"
+#include "Core/Global/ServiceLocator.h"
+#include "Core/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
 #include "pathtrace/PathTrace.h"
 #include "pathtrace/Scene.h"
@@ -88,7 +88,7 @@ namespace MOON {
 		QRect textRect = style()->subElementRect(QStyle::SE_ItemViewItemText, &option, this);
 		QPoint posInItem = mousePos;
 		if (textRect.contains(posInItem)) {
-			OvCore::ECS::Actor* actor = static_cast<OvCore::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
+			::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
 			if (actor) {
 				if (isEntityCheckAble(actor->GetName())) {
                    emit setSelectActor(actor);

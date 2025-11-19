@@ -1,27 +1,27 @@
 ﻿#include <tracy/Tracy.hpp>
-#include <OvCore/Rendering/FramebufferUtil.h>
+#include <Core/Rendering/FramebufferUtil.h>
 #include "AView.h"
-#include <OvRendering/HAL/Profiling.h>
-#include "OvRendering/HAL/Common/TFramebuffer.h"
-#include "OvRendering/HAL/Common/TTexture.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include <Rendering/HAL/Profiling.h>
+#include "Rendering/HAL/Common/TFramebuffer.h"
+#include "Rendering/HAL/Common/TTexture.h"
+#include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include <QMouseEvent>
 #include <qapplication.h>
 #include <iostream>
 
-OvEditor::Panels::AView::AView
+Editor::Panels::AView::AView
 (
 	const std::string& p_title) :
 	m_framebuffer(p_title), name(p_title)
 {
-	OvCore::Rendering::FramebufferUtil::SetupFramebuffer(
+	::Core::Rendering::FramebufferUtil::SetupFramebuffer(
 		m_framebuffer,
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),
 		true, true, false,false
 	);
-	OvCore::Rendering::FramebufferUtil::SetupFramebuffer(
+	::Core::Rendering::FramebufferUtil::SetupFramebuffer(
 		m_msaaframebuffer,
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),
@@ -29,21 +29,21 @@ OvEditor::Panels::AView::AView
 	);
 }
 
-void OvEditor::Panels::AView::Update(float p_deltaTime)
+void Editor::Panels::AView::Update(float p_deltaTime)
 {
 
 }
 
 
 
-void OvEditor::Panels::AView::InitFrame()
+void Editor::Panels::AView::InitFrame()
 {
-	m_renderer->AddDescriptor<OvCore::Rendering::SceneRenderer::SceneDescriptor>(
+	m_renderer->AddDescriptor<::Core::Rendering::SceneRenderer::SceneDescriptor>(
 		CreateSceneDescriptor()
 	);
 }
 
-void OvEditor::Panels::AView::Render()
+void Editor::Panels::AView::Render()
 {
 	auto [winWidth, winHeight] = GetSafeSize();
 	auto camera = GetCamera();
@@ -58,7 +58,7 @@ void OvEditor::Panels::AView::Render()
 
 		InitFrame();
 
-		OvRendering::Data::FrameDescriptor frameDescriptor;
+		Rendering::Data::FrameDescriptor frameDescriptor;
 		frameDescriptor.renderWidth = winWidth;
 		frameDescriptor.renderHeight = winHeight;
 		frameDescriptor.camera = camera;
@@ -68,72 +68,70 @@ void OvEditor::Panels::AView::Render()
 		m_renderer->BeginFrame(frameDescriptor);
 		DrawFrame();
 		m_renderer->EndFrame();
-		OvCore::Rendering::FramebufferUtil::CopyFramebufferColor(m_msaaframebuffer, 0, m_framebuffer, 0);
+		::Core::Rendering::FramebufferUtil::CopyFramebufferColor(m_msaaframebuffer, 0, m_framebuffer, 0);
 		FrameMarkEnd(name.c_str());
-		OvCore::Global::ServiceLocator::Get<::OvEditor::Core::Context>().driver->OnFrameCompleted();
+		::Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver->OnFrameCompleted();
 	}
 }
 
-void OvEditor::Panels::AView::Present()
+void Editor::Panels::AView::Present()
 {
 	m_renderer->Present(m_framebuffer);
 }
 
-void OvEditor::Panels::AView::DrawFrame()
+void Editor::Panels::AView::DrawFrame()
 {
 	m_renderer->DrawFrame();
 }
 
-std::pair<uint16_t, uint16_t> OvEditor::Panels::AView::GetSafeSize() const
+std::pair<uint16_t, uint16_t> Editor::Panels::AView::GetSafeSize() const
 {
 	return { mWidth,mHeight };
 }
 
-const OvCore::Rendering::SceneRenderer& OvEditor::Panels::AView::GetRenderer() const
+const Core::Rendering::SceneRenderer& Editor::Panels::AView::GetRenderer() const
 {
 	return *m_renderer.get();
 }
 
-OvCore::Rendering::SceneRenderer::SceneDescriptor OvEditor::Panels::AView::CreateSceneDescriptor()
+Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::AView::CreateSceneDescriptor()
 {
 	auto scene = GetScene();
-
-	OVASSERT(scene, "No scene assigned to this view!");
-
+	assert(scene&&"No scene assigned to this view!");
 	return {
 		*scene
 	};
 }
 
-OvCore::ECS::Actor& OvEditor::Panels::AView::GetSelectedActor()
+Core::ECS::Actor& Editor::Panels::AView::GetSelectedActor()
 {
 	return *mTargetActor;
 }
 
-void OvEditor::Panels::AView::SelectActor(::OvCore::ECS::Actor& actor)
+void Editor::Panels::AView::SelectActor(::Core::ECS::Actor& actor)
 {
 	mTargetActor = &actor;
 }
 
-void OvEditor::Panels::AView::Resize(int width, int height)
+void Editor::Panels::AView::Resize(int width, int height)
 {
 	mWidth = width;
 	mHeight = height;
 }
 
-void OvEditor::Panels::AView::UnselectActor()
+void Editor::Panels::AView::UnselectActor()
 {
 	mTargetActor = nullptr;
 }
 
-bool OvEditor::Panels::AView::IsSelectActor()
+bool Editor::Panels::AView::IsSelectActor()
 {
 	return mTargetActor != nullptr;
 }
 
-namespace OvEditor::Panels {
+namespace Editor::Panels {
 
-	InputState& OvEditor::Panels::AView::getInutState()
+	InputState& Editor::Panels::AView::getInutState()
 	{
 		return input;
 	}

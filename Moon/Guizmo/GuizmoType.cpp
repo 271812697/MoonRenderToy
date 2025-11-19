@@ -1,8 +1,8 @@
 ﻿#include "Guizmo/GuizmoType.h"
 #include "Guizmo/MathUtil/MathUtil.h"
-#include "OvCore/Global/ServiceLocator.h"
-#include "OvCore/ResourceManagement/TextureManager.h"
-#include "OvRendering/Resources/Texture.h"
+#include "Core/Global/ServiceLocator.h"
+#include "Core/ResourceManagement/TextureManager.h"
+#include "Rendering/Resources/Texture.h"
 #include <glad/glad.h>
 namespace MOON {
 	void Cell::clear() {
@@ -81,17 +81,17 @@ namespace MOON {
 		glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vData.size() * sizeof(VertexData), (GLvoid*)vData.data(), GL_STREAM_DRAW);
 		
 		//
-		OvRendering::Settings::TextureDesc desc;
+		Rendering::Settings::TextureDesc desc;
 		desc.isTextureBuffer = true;
-		desc.internalFormat = OvRendering::Settings::EInternalFormat::R8UI;
+		desc.internalFormat = Rendering::Settings::EInternalFormat::R8UI;
 		desc.buffetLen = edgeValue.size() * sizeof(uint8_t);
-		desc.mutableDesc= OvRendering::Settings::MutableTextureDesc{
+		desc.mutableDesc= Rendering::Settings::MutableTextureDesc{
 				.data=edgeValue.data()
 		};
-		edgeTexture = new OvRendering::Resources::Texture();;//new  OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER, "tbo");
-		auto gltexture=new OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER);
+		edgeTexture = new Rendering::Resources::Texture();;//new  OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER, "tbo");
+		auto gltexture=new Rendering::HAL::GLTexture(Rendering::Settings::ETextureType::TEXTURE_BUFFER);
 		gltexture->Allocate(desc);
-		edgeTexture->SetTexture(std::unique_ptr<OvRendering::HAL::Texture>(gltexture));
+		edgeTexture->SetTexture(std::unique_ptr<Rendering::HAL::Texture>(gltexture));
 	}
 	void Polygon::bind()
 	{
@@ -237,7 +237,7 @@ namespace MOON {
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 			viewCube.initGpuBuffer();
-			viewCube.texture = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}
 		return viewCube;
 	}

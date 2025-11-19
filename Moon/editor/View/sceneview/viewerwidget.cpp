@@ -6,10 +6,10 @@
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
 
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
-#include "OvCore/ECS/Components/CMaterialRenderer.h"
+#include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "Guizmo/Guizmo.h"
@@ -34,10 +34,10 @@ namespace MOON {
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
 			
 			mScenePath = QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
-			mEditorContext = new OvEditor::Core::Context("", "");
+			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
-			mSceneView = new OvEditor::Panels::SceneView("SceneView");
-			RegService(OvEditor::Panels::SceneView, *mSceneView);
+			mSceneView = new Editor::Panels::SceneView("SceneView");
+			RegService(Editor::Panels::SceneView, *mSceneView);
 			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
 			Guizmo::instance().init();
@@ -83,8 +83,8 @@ namespace MOON {
 	private:
 		friend ViewerWidget;
 		ViewerWidget* mSelf = nullptr;
-		OvEditor::Core::Context* mEditorContext = nullptr;
-		OvEditor::Panels::SceneView* mSceneView = nullptr;
+		Editor::Core::Context* mEditorContext = nullptr;
+		Editor::Panels::SceneView* mSceneView = nullptr;
 		ParseScene* parser = nullptr;
 		int mViewWidth;
 		int mViewHeight;
@@ -179,7 +179,7 @@ namespace MOON {
 	{
 		mInternal->onSwitchScene(path);
 	}
-	void ViewerWidget::onActorSelected(OvCore::ECS::Actor* actor) {
+	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {
 		if (actor != nullptr) {
 			mInternal->mSceneView->SelectActor(*actor);
 		}

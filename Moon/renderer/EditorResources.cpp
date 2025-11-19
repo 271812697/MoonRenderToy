@@ -1,24 +1,21 @@
-
-
-#include <filesystem>
-
-#include <OvCore/Helpers/GUIDrawer.h>
-#include <OvDebug/Assertion.h>
+﻿#include <filesystem>
+#include <Core/Helpers/GUIDrawer.h>
 #include "EditorResources.h"
-#include <OvRendering/Settings/ETextureFilteringMode.h>
-#include <OvTools/Utils/PathParser.h>
+#include <Rendering/Settings/ETextureFilteringMode.h>
+#include <Tools/Utils/PathParser.h>
+#include <assert.h>
 
 namespace
 {
-	template<OvRendering::Settings::ETextureFilteringMode FilteringMode>
+	template<Rendering::Settings::ETextureFilteringMode FilteringMode>
 	auto CreateTexture(const std::filesystem::path& p_path)
 	{
-		return OvRendering::Resources::Loaders::TextureLoader::Create(
+		return Rendering::Resources::Loaders::TextureLoader::Create(
 			p_path.string(),
 			FilteringMode,
 			FilteringMode,
-			OvRendering::Settings::ETextureWrapMode::REPEAT,
-			OvRendering::Settings::ETextureWrapMode::REPEAT,
+			Rendering::Settings::ETextureWrapMode::REPEAT,
+			Rendering::Settings::ETextureWrapMode::REPEAT,
 			false
 		);
 	}
@@ -26,20 +23,20 @@ namespace
 	auto CreateModel(const std::filesystem::path& p_path)
 	{
 		const auto modelParserFlags =
-			OvRendering::Resources::Parsers::EModelParserFlags::TRIANGULATE |
-			OvRendering::Resources::Parsers::EModelParserFlags::GEN_SMOOTH_NORMALS |
-			OvRendering::Resources::Parsers::EModelParserFlags::OPTIMIZE_MESHES |
-			OvRendering::Resources::Parsers::EModelParserFlags::FIND_INSTANCES |
-			OvRendering::Resources::Parsers::EModelParserFlags::CALC_TANGENT_SPACE |
-			OvRendering::Resources::Parsers::EModelParserFlags::JOIN_IDENTICAL_VERTICES |
-			OvRendering::Resources::Parsers::EModelParserFlags::DEBONE |
-			OvRendering::Resources::Parsers::EModelParserFlags::FIND_INVALID_DATA |
-			OvRendering::Resources::Parsers::EModelParserFlags::IMPROVE_CACHE_LOCALITY |
-			OvRendering::Resources::Parsers::EModelParserFlags::GEN_UV_COORDS |
-			OvRendering::Resources::Parsers::EModelParserFlags::PRE_TRANSFORM_VERTICES |
-			OvRendering::Resources::Parsers::EModelParserFlags::GLOBAL_SCALE;
+			Rendering::Resources::Parsers::EModelParserFlags::TRIANGULATE |
+			Rendering::Resources::Parsers::EModelParserFlags::GEN_SMOOTH_NORMALS |
+			Rendering::Resources::Parsers::EModelParserFlags::OPTIMIZE_MESHES |
+			Rendering::Resources::Parsers::EModelParserFlags::FIND_INSTANCES |
+			Rendering::Resources::Parsers::EModelParserFlags::CALC_TANGENT_SPACE |
+			Rendering::Resources::Parsers::EModelParserFlags::JOIN_IDENTICAL_VERTICES |
+			Rendering::Resources::Parsers::EModelParserFlags::DEBONE |
+			Rendering::Resources::Parsers::EModelParserFlags::FIND_INVALID_DATA |
+			Rendering::Resources::Parsers::EModelParserFlags::IMPROVE_CACHE_LOCALITY |
+			Rendering::Resources::Parsers::EModelParserFlags::GEN_UV_COORDS |
+			Rendering::Resources::Parsers::EModelParserFlags::PRE_TRANSFORM_VERTICES |
+			Rendering::Resources::Parsers::EModelParserFlags::GLOBAL_SCALE;
 
-		return OvRendering::Resources::Loaders::ModelLoader::Create(
+		return Rendering::Resources::Loaders::ModelLoader::Create(
 			p_path.string(),
 			modelParserFlags
 		);
@@ -47,7 +44,7 @@ namespace
 
 	auto CreateShader(const std::filesystem::path& p_path)
 	{
-		return OvRendering::Resources::Loaders::ShaderLoader::Create(
+		return Rendering::Resources::Loaders::ShaderLoader::Create(
 			p_path.string()
 		);
 	}
@@ -57,7 +54,7 @@ namespace
 	{
 		for (const auto& [id, resource] : p_resources)
 		{
-			OVASSERT(resource != nullptr, "Failed to load resource with ID: " + id);
+			assert(resource != nullptr&&"Failed to load resource with ID: ");
 		}
 	}
 
@@ -71,10 +68,10 @@ namespace
 	}
 }
 
-OvEditor::Core::EditorResources::EditorResources(const std::string& p_editorAssetsPath)
+Editor::Core::EditorResources::EditorResources(const std::string& p_editorAssetsPath)
 {
-	using namespace OvRendering::Resources::Loaders;
-	using enum OvRendering::Settings::ETextureFilteringMode;
+	using namespace Rendering::Resources::Loaders;
+	using enum Rendering::Settings::ETextureFilteringMode;
 
 	const auto editorAssetsPath = std::filesystem::path{ p_editorAssetsPath };
 	const auto texturesFolder = editorAssetsPath / "Textures";
@@ -87,7 +84,7 @@ OvEditor::Core::EditorResources::EditorResources(const std::string& p_editorAsse
 		{"Stop", CreateTexture<LINEAR>(texturesFolder / "Stop.png")},
 		{"Next", CreateTexture<LINEAR>(texturesFolder / "Next.png")},
 		{"Refresh", CreateTexture<LINEAR>(texturesFolder / "Refresh.png")},
-		{"Move", CreateTexture<LINEAR>(texturesFolder / "Move.png")},
+		{"Me", CreateTexture<LINEAR>(texturesFolder / "Move.png")},
 		{"Rotate", CreateTexture<LINEAR>(texturesFolder / "Rotate.png")},
 		{"Scale", CreateTexture<LINEAR>(texturesFolder / "Scale.png")},
 		{"File", CreateTexture<LINEAR>(texturesFolder / "File.png")},
@@ -137,30 +134,30 @@ OvEditor::Core::EditorResources::EditorResources(const std::string& p_editorAsse
 	ValidateResources(m_shaders);
 
 	// Register the empty texture for the GUIDrawer to use it when a texture is missing
-	OvCore::Helpers::GUIDrawer::ProvideEmptyTexture(*m_textures["Empty_Texture"]);
+	::Core::Helpers::GUIDrawer::ProvideEmptyTexture(*m_textures["Empty_Texture"]);
 }
 
-OvEditor::Core::EditorResources::~EditorResources()
+Editor::Core::EditorResources::~EditorResources()
 {
 	for (auto& [_, texture] : m_textures)
 	{
-		OvRendering::Resources::Loaders::TextureLoader::Destroy(texture);
+		Rendering::Resources::Loaders::TextureLoader::Destroy(texture);
 	}
 
 	for (auto& [_, mesh] : m_models)
 	{
-		OvRendering::Resources::Loaders::ModelLoader::Destroy(mesh);
+		Rendering::Resources::Loaders::ModelLoader::Destroy(mesh);
 	}
 
 	for (auto& [_, shader] : m_shaders)
 	{
-		OvRendering::Resources::Loaders::ShaderLoader::Destroy(shader);
+		Rendering::Resources::Loaders::ShaderLoader::Destroy(shader);
 	}
 }
 
-OvRendering::Resources::Texture* OvEditor::Core::EditorResources::GetFileIcon(const std::string& p_filename)
+Rendering::Resources::Texture* Editor::Core::EditorResources::GetFileIcon(const std::string& p_filename)
 {
-	using namespace OvTools::Utils;
+	using namespace Tools::Utils;
 
 	const PathParser::EFileType fileType = PathParser::GetFileType(p_filename);
 
@@ -171,17 +168,17 @@ OvRendering::Resources::Texture* OvEditor::Core::EditorResources::GetFileIcon(co
 	);
 }
 
-OvRendering::Resources::Texture* OvEditor::Core::EditorResources::GetTexture(const std::string& p_id)
+Rendering::Resources::Texture* Editor::Core::EditorResources::GetTexture(const std::string& p_id)
 {
 	return TryGetResource(m_textures, p_id);
 }
 
-OvRendering::Resources::Model* OvEditor::Core::EditorResources::GetModel(const std::string& p_id)
+Rendering::Resources::Model* Editor::Core::EditorResources::GetModel(const std::string& p_id)
 {
 	return TryGetResource(m_models, p_id);
 }
 
-OvRendering::Resources::Shader* OvEditor::Core::EditorResources::GetShader(const std::string& p_id)
+Rendering::Resources::Shader* Editor::Core::EditorResources::GetShader(const std::string& p_id)
 {
 	return TryGetResource(m_shaders, p_id);
 }

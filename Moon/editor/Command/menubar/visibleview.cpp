@@ -2,7 +2,7 @@
 #include "editor/UI/ReousrcePanel/resourcePanel.h"
 #include "editor/UI/TreeViewPanel/hierarchypanel.h"
 #include "editor/UI/SettingPanel/SettingPanel.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
 

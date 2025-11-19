@@ -1,4 +1,4 @@
-set(lib_folder "Extern")
+﻿set(lib_folder "Extern")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(CMAKE_CXX_STANDARD 20)
 if(NOT TARGET glad)
@@ -69,7 +69,7 @@ if(NOT TARGET tinygltf)
 endif()
 
 if(NOT TARGET tools)   
-    set(tools_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvTools)
+    set(tools_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Tools)
     file(GLOB_RECURSE tools_impl CONFIGURE_DEPENDS  
     "${tools_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE tools_head CONFIGURE_DEPENDS  
@@ -110,7 +110,7 @@ if(NOT TARGET tracy)
     set_target_properties(tracy PROPERTIES FOLDER ${lib_folder}/tracy)
 endif()
 if(NOT TARGET math)
-    set(math_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvMaths)
+    set(math_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Maths)
     file(GLOB_RECURSE math_impl CONFIGURE_DEPENDS  
     "${math_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE math_head CONFIGURE_DEPENDS  
@@ -123,23 +123,8 @@ endif()
 
 
 
-if(NOT TARGET Debug)
-    set(Debug_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvDebug)
-    file(GLOB_RECURSE Debug_impl CONFIGURE_DEPENDS  
-    "${Debug_SOURCE_DIR_}/*.cpp")
-    file(GLOB_RECURSE Debug_head CONFIGURE_DEPENDS  
-    "${Debug_SOURCE_DIR_}/*.h" "${Debug_SOURCE_DIR_}/*.inl")
-    source_group(TREE "${Debug_SOURCE_DIR_}" FILES ${Debug_impl} ${Debug_head})
-    add_library(Debug STATIC ${Debug_impl} ${Debug_head})
-    target_link_libraries(Debug PUBLIC tools)
-    target_include_directories(Debug PUBLIC $<BUILD_INTERFACE:${Debug_SOURCE_DIR_}/include>)
-    set_target_properties(Debug PROPERTIES FOLDER ${lib_folder}/Debug)
-endif()
-
-
-
 if(NOT TARGET rendering)
-    set(rendering_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvRendering)
+    set(rendering_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Rendering)
     file(GLOB_RECURSE rendering_impl CONFIGURE_DEPENDS  
     "${rendering_SOURCE_DIR_}/*.cpp")
     file(GLOB_RECURSE rendering_head CONFIGURE_DEPENDS  
@@ -150,7 +135,6 @@ if(NOT TARGET rendering)
     target_link_libraries(rendering PUBLIC assimp)
     target_link_libraries(rendering PUBLIC glad)
     target_link_libraries(rendering PUBLIC std_image)
-    target_link_libraries(rendering PUBLIC Debug)
     target_link_libraries(rendering PUBLIC math)
     target_link_libraries(rendering PUBLIC tracy)
     target_compile_definitions(rendering PUBLIC GRAPHICS_API_OPENGL)
@@ -159,7 +143,7 @@ if(NOT TARGET rendering)
     set_target_properties(rendering PROPERTIES FOLDER ${lib_folder}/rendering)
 endif()
 if(NOT TARGET core)
-    set(core_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/OvCore)
+    set(core_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Core)
     file(GLOB_RECURSE core_impl CONFIGURE_DEPENDS  
     "${core_SOURCE_DIR_}/*.cpp" "${core_SOURCE_DIR_}/*.inl")
     file(GLOB_RECURSE core_head CONFIGURE_DEPENDS  
@@ -170,7 +154,6 @@ if(NOT TARGET core)
     target_link_libraries(core PUBLIC std_image)
     target_link_libraries(core PUBLIC glad)
 
-    target_link_libraries(core PUBLIC Debug)
     target_link_libraries(core PUBLIC math)
     target_link_libraries(core PUBLIC rendering)
     target_link_libraries(core PUBLIC tinyxml2)

@@ -1,14 +1,10 @@
-﻿
-
-#pragma once
-
+﻿#pragma once
 #include <queue>
-
-#include <OvRendering/Entities/Camera.h>
+#include <Rendering/Entities/Camera.h>
 
 #include "AView.h"
 
-namespace OvEditor::Core
+namespace Editor::Core
 {
 	/**
 	* A simple camera controller used to navigate into views
@@ -22,8 +18,8 @@ namespace OvEditor::Core
 		* @param p_camera
 		*/
 		CameraController(
-			OvEditor::Panels::AView& p_view,
-			OvRendering::Entities::Camera& p_camera
+			Editor::Panels::AView& p_view,
+			::Rendering::Entities::Camera& p_camera
 		);
 
 		/**
@@ -37,8 +33,8 @@ namespace OvEditor::Core
 		* Asks the camera to move to the target actor
 		* @param p_target
 		*/
-		void MoveToTarget(OvCore::ECS::Actor& p_target);
-		void MoveToPose(const OvMaths::FVector3& pos, const OvMaths::FQuaternion& quat);
+		void MoveToTarget(::Core::ECS::Actor& p_target);
+		void MoveToPose(const Maths::FVector3& pos, const Maths::FQuaternion& quat);
 
 		/**
 		* Defines the speed of the camera
@@ -55,23 +51,23 @@ namespace OvEditor::Core
 		* Defines the position of the camera
 		* @param p_position
 		*/
-		void SetPosition(const OvMaths::FVector3& p_position);
+		void SetPosition(const Maths::FVector3& p_position);
 
 		/**
 		* Defines the rotation of the camera
 		* @param p_rotation
 		*/
-		void SetRotation(const OvMaths::FQuaternion& p_rotation);
+		void SetRotation(const Maths::FQuaternion& p_rotation);
 
 		/**
 		* Returns the position of the camera
 		*/
-		const OvMaths::FVector3& GetPosition() const;
+		const Maths::FVector3& GetPosition() const;
 
 		/**
 		* Returns the position of the camera
 		*/
-		const OvMaths::FQuaternion& GetRotation() const;
+		const Maths::FQuaternion& GetRotation() const;
 
 		/**
 		* Returns true if the right mouse click is being pressed
@@ -88,7 +84,7 @@ namespace OvEditor::Core
 		* @note Usefull to force orbital camera or camera focus to target a specific actor
 		* @param p_actor
 		*/
-		void LockTargetActor(OvCore::ECS::Actor& p_actor);
+		void LockTargetActor(::Core::ECS::Actor& p_actor);
 
 		/**
 		* Removes any locked actor
@@ -96,10 +92,10 @@ namespace OvEditor::Core
 		void UnlockTargetActor();
 
 	private:
-		std::optional<std::reference_wrapper<OvCore::ECS::Actor>> GetTargetActor() const;
-		void HandleCameraPanning(const OvMaths::FVector2& p_mouseOffset, bool p_firstMouse);
-		void HandleCameraOrbit(OvCore::ECS::Actor& p_target, const OvMaths::FVector2& p_mouseOffset, bool p_firstMouse);
-		void HandleCameraFPSMouse(const OvMaths::FVector2& p_mouseOffset, bool p_firstMouse);
+		std::optional<std::reference_wrapper<::Core::ECS::Actor>> GetTargetActor() const;
+		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
+		void HandleCameraOrbit(::Core::ECS::Actor& p_target, const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
+		void HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 
 		void HandleCameraZoom();
 		void HandleCameraFPSKeyboard(float p_deltaTime);
@@ -107,27 +103,22 @@ namespace OvEditor::Core
 		void HandleMouseReleased();
 
 	private:
-
-
-
-		OvEditor::Panels::AView& m_view;
-		OvRendering::Entities::Camera& m_camera;
-
-		std::queue<std::tuple<OvMaths::FVector3, OvMaths::FQuaternion>> m_cameraDestinations;
-
+		Editor::Panels::AView& m_view;
+		::Rendering::Entities::Camera& m_camera;
+		std::queue<std::tuple<Maths::FVector3, Maths::FQuaternion>> m_cameraDestinations;
 		bool m_leftMousePressed = false;
 		bool m_middleMousePressed = false;
 		bool m_rightMousePressed = false;
 
-		OvMaths::FVector3 m_targetSpeed;
-		OvMaths::FVector3 m_currentMovementSpeed;
+		Maths::FVector3 m_targetSpeed;
+		Maths::FVector3 m_currentMovementSpeed;
 
-		OvMaths::FTransform* m_orbitTarget = nullptr;
-		OvMaths::FVector3 m_orbitStartOffset;
+		Maths::FTransform* m_orbitTarget = nullptr;
+		Maths::FVector3 m_orbitStartOffset;
 		bool m_firstMouse = true;
 		double m_lastMousePosX = 0.0;
 		double m_lastMousePosY = 0.0;
-		OvMaths::FVector3 m_ypr;
+		Maths::FVector3 m_ypr;
 		float m_mouseSensitivity = 0.12f;
 		float m_cameraDragSpeed = 0.03f;
 		float m_cameraOrbitSpeed = 0.5f;
@@ -135,6 +126,6 @@ namespace OvEditor::Core
 		float m_focusDistance = 15.0f;
 		float m_focusLerpCoefficient = 8.0f;
 
-		std::optional<std::reference_wrapper<OvCore::ECS::Actor>> m_lockedActor = std::nullopt;
+		std::optional<std::reference_wrapper<::Core::ECS::Actor>> m_lockedActor = std::nullopt;
 	};
 }

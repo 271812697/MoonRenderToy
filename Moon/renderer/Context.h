@@ -1,24 +1,17 @@
-
-
-#pragma once
-
+﻿#pragma once
 #include <filesystem>
 
-#include <OvCore/ResourceManagement/MaterialManager.h>
-#include <OvCore/ResourceManagement/ModelManager.h>
-#include <OvCore/ResourceManagement/ShaderManager.h>
-
-#include <OvCore/ResourceManagement/TextureManager.h>
-#include <OvCore/SceneSystem/SceneManager.h>
-
+#include <Core/ResourceManagement/MaterialManager.h>
+#include <Core/ResourceManagement/ModelManager.h>
+#include <Core/ResourceManagement/ShaderManager.h>
+#include <Core/ResourceManagement/TextureManager.h>
+#include <Core/SceneSystem/SceneManager.h>
 #include "EditorResources.h"
+#include <Rendering/HAL/UniformBuffer.h>
+#include <Rendering/HAL/ShaderStorageBuffer.h>
+#include <Tools/Filesystem/IniFile.h>
 
-
-#include <OvRendering/HAL/UniformBuffer.h>
-#include <OvRendering/HAL/ShaderStorageBuffer.h>
-#include <OvTools/Filesystem/IniFile.h>
-
-namespace OvEditor::Core
+namespace Editor::Core
 {
 	/**
 	* The Context handle the engine features setup
@@ -28,7 +21,7 @@ namespace OvEditor::Core
 	public:
 		/**
 		* Constructor
-		* @param p_projectFolder (including the .ovproject file)
+		* @param p_projectFolder (including the .project file)
 		*/
 		Context(const std::string& p_projectPath, const std::string& p_projectName);
 
@@ -62,19 +55,19 @@ namespace OvEditor::Core
 		const std::string projectScriptsPath;
 		const std::string editorAssetsPath;
 
-		std::unique_ptr<OvRendering::Context::Driver> driver;
+		std::unique_ptr<::Rendering::Context::Driver> driver;
 
-		std::unique_ptr<OvEditor::Core::EditorResources> editorResources;
+		std::unique_ptr<Editor::Core::EditorResources> editorResources;
 
 
 
-		OvCore::SceneSystem::SceneManager sceneManager;
+		::Core::SceneSystem::SceneManager sceneManager;
 
-		OvCore::ResourceManagement::ModelManager modelManager;
-		OvCore::ResourceManagement::TextureManager textureManager;
-		OvCore::ResourceManagement::ShaderManager shaderManager;
-		OvCore::ResourceManagement::MaterialManager materialManager;
+		::Core::ResourceManagement::ModelManager modelManager;
+		::Core::ResourceManagement::TextureManager textureManager;
+		::Core::ResourceManagement::ShaderManager shaderManager;
+		::Core::ResourceManagement::MaterialManager materialManager;
 
-		OvTools::Filesystem::IniFile projectSettings;
+		Tools::Filesystem::IniFile projectSettings;
 	};
 }

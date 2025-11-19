@@ -1,17 +1,14 @@
+﻿#include <filesystem>
+#include <Core/Global/ServiceLocator.h>
 
-
-#include <filesystem>
-
-#include <OvCore/Global/ServiceLocator.h>
-
-#include <OvDebug/Assertion.h>
 #include "Context.h"
 
-#include <OvRendering/Entities/Light.h>
-#include <OvTools/Utils/SystemCalls.h>
+#include <Rendering/Entities/Light.h>
+#include <Tools/Utils/SystemCalls.h>
+#include <assert.h>
 
-using namespace OvCore::Global;
-using namespace OvCore::ResourceManagement;
+using namespace Core::Global;
+using namespace ::Core::ResourceManagement;
 
 constexpr std::array<std::pair<int, int>, 13> kResolutions
 {
@@ -55,11 +52,11 @@ std::array<int, 4> FindBestFitWindowSizeAndPosition(std::array<int, 4> p_workAre
 		}
 	}
 
-	OVASSERT(false, "No resolution found to fit the work area");
+	assert(false, "No resolution found to fit the work area");
 	return {};
 }
 
-OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
+Editor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
 	projectPath(p_projectPath),
 	projectName(p_projectName),
 	projectFilePath(p_projectPath + p_projectName + ".ovproject"),
@@ -80,12 +77,12 @@ OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::st
 
 
 	/* Graphics context creation */
-	driver = std::make_unique<OvRendering::Context::Driver>(OvRendering::Settings::DriverSettings{ true });
+	driver = std::make_unique<::Rendering::Context::Driver>(::Rendering::Settings::DriverSettings{ true });
 
 
 
 	/* Editor resources */
-	editorResources = std::make_unique<OvEditor::Core::EditorResources>(editorAssetsPath);
+	editorResources = std::make_unique<Editor::Core::EditorResources>(editorAssetsPath);
 
 
 	/* Service Locator providing */
@@ -95,13 +92,13 @@ OvEditor::Core::Context::Context(const std::string& p_projectPath, const std::st
 	ServiceLocator::Provide<ShaderManager>(shaderManager);
 	ServiceLocator::Provide<MaterialManager>(materialManager);
 
-	ServiceLocator::Provide<OvCore::SceneSystem::SceneManager>(sceneManager);
+	ServiceLocator::Provide<::Core::SceneSystem::SceneManager>(sceneManager);
 
 
-	ServiceLocator::Provide<OvEditor::Core::Context>(*this);
+	ServiceLocator::Provide<Editor::Core::Context>(*this);
 }
 
-OvEditor::Core::Context::~Context()
+Editor::Core::Context::~Context()
 {
 	modelManager.UnloadResources();
 	textureManager.UnloadResources();
@@ -110,17 +107,17 @@ OvEditor::Core::Context::~Context()
 
 }
 
-void OvEditor::Core::Context::ResetProjectSettings()
+void Editor::Core::Context::ResetProjectSettings()
 {
 
 }
 
-bool OvEditor::Core::Context::IsProjectSettingsIntegrityVerified()
+bool Editor::Core::Context::IsProjectSettingsIntegrityVerified()
 {
 	return false;
 }
 
-void OvEditor::Core::Context::ApplyProjectSettings()
+void Editor::Core::Context::ApplyProjectSettings()
 {
 
 }

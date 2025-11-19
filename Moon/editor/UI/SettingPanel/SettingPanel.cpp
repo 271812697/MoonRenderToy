@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "SettingPanel.h"
 #include "SettingWidget.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QListWidget>
