@@ -24,7 +24,7 @@ namespace Editor {
 			virtual ::Rendering::Entities::Camera* GetCamera() = 0;
 			virtual ::Core::SceneSystem::Scene* GetScene() = 0;
 			std::pair<uint16_t, uint16_t> GetSafeSize() const;
-			const ::Core::Rendering::SceneRenderer& GetRenderer() const;
+		    ::Core::Rendering::SceneRenderer& GetRenderer() ;
 			::Core::ECS::Actor& GetSelectedActor();
 			void SelectActor(::Core::ECS::Actor& actor);
 			void Resize(int width, int height);

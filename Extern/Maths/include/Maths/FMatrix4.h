@@ -155,7 +155,8 @@ namespace Maths
 		* @param p_column
 		*/
 		float& operator()(uint8_t p_row, uint8_t p_column);
-
+		FMatrix4 RotateOnAxisY(float p_rotation);
+		FMatrix4 RotateOnAxisX(float p_rotation);
 		/**
 		* Check if elements are equals
 		* @param p_left

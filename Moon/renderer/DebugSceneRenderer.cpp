@@ -329,14 +329,14 @@ protected:
 				kSelectedOutlineColor,
 				kSelectedOutlineWidth
 			);
-			m_renderer.Clear(false, true, false, Maths::FVector3::Zero);
-			m_renderer.GetFeature<Editor::Rendering::GizmoRenderFeature>().DrawGizmo(
-				selectedActor.transform.GetWorldPosition(),
-				selectedActor.transform.GetWorldRotation(),
-				debugSceneDescriptor.gizmoOperation,
-				false,
-				debugSceneDescriptor.highlightedGizmoDirection
-			);
+			//m_renderer.Clear(false, true, false, Maths::FVector3::Zero);
+			//m_renderer.GetFeature<Editor::Rendering::GizmoRenderFeature>().DrawGizmo(
+			//	selectedActor.transform.GetWorldPosition(),
+			//	selectedActor.transform.GetWorldRotation(),
+			//	debugSceneDescriptor.gizmoOperation,
+			//	false,
+			//	debugSceneDescriptor.highlightedGizmoDirection
+			//);
 		}
 
 		if (debugSceneDescriptor.highlightedActor)

@@ -16,6 +16,7 @@ Editor::Rendering::GizmoRenderPass::GizmoRenderPass(::Rendering::Core::Composite
 
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
+		
 	auto& debugSceneDescriptor = m_renderer.GetDescriptor<Editor::Rendering::DebugSceneRenderer::DebugSceneDescriptor>();
 	auto& view = GetService(Editor::Panels::SceneView);;
 	auto& renderer = MOON::Guizmo::instance();
@@ -45,8 +46,6 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 				stack.push_back(cur->rc);
 			}
 		}
-
-
 		auto pmin = cur->bounds.pmin;
 		auto pmax = cur->bounds.pmax;
 		renderer.drawAlignedBox({ pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });

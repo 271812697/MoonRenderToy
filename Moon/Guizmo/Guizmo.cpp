@@ -130,8 +130,23 @@ namespace MOON
 		mLineMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
-		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
-		mLitMaterial->AddFeature("WITH_EDGE");
+		mCellMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
+		mCellMaterial->AddFeature("WITH_EDGE");
+		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+		mLitMaterial->SetBackfaceCulling(false);;
+		mLitMaterial->SetCastShadows(false);
+		mLitMaterial->SetReceiveShadows(false);
+
+
+		mLitMaterial->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+
+		mLitMaterial->SetProperty("u_AlphaClippingThreshold", 1.0f);
+		mLitMaterial->SetProperty("u_Roughness", 0.1f);
+		mLitMaterial->SetProperty("u_Metallic", 0.1f);
+		// Emission
+		mLitMaterial->SetProperty("u_EmissiveIntensity", 1.0f);
+		mLitMaterial->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
+
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
 		glBindVertexArray(VertexArray);
@@ -159,6 +174,7 @@ namespace MOON
 		delete mLineMaterial;
 		delete mPointMaterial;
 		delete mTriangleMaterial;
+		delete mCellMaterial;
 		delete mLitMaterial;
 	}
 	void Guizmo::begin(PrimitiveMode _mode)
@@ -3962,8 +3978,6 @@ namespace MOON
 			);
 		
 			auto proj=Maths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
-			
-			
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
 			if (faceIndex != -1) {
 				viewCube.setCellColor(faceIndex,{255,0,255,255});
@@ -3973,21 +3987,28 @@ namespace MOON
 				}
 			}
 			
-			//mLitMaterial->SetProperty("uViewPos", renderView->GetCamera()->GetPosition());
-			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
-			mLitMaterial->SetProperty("uViewMatrix", view);
-			mLitMaterial->SetProperty("uVProjMatrix", proj);
-			mLitMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
-			mLitMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
-			mLitMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
-
-			mLitMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
-			
-			
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
+			mCellMaterial->SetProperty("uViewMatrix", view);
+			mCellMaterial->SetProperty("uVProjMatrix", proj);
+			mCellMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
+			mCellMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
+			mCellMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
-			
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
+	/*		Maths::FMatrix4 model =
+				Maths::FMatrix4::Translation({ 0,0,0 }) *
+				Maths::FMatrix4::Scaling({ 5,5,5 });
+			mCellMaterial->SetProperty("uModelMatrix", model);
+			
+			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial,model);
+			
+			mCellMaterial->SetProperty("uModelMatrix", model.RotateOnAxisY(-90));
+			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial, model);
+
+			mCellMaterial->SetProperty("uModelMatrix", model.RotateOnAxisX(-90));
+			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial, model);*/
 		}
 	}
 	void Guizmo::drawMesh()

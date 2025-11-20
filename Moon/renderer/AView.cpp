@@ -86,7 +86,7 @@ std::pair<uint16_t, uint16_t> Editor::Panels::AView::GetSafeSize() const
 	return { mWidth,mHeight };
 }
 
-const Core::Rendering::SceneRenderer& Editor::Panels::AView::GetRenderer() const
+ Core::Rendering::SceneRenderer& Editor::Panels::AView::GetRenderer() 
 {
 	return *m_renderer.get();
 }

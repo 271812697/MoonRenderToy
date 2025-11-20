@@ -2,12 +2,23 @@
 #include "Guizmo/MathUtil/MathUtil.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/ResourceManagement/TextureManager.h"
+#include "Core/Global/ServiceLocator.h"
 #include "Rendering/Resources/Texture.h"
+#include "Rendering/Resources/Mesh.h"
+#include "Rendering/Resources/Model.h"
+#include "renderer/Context.h"
 #include <glad/glad.h>
 namespace MOON {
 	void Cell::clear() {
 		vertex.clear();
 		uv.clear();
+	}
+	Cell::Cell(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2)
+	{
+		addPoint(v0,{0,0});
+		addPoint(v1, { 0,0 });
+		addPoint(v2, { 0,0 });
+		n = (v1 - v0).cross(v2-v0).normalized();
 	}
 	void Cell::addPoint(const Eigen::Vector3f& v, const Eigen::Vector2f& tex)
 	{
@@ -109,6 +120,24 @@ namespace MOON {
 	{
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
+	}
+	void Polygon::addMesh(Rendering::Resources::Mesh* mesh,const Maths::FMatrix4& matrix)
+	{
+		int vcnt=mesh->GetVertexCount();
+		int icnt = mesh->GetIndexCount();
+		int num = icnt > 0 ? icnt : vcnt;
+		for (int i = 0; i < num;i+=3) {
+			auto v0 = Maths::FMatrix4::MulPoint(matrix,mesh->GetVertexPosition(i));
+			auto v1 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+1));
+			auto v2 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+2));
+			cellArray.push_back(Cell({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z }));
+		}
+	}
+	void Polygon::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix)
+	{
+		for (auto m:model->GetMeshes()) {
+			addMesh(m,matrix);
+		}
 	}
 	void Polygon::initGpuBuffer()
 	{
@@ -236,6 +265,14 @@ namespace MOON {
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			Maths::FMatrix4 model =
+				Maths::FMatrix4::Translation({ 0,0,0 }) *
+				Maths::FMatrix4::Scaling({ 5,5,5 });
+			
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"),model);
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(-90));
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90));
+					
 			viewCube.initGpuBuffer();
 			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}
