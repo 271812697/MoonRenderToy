@@ -33,9 +33,6 @@ void Editor::Panels::AView::Update(float p_deltaTime)
 {
 
 }
-
-
-
 void Editor::Panels::AView::InitFrame()
 {
 	m_renderer->AddDescriptor<::Core::Rendering::SceneRenderer::SceneDescriptor>(
@@ -139,6 +136,14 @@ namespace Editor::Panels {
 	void AView::ClearEvents()
 	{
 		input.ClearEvents();
+	}
+	Maths::FVector3 AView::GetRoaterCenter()
+	{
+		return m_roaterCenter;
+	}
+	void AView::SetRotaterCenter(const Maths::FVector3& center)
+	{
+		m_roaterCenter = center;
 	}
 }
 

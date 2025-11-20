@@ -22,6 +22,7 @@ namespace Editor::Panels
 		void SetGizmoOperation(Core::EGizmoOperation p_operation);
 		Core::EGizmoOperation GetGizmoOperation() const;
 		void ReceiveEvent(QEvent* e);
+		bool MouseHit(Maths::FVector3& out);
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 

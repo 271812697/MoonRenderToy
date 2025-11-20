@@ -105,6 +105,7 @@ void Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 			{
 				m_lastMousePosX = xPos;
 				m_lastMousePosY = yPos;
+				
 				HandleFirstMouse();
 				m_firstMouse = false;
 			}
@@ -118,12 +119,7 @@ void Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 			m_lastMousePosY = yPos;
 			if (m_rightMousePressed)
 			{	
-				if (m_view.IsSelectActor())
-				{
-					auto& target = m_view.GetSelectedActor();
-					HandleCameraOrbit(target, mouseOffset, wasFirstMouse);
-				}
-				
+				HandleCameraOrbit(m_view.GetRoaterCenter(), mouseOffset, wasFirstMouse);
 			}
 			else if (m_middleMousePressed)
 			{
@@ -138,17 +134,18 @@ void Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 		HandleCameraFPSKeyboard(p_deltaTime);
 	}
 }
-Maths::FVector3 RemeRoll(const Maths::FVector3& p_ypr);
+Maths::FVector3 RemoveRoll(const Maths::FVector3& p_ypr);
 void Editor::Core::CameraController::HandleFirstMouse()
 {
 	m_ypr = Maths::FQuaternion::EulerAngles(m_camera.GetRotation());
-	m_ypr = RemeRoll(m_ypr);
-	if (m_view.IsSelectActor()) {
+	m_ypr = RemoveRoll(m_ypr);
+	m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_view.GetRoaterCenter(), m_camera.GetPosition());
+	//if (m_view.IsSelectActor()) {
 
-		m_orbitTarget = &m_view.GetSelectedActor().transform.GetFTransform();
-		m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_orbitTarget->GetWorldPosition(), m_camera.GetPosition());
+	//	m_orbitTarget = &m_view.GetSelectedActor().transform.GetFTransform();
+	//	m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_orbitTarget->GetWorldPosition(), m_camera.GetPosition());
 
-	}
+	//}
 
 }
 
@@ -237,7 +234,7 @@ void Editor::Core::CameraController::HandleCameraPanning(const Maths::FVector2& 
 	m_camera.SetPosition(m_camera.GetPosition() - m_camera.transform->GetWorldUp() * mouseOffset.y);
 }
 
-Maths::FVector3 RemeRoll(const Maths::FVector3& p_ypr)
+Maths::FVector3 RemoveRoll(const Maths::FVector3& p_ypr)
 {
 	Maths::FVector3 result = p_ypr;
 
@@ -255,7 +252,7 @@ Maths::FVector3 RemeRoll(const Maths::FVector3& p_ypr)
 }
 
 void Editor::Core::CameraController::HandleCameraOrbit(
-	::Core::ECS::Actor& p_target,
+	const Maths::FVector3& center,
 	const Maths::FVector2& p_mouseOffset,
 	bool p_firstMouse
 )
@@ -264,9 +261,8 @@ void Editor::Core::CameraController::HandleCameraOrbit(
 	m_ypr.y += -mouseOffset.x;
 	m_ypr.x += -mouseOffset.y;
 	m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
+	Maths::FTransform pivotTransform(center);
 
-	auto& target = p_target.transform.GetFTransform();
-	Maths::FTransform pivotTransform(target.GetWorldPosition());
 	Maths::FTransform cameraTransform(m_orbitStartOffset);
 	cameraTransform.SetParent(pivotTransform);
 	pivotTransform.RotateLocal(Maths::FQuaternion(m_ypr));

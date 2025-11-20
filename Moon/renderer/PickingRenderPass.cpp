@@ -147,22 +147,17 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 )
 {
 	const auto& filteredDrawables = m_renderer.GetDescriptor<::Core::Rendering::SceneRenderer::SceneFilteredDrawablesDescriptor>();
-
 	auto drawPickableModels = [&](auto drawables) {
 		for (auto& drawable : drawables)
 		{
 			const std::string pickingPassName = "PICKING_PASS";
-
 			// If the material has picking pass, use it, otherwise use the picking fallback material
 			auto& targetMaterial =
 				(drawable.material && drawable.material->IsValid() && drawable.material->HasPass(pickingPassName)) ?
 				drawable.material.value() :
 				m_actorPickingFallbackMaterial;
-
 			const auto& actor = drawable.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDrawableDescriptor>().actor;
-
 			PreparePickingMaterial(actor, targetMaterial);
-
 			// Prioritize using the actual material state mask.
 			auto stateMask =
 				drawable.material && drawable.material->IsValid() ?
@@ -175,7 +170,6 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 			finalDrawable.stateMask.frontfaceCulling = false;
 			finalDrawable.stateMask.backfaceCulling = false;
 			finalDrawable.pass = pickingPassName;
-
 			m_renderer.DrawEntity(p_pso, finalDrawable);
 		}
 		};

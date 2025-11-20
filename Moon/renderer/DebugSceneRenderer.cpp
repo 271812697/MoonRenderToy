@@ -20,6 +20,7 @@
 #include "PickingRenderPass.h"
 
 #include "Core/Global/ServiceLocator.h"
+#include "renderer/SceneView.h"
 #include <Rendering/Features/DebugShapeRenderFeature.h>
 #include <Rendering/Features/FrameInfoRenderFeature.h>
 #include <Rendering/Features/LightingRenderFeature.h>
@@ -316,6 +317,7 @@ protected:
 
 		if (debugSceneDescriptor.selectedActor)
 		{
+
 			auto& selectedActor = debugSceneDescriptor.selectedActor.value();
 			const bool isActorHered = debugSceneDescriptor.highlightedActor && debugSceneDescriptor.highlightedActor->GetID() == selectedActor.GetID();
 

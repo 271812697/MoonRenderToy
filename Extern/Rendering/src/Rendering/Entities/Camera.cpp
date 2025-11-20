@@ -255,11 +255,18 @@ void Rendering::Entities::Camera::OrthZoom(float delta, int x, int y)
 	const Maths::FVector3& right = transform->GetWorldRight();
 	const Maths::FVector3& forward = transform->GetWorldForward();
 	const Maths::FVector3& position = transform->GetWorldPosition();
-	float fovRad = m_fov/2.0f * (3.14159265359f / 180.0f);
-	float height = v*m_near*std::tan(fovRad);
-	float width = u*m_ratio * m_near * std::tan(fovRad);
-	Maths::FVector3 dir= forward * m_near + height * up - width * right;
-	return Geometry::Ray(position,dir);
+	if (m_projectionMode== Rendering::Settings::EProjectionMode::PERSPECTIVE) {
+		float fovRad = m_fov/2.0f * (3.14159265359f / 180.0f);
+		float height = v*m_near*std::tan(fovRad);
+		float width = u*m_ratio * m_near * std::tan(fovRad);
+		Maths::FVector3 dir= forward * m_near + height * up - width * right;
+		return Geometry::Ray(position,dir);
+	}
+	const float height = v * m_size;
+	const float width = u * m_size * m_ratio;
+	Maths::FVector3 screenPos = position + height * up - width * right;
+	return Geometry::Ray(screenPos, forward);
+
 }
 
 Maths::FMatrix4 Rendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) 

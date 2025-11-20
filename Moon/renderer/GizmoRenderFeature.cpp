@@ -8,10 +8,8 @@
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
 #include "EditorResources.h"
-#include "AView.h"
-//#include "EditorSettings.h"
+//#include "AView.h"
 #include "GizmoBehaviour.h"
-//#include "Editor/Core/EditorActions.h"
 #include "Core/Global/ServiceLocator.h"
 #include "GizmoRenderFeature.h"
 
@@ -84,7 +82,7 @@ void Editor::Rendering::GizmoRenderFeature::DrawGizmo(
 	{
 		const auto axisIndex = GetAxisIndexFromDirection(p_highlightedDirection);
 		m_gizmoArrowMaterial.SetProperty("u_HighlightedAxis", axisIndex);
-
+		
 		m_renderer.GetFeature<DebugModelRenderFeature>()
 			.DrawModelWithSingleMaterial(
 				pso,

@@ -102,7 +102,7 @@ namespace MOON {
 		//this->setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 		this->setMouseTracking(true);
 		QSurfaceFormat format;
-		format.setSamples(4);
+		format.setSamples(1);
 		this->setFormat(format);
 		RegService(ViewerWidget, *this);
 	}

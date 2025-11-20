@@ -107,7 +107,6 @@ void Editor::Panels::SceneView::InitFrame()
 	// Enable picking pass only when the scene view is hered, not picking, and not operating the camera
 	auto& pickingPass = m_renderer->GetPass<Editor::Rendering::PickingRenderPass>("Picking");
 	pickingPass.SetEnabled(
-
 		!m_gizmoOperations.IsPicking() &&
 		!m_cameraController.IsOperating()
 	);
@@ -169,13 +168,6 @@ void Editor::Panels::SceneView::FitToScene(const Maths::FVector3& dir)
 void Editor::Panels::SceneView::BuildBvh()
 {
 	auto& scene = *GetScene();
-	auto& modelRenders=scene.GetFastAccessComponents().modelRenderers;
-	for (auto& m : modelRenders) {
-		auto model = m->GetModel();
-		if (model) {
-			model->GetMeshes();
-		}
-	}
 
 	//scene.BuildBVH();
 }
@@ -196,6 +188,13 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 		return;
 	input.ReceiveEvent(e);
 	const QEvent::Type t = e->type();
+    if (t == QEvent::MouseButtonPress) {
+		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		if(e2->button()== Qt::LeftButton)
+		{ 
+			MouseHit(m_roaterCenter);
+		}
+	}
 	if (!m_cameraController.IsRightMousePressed()) {
 		if (t == QEvent::KeyPress) {
 			QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
@@ -211,6 +210,13 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 			}
 		}
 	}
+}
+
+bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
+{
+	auto[x,y]=input.GetMousePosition();
+	auto ray = GetCamera()->GetMouseRay(x, y);
+	return GetScene()->RayHit(ray,out);
 }
 
 
@@ -259,8 +265,8 @@ void Editor::Panels::SceneView::HandleActorPicking()
 		int mouseY = GetSafeSize().second - mousePos.second - 1;
 		int mouseX = mousePos.first;
 		auto& scene = *GetScene();
-		auto& actorPickingFeature = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-		const auto pickingResult = actorPickingFeature.ReadbackPickingResult(
+		auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+		const auto pickingResult = actorPickingPass.ReadbackPickingResult(
 			scene,
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
@@ -270,7 +276,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 		m_highlightedActor = {};
 		m_highlightedGizmoDirection = {};
 
-		if (!m_cameraController.IsRightMousePressed() && pickingResult.has_value())
+		if ( pickingResult.has_value())
 		{
 			if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
 			{
@@ -287,7 +293,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 			m_highlightedGizmoDirection = {};
 		}
 
-		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) && !m_cameraController.IsRightMousePressed())
+		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) )
 		{
 			if (m_highlightedGizmoDirection)
 			{

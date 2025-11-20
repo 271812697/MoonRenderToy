@@ -22,19 +22,20 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 	renderer.newFrame(&view);
 	auto& inputState = view.getInutState();
 	auto [x,y]=inputState.GetMousePosition();
-	auto ray = view.GetCamera()->GetMouseRay(x, y);;
-	auto rayPo = ray.Value(1);
-	renderer.drawPoint({ rayPo.x,rayPo.y,rayPo.z},30);
+	auto ray = view.GetCamera()->GetMouseRay(x, y);
+	auto rc=view.GetRoaterCenter();
+	Eigen::Vector3f center = { rc.x,rc.y,rc.z };
+	renderer.translation(renderer.makeId("rotaterCenter"), center);
+
 	Maths::FVector3 out;
 	if (view.GetScene()->RayHit(ray, out)) {
 		renderer.drawPoint({ out.x,out.y,out.z }, 20, Eigen::Vector4<uint8_t>{255,0,255,255});
-		std::cout << "RayHit" << std::endl;
 	}
 	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
 	auto sceneBvh = view.GetScene()->GetBvh();
 	stack.push_back(sceneBvh->m_root);
 	while (!stack.empty()) {
-		auto cur = stack.back();stack.pop_back();
+		auto cur = stack.back(); stack.pop_back();
 		if (!cur)continue;
 		if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
 			if (cur->lc) {
@@ -45,17 +46,10 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 			}
 		}
 
-		
-		auto pmin=cur->bounds.pmin;
-		auto pmax = cur->bounds.pmax;
-		renderer.drawAlignedBox({pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });
-	}
-	if (debugSceneDescriptor.selectedActor)
-	{
-		auto& selectedActor = debugSceneDescriptor.selectedActor.value();
-		const bool isActorHered = debugSceneDescriptor.highlightedActor && debugSceneDescriptor.highlightedActor->GetID() == selectedActor.GetID();
 
+		auto pmin = cur->bounds.pmin;
+		auto pmax = cur->bounds.pmax;
+		renderer.drawAlignedBox({ pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });
 	}
 	renderer.endFrame();
-
 }

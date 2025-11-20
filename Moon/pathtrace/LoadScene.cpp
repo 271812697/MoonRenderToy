@@ -1616,7 +1616,7 @@ namespace PathTrace
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				tempMat->AddFeature("NORMAL_MAPPING");
-				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.fx"]);
+				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
 				tempMat->SetProperty("u_Albedo", Maths::FVector4{ (float)pbr.baseColorFactor[0], (float)pbr.baseColorFactor[1], (float)pbr.baseColorFactor[2], (float)pbr.baseColorFactor[3] });
 				// Albedo Texture
 				if (pbr.baseColorTexture.index > -1) {

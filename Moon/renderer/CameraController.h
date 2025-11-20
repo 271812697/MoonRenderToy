@@ -94,7 +94,7 @@ namespace Editor::Core
 	private:
 		std::optional<std::reference_wrapper<::Core::ECS::Actor>> GetTargetActor() const;
 		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
-		void HandleCameraOrbit(::Core::ECS::Actor& p_target, const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
+		void HandleCameraOrbit(const Maths::FVector3& center, const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 		void HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 
 		void HandleCameraZoom();
