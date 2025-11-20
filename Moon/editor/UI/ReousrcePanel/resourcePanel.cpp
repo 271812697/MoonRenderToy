@@ -2,7 +2,7 @@
 #include "QDirectoryModel.h"
 #include "QPreviewHelper.h"
 #include "QResListView.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include <QMenuBar>
 #include <QDesktopServices>
 #include <qurl.h>

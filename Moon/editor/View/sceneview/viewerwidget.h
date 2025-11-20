@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_4_5_Core>
-namespace OvCore::ECS {
+namespace Core::ECS {
 	class Actor;
 }
 namespace MOON {
@@ -26,7 +26,7 @@ namespace MOON {
 		void keyReleaseEvent(QKeyEvent* event) override;
 
 	public slots:
-		void onActorSelected(OvCore::ECS::Actor* actor);
+		void onActorSelected(Core::ECS::Actor* actor);
 		void onSceneChange(const QString& path);
 	signals:
 		void sceneChange();

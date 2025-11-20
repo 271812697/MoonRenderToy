@@ -1,22 +1,22 @@
 ﻿#pragma once
-#include <OvCore/ECS/Actor.h>
+#include <Core/ECS/Actor.h>
 
-#include <OvCore/Resources/Material.h>
-#include <OvCore/Rendering/SceneRenderer.h>
-#include <OvCore/SceneSystem/SceneManager.h>
-#include <OvRendering/HAL/VertexBuffer.h>
+#include <Core/Resources/Material.h>
+#include <Core/Rendering/SceneRenderer.h>
+#include <Core/SceneSystem/SceneManager.h>
+#include <Rendering/HAL/VertexBuffer.h>
 #include "Context.h"
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 
-	class PointRenderPass : public OvRendering::Core::ARenderPass
+	class PointRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
-		PointRenderPass(OvRendering::Core::CompositeRenderer& p_renderer);
+		PointRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
 	private:
-		virtual void Draw(OvRendering::Data::PipelineState p_pso) override;
+		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 	private:
-	    OvRendering::HAL::VertexBuffer vbo;
-		OvCore::Resources::Material m_PointMaterial;
+		::Rendering::HAL::VertexBuffer vbo;
+		::Core::Resources::Material m_PointMaterial;
 	};
 }

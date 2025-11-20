@@ -1,9 +1,9 @@
 ﻿#include "io_occ_step.h"
-#include "OvCore/SceneSystem/Scene.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/SceneSystem/Scene.h"
+#include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
-#include "OvCore/ECS/Components/CMaterialRenderer.h"
-#include "OvCore/ResourceManagement/ModelManager.h"
+#include "Core/ECS/Components/CMaterialRenderer.h"
+#include "Core/ResourceManagement/ModelManager.h"
 #include <STEPControl_Reader.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TCollection_AsciiString.hxx>
@@ -129,7 +129,7 @@ namespace MOON {
         // 简单平面投影 UV（用于可视化）：基于法线选定投影平面，然后把顶点投影到局部坐标并归一化到 [0,1]
         static void GeneratePlanarUVs(const std::vector<gp_Pnt>& vertices,
             const std::vector<gp_Dir>& normals,
-            std::vector<OvMaths::FVector2>& outUVs) {
+            std::vector<Maths::FVector2>& outUVs) {
             if (vertices.empty()) return;
             // 1. 计算中心点
             gp_Vec center(0, 0, 0);
@@ -167,11 +167,11 @@ namespace MOON {
             for (size_t i = 0; i < tmp.size(); ++i) {
                 float uu = static_cast<float>((tmp[i].first - minU) / spanU);
                 float vv = static_cast<float>((tmp[i].second - minV) / spanV);
-                outUVs.push_back(OvMaths::FVector2{uu, vv});
+                outUVs.push_back(Maths::FVector2{uu, vv});
             }
         }
 
-        void ReadSTEP(const char* filePath, OvCore::SceneSystem::Scene* scene) {
+        void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
             // 1. 创建 STEP 读取器
             STEPControl_Reader reader;
 
@@ -204,9 +204,9 @@ namespace MOON {
             std::vector<TopoDS_Face> faces;
             CollectFaces(shape, faces);
             size_t vertexOffset = 0;
-            std::vector<OvMaths::FVector3> positions;
-            std::vector<OvMaths::FVector3> normals;
-            std::vector<OvMaths::FVector2> uvs;
+            std::vector<Maths::FVector3> positions;
+            std::vector<Maths::FVector3> normals;
+            std::vector<Maths::FVector2> uvs;
             std::vector<unsigned int> indices;
             for (auto& f : faces) {
                 std::vector<gp_Pnt> vertices;
@@ -220,8 +220,8 @@ namespace MOON {
                 std::vector<gp_Dir> occNormals;
                 ComputeNormals(vertices, tempIndices, occNormals);
                 // 转换为引擎类型：positions, normals, uvs
-                for (const auto& p : vertices) positions.push_back(OvMaths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
-                for (const auto& n : occNormals) normals.push_back(OvMaths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
+                for (const auto& p : vertices) positions.push_back(Maths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
+                for (const auto& n : occNormals) normals.push_back(Maths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
                 // 生成简单的平面 UV（可选）
                 GeneratePlanarUVs(vertices, occNormals, uvs);
                 for (const auto& id : tempIndices) {
@@ -232,29 +232,29 @@ namespace MOON {
             }
 
             // 使用 ModelManager 把 mesh 注册到资源系统（使用与 glTF 加载处相同的重载）
-            auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
+            auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
 
             // 创建并注册默认材质
-            OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-            OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
+            Core::Resources::Material* tempMat = new Core::Resources::Material();
+            Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
             tempMat->SetBackfaceCulling(false);
             tempMat->SetCastShadows(false);
             tempMat->SetReceiveShadows(false);
 
-            tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
-            tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
+            tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
+            tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
 
             tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
             tempMat->SetProperty("u_Roughness", 1.f);
             tempMat->SetProperty("u_Metallic", 0.0f);
             // Emission
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-            tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f, 0.0f, 0.0f });
+            tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
             tempMat->AddFeature("WITH_EDGE");
             // 在场景中创建 Actor 并绑定模型/材质
             auto& actor = scene->CreateActor();
-            actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
-            auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+            actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
+            auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
             materilaRener.SetMaterialAtIndex(0, *tempMat);
             materilaRener.UpdateMaterialList();
         }

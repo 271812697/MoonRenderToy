@@ -21,6 +21,16 @@ namespace MOON {
 
 		return true;
 	}
+	void Log::logMessage(LogOutput::Level level, const QString& msg)
+	{
+		if (LogOutput::LL_INVALID != level)
+		{
+			for (LogOutput* output : logArr)
+			{
+				output->logMessage(level, msg.toUtf8().constData());
+			}
+		}
+	}
 	void Log::logMessage(LogOutput::Level level, const char* msg)
 	{
 		if (LogOutput::LL_INVALID != level)
@@ -58,6 +68,16 @@ namespace MOON {
 			for (LogOutput* output : logArr)
 			{
 				output->logMessage(level, msg);
+			}
+		}
+	}
+	void Log::logMessageExt(LogOutput::Level level, const QString& msg)
+	{
+		if (LogOutput::LL_INVALID != level)
+		{
+			for (LogOutput* output : logArr)
+			{
+				output->logMessage(level, msg.toUtf8().constData());
 			}
 		}
 	}

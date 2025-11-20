@@ -1,11 +1,11 @@
-#include "renderer/InputState.h"
+﻿#include "renderer/InputState.h"
 #include <QKeyEvent>
-namespace OvEditor::Panels {
+namespace Editor::Panels {
 
-	OvEditor::Panels::InputState::InputState()
+	Editor::Panels::InputState::InputState()
 	{
 	}
-	KeyState OvEditor::Panels::InputState::GetKeyState(KeyBoard p_key)
+	KeyState Editor::Panels::InputState::GetKeyState(KeyBoard p_key)
 	{
 		return m_keyEvents[p_key];
 	}

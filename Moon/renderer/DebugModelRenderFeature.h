@@ -1,12 +1,12 @@
-#pragma once
-#include <OvRendering/Features/ARenderFeature.h>
+﻿#pragma once
+#include <Rendering/Features/ARenderFeature.h>
 
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 	/**
 	* Provide utility methods to draw a model quickly using a single material for all its submeshes
 	*/
-	class DebugModelRenderFeature : public OvRendering::Features::ARenderFeature
+	class DebugModelRenderFeature : public ::Rendering::Features::ARenderFeature
 	{
 	public:
 		/**
@@ -15,8 +15,8 @@ namespace OvEditor::Rendering
 		* @param p_executionPolicy
 		*/
 		DebugModelRenderFeature(
-			OvRendering::Core::CompositeRenderer& p_renderer,
-			OvRendering::Features::EFeatureExecutionPolicy p_executionPolicy
+			::Rendering::Core::CompositeRenderer& p_renderer,
+			::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 		);
 
 		/**
@@ -28,10 +28,10 @@ namespace OvEditor::Rendering
 		* @param p_modelMatrix
 		*/
 		virtual void DrawModelWithSingleMaterial(
-			OvRendering::Data::PipelineState p_pso,
-			OvRendering::Resources::Model& p_model,
-			OvRendering::Data::Material& p_material,
-			const OvMaths::FMatrix4& p_modelMatrix
+			::Rendering::Data::PipelineState p_pso,
+			::Rendering::Resources::Model& p_model,
+			::Rendering::Data::Material& p_material,
+			const Maths::FMatrix4& p_modelMatrix
 		);
 	};
 }

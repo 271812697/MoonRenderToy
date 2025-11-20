@@ -82,6 +82,7 @@ namespace MOON
 			if (warningItem)
 			{
 				warningItem->setIcon(QIcon(icon));
+				
 				m_logList->addItem(warningItem);
 			}
 		}

@@ -3,23 +3,23 @@
 #include "Settings/DebugSetting.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "renderer/SceneView.h"
-#include "OvCore/Global/ServiceLocator.h"
-#include <OvRendering/Data/Material.h>
-#include <OvRendering/Resources/Loaders/ShaderLoader.h>
-#include <OvMaths/FMatrix4.h>
+#include "Core/Global/ServiceLocator.h"
+#include <Rendering/Data/Material.h>
+#include <Rendering/Resources/Loaders/ShaderLoader.h>
+#include <Maths/FMatrix4.h>
 #include <glad/glad.h>
 #include <iostream>
 namespace MOON
 {
 
-	static OvMaths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
+	static Maths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
 		temp.transposeInPlace();
-		OvMaths::FMatrix4 ret;
+		Maths::FMatrix4 ret;
 		memcpy(ret.data, temp.data(), 16 * sizeof(float));
 		return ret;
 	}
-	static Eigen::Matrix4f ToEigenMatrix4f(const OvMaths::FMatrix4& mat) {
+	static Eigen::Matrix4f ToEigenMatrix4f(const Maths::FMatrix4& mat) {
 		Eigen::Matrix4f ret(mat.data);
 		
 		//memcpy(ret.data(), mat.data, 16 * sizeof(float));
@@ -48,25 +48,25 @@ namespace MOON
 	Guizmo::Guizmo()
 		: buffer(9 * MiB, 27 * MiB, false)
 		, command(driver, buffer.getCircularBuffer()), 
-		mEmptyTexture2D{ OvRendering::Settings::ETextureType::TEXTURE_2D },
-		mEmptyTextureCube{ OvRendering::Settings::ETextureType::TEXTURE_CUBE }
+		mEmptyTexture2D{ Rendering::Settings::ETextureType::TEXTURE_2D },
+		mEmptyTextureCube{ Rendering::Settings::ETextureType::TEXTURE_CUBE }
 	{
-		const auto kEmptyTextureDesc = OvRendering::Settings::TextureDesc{
+		const auto kEmptyTextureDesc = Rendering::Settings::TextureDesc{
 	.width = 1,
 	.height = 1,
-	.minFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
-	.magFilter = OvRendering::Settings::ETextureFilteringMode::NEAREST,
-	.horizontalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
-	.verticalWrap = OvRendering::Settings::ETextureWrapMode::REPEAT,
-	.internalFormat = OvRendering::Settings::EInternalFormat::RGBA8,
+	.minFilter = Rendering::Settings::ETextureFilteringMode::NEAREST,
+	.magFilter = Rendering::Settings::ETextureFilteringMode::NEAREST,
+	.horizontalWrap = Rendering::Settings::ETextureWrapMode::REPEAT,
+	.verticalWrap = Rendering::Settings::ETextureWrapMode::REPEAT,
+	.internalFormat = Rendering::Settings::EInternalFormat::RGBA8,
 	.useMipMaps = false
 		};
 
 		mEmptyTexture2D.Allocate(kEmptyTextureDesc);
-		mEmptyTexture2D.Upload(kWhite.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+		mEmptyTexture2D.Upload(kWhite.data(), Rendering::Settings::EFormat::RGBA, Rendering::Settings::EPixelDataType::UNSIGNED_BYTE);
 
 		mEmptyTextureCube.Allocate(kEmptyTextureDesc);
-		mEmptyTextureCube.Upload(kBlack.data(), OvRendering::Settings::EFormat::RGBA, OvRendering::Settings::EPixelDataType::UNSIGNED_BYTE);
+		mEmptyTextureCube.Upload(kBlack.data(), Rendering::Settings::EFormat::RGBA, Rendering::Settings::EPixelDataType::UNSIGNED_BYTE);
 
 		command.test(8);
 		command.queueCommand([]() {
@@ -127,10 +127,10 @@ namespace MOON
 	{
 		//shader leak
 		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
-		mLineMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
-		mPointMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
-		mTriangleMaterial = new OvRendering::Data::Material(OvRendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
-		mLitMaterial = new OvRendering::Data::Material(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
+		mLineMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
+		mPointMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
+		mTriangleMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
+		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
 		mLitMaterial->AddFeature("WITH_EDGE");
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
@@ -956,17 +956,6 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
-
-		//return;
-		//params to control
-		
-		//for (int i = 0; i < viewCube.cellArray.size(); i++) {
-		//	viewCube.cellArray[i].drawLine(this);
-		//	viewCube.cellArray[i].drawFace(this);
-		//}
-		auto& viewCube = ViewCube();
-
-
 	}
 
 	void Guizmo::drawRayHitScreenPoint()
@@ -2621,7 +2610,7 @@ namespace MOON
 	}
 
 	bool Guizmo::boxEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Matrix3f& _rotation_,
-		Eigen::Vector3f& _scale_, bool translationFlag, bool rotateFlag, bool faceMoveFlag, int& mode)
+		Eigen::Vector3f& _scale_, bool translationFlag, bool rotateFlag, bool faceMeFlag, int& mode)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(0, 0, 0);
@@ -2680,7 +2669,7 @@ namespace MOON
 			{makeId("FrontCenter"), Eigen::Vector3f(drawAt + zAxis * drawScale.z()), zAxis, &(outScale->z())},
 			{makeId("BackFaceCenter"), Eigen::Vector3f(drawAt - zAxis * drawScale.z()), zAxis, &(outScale->z())},
 		};
-		if (faceMoveFlag)
+		if (faceMeFlag)
 		{
 			for (int i = 0; i < 6; i++)
 			{
@@ -3145,26 +3134,26 @@ namespace MOON
 		idStack.pop_back();
 
 
-		static bool move = false;
-		static Eigen::Vector3f moveToPoint;
+		static bool me = false;
+		static Eigen::Vector3f meToPoint;
 		if (wasKeyReleased(ActionSelect) && isKeyDown(ActionControl))
 		{
 
 			float p[3] = { 0, 0, 0 };
 			if (false)
 			{
-				move = true;
-				moveToPoint = { p[0], p[1], p[2] };
+				me = true;
+				meToPoint = { p[0], p[1], p[2] };
 			}
 
 		}
-		if (move)
+		if (me)
 		{
-			*outVec3 = 0.85 * (*outVec3) + 0.15 * moveToPoint;
-			if ((*outVec3 - moveToPoint).norm() < 0.03f)
+			*outVec3 = 0.85 * (*outVec3) + 0.15 * meToPoint;
+			if ((*outVec3 - meToPoint).norm() < 0.03f)
 			{
-				*outVec3 = moveToPoint;
-				move = false;
+				*outVec3 = meToPoint;
+				me = false;
 
 			}
 			ret = true;
@@ -3498,12 +3487,12 @@ namespace MOON
 		for (int i = 0; i < polygon.size(); i++)
 		{
 			Eigen::Vector3f pos = polygon[i].first;
-			//move polygon's points
+			//me polygon's points
 			ret |= gizmoPlaneTranslationBehavior(polygonId[i].first, polygon[i].first, normal, cameraParam.snapTranslation,
 				pixelsToWorldSize(pos, 15), &pos);
 			polygon[i].first = pos;
 			pos = polygon[i].first + polygon[i].second;
-			//move tangent (normal)
+			//me tangent (normal)
 			if (gizmoPlaneTranslationBehavior(polygonId[i].second, pos, normal, cameraParam.snapTranslation, pixelsToWorldSize(pos, 15), &pos))
 			{
 				ret |= true;
@@ -3623,11 +3612,11 @@ namespace MOON
 		return cameraParam;
 	}
 
-	void Guizmo::newFrame(const OvEditor::Panels::SceneView* sceneView)
+	void Guizmo::newFrame(Editor::Panels::SceneView* sceneView)
 	{
 		litVertexArray.clear();
 		drawMeshList.clear();
-		renderView = const_cast<OvEditor::Panels::SceneView*>(sceneView);
+		renderView = const_cast<Editor::Panels::SceneView*>(sceneView);
 		// all state stacks should be default here.
 		assert(colorStack.size() == 1);
 		assert(alphaStack.size() == 1);
@@ -3697,7 +3686,7 @@ namespace MOON
 		cursorPos(1) = -cursorPos(1);
 		Eigen::Vector3f rayOrigin, rayDirection;
 		//
-		bool isOrth = renderView->GetCamera()->GetProjectionMode() == OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC;
+		bool isOrth = renderView->GetCamera()->GetProjectionMode() == Rendering::Settings::EProjectionMode::ORTHOGRAPHIC;
 
 		if (isOrth)
 		{
@@ -3738,18 +3727,18 @@ namespace MOON
 		cameraParam.proj = proj;
 		cameraParam.viewProj = proj * view;
 
-		bool ctrlDown = inputState.IsKeyPressed(OvEditor::Panels::Control);
+		bool ctrlDown = inputState.IsKeyPressed(Editor::Panels::Control);
 
-		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_LEFT);
-		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_MIDDLE);
-		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonPressed(OvEditor::Panels::MOUSE_BUTTON_RIGHT);
+		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_LEFT);
+		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_MIDDLE);
+		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_RIGHT);
 		cameraParam.keyDown[ActionControl] = ctrlDown;
 
-		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYL);
+		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYL);
 
-		cameraParam.keyDown[KeyT] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYT);
-		cameraParam.keyDown[KeyR] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYR);
-		cameraParam.keyDown[KeyS] = ctrlDown && inputState.IsKeyPressed(OvEditor::Panels::KEYS);
+		cameraParam.keyDown[KeyT] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYT);
+		cameraParam.keyDown[KeyR] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYR);
+		cameraParam.keyDown[KeyS] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYS);
 
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
@@ -3777,22 +3766,22 @@ namespace MOON
 
 	void Guizmo::drawUnsort()
 	{
-		auto driver = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver.get();
+		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
 		auto p_pso = driver->CreatePipelineState();
 		p_pso.stencilTest = true;
 		p_pso.stencilWriteMask = 0xFF;
 		p_pso.stencilFuncRef = 1;
 		p_pso.stencilFuncMask = 0xFF;
-		p_pso.stencilOpFail = OvRendering::Settings::EOperation::REPLACE;
-		p_pso.depthOpFail = OvRendering::Settings::EOperation::REPLACE;
-		p_pso.bothOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.stencilOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = Rendering::Settings::EOperation::REPLACE;
 		p_pso.colorWriting.mask = 0x00;
 		p_pso.depthWriting = true;
 		p_pso.colorWriting.mask = 0xFF;
 		p_pso.blending = true;
-		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
-		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
-		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::ALWAYS;
+		p_pso.blendingEquation = Rendering::Settings::EBlendingEquation::FUNC_ADD;
+		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::ALWAYS;
 		p_pso.culling = 0;
 		p_pso.depthTest = true;
 
@@ -3827,7 +3816,7 @@ namespace MOON
 		{
 			const DrawList& drawList = drawLists[i];
 			unsigned int prim;
-			OvRendering::Data::Material* mat = nullptr;
+			Rendering::Data::Material* mat = nullptr;
 			std::string passTag = "";
 			switch (drawList.primType)
 			{
@@ -3859,7 +3848,7 @@ namespace MOON
 			//mShader->bindActiveProgram();
 			//mShader->commitDescriptorSetToActiveProgram();
 			if (drawList.primType == DrawPrimitiveLines) {
-				mat->SetProperty("uViewport", OvMaths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
+				mat->SetProperty("uViewport", Maths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
 
 			}
 			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));
@@ -3871,27 +3860,27 @@ namespace MOON
 	void Guizmo::drawSort()
 	{
 		drawLists.clear();
-		auto driver = OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().driver.get();
+		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
 		auto p_pso = driver->CreatePipelineState();
 		p_pso.stencilTest = true;
 		p_pso.stencilWriteMask = 0xFF;
 		p_pso.stencilFuncRef = 1;
 		p_pso.stencilFuncMask = 0xFF;
-		p_pso.stencilOpFail = OvRendering::Settings::EOperation::REPLACE;
-		p_pso.depthOpFail = OvRendering::Settings::EOperation::REPLACE;
-		p_pso.bothOpFail = OvRendering::Settings::EOperation::REPLACE;
+		p_pso.stencilOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = Rendering::Settings::EOperation::REPLACE;
 		p_pso.colorWriting.mask = 0x00;
 		p_pso.depthWriting = true;
 		p_pso.colorWriting.mask = 0xFF;
 		p_pso.blending = true;
-		p_pso.blendingEquation = OvRendering::Settings::EBlendingEquation::FUNC_ADD;
+		p_pso.blendingEquation = Rendering::Settings::EBlendingEquation::FUNC_ADD;
 		
-		p_pso.blendingSrcFactor = OvRendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
 		p_pso.culling = 0;
-		p_pso.cullFace = OvRendering::Settings::ECullFace::FRONT_AND_BACK;
-		p_pso.blendingDestFactor = OvRendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
+		p_pso.cullFace = Rendering::Settings::ECullFace::FRONT_AND_BACK;
+		p_pso.blendingDestFactor = Rendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
 		p_pso.depthTest = true;
-		p_pso.depthFunc = OvRendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
 		driver->SetPipelineState(p_pso);
 		// Enable Depth Test
 		for (int i = 0; i < vertexData[1].size(); ++i)
@@ -3912,7 +3901,7 @@ namespace MOON
 			unsigned int prim;
 
 			std::string passTag = "";
-			OvRendering::Data::Material* mat = nullptr;
+			Rendering::Data::Material* mat = nullptr;
 			switch (drawList.primType)
 			{
 			case DrawPrimitivePoints:
@@ -3941,7 +3930,7 @@ namespace MOON
 			glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)drawList.vertexCount * sizeof(VertexData),
 				(GLvoid*)drawList.vertexData, GL_STREAM_DRAW);
 			if (drawList.primType == DrawPrimitiveLines) {
-				mat->SetProperty("uViewport", OvMaths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
+				mat->SetProperty("uViewport", Maths::FVector2{ cameraParam.viewportWidth,cameraParam.viewportHeight });
 
 			}
 			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));;
@@ -3966,13 +3955,13 @@ namespace MOON
 			auto forward=transform.GetWorldForward();
 			auto position = -forward * size * 2.0f;
 			auto up = transform.GetWorldUp();
-			auto view = OvMaths::FMatrix4::CreateView(
+			auto view = Maths::FMatrix4::CreateView(
 				position.x, position.y, position.z,
 				position.x+forward.x, position.y+forward.y, position.z+forward.z,
 				up.x, up.y, up.z
 			);
 		
-			auto proj=OvMaths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
+			auto proj=Maths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
 			
 			
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);

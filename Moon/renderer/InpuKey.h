@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-namespace OvEditor {
+namespace Editor{
 	namespace Panels
 	{
 		enum KeyState

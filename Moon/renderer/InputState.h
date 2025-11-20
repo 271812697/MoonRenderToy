@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "renderer/InpuKey.h"
 #include <unordered_map>
 class QEvent;
-namespace OvEditor {
+namespace Editor {
 	namespace Panels
 	{
 		class InputState {

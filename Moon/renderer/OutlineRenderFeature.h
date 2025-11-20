@@ -1,26 +1,23 @@
-
-
-#pragma once
-
-#include <OvRendering/Entities/Camera.h>
-#include <OvRendering/Features/DebugShapeRenderFeature.h>
-#include <OvRendering/Core/CompositeRenderer.h>
-
-#include <OvCore/ECS/Actor.h>
-#include <OvCore/SceneSystem/SceneManager.h>
-#include <OvCore/ECS/Components/CModelRenderer.h>
-#include <OvCore/Resources/Material.h>
-#include <OvCore/ECS/Components/CAmbientBoxLight.h>
-#include <OvCore/ECS/Components/CAmbientSphereLight.h>
+﻿#pragma once
+#include <Rendering/Entities/Camera.h>
+#include <Rendering/Features/DebugShapeRenderFeature.h>
+#include <Rendering/Core/CompositeRenderer.h>
+#include <Core/ECS/Actor.h>
+#include <Core/SceneSystem/SceneManager.h>
+#include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
+#include <Core/Resources/Material.h>
+#include <Core/ECS/Components/CAmbientBoxLight.h>
+#include <Core/ECS/Components/CAmbientSphereLight.h>
 
 #include "Context.h"
 
-namespace OvEditor::Rendering
+namespace Editor::Rendering
 {
 	/**
 	* Draw the scene for actor picking
 	*/
-	class OutlineRenderFeature : public OvRendering::Features::ARenderFeature
+	class OutlineRenderFeature : public ::Rendering::Features::ARenderFeature
 	{
 	public:
 		/**
@@ -29,8 +26,8 @@ namespace OvEditor::Rendering
 		* @param p_executionPolicy
 		*/
 		OutlineRenderFeature(
-			OvRendering::Core::CompositeRenderer& p_renderer,
-			OvRendering::Features::EFeatureExecutionPolicy p_executionPolicy
+			::Rendering::Core::CompositeRenderer& p_renderer,
+			::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 		);
 
 		/**
@@ -39,19 +36,19 @@ namespace OvEditor::Rendering
 		* @param p_color
 		* @param p_thickness
 		*/
-		virtual void DrawOutline(OvCore::ECS::Actor& p_actor, const OvMaths::FVector4& p_color, float p_thickness);
+		virtual void DrawOutline(::Core::ECS::Actor& p_actor, const Maths::FVector4& p_color, float p_thickness);
 
 	private:
-		void DrawStencilPass(OvCore::ECS::Actor& p_actor);
-		void DrawOutlinePass(OvCore::ECS::Actor& p_actor, const OvMaths::FVector4& p_color, float p_thickness);
+		void DrawStencilPass(::Core::ECS::Actor& p_actor);
+		void DrawOutlinePass(::Core::ECS::Actor& p_actor, const Maths::FVector4& p_color, float p_thickness);
 
-		void DrawActorToStencil(OvRendering::Data::PipelineState p_pso, OvCore::ECS::Actor& p_actor);
-		void DrawActorOutline(OvRendering::Data::PipelineState p_pso, OvCore::ECS::Actor& p_actor, const OvMaths::FVector4& p_color);
-		void DrawModelToStencil(OvRendering::Data::PipelineState p_pso, const OvMaths::FMatrix4& p_worldMatrix, OvRendering::Resources::Model& p_model, OvTools::Utils::OptRef<const OvCore::ECS::Components::CMaterialRenderer::MaterialList> p_materials = std::nullopt);
-		void DrawModelOutline(OvRendering::Data::PipelineState p_pso, const OvMaths::FMatrix4& p_worldMatrix, OvRendering::Resources::Model& p_model, const OvMaths::FVector4& p_color, OvTools::Utils::OptRef<const OvCore::ECS::Components::CMaterialRenderer::MaterialList> p_materials = std::nullopt);
+		void DrawActorToStencil(::Rendering::Data::PipelineState p_pso, ::Core::ECS::Actor& p_actor);
+		void DrawActorOutline(::Rendering::Data::PipelineState p_pso, ::Core::ECS::Actor& p_actor, const Maths::FVector4& p_color);
+		void DrawModelToStencil(::Rendering::Data::PipelineState p_pso, const Maths::FMatrix4& p_worldMatrix, ::Rendering::Resources::Model& p_model, Tools::Utils::OptRef<const ::Core::ECS::Components::CMaterialRenderer::MaterialList> p_materials = std::nullopt);
+		void DrawModelOutline(::Rendering::Data::PipelineState p_pso, const Maths::FMatrix4& p_worldMatrix, ::Rendering::Resources::Model& p_model, const Maths::FVector4& p_color, Tools::Utils::OptRef<const ::Core::ECS::Components::CMaterialRenderer::MaterialList > p_materials = std::nullopt);
 
 	private:
-		OvCore::Resources::Material m_stencilFillMaterial;
-		OvCore::Resources::Material m_outlineMaterial;
+		::Core::Resources::Material m_stencilFillMaterial;
+		::Core::Resources::Material m_outlineMaterial;
 	};
 }

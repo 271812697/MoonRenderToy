@@ -1,28 +1,28 @@
 ﻿#include "parsescene.h"
 #include "renderer/Context.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "pathtrace/Scene.h"
 #include "pathtrace/PathTrace.h"
-#include "OvCore/ECS/Components/CMaterialRenderer.h"
-#include "OvCore/ECS/Components/CPointLight.h"
-#include "OvCore/ECS/Components/CDirectionalLight.h"
-#include "OvCore/ECS/Components/CAmbientSphereLight.h"
-#include "OvCore/ECS/Components/CPostProcessStack.h"
+#include "Core/ECS/Components/CMaterialRenderer.h"
+#include "Core/ECS/Components/CPointLight.h"
+#include "Core/ECS/Components/CDirectionalLight.h"
+#include "Core/ECS/Components/CAmbientSphereLight.h"
+#include "Core/ECS/Components/CPostProcessStack.h"
 #include "pathtrace/LoadScene.h"
 #include "Settings/DebugSetting.h"
 #include "io/io_occ_step.h"
 
 
 namespace MOON {
-	OvMaths::FVector3 GetSpherePosition(float a, float b, float radius) {
+	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
 
 		float elevation = a / 180.0 * 3.14159265;
 		float azimuth = b / 180.0 * 3.14159265;
-		return OvMaths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
+		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 	}
 
 
-	void addSphereLight(OvCore::SceneSystem::Scene* scene) {
+	void addSphereLight(Core::SceneSystem::Scene* scene) {
 		auto node = DebugSettings::instance().getNode("showLight");
 		DebugSettings::instance().addCallBack("showLight", [=]() {
 			bool value = node->getData<bool>();
@@ -33,7 +33,7 @@ namespace MOON {
 			});
 		auto ambient = scene->FindActorByName("Ambient Light");
 		auto& ac1 = scene->CreateActor("PointLight1");
-		auto& pointLight1 = ac1.AddComponent<OvCore::ECS::Components::CPointLight>();
+		auto& pointLight1 = ac1.AddComponent<Core::ECS::Components::CPointLight>();
 		float kI = 0.50;
 		float kB = kI / 1.5;
 		float kC = kI / 3.5;
@@ -48,7 +48,7 @@ namespace MOON {
 		//ac1.transform.SetLocalPosition(GetSpherePosition(50, 10, 999));
 
 		auto& ac2 = scene->CreateActor("PointLight2");
-		auto& pointLight2 = ac2.AddComponent<OvCore::ECS::Components::CPointLight>();
+		auto& pointLight2 = ac2.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight2.SetIntensity(kB);
 		pointLight2.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
@@ -59,7 +59,7 @@ namespace MOON {
 		//ac2.transform.SetLocalPosition(GetSpherePosition(-75, 10, 999));
 
 		auto& ac3 = scene->CreateActor("PointLight3");
-		auto& pointLight3 = ac3.AddComponent<OvCore::ECS::Components::CPointLight>();
+		auto& pointLight3 = ac3.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight3.SetIntensity(kC);
 		pointLight3.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
@@ -70,7 +70,7 @@ namespace MOON {
 		//ac3.transform.SetLocalPosition(GetSpherePosition(0, 110, 999));
 
 		auto& ac4 = scene->CreateActor("PointLight4");
-		auto& pointLight4 = ac4.AddComponent<OvCore::ECS::Components::CPointLight>();
+		auto& pointLight4 = ac4.AddComponent<Core::ECS::Components::CPointLight>();
 
 		pointLight4.SetIntensity(kC);
 		pointLight4.SetConstant(1.0);
@@ -82,7 +82,7 @@ namespace MOON {
 		//ac4.transform.SetLocalPosition(GetSpherePosition(0, -110, 999));
 
 		auto& ac5 = scene->CreateActor("HeadLight");
-		auto& pointLight5 = ac5.AddComponent<OvCore::ECS::Components::CPointLight>();
+		auto& pointLight5 = ac5.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight5.SetIntensity(kB);
 		pointLight5.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
@@ -94,13 +94,13 @@ namespace MOON {
 
 	void ParseScene::ParsePathTraceScene(const std::string& path) {
 
-		GetService(OvEditor::Core::Context).sceneManager.LoadDefaultScene();
-		OvCore::SceneSystem::Scene* scene = GetService(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		GetService(Editor::Core::Context).sceneManager.LoadDefaultScene();
+		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}
-		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
-		scene->FindActorByName("Directional Light")->GetComponent<OvCore::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
+		scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
+		scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
 		addSphereLight(scene);
 		std::string sceneName = path;
 		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
@@ -116,35 +116,35 @@ namespace MOON {
 		}
 		else
 		{
-			auto model = OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::ModelManager>().LoadResource(sceneName);
+			auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadResource(sceneName);
 
 
-			OvCore::Resources::Material* tempMat = new OvCore::Resources::Material();
-			OvCore::Global::ServiceLocator::Get<OvCore::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
+			Core::Resources::Material* tempMat = new Core::Resources::Material();
+			Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
 			tempMat->SetBackfaceCulling(false);;
 			tempMat->SetCastShadows(false);
 			tempMat->SetReceiveShadows(false);
 
-			tempMat->SetShader(OvCore::Global::ServiceLocator::Get<OvEditor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-			tempMat->SetProperty("u_Albedo", OvMaths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+			tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+			tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
 			tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
 			tempMat->SetProperty("u_Roughness", 0.1f);
 			tempMat->SetProperty("u_Metallic", 0.1f);
 			// Emission
 			tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-			tempMat->SetProperty("u_EmissiveColor", OvMaths::FVector3{ 0.0f,0.0f,0.0f });
+			tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
 
 			auto& actor = scene->CreateActor();
-			actor.AddComponent<OvCore::ECS::Components::CModelRenderer>().SetModel(model);
+			actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
 
-			actor.GetComponent<OvCore::ECS::Components::CTransform>()->SetMatrix(xform.data);
-			auto& materilaRener = actor.AddComponent<OvCore::ECS::Components::CMaterialRenderer>();
+			actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
+			auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 			materilaRener.SetMaterialAtIndex(0, *tempMat);
 			materilaRener.UpdateMaterialList();
 
 		}
-
+		scene->BuildSceneBvh();
 	}
 
 	void ParseScene::updateTreeViewSceneRoot()

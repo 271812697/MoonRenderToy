@@ -1,6 +1,6 @@
 ﻿#include "EntityTreeModel.h"
-#include "OvCore/Global/ServiceLocator.h"
-#include "OvCore/SceneSystem/Scene.h"
+#include "Core/Global/ServiceLocator.h"
+#include "Core/SceneSystem/Scene.h"
 #include "renderer/Context.h"
 #include "treeViewpanel.h"
 #include "pathtrace/PathTrace.h"
@@ -51,7 +51,7 @@ namespace MOON {
 	}
 	void EntityTreeModel::onSceneRootChange()
 	{
-		OvCore::SceneSystem::Scene* scene = GetService(OvEditor::Core::Context).sceneManager.GetCurrentScene();
+		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}
@@ -60,9 +60,9 @@ namespace MOON {
 		for (int i = 0; i < actors.size(); i++) {
 			if (!actors[i]->HasParent()) {
 				std::vector <QStandardItem*> root = { mInternl->sceneRoot };
-				std::vector<OvCore::ECS::Actor*> s = { actors[i] };
+				std::vector<Core::ECS::Actor*> s = { actors[i] };
 				while (!s.empty()) {
-					OvCore::ECS::Actor* cur = s.back(); s.pop_back();
+					Core::ECS::Actor* cur = s.back(); s.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
 					QStandardItem* temp = new QStandardItem;
 					auto name = cur->GetName();
@@ -187,7 +187,7 @@ namespace MOON {
 
 		isProcessing = false;
 		if (item->isCheckable()) {
-			OvCore::ECS::Actor* actor = static_cast<OvCore::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
+			Core::ECS::Actor* actor = static_cast<Core::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
 			if (actor) {
 				Qt::CheckState currentState = item->checkState();
 				if (currentState == Qt::Checked) {
@@ -196,6 +196,8 @@ namespace MOON {
 				else if (currentState == Qt::Unchecked) {
 					actor->SetActive(false);
 				}
+				Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+				scene->BuildSceneBvh();
 			}
 		}
 	}

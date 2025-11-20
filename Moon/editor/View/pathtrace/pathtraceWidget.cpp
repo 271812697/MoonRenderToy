@@ -5,7 +5,7 @@
 #include "pathtrace/Scene.h"
 #include "pathtrace/Camera.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 namespace MOON {
 	static float viewW;
 	static float viewH;

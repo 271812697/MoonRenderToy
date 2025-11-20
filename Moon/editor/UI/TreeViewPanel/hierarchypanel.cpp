@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "hierarchypanel.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QListWidget>

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <QtWidgets/QTreeView>
-namespace OvCore::ECS {
+namespace Core::ECS {
 	class Actor;
 }
 namespace MOON {
@@ -11,7 +11,7 @@ namespace MOON {
 		TreeViewPanel(QWidget* parent);
 		~TreeViewPanel();
 	signals:
-		void setSelectActor(OvCore::ECS::Actor* actor);
+		void setSelectActor(Core::ECS::Actor* actor);
 
 	public slots:
 		void updateTreeViewSceneRoot();

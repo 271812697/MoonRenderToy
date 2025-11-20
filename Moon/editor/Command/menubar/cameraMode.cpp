@@ -1,6 +1,6 @@
 ﻿#include "cameraMode.h"
 
-#include "OvCore/Global/ServiceLocator.h"
+#include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
 
@@ -38,13 +38,13 @@ namespace MOON {
 		action->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+M", nullptr));
 
 		QObject::connect(group, &QActionGroup::triggered, this, [=](const QAction* action) {
-			auto& view=GetService(OvEditor::Panels::SceneView);
+			auto& view=GetService(Editor::Panels::SceneView);
 			if (action == mActionOrtho) {
-				view.setCameraMode(OvRendering::Settings::EProjectionMode::ORTHOGRAPHIC);
+				view.setCameraMode(Rendering::Settings::EProjectionMode::ORTHOGRAPHIC);
 			}
 			else
 			{
-				view.setCameraMode(OvRendering::Settings::EProjectionMode::PERSPECTIVE);
+				view.setCameraMode(Rendering::Settings::EProjectionMode::PERSPECTIVE);
 			}
 			});
 
