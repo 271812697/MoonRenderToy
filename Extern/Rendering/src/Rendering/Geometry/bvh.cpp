@@ -18,6 +18,7 @@ namespace Rendering::Geometry
 
 	void Bvh::Build(bbox const* bounds, int numbounds)
 	{
+		m_bounds = bbox();
 		for (int i = 0; i < numbounds; ++i)
 		{
 			// Calc bbox
@@ -327,6 +328,10 @@ namespace Rendering::Geometry
 
 	void Bvh::BuildImpl(bbox const* bounds, int numbounds)
 	{
+		if (numbounds == 0) {
+			Clear();
+			return;
+		}
 		// Structure describing split request
 		InitNodeAllocator(2 * numbounds - 1);
 		// Cache some stuff to have faster partitioning
@@ -348,6 +353,21 @@ namespace Rendering::Geometry
 		BuildNode(init, bounds, &centroids[0], &m_indices[0]);
 		// Set root_ pointer
 		m_root = &m_nodes[0];
+	}
+
+	void Bvh::Clear()
+	{
+		InitNodeAllocator(0);
+		m_nodes.clear();
+		m_indices.clear();
+		// Identifiers of leaf primitives
+		m_indices.clear();
+		// Node allocator counter, atomic for thread safety
+		m_nodecnt=0;
+
+		// Identifiers of leaf primitives
+		m_packed_indices.clear();
+		m_root = nullptr;
 	}
 
 	void Bvh::PrintStatistics() const

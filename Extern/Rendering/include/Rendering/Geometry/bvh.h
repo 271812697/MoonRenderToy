@@ -45,6 +45,7 @@ namespace Rendering::Geometry
 
 		// Build function
 		virtual void BuildImpl(bbox const* bounds, int numbounds);
+		void Clear();
 		// BVH node
 		struct Node;
 		// Node allocation

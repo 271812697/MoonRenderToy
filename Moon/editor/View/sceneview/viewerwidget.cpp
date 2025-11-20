@@ -157,7 +157,7 @@ namespace MOON {
 
 	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
 	{
-		LOG_INFO("%d %d", event->pos().x(), event->pos().y());
+		//LOG_INFO("%d %d", event->pos().x(), event->pos().y());
 
 	}
 

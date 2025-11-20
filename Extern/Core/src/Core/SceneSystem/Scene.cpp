@@ -23,6 +23,7 @@ Core::SceneSystem::Scene::~Scene()
 	});
 
 	m_actors.clear();
+	delete m_sceneBvh;
 }
 
 void Core::SceneSystem::Scene::AddDefaultCamera()
@@ -358,4 +359,116 @@ void Core::SceneSystem::Scene::OnDeserialize(tinyxml2::XMLDocument & p_doc, tiny
 			}
 		}
 	}
+}
+
+void Core::SceneSystem::Scene::BuildSceneBvh()
+{
+	ZoneScoped;
+	if (m_sceneBvh) {
+		delete m_sceneBvh;
+	}
+	m_sceneBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
+	// Collect all model renderers' bounds
+	m_modelRenderIndex.clear();
+	int i = 0;
+	std::vector<::Rendering::Geometry::bbox> bounds;
+	for (auto modelRenderer : m_fastAccessComponents.modelRenderers)
+	{
+		if (modelRenderer->owner.IsActive())
+		{
+			auto model=modelRenderer->GetModel();
+			if (model) {
+				auto box = modelRenderer->GetBoundingBox();
+				if (box.isValid()) {
+					bounds.push_back(box);
+					m_modelRenderIndex.push_back(i);				
+				}
+			}
+		}
+		i++;
+	}
+	// Build BVH
+	m_sceneBvh->Build(bounds.data(), static_cast<int>(bounds.size()));
+}
+
+bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint)
+{
+	float triDist = 1e6;
+	bool hit = false;
+	Maths::FVector3 hitNormal;
+	Maths::FVector3 bary;
+	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+	stack.push_back(m_sceneBvh->m_root);
+	while (!stack.empty()) {
+		auto cur = stack.back();stack.pop_back();
+		if (!cur)continue;
+		float tempDist = 1e6;
+		if (ray.HitDistance(cur->bounds, tempDist)) 
+		{
+		
+			if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+				stack.push_back(cur->lc);
+				stack.push_back(cur->rc);
+			}
+			else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+				for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
+					int index=m_sceneBvh->m_packed_indices[i];
+					auto modelRenderer = m_fastAccessComponents.modelRenderers[m_modelRenderIndex[index]];
+					auto model = modelRenderer->GetModel();
+					if (model) {
+						auto matrix=modelRenderer->owner.transform.GetWorldMatrix();
+						auto invMatrix = Maths::FMatrix4::Inverse(matrix);
+						auto localRay = ray.Transformed(invMatrix);
+						auto& meshes = model->GetMeshes();
+						for (int i = 0;i < meshes.size();i++) {
+							auto& mesh = meshes[i];
+							auto meshBvh=mesh->GetBvh();
+							std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+							meshBvhStack.push_back(meshBvh->m_root);
+							while (!meshBvhStack.empty()) {
+								auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+								if (!meshBvhCur)continue;
+								float meshTempDist = 1e6;
+								if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
+								{
+									
+									if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+										meshBvhStack.push_back(meshBvhCur->lc);
+										meshBvhStack.push_back(meshBvhCur->rc);
+									}
+									else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+										for (int j = meshBvhCur->startidx;j < meshBvhCur->startidx + meshBvhCur->numprims;j++) {
+											int triIndex = meshBvh->m_packed_indices[j];
+											Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
+											Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
+											Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
+											float currentTriDist = 1e6;
+											Maths::FVector3 currentHitNormal;
+											Maths::FVector3 currentBary;
+											if (localRay.HitDistance(v0, v1, v2, currentTriDist, &currentHitNormal, &currentBary)) {
+												if (currentTriDist < triDist) {
+													triDist = currentTriDist;
+													hitNormal = currentHitNormal;
+													bary = currentBary;
+													outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
+													outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
+													hit = true;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return hit;
+}
+
+::Rendering::Geometry::Bvh* Core::SceneSystem::Scene::GetBvh()
+{
+	return m_sceneBvh;
 }

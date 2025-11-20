@@ -16,8 +16,46 @@ Editor::Rendering::GizmoRenderPass::GizmoRenderPass(::Rendering::Core::Composite
 
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
+	auto& debugSceneDescriptor = m_renderer.GetDescriptor<Editor::Rendering::DebugSceneRenderer::DebugSceneDescriptor>();
 	auto& view = GetService(Editor::Panels::SceneView);;
-	MOON::Guizmo::instance().newFrame(&view);
-	MOON::Guizmo::instance().endFrame();
+	auto& renderer = MOON::Guizmo::instance();
+	renderer.newFrame(&view);
+	auto& inputState = view.getInutState();
+	auto [x,y]=inputState.GetMousePosition();
+	auto ray = view.GetCamera()->GetMouseRay(x, y);;
+	auto rayPo = ray.Value(1);
+	renderer.drawPoint({ rayPo.x,rayPo.y,rayPo.z},30);
+	Maths::FVector3 out;
+	if (view.GetScene()->RayHit(ray, out)) {
+		renderer.drawPoint({ out.x,out.y,out.z }, 20, Eigen::Vector4<uint8_t>{255,0,255,255});
+		std::cout << "RayHit" << std::endl;
+	}
+	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+	auto sceneBvh = view.GetScene()->GetBvh();
+	stack.push_back(sceneBvh->m_root);
+	while (!stack.empty()) {
+		auto cur = stack.back();stack.pop_back();
+		if (!cur)continue;
+		if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+			if (cur->lc) {
+				stack.push_back(cur->lc);
+			}
+			if (cur->rc) {
+				stack.push_back(cur->rc);
+			}
+		}
+
+		
+		auto pmin=cur->bounds.pmin;
+		auto pmax = cur->bounds.pmax;
+		renderer.drawAlignedBox({pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });
+	}
+	if (debugSceneDescriptor.selectedActor)
+	{
+		auto& selectedActor = debugSceneDescriptor.selectedActor.value();
+		const bool isActorHered = debugSceneDescriptor.highlightedActor && debugSceneDescriptor.highlightedActor->GetID() == selectedActor.GetID();
+
+	}
+	renderer.endFrame();
 
 }

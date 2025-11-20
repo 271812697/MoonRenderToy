@@ -50,8 +50,8 @@ void Core::SceneSystem::SceneManager::LoadDefaultScene()
 	m_currentScene->AddDefaultCamera();
 	m_currentScene->AddDefaultLights();
 
-	m_currentScene->AddDefaultReflections();
-	m_currentScene->AddDefaultAtmosphere();
+	//m_currentScene->AddDefaultReflections();
+	//m_currentScene->AddDefaultAtmosphere();
 
 	m_currentScene->AddDefaultSkysphere();
 	m_currentScene->AddDefaultPostProcessStack();

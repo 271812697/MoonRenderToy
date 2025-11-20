@@ -22,6 +22,11 @@ Maths::FVector3::FVector3(const FVector3& p_toCopy) : x(p_toCopy.x), y(p_toCopy.
 {
 }
 
+Maths::FVector3 Maths::FVector3::Normalize()
+{
+	return Maths::FVector3::Normalize(*this);
+}
+
 Maths::FVector3 Maths::FVector3::operator-() const
 {
 	return operator*(-1.0f);
@@ -120,6 +125,19 @@ bool Maths::FVector3::operator==(const FVector3 & p_other)
 bool Maths::FVector3::operator!=(const FVector3 & p_other)
 {
 	return !operator==(p_other);
+}
+
+float Maths::FVector3::Length()
+{
+	return Length(*this);
+}
+
+float Maths::FVector3::Dot(const FVector3& p_left)
+{
+	return Dot(p_left,*this);
+}
+Maths::FVector3 Maths::FVector3::Cross(const FVector3& p_right) {
+	return Cross(*this,p_right);
 }
 
 Maths::FVector3 Maths::FVector3::Add(const FVector3& p_left, const FVector3& p_right)
@@ -266,4 +284,5 @@ float Maths::FVector3::AngleBetween(const FVector3& p_from, const FVector3& p_to
 
 	return 0.0f;
 }
+
 

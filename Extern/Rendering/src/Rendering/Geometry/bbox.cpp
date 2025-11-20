@@ -3,6 +3,12 @@ namespace Rendering::Geometry
 {
 	FVector3 bbox::center()  const { return (pmax + pmin) * 0.5f; }
 	FVector3 bbox::extents() const { return pmax - pmin; }
+	bool bbox::isValid()const
+	{
+		return pmax.x >= pmin.x &&
+			pmax.y >= pmin.y &&
+			pmax.z >= pmin.z;
+	}
 	//包围盒面积
 	float bbox::surface_area() const
 	{
@@ -21,6 +27,10 @@ namespace Rendering::Geometry
 	{
 		pmin = FVector3::Min(pmin, b.pmin);
 		pmax = FVector3::Max(pmax, b.pmax);
+	}
+	bbox bbox::transform(const Maths::FMatrix4&matrix)const
+	{
+		return bbox(Maths::FMatrix4::MulPoint(matrix, pmin), Maths::FMatrix4::MulPoint(matrix, pmax));
 	}
 	bool bbox::contains(FVector3 const& p) const
 	{

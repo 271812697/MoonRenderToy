@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Rendering/HAL/VertexArray.h>
 #include <Rendering/Geometry/BoundingSphere.h>
+#include <Rendering/Geometry/bbox.h>
 
 namespace Rendering::Resources
 {
@@ -15,5 +16,6 @@ namespace Rendering::Resources
 		virtual uint32_t GetVertexCount() const = 0;
 		virtual uint32_t GetIndexCount() const = 0;
 		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const = 0;
+		virtual const Rendering::Geometry::bbox& GetBoundingBox()const=0;
 	};
 }

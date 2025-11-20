@@ -196,6 +196,8 @@ namespace MOON {
 				else if (currentState == Qt::Unchecked) {
 					actor->SetActive(false);
 				}
+				Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+				scene->BuildSceneBvh();
 			}
 		}
 	}

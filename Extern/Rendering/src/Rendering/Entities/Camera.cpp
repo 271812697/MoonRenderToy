@@ -247,6 +247,21 @@ void Rendering::Entities::Camera::OrthZoom(float delta, int x, int y)
 	
 }
 
+::Rendering::Geometry::Ray Rendering::Entities::Camera::GetMouseRay(int x, int y)
+{
+	float u = (x / static_cast<float>(m_windowWidth))*2.0f - 1.0f;
+	float v = (1.0f - y / static_cast<float>(m_windowHeight))*2.0f - 1.0f;
+	const Maths::FVector3& up = transform->GetWorldUp();
+	const Maths::FVector3& right = transform->GetWorldRight();
+	const Maths::FVector3& forward = transform->GetWorldForward();
+	const Maths::FVector3& position = transform->GetWorldPosition();
+	float fovRad = m_fov/2.0f * (3.14159265359f / 180.0f);
+	float height = v*m_near*std::tan(fovRad);
+	float width = u*m_ratio * m_near * std::tan(fovRad);
+	Maths::FVector3 dir= forward * m_near + height * up - width * right;
+	return Geometry::Ray(position,dir);
+}
+
 Maths::FMatrix4 Rendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) 
 {
     using namespace Maths;

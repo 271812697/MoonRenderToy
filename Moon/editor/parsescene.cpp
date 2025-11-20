@@ -144,7 +144,7 @@ namespace MOON {
 			materilaRener.UpdateMaterialList();
 
 		}
-
+		scene->BuildSceneBvh();
 	}
 
 	void ParseScene::updateTreeViewSceneRoot()

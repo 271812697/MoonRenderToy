@@ -956,17 +956,6 @@ namespace MOON
 	}
 	void Guizmo::drawViewCube()
 	{
-
-		//return;
-		//params to control
-		
-		//for (int i = 0; i < viewCube.cellArray.size(); i++) {
-		//	viewCube.cellArray[i].drawLine(this);
-		//	viewCube.cellArray[i].drawFace(this);
-		//}
-		auto& viewCube = ViewCube();
-
-
 	}
 
 	void Guizmo::drawRayHitScreenPoint()

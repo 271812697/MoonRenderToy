@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include "Maths/FVector3.h"
+#include "Maths/FVector2.h"
 namespace Rendering::Geometry
 {
 	/**
@@ -12,10 +14,10 @@ namespace Rendering::Geometry
 		float tangent[3];
 		float bitangent[3];
 	};
-	struct VertexSimple
+	struct VertexBVH
 	{
-		float position[3];
-		float normals[3];
-		float texCoords[2];
+		Maths::FVector3 position;
+		Maths::FVector2 texCoords;
+		Maths::FVector3 normals;
 	};
 }

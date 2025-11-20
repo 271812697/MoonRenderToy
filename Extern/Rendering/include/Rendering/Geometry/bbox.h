@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include "Maths/FVector3.h"
+#include "Maths/FMatrix4.h"
 namespace Rendering::Geometry
 {
 	using namespace Maths;
@@ -24,7 +25,9 @@ namespace Rendering::Geometry
 			, pmax(p)
 		{
 		}
+		bbox(const bbox& b):pmin(b.pmin),pmax(b.pmax) {
 
+		}
 		bbox(FVector3 const& p1, FVector3 const& p2)
 			: pmin(FVector3::Min(p1, p2))
 			, pmax(FVector3::Max(p1, p2))
@@ -33,7 +36,7 @@ namespace Rendering::Geometry
 
 		FVector3 center()  const;
 		FVector3 extents() const;
-
+		bool isValid()const;
 		bool contains(FVector3 const& p) const;
 
 		inline int maxdim() const
@@ -59,6 +62,7 @@ namespace Rendering::Geometry
 		void grow(FVector3 const& p);
 		// Grow the bounding box by a box
 		void grow(bbox const& b);
+		bbox transform(const Maths::FMatrix4&)const;
 
 		FVector3 pmin;
 		FVector3 pmax;

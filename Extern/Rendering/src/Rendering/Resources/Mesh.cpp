@@ -1,5 +1,6 @@
 ﻿#include <array>
 #include <Rendering/Resources/Mesh.h>
+#include "Rendering/Geometry/split_bvh.h"
 
 Rendering::Resources::Mesh::Mesh(
 	std::span<const Geometry::Vertex> p_vertices,
@@ -9,12 +10,28 @@ Rendering::Resources::Mesh::Mesh(
 	m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
 	m_indicesCount(static_cast<uint32_t>(p_indices.size()))
 {
+	isIndex = m_indicesCount> 0;
+	
+	m_indices.resize(m_indicesCount);
+	m_vertices.resize(m_vertexCount);
+	memcpy(m_indices.data(), p_indices.data(), p_indices.size_bytes());
 	for (int i = 0;i < p_vertices.size();i++) {
+	
+		m_vertices[i].position.x = p_vertices[i].position[0];
+		m_vertices[i].position.y = p_vertices[i].position[1];
+		m_vertices[i].position.z = p_vertices[i].position[2];
 
+		m_vertices[i].texCoords.x = p_vertices[i].texCoords[0];
+		m_vertices[i].texCoords.y= p_vertices[i].texCoords[1];
+
+		m_vertices[i].normals.x = p_vertices[i].normals[0];
+		m_vertices[i].normals.y = p_vertices[i].normals[1];
+		m_vertices[i].normals.z = p_vertices[i].normals[2];
 	}
 	m_materialIndex.push_back(p_materialIndex);
 	Upload(p_vertices, p_indices);
-	ComputeBoundingSphere(p_vertices);
+	ComputeBoundingSphereAndBox(p_vertices);
+
 }
 Rendering::Resources::Mesh::~Mesh()
 {
@@ -66,28 +83,47 @@ Rendering::HAL::VertexBuffer& Rendering::Resources::Mesh::getVertexBuffer()
 	return m_vertexBuffer;
 }
 
+Maths::FVector3 Rendering::Resources::Mesh::GetVertexPosition(int index)
+{
+	return isIndex?m_vertices[m_indices[index]].position: m_vertices[index].position;
+}
+
 void Rendering::Resources::Mesh::BuildBvh()
 {
 	if (m_bvh) {
 		delete m_bvh;
+		m_bvh = nullptr;
 	}
-	const int numTris = verticesUVX.size() / 3;
-	//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
-	std::vector<RadeonRays::bbox> bounds(numTris);
+	
+	//currently only build for triangles
+	
+	int numTris = isIndex ? m_indicesCount / 3 : m_vertexCount / 3;
+	if (numTris > 0) {
+		m_bvh = new Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+		//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
+		std::vector<Geometry::bbox> bounds(numTris);
 
-	for (int i = 0; i < numTris; ++i)
-	{
-		const Vec3 v1 = Vec3(verticesUVX[i * 3 + 0]);
-		const Vec3 v2 = Vec3(verticesUVX[i * 3 + 1]);
-		const Vec3 v3 = Vec3(verticesUVX[i * 3 + 2]);
-
-		bounds[i].grow(v1);
-		bounds[i].grow(v2);
-		bounds[i].grow(v3);
+		for (int i = 0; i < numTris; ++i)
+		{
+			if (isIndex) {
+				bounds[i].grow(m_vertices[m_indices[3 * i]].position);
+				bounds[i].grow(m_vertices[m_indices[3 * i+1]].position);
+				bounds[i].grow(m_vertices[m_indices[3 * i+2]].position);
+			}
+			else
+			{			
+				bounds[i].grow(m_vertices[3 * i].position);
+				bounds[i].grow(m_vertices[3 * i + 1].position);
+				bounds[i].grow(m_vertices[3 * i + 2].position);
+			}
+		}
+		m_bvh->Build(&bounds[0], numTris);
 	}
+}
 
-	mBvh->Build(&bounds[0], numTris);
-	meshBounds = mBvh->Bounds();
+Rendering::Geometry::Bvh* Rendering::Resources::Mesh::GetBvh()
+{
+	return m_bvh;
 }
 
 void Rendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices)
@@ -118,7 +154,7 @@ void Rendering::Resources::Mesh::Upload(std::span<const Geometry::Vertex> p_vert
 	}
 }
 
-void Rendering::Resources::Mesh::ComputeBoundingSphere(std::span<const Geometry::Vertex> p_vertices)
+void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(std::span<const Geometry::Vertex> p_vertices)
 {
 	m_boundingSphere.position = Maths::FVector3::Zero;
 	m_boundingSphere.radius = 0.0f;
@@ -152,6 +188,8 @@ void Rendering::Resources::Mesh::ComputeBoundingSphere(std::span<const Geometry:
 			const auto& position = reinterpret_cast<const Maths::FVector3&>(vertex.position);
 			m_boundingSphere.radius = std::max(m_boundingSphere.radius, Maths::FVector3::Distance(m_boundingSphere.position, position));
 		}
+		BuildBvh();
 	}
-	m_bvh
+
+	
 }

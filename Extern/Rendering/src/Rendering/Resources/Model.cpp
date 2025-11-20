@@ -1,12 +1,14 @@
-﻿
-
-#include <algorithm>
-
+﻿#include <algorithm>
 #include "Rendering/Resources/Model.h"
-
 const Rendering::Geometry::BoundingSphere& Rendering::Resources::Model::GetBoundingSphere() const
 {
 	return m_boundingSphere;
+}
+
+const Rendering::Geometry::bbox& Rendering::Resources::Model::GetBoundingBox()
+{
+	ComputeBoundingBox();
+	return m_boundingBox;
 }
 
 Rendering::Resources::Model::Model(const std::string & p_path) : path(p_path)
@@ -55,6 +57,15 @@ void Rendering::Resources::Model::ComputeBoundingSphere()
 			m_boundingSphere.position = Maths::FVector3{ minX + maxX, minY + maxY, minZ + maxZ } / 2.0f;
 			m_boundingSphere.radius = Maths::FVector3::Distance(m_boundingSphere.position, { minX, minY, minZ });
 		}
+	}
+}
+
+void Rendering::Resources::Model::ComputeBoundingBox()
+{
+	m_boundingBox = Geometry::bbox();
+	for (const auto& mesh : m_meshes)
+	{
+		m_boundingBox.grow(mesh->GetBoundingBox());
 	}
 }
 

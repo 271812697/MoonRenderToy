@@ -393,8 +393,12 @@ Maths::FVector3 Maths::FMatrix4::MulPoint(const FMatrix4& p_matrix, const FVecto
 {
 	FVector4 hp = { p.x,p.y,p.z,1.0f };
 	hp = p_matrix * hp;
-
 	return { hp.x / hp.w,hp.y / hp.w,hp.z / hp.w };
+}
+Maths::FVector3 Maths::FMatrix4::MulDir(const FMatrix4& p_matrix, const FVector3& p)
+{  
+	auto dir=FMatrix4::Multiply(p_matrix, FVector4(p, 0.0));
+	return FVector3(dir.x,dir.y,dir.z).Normalize();
 }
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisX(float p_rotation)
 {

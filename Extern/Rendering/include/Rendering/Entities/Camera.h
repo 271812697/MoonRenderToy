@@ -7,14 +7,13 @@
 #include "Rendering/Data/Frustum.h"
 #include "Rendering/Settings/EProjectionMode.h"
 #include "Rendering/Entities/Entity.h"
+#include "Rendering/Geometry/ray.h"
 
 namespace Rendering::Entities
 {
-
 	class Camera : public Rendering::Entities::Entity
 	{
 	public:
-
 		Camera(Tools::Utils::OptRef<Maths::FTransform> p_transform = std::nullopt);
 		void CacheMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight);
 		void CacheProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
@@ -55,6 +54,7 @@ namespace Rendering::Entities
 		void ProjectionFitToSphere(Rendering::Geometry::BoundingSphere& sphere,const Maths::FVector3& dir);
 		void PersertiveZoom(float delta);
 		void OrthZoom(float delta, int x, int y);
+		Geometry::Ray GetMouseRay(int x, int y);
 	private:
 		Maths::FMatrix4 CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
 		Maths::FMatrix4 CalculateViewMatrix() const;

@@ -44,6 +44,16 @@ const Rendering::Geometry::BoundingSphere& Core::ECS::Components::CModelRenderer
 	return m_customBoundingSphere;
 }
 
+const::Rendering::Geometry::bbox Core::ECS::Components::CModelRenderer::GetBoundingBox() const
+{
+	if (m_model)
+	{
+		return m_model->GetBoundingBox().transform(owner.transform.GetWorldMatrix());
+	}
+	static ::Rendering::Geometry::bbox emptyBox;
+	return emptyBox;
+}
+
 void Core::ECS::Components::CModelRenderer::SetCustomBoundingSphere(const ::Rendering::Geometry::BoundingSphere& p_boundingSphere)
 {
 	m_customBoundingSphere = p_boundingSphere;

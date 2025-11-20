@@ -268,6 +268,7 @@ namespace Maths
 		*/
 		static FMatrix4 Translation(const FVector3& p_translation);
 		static FVector3 MulPoint(const FMatrix4& p_matrix, const FVector3& p);
+		static FVector3 MulDir(const FMatrix4& p_matrix, const FVector3& p);
 		/**
 		* Translate matrix in 3D
 		* @param p_matrix

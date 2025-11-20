@@ -18,7 +18,7 @@ namespace Maths
 		FVector3(float p_x = 0.0f, float p_y = 0.0f, float p_z = 0.0f);
 
 		FVector3(const FVector3& p_toCopy);
-
+		FVector3 Normalize();
 
 		FVector3(FVector3&& p_toMove) noexcept = default;
 
@@ -57,11 +57,11 @@ namespace Maths
 
 
 		bool operator!=(const FVector3& p_other);
-
+		float Length();
+		float Dot(const FVector3& p_left);
+		FVector3 Cross(const FVector3& p_right);
 		static FVector3 Add(const FVector3& p_left, const FVector3& p_right);
-
 		static FVector3 Substract(const FVector3& p_left, const FVector3& p_right);
-
 		static FVector3 Multiply(const FVector3& p_target, float p_scalar);
 
 
@@ -83,4 +83,10 @@ namespace Maths
 		static FVector3 Clamp(const FVector3& a, const FVector3& min, const FVector3& max);
 		static float AngleBetween(const FVector3& p_from, const FVector3& p_to);
 	};
+	
+	
+	inline FVector3 operator*(float scalar, const Maths::FVector3& v)
+	{
+		return Maths::FVector3(v.x * scalar, v.y * scalar, v.z * scalar);
+	}
 }
