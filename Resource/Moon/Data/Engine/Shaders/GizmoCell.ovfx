@@ -20,7 +20,7 @@ out VSOutPut{
 
 void main() 
 {
-    vData.color = aColor.abgr; // swizzle to correct endianness
+    vData.color = aColor.rgba; // swizzle to correct endianness
     vData.pos= aPositionSize.xyz;
     vData.normal=aNormal;
     vData.uv=aUv;

@@ -138,7 +138,8 @@ namespace MOON
 		Eigen::Vector4<uint8_t> color = { 255,255,255,255 };
 		void clear();
 		Cell() = default;
-		Cell(const Eigen::Vector3f&v0, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2);
+
+		Cell(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2,const Eigen::Vector4<uint8_t>& c);
 		void addPoint(const Eigen::Vector3f& v, const Eigen::Vector2f& tex);
 		void addPointArray(const std::vector<Eigen::Vector3f>& v, const std::vector<Eigen::Vector2f>& tex);
 		Cell transform(const Eigen::Matrix4f& mat, float offsetX = 0.0f, float offsetY = 0.0f);
@@ -192,6 +193,7 @@ namespace MOON
 		unsigned int vbo = 0;
 		unsigned int numVertex = 0;
 		bool isDirty = false;
+		bool drawEdge = true;
 		Rendering::Resources::Texture* texture = nullptr;
 		Rendering::Resources::Texture* edgeTexture = nullptr;
 		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
@@ -211,10 +213,11 @@ namespace MOON
 			initGpuBuffer();
 		}
 		~Polygon();
-		void addMesh(Rendering::Resources::Mesh*mesh, const Maths::FMatrix4& matrix);
-		void addModel(Rendering::Resources::Model*model,const Maths::FMatrix4& matrix);
+		void addMesh(Rendering::Resources::Mesh*mesh, const Maths::FMatrix4& matrix , const Eigen::Vector4<uint8_t>& c);
+		void addModel(Rendering::Resources::Model*model,const Maths::FMatrix4& matrix,const Eigen::Vector4<uint8_t>& c);
 		void initGpuBuffer();
 		int hit(const Eigen::Matrix4f& viewProj, float u, float v);
 	};
 	Polygon& ViewCube();
+	Polygon& ViewAxis();
 }

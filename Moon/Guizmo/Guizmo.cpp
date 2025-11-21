@@ -3980,7 +3980,7 @@ namespace MOON
 			auto proj=Maths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
 			if (faceIndex != -1) {
-				viewCube.setCellColor(faceIndex,{255,0,255,255});
+				viewCube.setCellColor(faceIndex,{255,255,0,255});
 				if (wasKeyReleased(MouseMiddle)) {
 					auto nor=-viewCube.getCellNormal(faceIndex);
 					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
@@ -3997,18 +3997,14 @@ namespace MOON
 			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
-	/*		Maths::FMatrix4 model =
-				Maths::FMatrix4::Translation({ 0,0,0 }) *
-				Maths::FMatrix4::Scaling({ 5,5,5 });
-			mCellMaterial->SetProperty("uModelMatrix", model);
-			
-			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial,model);
-			
-			mCellMaterial->SetProperty("uModelMatrix", model.RotateOnAxisY(-90));
-			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial, model);
+			auto& viewAxis = ViewAxis();
+			mCellMaterial->SetProperty("edgeTexture", viewAxis.edgeTexture);
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			viewAxis.bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
 
-			mCellMaterial->SetProperty("uModelMatrix", model.RotateOnAxisX(-90));
-			renderView->GetRenderer().DrawModelWithSingleMaterial(p_pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), *mCellMaterial, model);*/
+
+
 		}
 	}
 	void Guizmo::drawMesh()

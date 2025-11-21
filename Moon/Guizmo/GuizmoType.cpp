@@ -13,8 +13,9 @@ namespace MOON {
 		vertex.clear();
 		uv.clear();
 	}
-	Cell::Cell(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2)
+	Cell::Cell(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2, const Eigen::Vector4<uint8_t>& c)
 	{
+		color = c;
 		addPoint(v0,{0,0});
 		addPoint(v1, { 0,0 });
 		addPoint(v2, { 0,0 });
@@ -74,14 +75,14 @@ namespace MOON {
 				vData.push_back(vd2);
 				vData.push_back(vd3);
 				if (j == 2) {
-					edgeValue.push_back(6);
+					edgeValue.push_back(drawEdge ? 6:0);
 				}
 				else if (j == cell.vertex.size() - 1) {
-					edgeValue.push_back(3);
+					edgeValue.push_back(drawEdge ? 3:0);
 				}
 				else
 				{
-					edgeValue.push_back(2);
+					edgeValue.push_back(drawEdge ? 2:0);
 				}
 			}
 		}
@@ -121,7 +122,7 @@ namespace MOON {
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
 	}
-	void Polygon::addMesh(Rendering::Resources::Mesh* mesh,const Maths::FMatrix4& matrix)
+	void Polygon::addMesh(Rendering::Resources::Mesh* mesh,const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
 	{
 		int vcnt=mesh->GetVertexCount();
 		int icnt = mesh->GetIndexCount();
@@ -130,13 +131,13 @@ namespace MOON {
 			auto v0 = Maths::FMatrix4::MulPoint(matrix,mesh->GetVertexPosition(i));
 			auto v1 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+1));
 			auto v2 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+2));
-			cellArray.push_back(Cell({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z }));
+			cellArray.push_back(Cell({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z },c));
 		}
 	}
-	void Polygon::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix)
+	void Polygon::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
 	{
 		for (auto m:model->GetMeshes()) {
-			addMesh(m,matrix);
+			addMesh(m,matrix,c);
 		}
 	}
 	void Polygon::initGpuBuffer()
@@ -265,17 +266,35 @@ namespace MOON {
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			Maths::FMatrix4 model =
+		/*	Maths::FMatrix4 model =
 				Maths::FMatrix4::Translation({ 0,0,0 }) *
 				Maths::FMatrix4::Scaling({ 5,5,5 });
 			
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"),model);
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(-90));
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90));
-					
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"),model,{0,0,255,255});
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(90), {255,0,0,255});
+			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90),{0,255,0,255});
+	*/				
 			viewCube.initGpuBuffer();
 			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}
 		return viewCube;
+	}
+	Polygon& ViewAxis()
+	{
+		static Polygon viewAxis;
+		if (viewAxis.cellArray.size() == 0) {
+
+			Maths::FMatrix4 model =
+				Maths::FMatrix4::Translation({ 0,0,0 }) *
+				Maths::FMatrix4::Scaling({ 5,5,5 });
+			viewAxis.drawEdge = false;
+			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model, { 0,0,255,255 });
+			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(-90), { 255,0,0,255 });
+			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90), { 0,255,0,255 });
+
+			viewAxis.initGpuBuffer();
+			viewAxis.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+		}
+		return viewAxis;
 	}
 }
