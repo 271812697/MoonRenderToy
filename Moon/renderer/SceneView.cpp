@@ -127,6 +127,9 @@ void Editor::Panels::SceneView::FitToSelectedActor(const Maths::FVector3& dir)
 				auto transform=mTargetActor->GetComponent<::Core::ECS::Components::CTransform>();
 				auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
 				sphere.position=Maths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
+				
+				auto scale = transform->GetWorldScale();
+				sphere.radius*=scale.Max();
 				m_camera.ProjectionFitToSphere(sphere,dir);
 
 				float pi = 3.14159265359f;

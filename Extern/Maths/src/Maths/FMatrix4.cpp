@@ -8,7 +8,7 @@
 #include "Maths/FQuaternion.h"
 
 constexpr float kPI = 3.14159265359f;
-constexpr float kEpsilon = 0.00001f;
+constexpr float kEpsilon = 0.0000001f;
 
 const Maths::FMatrix4 Maths::FMatrix4::Identity{
 	1.f, 0.f, 0.f, 0.f,
@@ -422,6 +422,11 @@ Maths::FVector3 Maths::FMatrix4::MulPoint( const FVector3& p)const
 Maths::FVector3 Maths::FMatrix4::MulDir( const FVector3& p)const 
 {
 	return MulDir(*this,p);
+}
+Maths::FVector3 Maths::FMatrix4::MulDirNotNormlaize(const FVector3& p) const
+{
+	auto dir = FMatrix4::Multiply(*this, FVector4(p, 0.0));
+	return FVector3(dir.x, dir.y, dir.z);
 }
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisX(float p_rotation)
 {

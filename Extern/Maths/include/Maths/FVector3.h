@@ -60,6 +60,7 @@ namespace Maths
 		float Length();
 		float Dot(const FVector3& p_left);
 		FVector3 Cross(const FVector3& p_right);
+		float Max();
 		static FVector3 Add(const FVector3& p_left, const FVector3& p_right);
 		static FVector3 Substract(const FVector3& p_left, const FVector3& p_right);
 		static FVector3 Multiply(const FVector3& p_target, float p_scalar);

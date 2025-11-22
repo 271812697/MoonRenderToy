@@ -139,7 +139,10 @@ float Maths::FVector3::Dot(const FVector3& p_left)
 Maths::FVector3 Maths::FVector3::Cross(const FVector3& p_right) {
 	return Cross(*this,p_right);
 }
-
+float Maths::FVector3::Max()
+{
+	return std::max(x, std::max(y, z));
+}
 Maths::FVector3 Maths::FVector3::Add(const FVector3& p_left, const FVector3& p_right)
 {
 	return FVector3
