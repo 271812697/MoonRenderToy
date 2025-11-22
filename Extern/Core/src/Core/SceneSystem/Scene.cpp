@@ -405,7 +405,6 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 		float tempDist = 1e6;
 		if (ray.HitDistance(cur->bounds, tempDist)) 
 		{
-		
 			if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
 				stack.push_back(cur->lc);
 				stack.push_back(cur->rc);
