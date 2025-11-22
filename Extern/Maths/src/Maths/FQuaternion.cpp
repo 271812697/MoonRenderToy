@@ -28,6 +28,16 @@ Maths::FQuaternion::FQuaternion(float p_x, float p_y, float p_z, float p_w) :
 {
 }
 
+Maths::FQuaternion::FQuaternion(FVector3 axis, float angleRad)
+{
+	w = cos(angleRad /2 );
+	float len=sqrt(1 - w * w);
+	FVector3 op=axis.Normalize()*len;
+	x = op.x;
+	y = op.y;
+	z = op.z;
+}
+
 Maths::FQuaternion::FQuaternion(const FQuaternion & p_other) :
 	x(p_other.x), y(p_other.y), z(p_other.z), w(p_other.w)
 {
@@ -159,6 +169,7 @@ Maths::FQuaternion::FQuaternion(const FVector3 & p_euler)
 	x = sr * cp * cy - cr * sp * sy;
 	y = cr * sp * cy + sr * cp * sy;
 	z = cr * cp * sy - sr * sp * cy;
+
 	w = cr * cp * cy + sr * sp * sy;
 }
 

@@ -130,8 +130,23 @@ namespace MOON
 		mLineMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
-		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
-		mLitMaterial->AddFeature("WITH_EDGE");
+		mCellMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
+		mCellMaterial->AddFeature("WITH_EDGE");
+		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+		mLitMaterial->SetBackfaceCulling(false);;
+		mLitMaterial->SetCastShadows(false);
+		mLitMaterial->SetReceiveShadows(false);
+
+
+		mLitMaterial->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+
+		mLitMaterial->SetProperty("u_AlphaClippingThreshold", 1.0f);
+		mLitMaterial->SetProperty("u_Roughness", 0.1f);
+		mLitMaterial->SetProperty("u_Metallic", 0.1f);
+		// Emission
+		mLitMaterial->SetProperty("u_EmissiveIntensity", 1.0f);
+		mLitMaterial->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
+
 		glGenBuffers(1, &VertexBuffer);
 		glGenVertexArrays(1, &VertexArray);
 		glBindVertexArray(VertexArray);
@@ -159,6 +174,7 @@ namespace MOON
 		delete mLineMaterial;
 		delete mPointMaterial;
 		delete mTriangleMaterial;
+		delete mCellMaterial;
 		delete mLitMaterial;
 	}
 	void Guizmo::begin(PrimitiveMode _mode)
@@ -3801,15 +3817,8 @@ namespace MOON
 		}
 		driver->SetPipelineState(p_pso);
 		glEnable(GL_POINT_SPRITE);
-		//glEnable(GL_BLEND);
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_PROGRAM_POINT_SIZE);
-		//glEnable(GL_DEPTH_TEST);
-		//glDepthFunc(GL_ALWAYS);
-		//glDisable(GL_CULL_FACE);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		//glEnable(GL_POLYGON_OFFSET_FILL); // 2.0f, 25.0f
+
 		glViewport(0, 0, cameraParam.viewportWidth, cameraParam.viewportHeight);
 
 		for (int i = 0, n = drawLists.size(); i < n; ++i)
@@ -3962,32 +3971,31 @@ namespace MOON
 			);
 		
 			auto proj=Maths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
-			
-			
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
 			if (faceIndex != -1) {
-				viewCube.setCellColor(faceIndex,{255,0,255,255});
+				viewCube.setCellColor(faceIndex,{255,255,0,255});
 				if (wasKeyReleased(MouseMiddle)) {
 					auto nor=-viewCube.getCellNormal(faceIndex);
 					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
 				}
 			}
 			
-			//mLitMaterial->SetProperty("uViewPos", renderView->GetCamera()->GetPosition());
-			mLitMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
-			mLitMaterial->SetProperty("uViewMatrix", view);
-			mLitMaterial->SetProperty("uVProjMatrix", proj);
-			mLitMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
-			mLitMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
-			mLitMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
-
-			mLitMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
-			
-			
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
+			mCellMaterial->SetProperty("uViewMatrix", view);
+			mCellMaterial->SetProperty("uVProjMatrix", proj);
+			mCellMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
+			mCellMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
+			mCellMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
-			
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
+			auto& viewAxis = ViewAxis();
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewAxis.model));
+			mCellMaterial->SetProperty("edgeTexture", viewAxis.edgeTexture);
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			viewAxis.bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
 		}
 	}
 	void Guizmo::drawMesh()

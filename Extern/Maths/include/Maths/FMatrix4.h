@@ -155,7 +155,8 @@ namespace Maths
 		* @param p_column
 		*/
 		float& operator()(uint8_t p_row, uint8_t p_column);
-
+		FMatrix4 RotateOnAxisY(float p_rotation);
+		FMatrix4 RotateOnAxisX(float p_rotation);
 		/**
 		* Check if elements are equals
 		* @param p_left
@@ -261,7 +262,7 @@ namespace Maths
 		* @param p_matrix
 		*/
 		static FMatrix4 Inverse(const FMatrix4& p_matrix);
-
+		FMatrix4 Inverse();
 		/**
 		* Return 3D translation matrix
 		* @param p_translation
@@ -269,6 +270,8 @@ namespace Maths
 		static FMatrix4 Translation(const FVector3& p_translation);
 		static FVector3 MulPoint(const FMatrix4& p_matrix, const FVector3& p);
 		static FVector3 MulDir(const FMatrix4& p_matrix, const FVector3& p);
+		FVector3 MulPoint(const FVector3& p)const;
+		FVector3 MulDir(const FVector3& p)const ;
 		/**
 		* Translate matrix in 3D
 		* @param p_matrix

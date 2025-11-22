@@ -130,7 +130,8 @@ namespace Maths
 		* @param p_translation
 		*/
 		void TranslateLocal(const FVector3& p_translation);
-
+		void TranslateWorld(const FVector3& p_translation);
+		void RotateWorld(const FQuaternion& p_rotation);
 		/**
 		* Rotate in the local space
 		* @param p_rotation

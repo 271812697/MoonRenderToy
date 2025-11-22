@@ -220,7 +220,7 @@ namespace MOON
 		void cancleDrawTask(const std::string& name);
 	
 	private:
-		Editor::Panels::SceneView* renderView = nullptr;
+		 Editor::Panels::SceneView* renderView = nullptr;
 
 	private:
 		std::vector<std::string> cancelList;
@@ -232,8 +232,8 @@ namespace MOON
 		Rendering::Data::Material* mLineMaterial = nullptr;
 		Rendering::Data::Material* mPointMaterial = nullptr;
 		Rendering::Data::Material* mTriangleMaterial = nullptr;
+		Rendering::Data::Material* mCellMaterial = nullptr;
 		Rendering::Data::Material* mLitMaterial = nullptr;
-
 		std::vector<Eigen::Vector4<uint8_t>> colorStack;
 		std::vector<float> alphaStack;
 		std::vector<float> sizeStack;

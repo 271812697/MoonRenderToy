@@ -151,6 +151,17 @@ float& Maths::FMatrix4::operator()(uint8_t p_row, uint8_t p_column)
 	return data[4 * p_row + p_column];
 }
 
+Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisY(float p_rotation)
+{
+	return RotateOnAxisY(*this,p_rotation/180*kPI);
+	
+}
+
+Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisX(float p_rotation)
+{
+	return RotateOnAxisX(*this, p_rotation / 180 * kPI);
+}
+
 bool Maths::FMatrix4::AreEquals(const FMatrix4& p_left, const FMatrix4& p_right)
 {
 	return memcmp(&p_left, &p_right, 16 * sizeof(float)) == 0;
@@ -376,6 +387,10 @@ Maths::FMatrix4 Maths::FMatrix4::Inverse(const FMatrix4& p_matrix)
 
 	return inverse;
 }
+Maths::FMatrix4 Maths::FMatrix4::Inverse()
+{
+	return Inverse(*this);
+}
 
 Maths::FMatrix4 Maths::FMatrix4::Translation(const FVector3& p_translation)
 {
@@ -399,6 +414,14 @@ Maths::FVector3 Maths::FMatrix4::MulDir(const FMatrix4& p_matrix, const FVector3
 {  
 	auto dir=FMatrix4::Multiply(p_matrix, FVector4(p, 0.0));
 	return FVector3(dir.x,dir.y,dir.z).Normalize();
+}
+Maths::FVector3 Maths::FMatrix4::MulPoint( const FVector3& p)const 
+{
+	return MulPoint(*this,p);
+}
+Maths::FVector3 Maths::FMatrix4::MulDir( const FVector3& p)const 
+{
+	return MulDir(*this,p);
 }
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisX(float p_rotation)
 {

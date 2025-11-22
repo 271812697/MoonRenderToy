@@ -140,13 +140,7 @@ void Editor::Core::CameraController::HandleFirstMouse()
 	m_ypr = Maths::FQuaternion::EulerAngles(m_camera.GetRotation());
 	m_ypr = RemoveRoll(m_ypr);
 	m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_view.GetRoaterCenter(), m_camera.GetPosition());
-	//if (m_view.IsSelectActor()) {
-
-	//	m_orbitTarget = &m_view.GetSelectedActor().transform.GetFTransform();
-	//	m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_orbitTarget->GetWorldPosition(), m_camera.GetPosition());
-
-	//}
-
+	
 }
 
 void Editor::Core::CameraController::MoveToTarget(::Core::ECS::Actor& p_target)
@@ -228,10 +222,7 @@ std::optional<std::reference_wrapper<Core::ECS::Actor>> Editor::Core::CameraCont
 void Editor::Core::CameraController::HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouset)
 {
 
-	auto mouseOffset = p_mouseOffset * m_cameraDragSpeed;
-
-	m_camera.SetPosition(m_camera.GetPosition() + m_camera.transform->GetWorldRight() * mouseOffset.x);
-	m_camera.SetPosition(m_camera.GetPosition() - m_camera.transform->GetWorldUp() * mouseOffset.y);
+	m_camera.HandleCameraPanning(p_mouseOffset, m_cameraDragSpeed);
 }
 
 Maths::FVector3 RemoveRoll(const Maths::FVector3& p_ypr)
@@ -258,14 +249,32 @@ void Editor::Core::CameraController::HandleCameraOrbit(
 )
 {
 	auto mouseOffset = p_mouseOffset * m_cameraOrbitSpeed;
-	m_ypr.y += -mouseOffset.x;
-	m_ypr.x += -mouseOffset.y;
-	m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
+	float oldpry = m_ypr.y;
+	float oldprx = m_ypr.x;
+	m_ypr.y +=-mouseOffset.x;
+	m_ypr.x +=-mouseOffset.y;
+	//m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
+	float offsetY =  m_ypr.x - oldprx;
+	float offsetX =  m_ypr.y - oldpry;
+	//Maths::FTransform pivotTransform(center);
+	//Maths::FTransform cameraTransform(m_orbitStartOffset);
+	//cameraTransform.SetParent(pivotTransform);
+	//pivotTransform.RotateLocal(Maths::FQuaternion(m_ypr));
+	//m_camera.SetPosition(cameraTransform.GetWorldPosition());
+	//m_camera.SetRotation(cameraTransform.GetWorldRotation());
 	Maths::FTransform pivotTransform(center);
-
-	Maths::FTransform cameraTransform(m_orbitStartOffset);
+	Maths::FTransform cameraTransform=m_camera.GetTransform();
 	cameraTransform.SetParent(pivotTransform);
-	pivotTransform.RotateLocal(Maths::FQuaternion(m_ypr));
+	cameraTransform.SetLocalPosition(m_camera.GetPosition()-center);
+	auto yAxis =  m_camera.GetTransform().GetWorldUp();
+	auto xAxis = m_camera.GetTransform().GetWorldRight();
+	float ratio = m_camera.GetRatio();
+	//There's no need to correct the aspect ratio.
+	auto rAXis = yAxis * offsetX + xAxis*offsetY ;
+	float angleRad = rAXis.Length() / 180.0*3.14157;// -mouseOffset.x / 180.0f * 3.14157;// rAXis.Length() / 100.0;
+	rAXis = rAXis.Normalize();
+	auto quat = Maths::FQuaternion(rAXis, angleRad);
+	pivotTransform.RotateWorld(quat);
 	m_camera.SetPosition(cameraTransform.GetWorldPosition());
 	m_camera.SetRotation(cameraTransform.GetWorldRotation());
 }
@@ -290,14 +299,14 @@ void Editor::Core::CameraController::HandleCameraZoom()
 
 void Editor::Core::CameraController::HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse)
 {
-	auto mouseOffset = p_mouseOffset * m_mouseSensitivity;
+	//auto mouseOffset = p_mouseOffset * m_mouseSensitivity;
 
 
-	m_ypr.y -= mouseOffset.x;
-	m_ypr.x += -mouseOffset.y;
-	m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
+	//m_ypr.y -= mouseOffset.x;
+	//m_ypr.x += -mouseOffset.y;
+	//m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
 
-	m_camera.SetRotation(Maths::FQuaternion(m_ypr));
+	//m_camera.SetRotation(Maths::FQuaternion(m_ypr));
 }
 
 void Editor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime)

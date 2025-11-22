@@ -65,9 +65,6 @@ else()
 endif()
 
 list(APPEND Mayo_CompileDefinitions OCCT_HANDLE_NOCAST)
-if(UNIX AND NOT APPLE)
-    list(APPEND Mayo_CompileDefinitions OCC_CONVERT_SIGNALS)
-endif()
 
 if(OpenCASCADE_FOUND)
     message(STATUS "OpenCascade version ${OpenCASCADE_VERSION}")
@@ -152,7 +149,6 @@ if(OpenCASCADE_FOUND)
 endif()
 
 add_subdirectory(Extern)
-add_subdirectory(QtNode)
 add_subdirectory(Moon)
 add_subdirectory(Tools)
 
