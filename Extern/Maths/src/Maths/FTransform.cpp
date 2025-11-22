@@ -164,6 +164,16 @@ void Maths::FTransform::TranslateLocal(const FVector3& p_translation)
 	SetLocalPosition(m_localPosition + p_translation);
 }
 
+void Maths::FTransform::TranslateWorld(const FVector3& p_translation)
+{
+	SetWorldPosition(m_worldPosition + p_translation);
+}
+
+void Maths::FTransform::RotateWorld(const FQuaternion& p_rotation)
+{
+	SetWorldRotation(p_rotation*m_worldRotation);
+}
+
 void Maths::FTransform::RotateLocal(const FQuaternion& p_rotation)
 {
 	SetLocalRotation(m_localRotation * p_rotation);

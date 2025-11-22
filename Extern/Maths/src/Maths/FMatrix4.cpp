@@ -387,6 +387,10 @@ Maths::FMatrix4 Maths::FMatrix4::Inverse(const FMatrix4& p_matrix)
 
 	return inverse;
 }
+Maths::FMatrix4 Maths::FMatrix4::Inverse()
+{
+	return Inverse(*this);
+}
 
 Maths::FMatrix4 Maths::FMatrix4::Translation(const FVector3& p_translation)
 {
@@ -410,6 +414,14 @@ Maths::FVector3 Maths::FMatrix4::MulDir(const FMatrix4& p_matrix, const FVector3
 {  
 	auto dir=FMatrix4::Multiply(p_matrix, FVector4(p, 0.0));
 	return FVector3(dir.x,dir.y,dir.z).Normalize();
+}
+Maths::FVector3 Maths::FMatrix4::MulPoint( const FVector3& p)const 
+{
+	return MulPoint(*this,p);
+}
+Maths::FVector3 Maths::FMatrix4::MulDir( const FVector3& p)const 
+{
+	return MulDir(*this,p);
 }
 Maths::FMatrix4 Maths::FMatrix4::RotationOnAxisX(float p_rotation)
 {

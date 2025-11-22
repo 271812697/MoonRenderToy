@@ -265,15 +265,7 @@ namespace MOON {
 			cellArr.push_back(cell);
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-		/*	Maths::FMatrix4 model =
-				Maths::FMatrix4::Translation({ 0,0,0 }) *
-				Maths::FMatrix4::Scaling({ 5,5,5 });
-			
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"),model,{0,0,255,255});
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(90), {255,0,0,255});
-			viewCube.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90),{0,255,0,255});
-	*/				
+			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));			
 			viewCube.initGpuBuffer();
 			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}
@@ -283,15 +275,18 @@ namespace MOON {
 	{
 		static Polygon viewAxis;
 		if (viewAxis.cellArray.size() == 0) {
-
+			float halflen = 3.0f;
 			Maths::FMatrix4 model =
 				Maths::FMatrix4::Translation({ 0,0,0 }) *
-				Maths::FMatrix4::Scaling({ 5,5,5 });
+				Maths::FMatrix4::Scaling({ 6,6,6 });
 			viewAxis.drawEdge = false;
 			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model, { 0,0,255,255 });
 			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(-90), { 255,0,0,255 });
 			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90), { 0,255,0,255 });
-
+			viewAxis.model = Eigen::Matrix4f::Identity();
+			viewAxis.model(0, 3) = -halflen;
+			viewAxis.model(1, 3) = -halflen;
+			viewAxis.model(2, 3) = -halflen;
 			viewAxis.initGpuBuffer();
 			viewAxis.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}

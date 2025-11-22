@@ -54,7 +54,9 @@ namespace Rendering::Entities
 		void ProjectionFitToSphere(Rendering::Geometry::BoundingSphere& sphere,const Maths::FVector3& dir);
 		void PersertiveZoom(float delta);
 		void OrthZoom(float delta, int x, int y);
+		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset,float p_speed);
 		Geometry::Ray GetMouseRay(int x, int y);
+		float GetRatio();
 	private:
 		Maths::FMatrix4 CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
 		Maths::FMatrix4 CalculateViewMatrix() const;

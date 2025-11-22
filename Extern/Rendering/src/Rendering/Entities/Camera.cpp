@@ -247,6 +247,20 @@ void Rendering::Entities::Camera::OrthZoom(float delta, int x, int y)
 	
 }
 
+void Rendering::Entities::Camera::HandleCameraPanning(const Maths::FVector2& p_mouseOffset, float p_speed)
+{
+	if (m_projectionMode== Rendering::Settings::EProjectionMode::PERSPECTIVE) {
+		auto mouseOffset = p_mouseOffset * p_speed;
+		SetPosition(GetPosition() + transform->GetWorldRight() * mouseOffset.x - transform->GetWorldUp() * mouseOffset.y);
+	}
+	else
+	{
+		float dx=2 * m_ratio * m_size * p_mouseOffset.x / m_windowWidth;
+		float dy=2* m_size*p_mouseOffset.y / m_windowHeight;
+		SetPosition(GetPosition() + transform->GetWorldRight() * dx - transform->GetWorldUp() * dy);
+	}
+}
+
 ::Rendering::Geometry::Ray Rendering::Entities::Camera::GetMouseRay(int x, int y)
 {
 	float u = (x / static_cast<float>(m_windowWidth))*2.0f - 1.0f;
@@ -267,6 +281,11 @@ void Rendering::Entities::Camera::OrthZoom(float delta, int x, int y)
 	Maths::FVector3 screenPos = position + height * up - width * right;
 	return Geometry::Ray(screenPos, forward);
 
+}
+
+float Rendering::Entities::Camera::GetRatio()
+{
+	return m_ratio;
 }
 
 Maths::FMatrix4 Rendering::Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight) 

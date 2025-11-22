@@ -325,7 +325,6 @@ void Editor::Panels::SceneView::HandleActorPicking()
 		auto mousePosition = input.GetMousePosition();
 		m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mousePosition.first), static_cast<float>(mousePosition.second) });
 		m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
-
 	}
 }
 

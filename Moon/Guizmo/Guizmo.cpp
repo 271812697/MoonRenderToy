@@ -3817,15 +3817,8 @@ namespace MOON
 		}
 		driver->SetPipelineState(p_pso);
 		glEnable(GL_POINT_SPRITE);
-		//glEnable(GL_BLEND);
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_PROGRAM_POINT_SIZE);
-		//glEnable(GL_DEPTH_TEST);
-		//glDepthFunc(GL_ALWAYS);
-		//glDisable(GL_CULL_FACE);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		//glEnable(GL_POLYGON_OFFSET_FILL); // 2.0f, 25.0f
+
 		glViewport(0, 0, cameraParam.viewportWidth, cameraParam.viewportHeight);
 
 		for (int i = 0, n = drawLists.size(); i < n; ++i)
@@ -3998,13 +3991,11 @@ namespace MOON
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
 			auto& viewAxis = ViewAxis();
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewAxis.model));
 			mCellMaterial->SetProperty("edgeTexture", viewAxis.edgeTexture);
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			viewAxis.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
-
-
-
 		}
 	}
 	void Guizmo::drawMesh()

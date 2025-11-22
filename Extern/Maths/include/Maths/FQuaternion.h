@@ -43,7 +43,7 @@ namespace Maths
 		* @note In pure/applied Maths, we write W (or real), (Xi + Yj + Zk) (or Vector)
 		*/
 		FQuaternion(float p_x, float p_y, float p_z, float p_w);
-
+		FQuaternion(FVector3 axis, float angleRad);
 		/**
 		* Copy Constructor
 		* @param p_other
