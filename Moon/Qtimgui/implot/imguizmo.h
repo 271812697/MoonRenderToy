@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Qtimgui/imgui/imgui.h"
-namespace ImGuizmo {
+namespace ImGizmo {
 
 	void SetRect(const float x, const float y, const float size);
 	void SetDrawList(ImDrawList* drawlist = nullptr);

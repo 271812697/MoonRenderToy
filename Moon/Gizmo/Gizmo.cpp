@@ -1,16 +1,26 @@
-﻿#include "Guizmo.h"
-#include "Guizmo/MathUtil/MathUtil.h"
-#include "Settings/DebugSetting.h"
+﻿#include <glad/glad.h>
+#include "Qtimgui/imguiwidgets/QtImGui.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/imgui/imgui_internal.h"
+#include "Qtimgui/implot/implotCustom.h"
+#include "Qtimgui/implot/imGuizmo.h"
+#include "Gizmo.h"
+#include "Gizmo/MathUtil/MathUtil.h"
+#include "Settings/DebugSetting.h"
 #include "renderer/SceneView.h"
 #include "Core/Global/ServiceLocator.h"
+#include "GizmoWidget.h"
+
+#include "editor/View/sceneview/viewerwidget.h"
 #include <Rendering/Data/Material.h>
 #include <Rendering/Resources/Loaders/ShaderLoader.h>
 #include <Maths/FMatrix4.h>
-#include <glad/glad.h>
 #include <iostream>
 namespace MOON
 {
+
+	static QtImGui::RenderRef imref = nullptr;
+	static ImPlotContext* ctx = nullptr;
 
 	static Maths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
@@ -42,12 +52,10 @@ namespace MOON
 	static Eigen::Vector4<uint8_t> Color_ARB = Eigen::Vector4<uint8_t>(255, 232, 162, 0);
 	static unsigned int VertexArray;
 	static unsigned int VertexBuffer;
-	static constexpr const size_t MiB = 1024u * 1024u;
 	constexpr auto kWhite = std::to_array<uint8_t>({ 255, 255, 255, 255 });
 	constexpr auto kBlack = std::to_array<uint8_t, 6 * 4>({ 0 });
-	Guizmo::Guizmo()
-		: buffer(9 * MiB, 27 * MiB, false)
-		, command(driver, buffer.getCircularBuffer()), 
+	Gizmo::Gizmo()
+		:  
 		mEmptyTexture2D{ Rendering::Settings::ETextureType::TEXTURE_2D },
 		mEmptyTextureCube{ Rendering::Settings::ETextureType::TEXTURE_CUBE }
 	{
@@ -67,21 +75,14 @@ namespace MOON
 
 		mEmptyTextureCube.Allocate(kEmptyTextureDesc);
 		mEmptyTextureCube.Upload(kBlack.data(), Rendering::Settings::EFormat::RGBA, Rendering::Settings::EPixelDataType::UNSIGNED_BYTE);
-
-		command.test(8);
-		command.queueCommand([]() {
-			// std::cout << "say hello" << std::endl;
-			}
-		);
-
 	}
 
-	Guizmo& Guizmo::instance()
+	Gizmo& Gizmo::instance()
 	{
-		static Guizmo guizmo;
-		return guizmo;
+		static Gizmo Gizmo;
+		return Gizmo;
 	}
-	void Guizmo::init()
+	void Gizmo::init()
 	{
 		prepareGl();
 		registerDebugSettings();
@@ -118,12 +119,16 @@ namespace MOON
 		pushEnableSorting(false);
 		pushLayerId(0);
 		pushId(0x811C9DC5u);
+
+		
+		imref = QtImGui::initialize(&GetService(ViewerWidget), false);
+		ctx = ImPlot::CreateContext();
 	}
-	void Guizmo::preStoreMesh()
+	void Gizmo::preStoreMesh()
 	{
 
 	}
-	void Guizmo::prepareGl()
+	void Gizmo::prepareGl()
 	{
 		//shader leak
 		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
@@ -163,11 +168,11 @@ namespace MOON
 		
 		preStoreMesh();
 	}
-	void Guizmo::registerDebugSettings()
+	void Gizmo::registerDebugSettings()
 	{
-		DebugSettings::instance().registerFloatReference("View", "FixedscaleValue", debugSettings.scaleValue, 0.5f, 10.0f);
+
 	}
-	void Guizmo::terminate()
+	void Gizmo::terminate()
 	{
 		// free resource
 
@@ -177,7 +182,7 @@ namespace MOON
 		delete mCellMaterial;
 		delete mLitMaterial;
 	}
-	void Guizmo::begin(PrimitiveMode _mode)
+	void Gizmo::begin(PrimitiveMode _mode)
 	{
 		assert(!endFrameCalled); // Begin*() called after EndFrame() but before NewFrame(), or forgot to call NewFrame()
 		assert(primMode == PrimitiveModeNone); // forgot to call End()
@@ -202,7 +207,7 @@ namespace MOON
 		};
 		firstVertThisPrim = getCurrentVertexList()->size();
 	}
-	void Guizmo::end()
+	void Gizmo::end()
 	{
 		assert(primMode != PrimitiveModeNone); // End() called without Begin*()
 		if (vertCountThisPrim > 0)
@@ -236,16 +241,16 @@ namespace MOON
 		primMode = PrimitiveModeNone;
 		primType = DrawPrimitiveCount;
 	}
-	void Guizmo::vertex(const Eigen::Vector3f& p, const Eigen::Vector4f& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex)
+	void Gizmo::vertex(const Eigen::Vector3f& p, const Eigen::Vector4f& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex)
 	{
 		litVertexArray.push_back(VertexData(p, c, n, tex));
 	}
 
-	void Guizmo::vertex(const Eigen::Vector3f& p, const Eigen::Vector4<uint8_t>& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex)
+	void Gizmo::vertex(const Eigen::Vector3f& p, const Eigen::Vector4<uint8_t>& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex)
 	{
 		litVertexArray.push_back(VertexData(p, c, n, tex));
 	}
-	void Guizmo::vertex(const Eigen::Vector3f& _position, float _size, const Eigen::Vector4<uint8_t>& _color)
+	void Gizmo::vertex(const Eigen::Vector3f& _position, float _size, const Eigen::Vector4<uint8_t>& _color)
 	{
 		assert(primMode != PrimitiveModeNone); // Vertex() called without Begin*()
 
@@ -293,31 +298,31 @@ namespace MOON
 
 
 
-	void Guizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
+	void Gizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
 		const std::string& mesh, bool longterm)
 	{
 		//drawOneMesh(Coord3(translation, rotation, scale), mesh, longterm);
 	}
 
-	void Guizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
+	void Gizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
 		Eigen::Vector3f& color, const std::string& mesh, bool longterm)
 	{
 		//drawOneMesh(Coord3(translation, rotation, scale), mesh, color, longterm);
 	}
 
-	void Guizmo::drawOneMesh(
+	void Gizmo::drawOneMesh(
 		Eigen::Vector3f translation, Eigen::Vector3f scale, const std::string& mesh, bool longterm)
 	{
 		//drawOneMesh(Coord3(translation, Eigen::Matrix3f::Identity(), scale), mesh, longterm);
 	}
 
-	void Guizmo::drawOneMesh(
+	void Gizmo::drawOneMesh(
 		Eigen::Vector3f translation, Eigen::Vector3f scale, Eigen::Vector3f& color, const std::string& mesh, bool longterm)
 	{
 		//drawOneMesh(Coord3(translation, Eigen::Matrix3f::Identity(), scale), mesh, color, longterm);
 	}
 
-	void Guizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& name, bool longterm)
+	void Gizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& name, bool longterm)
 	{
 		if (longterm)
 		{
@@ -329,7 +334,7 @@ namespace MOON
 		}
 	}
 
-	void Guizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
+	void Gizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
 	{
 		if (longterm)
 		{
@@ -341,7 +346,7 @@ namespace MOON
 		}
 	}
 
-	void Guizmo::drawOneFixScaleMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
+	void Gizmo::drawOneFixScaleMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
 	{
 		MeshInstance me = { mesh, model, color };
 		me.fixScaled = true;
@@ -355,24 +360,24 @@ namespace MOON
 		}
 	}
 
-	void Guizmo::drawPoint(const Eigen::Vector3f& _position, float _size, Eigen::Vector4<uint8_t> _color)
+	void Gizmo::drawPoint(const Eigen::Vector3f& _position, float _size, Eigen::Vector4<uint8_t> _color)
 	{
 		begin(PrimitiveModePoints);
 		vertex(_position, _size, _color);
 		end();
 	}
 
-	void Guizmo::drawPoint(const Eigen::Vector3f& pos)
+	void Gizmo::drawPoint(const Eigen::Vector3f& pos)
 	{
 		drawPoint(pos, sizeStack.back(), colorStack.back());
 	}
 
-	void Guizmo::drawPoint(const Eigen::Vector3f& pos, float size)
+	void Gizmo::drawPoint(const Eigen::Vector3f& pos, float size)
 	{
 		drawPoint(pos, size, colorStack.back());
 	}
 
-	void Guizmo::drawPointList(const std::vector<Eigen::Vector3f>& position, float size, Eigen::Vector4<uint8_t> color)
+	void Gizmo::drawPointList(const std::vector<Eigen::Vector3f>& position, float size, Eigen::Vector4<uint8_t> color)
 	{
 		std::vector<VertexData> vd(position.size());
 		float alpha = alphaStack.back();
@@ -396,7 +401,7 @@ namespace MOON
 		vertexList->insert(vertexList->end(), vd.begin(), vd.end());
 	}
 
-	void Guizmo::drawLineList(const std::vector<Eigen::Vector3f>& position, float _size, Eigen::Vector4<uint8_t> _color)
+	void Gizmo::drawLineList(const std::vector<Eigen::Vector3f>& position, float _size, Eigen::Vector4<uint8_t> _color)
 	{
 		std::vector<VertexData> vd(position.size());
 		float alpha = alphaStack.back();
@@ -420,7 +425,7 @@ namespace MOON
 		vertexList->insert(vertexList->end(), vd.begin(), vd.end());
 	}
 
-	void Guizmo::drawTriangleList(const std::vector<Eigen::Vector3f>& position, float _size, Eigen::Vector4<uint8_t> _color)
+	void Gizmo::drawTriangleList(const std::vector<Eigen::Vector3f>& position, float _size, Eigen::Vector4<uint8_t> _color)
 	{
 		std::vector<VertexData> vd(position.size());
 		float alpha = alphaStack.back();
@@ -444,7 +449,7 @@ namespace MOON
 		vertexList->insert(vertexList->end(), vd.begin(), vd.end());
 	}
 
-	void Guizmo::drawLine(
+	void Gizmo::drawLine(
 		const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size, Eigen::Vector4<uint8_t> _color)
 	{
 		begin(PrimitiveModeLines);
@@ -453,17 +458,17 @@ namespace MOON
 		end();
 	}
 
-	void Guizmo::drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size)
+	void Gizmo::drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size)
 	{
 		drawLine(_a, _b, _size, colorStack.back());
 	}
 
-	void Guizmo::drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b)
+	void Gizmo::drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b)
 	{
 		drawLine(_a, _b, sizeStack.back());
 	}
 
-	void Guizmo::drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n)
+	void Gizmo::drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n)
 	{
 
 		auto& matrix = matrixStack.back();
@@ -473,12 +478,12 @@ namespace MOON
 		litVertexArray.push_back({ MatrixMulPoint(matrix, c), colorStack.back(), mn });
 	}
 
-	void Guizmo::drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c)
+	void Gizmo::drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c)
 	{
 		drawTriangle(_a, _b, _c, colorStack.back());
 	}
 
-	void Guizmo::drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c,
+	void Gizmo::drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c,
 		const Eigen::Vector4<uint8_t>& _color)
 	{
 		colorStack.push_back(_color);
@@ -491,7 +496,7 @@ namespace MOON
 	}
 
 
-	void Guizmo::drawQuadFilled(
+	void Gizmo::drawQuadFilled(
 		const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, const Eigen::Vector2<float>& _size)
 	{
 		Eigen::Matrix4f matrix = matrixStack.back() * LookAt(_origin, _origin + _normal);
@@ -502,7 +507,7 @@ namespace MOON
 		matrixStack.pop_back();
 	}
 
-	void Guizmo::drawQuad(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c,
+	void Gizmo::drawQuad(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c,
 		const Eigen::Vector3f& _d)
 	{
 		begin(PrimitiveModeLineLoop);
@@ -513,7 +518,7 @@ namespace MOON
 		end();
 	}
 
-	void Guizmo::drawQuad(
+	void Gizmo::drawQuad(
 		const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, const Eigen::Vector2<float>& _size)
 	{
 		matrixStack.push_back(matrixStack.back() * LookAt(_origin, _origin + _normal));
@@ -522,7 +527,7 @@ namespace MOON
 		matrixStack.pop_back();
 	}
 
-	void Guizmo::drawQuadFilled(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b,
+	void Gizmo::drawQuadFilled(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b,
 		const Eigen::Vector3f& _c, const Eigen::Vector3f& _d)
 	{
 
@@ -535,14 +540,14 @@ namespace MOON
 		vertex(_d);
 		end();
 	}
-	void Guizmo::drawArrow(const Eigen::Vector3f& _start, const Eigen::Vector3f& _end, float _headLength,
+	void Gizmo::drawArrow(const Eigen::Vector3f& _start, const Eigen::Vector3f& _end, float _headLength,
 		float axisThickness, float _headThickness)
 	{
 		sizeStack.push_back(axisThickness);
 		drawArrow(_start, _end, _headLength, _headThickness);
 		sizeStack.pop_back();
 	}
-	void Guizmo::drawArrow(
+	void Gizmo::drawArrow(
 		const Eigen::Vector3f& _start, const Eigen::Vector3f& _end, float _headLength, float _headThickness)
 	{
 
@@ -569,7 +574,7 @@ namespace MOON
 		end();
 	}
 
-	void Guizmo::drawArrow(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis,
+	void Gizmo::drawArrow(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis,
 		float _worldHeight, Eigen::Vector4<uint8_t> _color)
 	{
 
@@ -599,7 +604,7 @@ namespace MOON
 		colorStack.pop_back();
 	}
 
-	void Guizmo::drawCircleFilled(
+	void Gizmo::drawCircleFilled(
 		const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail)
 	{
 		if (_detail < 0)
@@ -628,7 +633,7 @@ namespace MOON
 		matrixStack.pop_back();
 	}
 
-	void Guizmo::drawTransparencyCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail)
+	void Gizmo::drawTransparencyCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail)
 	{
 		alphaStack.push_back(0.5);
 		colorStack.push_back(Color_Green);
@@ -644,7 +649,7 @@ namespace MOON
 		colorStack.pop_back();
 	}
 
-	void Guizmo::drawSphere(const Eigen::Vector3f& _origin, float _radius, int _detail)
+	void Gizmo::drawSphere(const Eigen::Vector3f& _origin, float _radius, int _detail)
 	{
 		if (_detail < 0)
 		{
@@ -679,7 +684,7 @@ namespace MOON
 
 	}
 
-	void Guizmo::drawSphereFilled(const Eigen::Vector3f& _origin, float _radius, int _detail)
+	void Gizmo::drawSphereFilled(const Eigen::Vector3f& _origin, float _radius, int _detail)
 	{
 		if (_detail < 0)
 		{
@@ -734,14 +739,14 @@ namespace MOON
 		end();
 	}
 
-	void Guizmo::drawCircleFaceCamera(const Eigen::Vector3f& _origin)
+	void Gizmo::drawCircleFaceCamera(const Eigen::Vector3f& _origin)
 	{
 		sizeStack.push_back(2.8);
 		drawCircle(_origin, cameraParam.viewDirectioin, pixelsToWorldSize(_origin, 7.5), 40);
 		sizeStack.pop_back();
 	}
 
-	void Guizmo::drawCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail)
+	void Gizmo::drawCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail)
 	{
 		if (_detail < 0)
 		{
@@ -759,7 +764,7 @@ namespace MOON
 		matrixStack.pop_back();
 	}
 
-	void Guizmo::drawConeFilled(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height,
+	void Gizmo::drawConeFilled(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height,
 		float _radius, int _detail)
 	{
 		if (_detail < 0)
@@ -789,7 +794,7 @@ namespace MOON
 		matrixStack.pop_back();
 	}
 
-	void Guizmo::drawAlignedBox(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max)
+	void Gizmo::drawAlignedBox(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max)
 	{
 		begin(PrimitiveModeLineLoop);
 		vertex(Eigen::Vector3f(_min.x(), _min.y(), _min.z()));
@@ -815,7 +820,7 @@ namespace MOON
 		end();
 	}
 
-	void Guizmo::drawAlignedBoxFilled(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max)
+	void Gizmo::drawAlignedBoxFilled(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max)
 	{
 		// x+
 		drawQuadFilled(Eigen::Vector3f(_max.x(), _max.y(), _min.z()),
@@ -843,7 +848,7 @@ namespace MOON
 			Eigen::Vector3f(_max.x(), _min.y(), _min.z()));
 	}
 
-	void Guizmo::drawAlignedBoxFilled(
+	void Gizmo::drawAlignedBoxFilled(
 		const Eigen::Vector3f& _min, const Eigen::Vector3f& _max, const std::vector<Eigen::Vector4<uint8_t>>& color)
 	{
 		if (color.size() == 0)
@@ -892,7 +897,7 @@ namespace MOON
 		}
 	}
 
-	void Guizmo::drawPlaneGrid(const Eigen::Vector3f& origin, const Eigen::Vector3f& normal, float scale, float gridSize)
+	void Gizmo::drawPlaneGrid(const Eigen::Vector3f& origin, const Eigen::Vector3f& normal, float scale, float gridSize)
 	{
 		// Draw plane grid
 
@@ -923,7 +928,7 @@ namespace MOON
 		popEnableSorting();
 	}
 
-	bool Guizmo::drawManpulate(unsigned _id, Eigen::Matrix4f& model)
+	bool Gizmo::drawManpulate(unsigned _id, Eigen::Matrix4f& model)
 	{
 		// Draw Ray hit point
 		colorStack.push_back(Eigen::Vector4<uint8_t>(255, 0, 0, 255));
@@ -966,15 +971,15 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::drawManpulate(const char* _id, Eigen::Matrix4f& model)
+	bool Gizmo::drawManpulate(const char* _id, Eigen::Matrix4f& model)
 	{
 		return drawManpulate(makeId(_id), model);
 	}
-	void Guizmo::drawViewCube()
+	void Gizmo::drawViewCube()
 	{
 	}
 
-	void Guizmo::drawRayHitScreenPoint()
+	void Gizmo::drawRayHitScreenPoint()
 	{
 		// Draw Ray hit point
 		colorStack.push_back(Eigen::Vector4<uint8_t>(255, 0, 200, 255));
@@ -984,7 +989,7 @@ namespace MOON
 		matrixStack.pop_back();
 		colorStack.pop_back();
 	}
-	bool Guizmo::lineEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color)
+	bool Gizmo::lineEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color)
 	{
 		if (line.size() < 2)
 		{
@@ -1057,7 +1062,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::scaleEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color, int& index)
+	bool Gizmo::scaleEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color, int& index)
 	{
 		if (line.size() > 3)
 		{
@@ -1149,7 +1154,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::planeEdit(unsigned int id, Eigen::Vector3f& _origin, Eigen::Vector3f& _normal)
+	bool Gizmo::planeEdit(unsigned int id, Eigen::Vector3f& _origin, Eigen::Vector3f& _normal)
 	{
 		appId = id;
 		bool ret = false;
@@ -1240,7 +1245,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::planeEdit(unsigned int id, std::vector<Eigen::Vector3f>& threePoints, int& index)
+	bool Gizmo::planeEdit(unsigned int id, std::vector<Eigen::Vector3f>& threePoints, int& index)
 	{
 		if (threePoints.size() < 3)
 		{
@@ -1325,7 +1330,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::axisRotateEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, float& angle)
+	bool Gizmo::axisRotateEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, float& angle)
 	{
 		// appId = id;  
 		// pushEnableSorting(true);
@@ -1349,7 +1354,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::translation(unsigned int _id, Eigen::Vector3f& _translation_, bool _local)
+	bool Gizmo::translation(unsigned int _id, Eigen::Vector3f& _translation_, bool _local)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(_translation_.x(), _translation_.y(), _translation_.z());
@@ -1517,14 +1522,14 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::gizmoPlaneTranslationBehavior(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal,
+	bool Gizmo::gizmoPlaneTranslationBehavior(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal,
 		float _snap, float _worldSize, Eigen::Vector3f* _out_)
 	{
 		// To Do;
 		return false;
 	}
 
-	void Guizmo::gizmoAxisTranslationDraw(unsigned int _id, const Eigen::Vector3f& _origin,
+	void Gizmo::gizmoAxisTranslationDraw(unsigned int _id, const Eigen::Vector3f& _origin,
 		const Eigen::Vector3f& _axis, float _worldHeight, float _worldSize, Eigen::Vector4<uint8_t> _color)
 	{
 		Eigen::Vector3f viewDir =
@@ -1557,7 +1562,7 @@ namespace MOON
 		colorStack.pop_back();
 	}
 
-	bool Guizmo::gizmoAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin,
+	bool Gizmo::gizmoAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin,
 		const Eigen::Vector3f& _axis, float _snap, float _worldHeight, float _worldSize, Eigen::Vector3f* _out_)
 	{
 
@@ -1623,7 +1628,7 @@ namespace MOON
 		return false;
 	}
 
-	void Guizmo::gizmoPlaneTranslationDraw(unsigned int _id, const Eigen::Vector3f& _origin,
+	void Gizmo::gizmoPlaneTranslationDraw(unsigned int _id, const Eigen::Vector3f& _origin,
 		const Eigen::Vector3f& _normal, float _worldSize, Eigen::Vector4<uint8_t> _color)
 	{
 		Eigen::Vector3f viewDir =
@@ -1645,7 +1650,7 @@ namespace MOON
 		colorStack.pop_back();
 	}
 
-	bool Guizmo::gizmoPlaneTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin,
+	bool Gizmo::gizmoPlaneTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin,
 		const Eigen::Vector3f& _normal, float _snap, float _worldSize, Eigen::Vector3f* _out_)
 	{
 		Ray ray(cameraParam.rayOrigin, cameraParam.rayDirection);
@@ -1698,7 +1703,7 @@ namespace MOON
 		return false;
 	}
 
-	bool Guizmo::rotation(unsigned int _id, Eigen::Matrix3f& _rotation_, bool _local)
+	bool Gizmo::rotation(unsigned int _id, Eigen::Matrix3f& _rotation_, bool _local)
 	{
 		Eigen::Vector3f origin = matrixStack.back().block(0, 3, 3, 1);
 		float worldRadius = pixelsToWorldSize(origin, gizmoHeightPixels);
@@ -1798,7 +1803,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::gizmoAxislAngleBehavior(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _snap, float _worldRadius, float _worldSize, float* _out_)
+	bool Gizmo::gizmoAxislAngleBehavior(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _snap, float _worldRadius, float _worldSize, float* _out_)
 	{
 		Eigen::Vector3f viewDir =
 			cameraParam.orthProj ? cameraParam.viewDirectioin : (cameraParam.eye - _origin).normalized();
@@ -1873,7 +1878,7 @@ namespace MOON
 		return false;
 	}
 
-	void Guizmo::axisRotateDraw(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _worldRadius, Eigen::Vector4<uint8_t> _color)
+	void Gizmo::axisRotateDraw(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _worldRadius, Eigen::Vector4<uint8_t> _color)
 	{
 		Eigen::Vector3f viewDir = cameraParam.orthProj ? cameraParam.viewDirectioin : (cameraParam.eye - _origin).normalized();
 		Eigen::Vector4<uint8_t> color = _color;
@@ -1924,7 +1929,7 @@ namespace MOON
 		sizeStack.pop_back();
 		colorStack.pop_back();
 	}
-	void Guizmo::gizmoAxislAngleDraw(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _worldRadius, float _angle, Eigen::Vector4<uint8_t> _color, float _minAlpha)
+	void Gizmo::gizmoAxislAngleDraw(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _worldRadius, float _angle, Eigen::Vector4<uint8_t> _color, float _minAlpha)
 	{
 		Eigen::Vector3f viewDir = cameraParam.orthProj ? cameraParam.viewDirectioin : (cameraParam.eye - _origin).normalized();
 		float aligned = fabs(_axis.dot(viewDir));
@@ -2001,7 +2006,7 @@ namespace MOON
 		colorStack.pop_back();
 	}
 
-	int Guizmo::estimateLevelOfDetail(const Eigen::Vector3f& _position, float _worldSize, int _min, int _max)
+	int Gizmo::estimateLevelOfDetail(const Eigen::Vector3f& _position, float _worldSize, int _min, int _max)
 	{
 		if (cameraParam.orthProj)
 		{
@@ -2016,7 +2021,7 @@ namespace MOON
 		return (int)(fmin + (fmax - fmin) * x);
 	}
 
-	bool Guizmo::gizmoSpherePlaneTranslationBehavior(unsigned _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_)
+	bool Gizmo::gizmoSpherePlaneTranslationBehavior(unsigned _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_)
 	{
 		Ray ray(cameraParam.rayOrigin, cameraParam.rayDirection);
 		Plane plane(_normal, _origin);
@@ -2059,7 +2064,7 @@ namespace MOON
 		return false;
 	}
 
-	bool Guizmo::gizmoCircleAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius,
+	bool Gizmo::gizmoCircleAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius,
 		const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_)
 	{
 		Ray ray(cameraParam.rayOrigin, cameraParam.rayDirection);
@@ -2118,7 +2123,7 @@ namespace MOON
 		return false;
 	}
 
-	bool Guizmo::gizmoSphereAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius,
+	bool Gizmo::gizmoSphereAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius,
 		const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_)
 	{
 		Ray ray(cameraParam.rayOrigin, cameraParam.rayDirection);
@@ -2169,7 +2174,7 @@ namespace MOON
 		return false;
 	}
 
-	bool Guizmo::gizmoOperateNormalBehavior(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _end,
+	bool Gizmo::gizmoOperateNormalBehavior(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _end,
 		float _worldSize, Eigen::Vector3f* _out_)
 	{
 		bool ret = false;
@@ -2229,7 +2234,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::planeClip(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Vector3f& _normal, float& _scale,
+	bool Gizmo::planeClip(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Vector3f& _normal, float& _scale,
 		const Eigen::Vector3f& minBox, const Eigen::Vector3f& maxBox, bool opeartorNormal, bool drawCircleFlag)
 	{
 		bool ret = false;
@@ -2411,7 +2416,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::boxEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Matrix3f& _rotation_, Eigen::Vector3f& _scale_)
+	bool Gizmo::boxEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Matrix3f& _rotation_, Eigen::Vector3f& _scale_)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(0, 0, 0);
@@ -2625,7 +2630,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::boxEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Matrix3f& _rotation_,
+	bool Gizmo::boxEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Matrix3f& _rotation_,
 		Eigen::Vector3f& _scale_, bool translationFlag, bool rotateFlag, bool faceMeFlag, int& mode)
 	{
 		bool ret = false;
@@ -2851,7 +2856,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::sphereEdit(unsigned int _id, Eigen::Vector3f& _translation_, float& r)
+	bool Gizmo::sphereEdit(unsigned int _id, Eigen::Vector3f& _translation_, float& r)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(0, 0, 0);
@@ -2919,7 +2924,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::dragPointInPlane(unsigned int id, Eigen::Vector3f& translation, const Eigen::Vector3f& normal)
+	bool Gizmo::dragPointInPlane(unsigned int id, Eigen::Vector3f& translation, const Eigen::Vector3f& normal)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(translation);
@@ -2937,7 +2942,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::dragPointByAxis(unsigned int id, Eigen::Vector3f& translation, const Eigen::Vector3f& axis)
+	bool Gizmo::dragPointByAxis(unsigned int id, Eigen::Vector3f& translation, const Eigen::Vector3f& axis)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outVec3 = new Eigen::Vector3f(translation);
@@ -2955,7 +2960,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::clydinerEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Vector3f& _normal, float& height,
+	bool Gizmo::clydinerEdit(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Vector3f& _normal, float& height,
 		float& _tr, float& _br, bool same)
 	{
 		if (same)
@@ -3181,7 +3186,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::PrismEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, float* _height,
+	bool Gizmo::PrismEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, float* _height,
 		std::vector<Eigen::Vector3f>& polygon, std::vector<Eigen::Vector2f>& polygon2D, bool flip)
 	{
 		bool ret = false;
@@ -3321,7 +3326,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::CurveEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, std::vector<Eigen::Vector3f>& polygon)
+	bool Gizmo::CurveEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, std::vector<Eigen::Vector3f>& polygon)
 	{
 		drawRayHitScreenPoint();
 		bool ret = false;
@@ -3439,7 +3444,7 @@ namespace MOON
 		return ret;
 	}
 
-	bool Guizmo::CurveEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3f>>& polygon)
+	bool Gizmo::CurveEdit(unsigned int _id, Eigen::Vector3f& _normal, Eigen::Vector3f& _origin, std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3f>>& polygon)
 	{
 		bool ret = false;
 		Eigen::Vector3f* outNormal = new Eigen::Vector3f(_normal);
@@ -3575,7 +3580,7 @@ namespace MOON
 		delete outOrigin;
 		return ret;
 	}
-	bool Guizmo::drawTranslate2D(unsigned int id, Eigen::Vector2f& pos)
+	bool Gizmo::drawTranslate2D(unsigned int id, Eigen::Vector2f& pos)
 	{
 
 		auto c1 = ImGui::ColorConvertFloat4ToU32({ 0.8156f, 0.9215f, 1.0f, 1.0f });
@@ -3623,12 +3628,17 @@ namespace MOON
 		pos.y() = Clamp<float>(pos.y(), 0.0f, cameraParam.viewportHeight);
 		return ret;
 	}
-	CameraParam& Guizmo::getCameraParam()
+	Eigen::Vector2f Gizmo::worldToScreen(const Eigen::Vector3f& pos)
+	{
+		Eigen::Vector3f p=MatrixMulPoint(cameraParam.viewProj,pos);
+		return Eigen::Vector2f((p.x()+1.0)/2.0*cameraParam.viewportWidth, (1.0-p.y()) / 2.0*cameraParam.viewportHeight);
+	}
+	CameraParam& Gizmo::getCameraParam()
 	{
 		return cameraParam;
 	}
 
-	void Guizmo::newFrame(Editor::Panels::SceneView* sceneView)
+	void Gizmo::newFrame(Editor::Panels::SceneView* sceneView)
 	{
 		litVertexArray.clear();
 		drawMeshList.clear();
@@ -3760,9 +3770,11 @@ namespace MOON
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
 		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
+		
+
 	}
 
-	void Guizmo::test()
+	void Gizmo::test()
 	{
 		drawViewCube();
 		//colorStack.push_back(Color_Gold);
@@ -3780,7 +3792,7 @@ namespace MOON
 		//boxEdit(makeId("box edit"), t, rotation, scale);
 	}
 
-	void Guizmo::drawUnsort()
+	void Gizmo::drawUnsort()
 	{
 		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
 		auto p_pso = driver->CreatePipelineState();
@@ -3866,7 +3878,7 @@ namespace MOON
 		}
 	}
 
-	void Guizmo::drawSort()
+	void Gizmo::drawSort()
 	{
 		drawLists.clear();
 		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
@@ -3998,26 +4010,13 @@ namespace MOON
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
 		}
 	}
-	void Guizmo::drawMesh()
+	void Gizmo::drawMesh()
 	{
-	}
-	void Guizmo::executeCommand()
-	{
-		buffer.flush();
-		auto ranges = buffer.waitForCommands();
-		for (auto& item : ranges)
-		{
-			if (item.begin)
-			{
-				command.execute(item.begin);
-				buffer.releaseBuffer(item);
-			}
-		}
 	}
 
-	void Guizmo::endFrame()
+
+	void Gizmo::endFrame()
 	{
-		executeCommand();
 		runDrawTask();
 		drawWidgets();
 
@@ -4029,16 +4028,26 @@ namespace MOON
 		drawSort();
 		drawUnsort();
 	}
-	void Guizmo::clear()
+	void Gizmo::newImgui()
+	{
+		QtImGui::newFrame(imref);
+		ImPlot::SetCurrentContext(ctx);
+	}
+	void Gizmo::endImgui()
+	{
+		ImGui::Render();
+		QtImGui::render(imref);
+	}
+	void Gizmo::clear()
 	{
 		//to do something here.
 	}
-	void Guizmo::updateDepth(float _depth)
+	void Gizmo::updateDepth(float _depth)
 	{
 		hotDepth = _depth;
 
 	}
-	bool Guizmo::makeHot(unsigned int _id, float _depth, bool _intersects)
+	bool Gizmo::makeHot(unsigned int _id, float _depth, bool _intersects)
 	{
 		if (activeId == IdInvalid && _depth < hotDepth && _intersects && !isKeyDown(ActionSelect))
 		{
@@ -4051,42 +4060,42 @@ namespace MOON
 
 		return false;
 	}
-	bool Guizmo::makeHot2D(unsigned int id)
+	bool Gizmo::makeHot2D(unsigned int id)
 	{
 		hotId2D = id;
 		return true;
 	}
-	bool Guizmo::isHot(unsigned int id)
+	bool Gizmo::isHot(unsigned int id)
 	{
 		return id == hotId;
 	}
-	bool Guizmo::isHot2D(unsigned int id)
+	bool Gizmo::isHot2D(unsigned int id)
 	{
 		return id == hotId2D;
 	}
-	bool Guizmo::isAppActive(unsigned int id)
+	bool Gizmo::isAppActive(unsigned int id)
 	{
 		return appActiveId == id;
 	}
-	void Guizmo::makeActive(unsigned int id)
+	void Gizmo::makeActive(unsigned int id)
 	{
 		activeId = id;
 		appActiveId = id == IdInvalid ? IdInvalid : appId;
 	}
-	void Guizmo::makeActive2D(unsigned int _id)
+	void Gizmo::makeActive2D(unsigned int _id)
 	{
 		activeId2D = _id;
 	}
-	void Guizmo::resetId()
+	void Gizmo::resetId()
 	{
 		activeId = hotId = appActiveId = appHotId = IdInvalid;
 		hotDepth = FLT_MAX;
 	}
-	void Guizmo::resetId2D()
+	void Gizmo::resetId2D()
 	{
 		activeId2D = hotId2D = IdInvalid;
 	}
-	unsigned int Guizmo::makeId(const char* str)
+	unsigned int Gizmo::makeId(const char* str)
 	{
 		unsigned int ret = idStack.size();
 		while (*str)
@@ -4096,29 +4105,29 @@ namespace MOON
 		}
 		return ret;
 	}
-	void Guizmo::pushEnableSorting(bool enable)
+	void Gizmo::pushEnableSorting(bool enable)
 	{
 		assert(primMode == PrimitiveModeNone); // can't change sort mode mid-primitive
 		vertexDataIndex = enable ? 1 : 0;
 		enableSortingStack.push_back(enable);
 	}
-	void Guizmo::popEnableSorting()
+	void Gizmo::popEnableSorting()
 	{
 		assert(primMode == PrimitiveModeNone); // can't change sort mode mid-primitive
 		enableSortingStack.pop_back();
 		vertexDataIndex = enableSortingStack.back() ? 1 : 0;
 	}
-	void Guizmo::setEnableSorting(bool _enable)
+	void Gizmo::setEnableSorting(bool _enable)
 	{
 		assert(primMode == PrimitiveModeNone); // can't change sort mode mid-primitive
 		vertexDataIndex = _enable ? 1 : 0;
 		enableSortingStack.back() = _enable;
 	}
-	void Guizmo::setEnableLit(bool enable)
+	void Gizmo::setEnableLit(bool enable)
 	{
 		enableLit = enable;
 	}
-	void Guizmo::pushLayerId(unsigned int layer)
+	void Gizmo::pushLayerId(unsigned int layer)
 	{
 		assert(primMode == PrimitiveModeNone); // can't change layer mid-primitive
 		int idx = findLayerIndex(layer);
@@ -4137,13 +4146,13 @@ namespace MOON
 		layerIdStack.push_back(layer);
 		layerIndex = idx;
 	}
-	void Guizmo::popLayerId()
+	void Gizmo::popLayerId()
 	{
 		assert(layerIdStack.size() > 1);
 		layerIdStack.pop_back();
 		layerIndex = findLayerIndex(layerIdStack.back());
 	}
-	Guizmo::~Guizmo()
+	Gizmo::~Gizmo()
 	{
 		for (int i = 0; i < vertexData[0].size(); i++)
 		{
@@ -4152,17 +4161,17 @@ namespace MOON
 		}
 		terminate();
 	}
-	float Guizmo::pixelsToWorldSize(const Eigen::Vector3f& position, float pixels)
+	float Gizmo::pixelsToWorldSize(const Eigen::Vector3f& position, float pixels)
 	{
 		float d = cameraParam.orthProj ? 1.0f : (position - cameraParam.eye).norm();
 		return cameraParam.projectY * d * (pixels / cameraParam.viewportHeight);
 	}
-	Eigen::Vector3f Guizmo::screenToWorld(const Eigen::Vector2f& pos)
+	Eigen::Vector3f Gizmo::screenToWorld(const Eigen::Vector2f& pos)
 	{
 		Eigen::Vector3f p = { 2.0f * pos.x() / cameraParam.viewportWidth - 1.0f, 2.0f * (1.0f - pos.y() / cameraParam.viewportHeight) - 1.0f, 0.0f };
 		return MatrixMulPoint(cameraParam.viewProj.inverse(), p);
 	}
-	void Guizmo::runDrawTask()
+	void Gizmo::runDrawTask()
 	{
 		for (auto& drawTask : mDrawTaskMap)
 		{
@@ -4177,11 +4186,13 @@ namespace MOON
 		}
 		cancelList.clear();
 	}
-	void Guizmo::drawWidgets()
+	void Gizmo::drawWidgets()
 	{
-
+		for (const auto& it:mGizmoWidgets) {
+			it.second->update();
+		}
 	}
-	void Guizmo::placeDrawTask(const std::string& name, std::function<void()> task)
+	void Gizmo::placeDrawTask(const std::string& name, std::function<void()> task)
 	{
 		if (mDrawTaskMap.find(name) != mDrawTaskMap.end())
 		{
@@ -4190,12 +4201,27 @@ namespace MOON
 		mDrawTaskMap.emplace(name, task);
 	}
 
-	void Guizmo::cancleDrawTask(const std::string& name)
+	void Gizmo::cancleDrawTask(const std::string& name)
 	{
 		cancelList.push_back(name);
 	}
 
-	int Guizmo::findLayerIndex(unsigned int _id) const
+	void Gizmo::addGizmoWidget(GizmoWidget* widget)
+	{
+		if (mGizmoWidgets.find(widget->getName()) != mGizmoWidgets.end()) {
+			assert(false&&"the widget has been added!");
+		}
+		mGizmoWidgets[widget->getName()]=widget;
+	}
+
+	void Gizmo::removeGizmoWidget(GizmoWidget* widget)
+	{
+		if (widget) {
+			mGizmoWidgets.erase(widget->getName());
+		}
+	}
+
+	int Gizmo::findLayerIndex(unsigned int _id) const
 	{
 		for (int i = 0; i < (int)layerIdMap.size(); ++i)
 		{
@@ -4206,7 +4232,7 @@ namespace MOON
 		}
 		return -1;
 	}
-	VertexList* Guizmo::getCurrentVertexList()
+	VertexList* Gizmo::getCurrentVertexList()
 	{
 		return vertexData[vertexDataIndex][layerIndex * DrawPrimitiveCount + primType];
 	}

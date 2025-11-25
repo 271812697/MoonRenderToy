@@ -142,16 +142,16 @@ bool Ray::HitDistance(const Maths::FVector3& v0, const Maths::FVector3& v1, cons
     // Calculate determinant & check backfacing
     Maths::FVector3 p(direction_.Cross(edge2));
     float det = edge1.Dot(p);
-    if (det >= 1e-6)
+    if (abs(det) >= 1e-6)
     {
         // Calculate u & v parameters and test
         Maths::FVector3 t(origin_ - v0);
-        float u = t.Dot(p);
-        if (u >= 0.0f && u <= det)
+        float u = t.Dot(p)/det;
+        if (u >= 0.0f && u <= 1.0f)
         {
             Maths::FVector3 q(t.Cross(edge1));
-            float v = direction_.Dot(q);
-            if (v >= 0.0f && u + v <= det)
+            float v = direction_.Dot(q)/det;
+            if (v >= 0.0f && u + v <= 1.0f)
             {
                 float distance = edge2.Dot(q) / det;
                 // Discard hits behind the ray
@@ -161,7 +161,7 @@ bool Ray::HitDistance(const Maths::FVector3& v0, const Maths::FVector3& v1, cons
                     if (outNormal)
                         *outNormal = edge1.Cross(edge2);
                     if (outBary)
-                        *outBary = Maths::FVector3(1 - (u / det) - (v / det), u / det, v / det);
+                        *outBary = Maths::FVector3(1 - (u ) - (v ), u , v );
                     outDist = distance;
                     return true;
                 }
@@ -177,8 +177,9 @@ bool Ray::HitDistance(const Maths::FVector3& v0, const Maths::FVector3& v1, cons
 Ray Ray::Transformed(const Maths::FMatrix4& transform) const
 {
     Ray ret;
-    ret.origin_ =  Maths::FMatrix4::MulPoint(transform , origin_);
-    ret.direction_=Maths::FMatrix4::MulDir(transform,direction_);
+    ret.origin_ = transform.MulPoint(origin_);
+    ret.direction_ = transform.MulDirNotNormlaize(direction_);
+    
     return ret;
 }
 

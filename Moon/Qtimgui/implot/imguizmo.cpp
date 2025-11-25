@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-//#define IMOGUIZMO_LEFT_HANDED
-#include "imguizmo.h"
+//#define IMOGizmo_LEFT_HANDED
+#include "imGuizmo.h"
 #include <cmath>
 #include <cstring>
 #include <vector>
 #include <algorithm>
-namespace ImGuizmo {
+namespace ImGizmo {
 	namespace internal {
 		static struct Config {
 			float mX = 50.f;
@@ -113,7 +113,7 @@ namespace ImGuizmo {
 
 		void lookAt(ImVec3 const& eye, ImVec3 const& at, ImVec3 const& up, float* viewMatrix)
 		{
-#ifdef IMOGUIZMO_LEFT_HANDED
+#ifdef IMOGizmo_LEFT_HANDED
 			const auto f = normalize(at - eye);
 			const auto r = normalize(cross(up, f));
 			const auto u = cross(f, r);
@@ -191,7 +191,7 @@ namespace ImGuizmo {
 		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus | ((background != true) ? ImGuiWindowFlags_NoBackground : ImGuiWindowFlags_None);
 		ImGui::SetNextWindowPos({ internal::config.mX, internal::config.mY }, ImGuiCond_Always);
 		ImGui::SetNextWindowSize({ internal::config.mSize, internal::config.mSize });
-		ImGui::Begin("imoguizmo", nullptr, flags);
+		ImGui::Begin("imoGizmo", nullptr, flags);
 		SetDrawList(internal::config.mDrawList);
 		ImGui::End();
 	}

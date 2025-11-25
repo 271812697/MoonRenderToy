@@ -200,13 +200,13 @@ namespace MOON {
 		mRegistry.push_back(ptr);
 		return true;
 	}
-	bool DebugSettings::addCallBack(const std::string& key, std::function<void()> fn)
+	bool DebugSettings::addCallBack(const std::string& key, const std::string& name,std::function<void(NodeBase* self)> fn)
 	{
 		auto it = mIndexMap.find(key);
 		if (it == mIndexMap.end()) {
             return false;
 		}
-		mRegistry[it->second]->addCallBack(fn);
+		mRegistry[it->second]->addCallBack(name,fn);
 		return true;
 	}
 	NodeBase* DebugSettings::getNode(const std::string& key)
@@ -239,6 +239,7 @@ namespace MOON {
 		mHashCode[typeid(float).hash_code()] = "float";
 		add("View","showLight",false);
 		add("View", "showGrid", false);
+		add("View", "showBvh", false);
 		add("View", new DragFloat(0.5, 0.5, 10.0, "zoom speed"));
 		add("Line",new DragFloat(0.5,0.5,1.0,"linewidth"));
 		add("Batch",new InputString("path","path"));
@@ -270,8 +271,8 @@ namespace MOON {
 	}
 	void NodeBase::submitCallBack()
 	{
-		for (int i = 0;i < mCallList.size();i++) {
-			createCallBack(CallBackManager::instance(), mCallList[i]);
+		for (const auto& call : mCallList) {
+			createCallBack(CallBackManager::instance(),call.second,this);
 		}
 	}
 }

@@ -18,8 +18,8 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 	m_gridMaterial.SetDepthTest(true);
 
 	auto node = MOON::DebugSettings::instance().getNode("showGrid");
-	MOON::DebugSettings::instance().addCallBack("showGrid", [node,this]() {
-		bool value = node->getData<bool>();
+	MOON::DebugSettings::instance().addCallBack("showGrid","Default", [this](MOON::NodeBase* self) {
+		bool value = self->getData<bool>();
 		this->SetEnabled(value);
 		});
 }

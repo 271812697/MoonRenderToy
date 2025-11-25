@@ -1,0 +1,66 @@
+﻿#include "Gizmo/Widgets/Measurement.h"
+#include "Gizmo/Gizmo.h"
+#include "renderer/SceneView.h"
+#include "Qtimgui/imgui/imgui.h"
+
+namespace MOON {
+	struct Measure
+	{
+		Eigen::Vector3f start;
+		Eigen::Vector3f end;
+	};
+	std::vector<Measure> g_measures;
+	bool selectingStart = false;
+	Measurement::Measurement(const std::string& name, Editor::Panels::SceneView* view) :GizmoWidget(name), m_sceneView(view)
+	{
+	}
+	Measurement::~Measurement()
+	{
+	}
+	void Measurement::onUpdate()
+	{
+		 {
+			Maths::FVector3 out;
+			if (m_sceneView->MouseHit(out)) {
+				Eigen::Vector3f pos = { out.x,out.y,out.z };
+				if (renderer->wasKeyPressed(MOON::MouseLeft)) {
+					if (!selectingStart) {
+						Measure m;
+						m.start = pos;
+						m.end = pos;
+						g_measures.push_back(m);
+						selectingStart = true;
+					}
+					else {
+						g_measures.back().end = pos;
+						selectingStart = false;
+					}
+				}
+				else
+				{
+					if (selectingStart) {
+						g_measures.back().end = pos;
+					}
+				}
+			}
+		}
+		for (const auto& m : g_measures) {
+			renderer->drawLine(m.start, m.end, 2.0,Eigen::Vector4<uint8_t>{ 255,0, 255, 0 });
+			float distance = (m.start - m.end).norm();
+			Eigen::Vector3f delta = m.start - m.end;
+			
+			Eigen::Vector3f mid = (m.start + m.end) * 0.5f;
+			Eigen::Vector2f spos=renderer->worldToScreen(mid);
+			std::string text = std::to_string(distance) + "\n" + "x:"+ std::to_string(abs(delta.x())) + "\n" + "y:" + std::to_string(abs(delta.y())) + "\n" + "z:" + std::to_string(abs(delta.z()));
+			ImGui::GetForegroundDrawList()->AddText({spos.x(),spos.y()}, IM_COL32(255, 255, 0, 255), text.c_str());
+			//renderer->drawText3D(mid, std::to_string(distance), Eigen::Vector4<uint8_t>{ 255, 255, 255, 255 }, 16);
+		}
+		//auto rc = m_sceneView->GetRoaterCenter();
+		//Eigen::Vector3f center = { rc.x,rc.y,rc.z };
+		//renderer->translation(renderer->makeId("rotaterCenter"), center);
+	}
+	void Measurement::onSetEnable(bool flag)
+	{
+		g_measures.clear();
+	}
+}

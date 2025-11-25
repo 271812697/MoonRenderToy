@@ -3,16 +3,9 @@
 #include <Eigen/Core>
 #include <vector>
 #include <unordered_map>
-#include "backend/Driver.h"
-#include "backend/CircularBuffer.h"
-#include "backend/CommandBufferQueue.h"
-#include "backend/CommandStream.h"
-#include "Guizmo/GuizmoType.h"
+#include "Gizmo/GizmoType.h"
 #include "Rendering/Resources/Texture.h"
 
-#define ADDBehaviour(be) MOON::Guizmo::instance().addBehaviour(be)
-#define ReMoveBehaviour(be) MOON::Guizmo::instance().removeBehaviour(be)
-#define GetBehaviour(be) MOON::Guizmo::instance().getBehaviour(be)
 
 namespace Editor {
 	namespace Panels {
@@ -26,15 +19,16 @@ namespace Rendering::Data
 }
 namespace MOON
 {
-	class Guizmo
+	class GizmoWidget;
+	class Gizmo
 	{
 	private:
-		Guizmo();
-		~Guizmo();
-		Guizmo(const Guizmo&) = delete;
-		Guizmo& operator=(const Guizmo&) = delete;
+		Gizmo();
+		~Gizmo();
+		Gizmo(const Gizmo&) = delete;
+		Gizmo& operator=(const Gizmo&) = delete;
 	public:
-		static Guizmo& instance();
+		static Gizmo& instance();
 		void init();
 		void preStoreMesh();
 		void prepareGl();
@@ -154,7 +148,7 @@ namespace MOON
 			std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3f>>& polygon);
 		//methods drawing in screenspace!
 		bool drawTranslate2D(unsigned int id, Eigen::Vector2f& pos);
-
+		Eigen::Vector2f worldToScreen(const Eigen::Vector3f& pos);
 
 
 		CameraParam& getCameraParam();
@@ -164,8 +158,9 @@ namespace MOON
 		void drawSort();
 		void drawMesh();
 
-		void executeCommand();
 		void endFrame();
+		void newImgui();
+		void endImgui();
 		void clear();
 		void updateDepth(float _depth);
 		bool makeHot(unsigned int _id, float _depth, bool _intersects);
@@ -218,14 +213,27 @@ namespace MOON
 		void drawWidgets();
 		void placeDrawTask(const std::string& name, std::function<void()> task);
 		void cancleDrawTask(const std::string& name);
-	
+		void addGizmoWidget(GizmoWidget* widget);
+		void removeGizmoWidget(GizmoWidget* widget);
+		bool isKeyDown(Key key) const
+		{
+			return keyDownCurr[key];
+		}
+		bool wasKeyPressed(Key key) const
+		{
+			return keyDownCurr[key] && !keyDownPrev[key];
+		}
+		bool wasKeyReleased(Key key) const
+		{
+			return !keyDownCurr[key] && keyDownPrev[key];
+		}
 	private:
 		 Editor::Panels::SceneView* renderView = nullptr;
 
 	private:
 		std::vector<std::string> cancelList;
 		std::unordered_map<std::string, std::function<void()>> mDrawTaskMap;
-
+		std::unordered_map<std::string, GizmoWidget*>mGizmoWidgets;
 		
 		Rendering::HAL::Texture mEmptyTexture2D;
 		Rendering::HAL::Texture mEmptyTextureCube;
@@ -245,19 +253,6 @@ namespace MOON
 		CameraParam cameraParam;
 		bool keyDownCurr[KeyCount];
 		bool keyDownPrev[KeyCount];
-
-		bool isKeyDown(Key key) const
-		{
-			return keyDownCurr[key];
-		}
-		bool wasKeyPressed(Key key) const
-		{
-			return keyDownCurr[key] && !keyDownPrev[key];
-		}
-		bool wasKeyReleased(Key key) const
-		{
-			return !keyDownCurr[key] && keyDownPrev[key];
-		}
 
 		unsigned int activeId;
 		unsigned int hotId;
@@ -292,27 +287,16 @@ namespace MOON
 		int vertexDataIndex;
 		std::vector<unsigned int> layerIdMap;
 		int layerIndex;
-
 		std::vector<DrawList> drawLists;
 
-
-		struct DrawSettings
-		{
-			float scaleValue = 1.0f;
-
-		};
 		//Long-term lasting
 		std::vector<MeshInstance> drawLongTermMeshList;
 		//short lasting
 		std::vector<MeshInstance> drawMeshList;
-		DrawSettings debugSettings;
-
+		
 		bool enableLit;
 		bool sortCalled;
 		bool endFrameCalled;
-
-
-
 		int findLayerIndex(unsigned int id) const;
 		VertexList* getCurrentVertexList();
 		const DrawList* getDrawLists() const
@@ -323,10 +307,5 @@ namespace MOON
 		{
 			return drawLists.size();
 		}
-	private:
-		Driver driver;
-		CommandBufferQueue buffer;
-		CommandStream command;
 	};
-
 }

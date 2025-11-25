@@ -14,7 +14,6 @@ namespace MOON
 	}
 	Eigen::Vector3f MatrixMulPoint(const Eigen::Matrix4f& matrix, const Eigen::Vector3f& point)
 	{
-
 		Eigen::Vector4<float> homeous = matrix * Eigen::Vector4<float>(point.x(), point.y(), point.z(), 1.0);
 		return Eigen::Vector3f(homeous.x() / homeous.w(), homeous.y() / homeous.w(), homeous.z() / homeous.w());
 	}

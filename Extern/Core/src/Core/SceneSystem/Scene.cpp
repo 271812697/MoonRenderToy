@@ -405,7 +405,6 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 		float tempDist = 1e6;
 		if (ray.HitDistance(cur->bounds, tempDist)) 
 		{
-		
 			if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
 				stack.push_back(cur->lc);
 				stack.push_back(cur->rc);
@@ -431,7 +430,6 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 								float meshTempDist = 1e6;
 								if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
 								{
-									
 									if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
 										meshBvhStack.push_back(meshBvhCur->lc);
 										meshBvhStack.push_back(meshBvhCur->rc);

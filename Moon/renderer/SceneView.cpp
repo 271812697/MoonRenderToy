@@ -36,7 +36,7 @@ Editor::Panels::SceneView::SceneView
 	: AViewControllable(p_title),
 	m_sceneManager(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().sceneManager)
 {
-	
+	RegService(Editor::Panels::SceneView, *this);
 	m_renderer = std::make_unique<Editor::Rendering::DebugSceneRenderer>(*::Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver);
 	m_camera.SetFar(5000.0f);
 	m_fallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
@@ -127,6 +127,9 @@ void Editor::Panels::SceneView::FitToSelectedActor(const Maths::FVector3& dir)
 				auto transform=mTargetActor->GetComponent<::Core::ECS::Components::CTransform>();
 				auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
 				sphere.position=Maths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
+				
+				auto scale = transform->GetWorldScale();
+				sphere.radius*=scale.Max();
 				m_camera.ProjectionFitToSphere(sphere,dir);
 
 				float pi = 3.14159265359f;
@@ -190,7 +193,7 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 	const QEvent::Type t = e->type();
     if (t == QEvent::MouseButtonPress) {
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if(e2->button()== Qt::LeftButton)
+		if(e2->button()== Qt::RightButton)
 		{ 
 			MouseHit(m_roaterCenter);
 		}
@@ -217,6 +220,13 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 	auto[x,y]=input.GetMousePosition();
 	auto ray = GetCamera()->GetMouseRay(x, y);
 	return GetScene()->RayHit(ray,out);
+}
+
+::Rendering::Geometry::Ray Editor::Panels::SceneView::GetMouseRay()
+{
+	
+	auto [x, y] = input.GetMousePosition();
+	return GetCamera()->GetMouseRay(x, y);
 }
 
 

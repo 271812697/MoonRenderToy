@@ -30,7 +30,19 @@ namespace Rendering::Geometry
 	}
 	bbox bbox::transform(const Maths::FMatrix4&matrix)const
 	{
-		return bbox(Maths::FMatrix4::MulPoint(matrix, pmin), Maths::FMatrix4::MulPoint(matrix, pmax));
+		bbox ret;
+		for (int i = 0; i < 8; i++) {
+			int m = i >> 2;
+			int n = (i % 4) >> 1;
+			int o = i % 2;
+			FVector3 p = { 
+				m ? pmin.x : pmax.x,
+				n ? pmin.y : pmax.y,
+				o ? pmin.z : pmax.z 
+			};
+			ret.grow(matrix.MulPoint(p));
+		}
+		return ret;
 	}
 	bool bbox::contains(FVector3 const& p) const
 	{

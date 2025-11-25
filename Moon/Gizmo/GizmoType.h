@@ -10,7 +10,7 @@ namespace Rendering {
 }
 namespace MOON
 {
-	class Guizmo;
+	class Gizmo;
 	struct VertexData
 	{
 		Eigen::Vector4<float> positionSize; // xyz = position, w = size

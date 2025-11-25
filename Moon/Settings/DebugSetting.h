@@ -66,12 +66,13 @@ public:
 		}
 	}
 
-	void addCallBack(std::function<void()> fn) {
-		mCallList.push_back(fn);
+	void addCallBack(const std::string& name,std::function<void(NodeBase* self)> fn) {
+		mCallList[name] = fn;
 	}
 	void submitCallBack();
 protected:
-	std::vector<std::function<void()>>mCallList;
+	std::unordered_map<std::string, std::function<void(NodeBase* self)>>mCallList;
+	
 	void* mData = nullptr;
 	size_t mType=0;
 	std::string mName="";
@@ -167,7 +168,7 @@ public:
 	bool registerDoubleReference(const std::string& group, const std::string& key, double& value, double minValue, double maxValue);
 	bool registerColorEdit(const std::string& group, const std::string& key,float color[3]);
 	bool registerBoolReference(const std::string& group, const std::string& key, bool& value);
-	bool addCallBack(const std::string& key, std::function<void()>fn);
+	bool addCallBack(const std::string& key, const std::string& name,std::function<void(NodeBase* self)>fn);
 	NodeBase* getNode(const std::string& key);
 	~DebugSettings();
 
