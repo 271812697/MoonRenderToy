@@ -4,6 +4,8 @@ This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+![image-20251123193430587](README.assets/image-20251123193430587.png)
+
 ![image-20251104222642971](README.assets/image-20251104222642971.png)
 
 ## PathTrace

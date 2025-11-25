@@ -13,6 +13,7 @@ namespace Editor::Rendering
 	public:
 		GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
 		~GizmoRenderPass();
+		void enableGizmoWidget(const std::string& name,bool flag);
 	private:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 	private:

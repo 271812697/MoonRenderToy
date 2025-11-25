@@ -1,17 +1,26 @@
-﻿#include "Gizmo.h"
+﻿#include <glad/glad.h>
+#include "Qtimgui/imguiwidgets/QtImGui.h"
+#include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/imgui/imgui_internal.h"
+#include "Qtimgui/implot/implotCustom.h"
+#include "Qtimgui/implot/imGuizmo.h"
+#include "Gizmo.h"
 #include "Gizmo/MathUtil/MathUtil.h"
 #include "Settings/DebugSetting.h"
-#include "Qtimgui/imgui/imgui.h"
 #include "renderer/SceneView.h"
 #include "Core/Global/ServiceLocator.h"
 #include "GizmoWidget.h"
+
+#include "editor/View/sceneview/viewerwidget.h"
 #include <Rendering/Data/Material.h>
 #include <Rendering/Resources/Loaders/ShaderLoader.h>
 #include <Maths/FMatrix4.h>
-#include <glad/glad.h>
 #include <iostream>
 namespace MOON
 {
+
+	static QtImGui::RenderRef imref = nullptr;
+	static ImPlotContext* ctx = nullptr;
 
 	static Maths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
@@ -110,6 +119,10 @@ namespace MOON
 		pushEnableSorting(false);
 		pushLayerId(0);
 		pushId(0x811C9DC5u);
+
+		
+		imref = QtImGui::initialize(&GetService(ViewerWidget), false);
+		ctx = ImPlot::CreateContext();
 	}
 	void Gizmo::preStoreMesh()
 	{
@@ -157,7 +170,7 @@ namespace MOON
 	}
 	void Gizmo::registerDebugSettings()
 	{
-		DebugSettings::instance().registerFloatReference("View", "FixedscaleValue", debugSettings.scaleValue, 0.5f, 10.0f);
+
 	}
 	void Gizmo::terminate()
 	{
@@ -3615,6 +3628,11 @@ namespace MOON
 		pos.y() = Clamp<float>(pos.y(), 0.0f, cameraParam.viewportHeight);
 		return ret;
 	}
+	Eigen::Vector2f Gizmo::worldToScreen(const Eigen::Vector3f& pos)
+	{
+		Eigen::Vector3f p=MatrixMulPoint(cameraParam.viewProj,pos);
+		return Eigen::Vector2f((p.x()+1.0)/2.0*cameraParam.viewportWidth, (1.0-p.y()) / 2.0*cameraParam.viewportHeight);
+	}
 	CameraParam& Gizmo::getCameraParam()
 	{
 		return cameraParam;
@@ -3752,6 +3770,8 @@ namespace MOON
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
 		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
+		
+
 	}
 
 	void Gizmo::test()
@@ -4007,6 +4027,16 @@ namespace MOON
 		drawMesh();
 		drawSort();
 		drawUnsort();
+	}
+	void Gizmo::newImgui()
+	{
+		QtImGui::newFrame(imref);
+		ImPlot::SetCurrentContext(ctx);
+	}
+	void Gizmo::endImgui()
+	{
+		ImGui::Render();
+		QtImGui::render(imref);
 	}
 	void Gizmo::clear()
 	{

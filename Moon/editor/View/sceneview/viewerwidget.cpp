@@ -56,10 +56,11 @@ namespace MOON {
 				mSceneView->UnselectActor();
 				emit mSelf->sceneChange();
 			}
-
+			Gizmo::instance().newImgui();
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
+			Gizmo::instance().endImgui();
 
 		}
 		bool event(QEvent* evt)

@@ -2,7 +2,6 @@
 #include "GizmoBehaviour.h"
 #include "AViewControllable.h"
 #include "PickingRenderPass.h"
-
 namespace Editor::Panels
 {
 
@@ -24,10 +23,10 @@ namespace Editor::Panels
 		void ReceiveEvent(QEvent* e);
 		bool MouseHit(Maths::FVector3& out);
 		::Rendering::Geometry::Ray GetMouseRay();
+
 		
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
-
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
@@ -36,9 +35,7 @@ namespace Editor::Panels
 		Editor::Core::GizmoBehaviour m_gizmoOperations;
 		Editor::Core::EGizmoOperation m_currentOperation = Editor::Core::EGizmoOperation::TRANSLATE;
 		::Core::Resources::Material m_fallbackMaterial;
-
 		Tools::Utils::OptRef<::Core::ECS::Actor> m_highlightedActor;
 		std::optional<Editor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
-
 	};
 }

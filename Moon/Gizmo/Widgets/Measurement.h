@@ -13,6 +13,7 @@ namespace MOON
 		Measurement(const std::string& name, Editor::Panels::SceneView* view);
 		virtual ~Measurement();
 		virtual void onUpdate()override;
+		virtual void onSetEnable(bool flag)override;
 	private:
 		Editor::Panels::SceneView* m_sceneView = nullptr;
 	};

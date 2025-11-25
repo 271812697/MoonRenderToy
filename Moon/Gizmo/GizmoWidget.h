@@ -11,9 +11,10 @@ namespace MOON
 		virtual ~GizmoWidget();
 		const std::string& getName() const { return mName; }
 		bool isEnabled() const { return mActive; }
-		void setEnabled(bool flag) { mActive = flag; }
+		void setEnabled(bool flag) { mActive = flag; onSetEnable(flag); }
 		void update();
 		virtual void onUpdate();
+		virtual void onSetEnable(bool flag);
 	protected:
 		std::string mName;	
 		bool mActive = true;

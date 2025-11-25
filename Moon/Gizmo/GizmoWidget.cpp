@@ -19,4 +19,7 @@ namespace MOON {
 	void GizmoWidget::onUpdate()
 	{
 	}
+	void GizmoWidget::onSetEnable(bool flag)
+	{
+	}
 }

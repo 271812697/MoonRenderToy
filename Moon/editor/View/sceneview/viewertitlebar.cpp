@@ -4,6 +4,8 @@
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/Command/viewer/CameraFitCommand.h"
 #include "renderer/PointRenderPass.h"
+#include "renderer/GizmoRenderPass.h"
+#include "core/callbackManager.h"
 #include <QHBoxLayout>
 #include <QToolBar>
 #include <QPointer>
@@ -50,6 +52,26 @@ namespace MOON {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
 			view.GetRenderer().GetPass<Editor::Rendering::PointRenderPass>("PointDraw").SetEnabled(value);
+		}
+	};
+	class  MeasureCommand : public Command
+	{
+	public:
+		MeasureCommand(QObject* parent) :Command(parent) {
+			auto action = new QAction(this);
+			action->setCheckable(true);
+			setAction(action);
+			setIcon(QString::fromUtf8(":/widgets/icons/pqRuler.svg"));
+			createCallBack(CallBackManager::instance(), [this]() {
+				this->execute();
+				});
+
+		}
+	protected:
+		virtual void execute()override {
+			bool value = action()->isChecked();
+			auto& view = GetService(Editor::Panels::SceneView);
+			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("Measure",value);
 		}
 	};
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {
@@ -107,6 +129,9 @@ namespace MOON {
 			points = new PointsCommand(mSelf);
 			mToolBar->addAction(points->action());
 
+			measure = new MeasureCommand(mSelf);
+			mToolBar->addAction(measure->action());
+
 		
 		}
 		~ViewerWindowTitleBarInternal() {
@@ -128,6 +153,7 @@ namespace MOON {
 		CameraFitCommand* rotateCameraCW = nullptr;
 		WireCommand* wire = nullptr;
 		PointsCommand* points = nullptr;
+		MeasureCommand* measure = nullptr;
 	};
 	ViewerWindowTitleBar::ViewerWindowTitleBar(QWidget* parent) :QWidget(parent), mInternal(new ViewerWindowTitleBarInternal(this))
 	{

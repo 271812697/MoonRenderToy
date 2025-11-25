@@ -6,9 +6,6 @@
 #include "Gizmo/GizmoType.h"
 #include "Rendering/Resources/Texture.h"
 
-#define ADDBehaviour(be) MOON::Gizmo::instance().addBehaviour(be)
-#define ReMoveBehaviour(be) MOON::Gizmo::instance().removeBehaviour(be)
-#define GetBehaviour(be) MOON::Gizmo::instance().getBehaviour(be)
 
 namespace Editor {
 	namespace Panels {
@@ -151,7 +148,7 @@ namespace MOON
 			std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3f>>& polygon);
 		//methods drawing in screenspace!
 		bool drawTranslate2D(unsigned int id, Eigen::Vector2f& pos);
-
+		Eigen::Vector2f worldToScreen(const Eigen::Vector3f& pos);
 
 
 		CameraParam& getCameraParam();
@@ -162,6 +159,8 @@ namespace MOON
 		void drawMesh();
 
 		void endFrame();
+		void newImgui();
+		void endImgui();
 		void clear();
 		void updateDepth(float _depth);
 		bool makeHot(unsigned int _id, float _depth, bool _intersects);
@@ -288,27 +287,16 @@ namespace MOON
 		int vertexDataIndex;
 		std::vector<unsigned int> layerIdMap;
 		int layerIndex;
-
 		std::vector<DrawList> drawLists;
 
-
-		struct DrawSettings
-		{
-			float scaleValue = 1.0f;
-
-		};
 		//Long-term lasting
 		std::vector<MeshInstance> drawLongTermMeshList;
 		//short lasting
 		std::vector<MeshInstance> drawMeshList;
-		DrawSettings debugSettings;
-
+		
 		bool enableLit;
 		bool sortCalled;
 		bool endFrameCalled;
-
-
-
 		int findLayerIndex(unsigned int id) const;
 		VertexList* getCurrentVertexList();
 		const DrawList* getDrawLists() const
@@ -320,5 +308,4 @@ namespace MOON
 			return drawLists.size();
 		}
 	};
-
 }

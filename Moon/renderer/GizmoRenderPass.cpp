@@ -19,19 +19,28 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 		GizmoRenderPassInternal(Editor::Rendering::GizmoRenderPass* gizmoPass):
 			mSelf(gizmoPass)
 		{
-			mRotateCenterWidget = new MOON::RotateCenter("RotateCenter", &GetService(Editor::Panels::SceneView));
-		    mMeasurementWidget = new MOON::Measurement("Measure", &GetService(Editor::Panels::SceneView));
+			mWidgets["RotateCenter"] = new MOON::RotateCenter("RotateCenter", &GetService(Editor::Panels::SceneView));
+			mWidgets["Measure"] = new MOON::Measurement("Measure", &GetService(Editor::Panels::SceneView));
 		}
 		~GizmoRenderPassInternal()
 		{
-			delete mRotateCenterWidget;
-			delete mMeasurementWidget;
+			for (auto it : mWidgets) {
+				delete it.second;
+			}
 		}
+		void enableGizmoWidget(const std::string& name, bool flag)
+		{
+			if (mWidgets.find(name) != mWidgets.end()) {
+				mWidgets[name]->setEnabled(flag);
+			}
+		}
+
 	private:
 		friend  class Editor::Rendering::GizmoRenderPass;
 		Editor::Rendering::GizmoRenderPass* mSelf = nullptr;
 		MOON::RotateCenter* mRotateCenterWidget = nullptr;
 		MOON::Measurement* mMeasurementWidget = nullptr;
+		std::unordered_map<std::string, MOON::GizmoWidget*>mWidgets;
 };
 Editor::Rendering::GizmoRenderPass::GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer)
 	: ::Rendering::Core::ARenderPass(p_renderer),mInternal(new Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal(this))
@@ -47,6 +56,11 @@ Editor::Rendering::GizmoRenderPass::~GizmoRenderPass()
 	if (mInternal) {
 		delete mInternal;
 	}
+}
+
+void Editor::Rendering::GizmoRenderPass::enableGizmoWidget(const std::string& name, bool flag)
+{
+	mInternal->enableGizmoWidget(name,flag);
 }
 
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
