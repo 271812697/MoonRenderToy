@@ -1,12 +1,15 @@
-﻿#include <Core/ECS/Components/CAmbientBoxLight.h>
+﻿
+#include <Core/ECS/Components/CAmbientBoxLight.h>
 #include <Core/ECS/Components/CAmbientSphereLight.h>
+
 #include "CameraController.h"
+#include "GizmoRenderPass.h"
 #include <iostream>
 
 
 Editor::Core::CameraController::CameraController(
 	Editor::Panels::AView& p_view,
-	Rendering::Entities::Camera& p_camera
+	::Rendering::Entities::Camera& p_camera
 ) :
 	m_view(p_view),
 	m_camera(p_camera)
@@ -40,7 +43,7 @@ float GetActorFocusDist(Core::ECS::Actor& p_actor)
 	return distance;
 }
 
-void Editor::Core::CameraController::HandleInputs(float p_deltaTime)
+void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 {
 	HandleMouseReleased();
 	HandleMousePressed();
@@ -285,7 +288,7 @@ void Editor::Core::CameraController::HandleCameraZoom()
 	auto& input = m_view.getInutState();
 	auto [x, y] = input.GetMousePosition();
 
-	if (m_camera.GetProjectionMode() == Rendering::Settings::EProjectionMode::PERSPECTIVE)
+	if (m_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::PERSPECTIVE)
 	{
 		
 		m_camera.PersertiveZoom(verticalScroll);
@@ -352,6 +355,7 @@ void Editor::Core::CameraController::HandleMousePressed()
 	if (input.IsMouseButtonPressed(Editor::Panels::MouseButton::MOUSE_BUTTON_RIGHT))
 	{
 		m_rightMousePressed = true;
+		m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", true);;
 	}
 }
 
@@ -374,6 +378,7 @@ void Editor::Core::CameraController::HandleMouseReleased()
 	{
 		m_rightMousePressed = false;
 		m_firstMouse = true;
+		m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", false);;
 
 	}
 }

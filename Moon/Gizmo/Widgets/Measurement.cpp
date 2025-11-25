@@ -45,7 +45,7 @@ namespace MOON {
 			}
 		}
 		for (const auto& m : g_measures) {
-			renderer->drawLine(m.start, m.end, 2.0,Eigen::Vector4<uint8_t>{ 255, 255, 0, 255 });
+			renderer->drawLine(m.start, m.end, 2.0,Eigen::Vector4<uint8_t>{ 255,0, 255, 0 });
 			float distance = (m.start - m.end).norm();
 			Eigen::Vector3f delta = m.start - m.end;
 			

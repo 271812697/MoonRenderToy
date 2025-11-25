@@ -193,7 +193,7 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 	const QEvent::Type t = e->type();
     if (t == QEvent::MouseButtonPress) {
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
-		if(e2->button()== Qt::LeftButton)
+		if(e2->button()== Qt::RightButton)
 		{ 
 			MouseHit(m_roaterCenter);
 		}
