@@ -23,9 +23,9 @@ namespace MOON {
 
 
 	void addSphereLight(Core::SceneSystem::Scene* scene) {
-		auto node = DebugSettings::instance().getNode("showLight");
-		DebugSettings::instance().addCallBack("showLight", [=]() {
-			bool value = node->getData<bool>();
+		//auto node = DebugSettings::instance().getNode("showLight");
+		DebugSettings::instance().addCallBack("showLight", "default", [scene](NodeBase* self) {
+			bool value = self->getData<bool>();
 			scene->FindActorByName("PointLight1")->SetActive(value);
 			scene->FindActorByName("PointLight2")->SetActive(value);
 			scene->FindActorByName("PointLight3")->SetActive(value);

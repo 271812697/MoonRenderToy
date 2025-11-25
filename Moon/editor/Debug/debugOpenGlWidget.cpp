@@ -4,7 +4,7 @@
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/imgui/imgui_internal.h"
 #include "Qtimgui/implot/implotCustom.h"
-#include "Qtimgui/implot/imguizmo.h"
+#include "Qtimgui/implot/imGuizmo.h"
 namespace MOON {
 	static QtImGui::RenderRef imref = nullptr;
 	static ImPlotContext* ctx = nullptr;

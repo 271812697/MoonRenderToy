@@ -1,5 +1,5 @@
-﻿#include "Guizmo/GuizmoType.h"
-#include "Guizmo/MathUtil/MathUtil.h"
+﻿#include "Gizmo/GizmoType.h"
+#include "Gizmo/MathUtil/MathUtil.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/ResourceManagement/TextureManager.h"
 #include "Core/Global/ServiceLocator.h"

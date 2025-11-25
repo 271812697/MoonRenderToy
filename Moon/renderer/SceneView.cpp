@@ -36,7 +36,7 @@ Editor::Panels::SceneView::SceneView
 	: AViewControllable(p_title),
 	m_sceneManager(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().sceneManager)
 {
-	
+	RegService(Editor::Panels::SceneView, *this);
 	m_renderer = std::make_unique<Editor::Rendering::DebugSceneRenderer>(*::Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver);
 	m_camera.SetFar(5000.0f);
 	m_fallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Unlit.ovfx"]);
@@ -220,6 +220,13 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 	auto[x,y]=input.GetMousePosition();
 	auto ray = GetCamera()->GetMouseRay(x, y);
 	return GetScene()->RayHit(ray,out);
+}
+
+::Rendering::Geometry::Ray Editor::Panels::SceneView::GetMouseRay()
+{
+	
+	auto [x, y] = input.GetMousePosition();
+	return GetCamera()->GetMouseRay(x, y);
 }
 
 

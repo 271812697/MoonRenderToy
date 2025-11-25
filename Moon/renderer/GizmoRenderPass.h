@@ -12,8 +12,12 @@ namespace Editor::Rendering
 	{
 	public:
 		GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		~GizmoRenderPass();
 	private:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+	private:
+		class GizmoRenderPassInternal;
+		GizmoRenderPassInternal* mInternal = nullptr;
 
 	};
 }
