@@ -145,27 +145,27 @@ namespace MOON
 		Cell transform(const Eigen::Matrix4f& mat, float offsetX = 0.0f, float offsetY = 0.0f);
 		void tranformUV(float u, float v);
 	};
-	struct MeshInstance
+	struct PolygonInstance
 	{
-		MeshInstance(const std::string& n, const Eigen::Matrix4f& m)
+		PolygonInstance(const std::string& n, const Eigen::Matrix4f& m)
 			: mesh(n)
 			, model(m)
 		{
 			color = { 1.0f, 1.0f, 1.0f };
 		}
-		MeshInstance(const std::string& n, const Eigen::Matrix4f& m, const Eigen::Vector3f& c)
+		PolygonInstance(const std::string& n, const Eigen::Matrix4f& m, const Eigen::Vector3f& c)
 			: mesh(n)
 			, model(m)
 			, color(c)
 		{
 		}
-		MeshInstance(std::string&& n, Eigen::Matrix4f&& m)
+		PolygonInstance(std::string&& n, Eigen::Matrix4f&& m)
 			: mesh(std::move(n))
 			, model(std::move(m))
 		{
 			color = { 1.0f, 1.0f, 1.0f };
 		}
-		MeshInstance(std::string&& n, Eigen::Matrix4f&& m, Eigen::Vector3f&& c)
+		PolygonInstance(std::string&& n, Eigen::Matrix4f&& m, Eigen::Vector3f&& c)
 			: mesh(std::move(n))
 			, model(std::move(m))
 			, color(c)

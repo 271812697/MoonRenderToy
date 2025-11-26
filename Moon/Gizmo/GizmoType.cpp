@@ -280,9 +280,13 @@ namespace MOON {
 				Maths::FMatrix4::Translation({ 0,0,0 }) *
 				Maths::FMatrix4::Scaling({ 6,6,6 });
 			viewAxis.drawEdge = false;
-			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model, { 0,0,255,255 });
-			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisY(-90), { 255,0,0,255 });
-			viewAxis.addModel(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Arrow_Translate"), model.RotateOnAxisX(-90), { 0,255,0,255 });
+			
+			auto arrow = GetService(Editor::Core::Context).editorResources->GetModel("Arrow_Translate");
+			auto sphere= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
+			viewAxis.addModel(arrow, model, { 0,0,255,255 });
+			viewAxis.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
+			viewAxis.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });
+			viewAxis.addModel(sphere, Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 0.5f,0.5f,0.5f }), { 255,255,0,255 });
 			viewAxis.model = Eigen::Matrix4f::Identity();
 			viewAxis.model(0, 3) = -halflen;
 			viewAxis.model(1, 3) = -halflen;

@@ -1,8 +1,6 @@
 ﻿#include <filesystem>
 #include <Core/Global/ServiceLocator.h>
-
 #include "Context.h"
-
 #include <Rendering/Entities/Light.h>
 #include <Tools/Utils/SystemCalls.h>
 #include <assert.h>
@@ -10,51 +8,6 @@
 using namespace Core::Global;
 using namespace ::Core::ResourceManagement;
 
-constexpr std::array<std::pair<int, int>, 13> kResolutions
-{
-	std::make_pair(640, 360), // nHD
-	std::make_pair(854, 480), // FWVGA
-	std::make_pair(960, 540), // qHD
-	std::make_pair(1024, 576), // WSVGA
-	std::make_pair(1280, 720), // HD
-	std::make_pair(1366, 768), // FWXGA
-	std::make_pair(1600, 900), // HD+
-	std::make_pair(1920, 1080), // Full HD
-	std::make_pair(2560, 1440), // QHD
-	std::make_pair(3200, 1800), // QHD+
-	std::make_pair(3840, 2160), // 4K UHD
-	std::make_pair(5120, 2880), // 5K
-	std::make_pair(7680, 4320), // 8K UHD
-};
-
-std::array<int, 4> FindBestFitWindowSizeAndPosition(std::array<int, 4> p_workAreaSize)
-{
-	// Extract work area dimensions
-	int workAreaX = p_workAreaSize[0];
-	int workAreaY = p_workAreaSize[1];
-	int workAreaWidth = p_workAreaSize[2];
-	int workAreaHeight = p_workAreaSize[3];
-
-	// Iterate over available resolutions
-	for (auto it = kResolutions.rbegin(); it != kResolutions.rend(); ++it)
-	{
-		int width = it->first;
-		int height = it->second;
-
-		// Check if resolution fits within work area
-		if (width <= workAreaWidth && height <= workAreaHeight)
-		{
-			// Center the resolution within the work area
-			int posX = workAreaX + workAreaWidth / 2 - width / 2;
-			int posY = workAreaY + workAreaHeight / 2 - height / 2;
-
-			return { posX, posY, width, height };
-		}
-	}
-
-	assert(false, "No resolution found to fit the work area");
-	return {};
-}
 
 Editor::Core::Context::Context(const std::string& p_projectPath, const std::string& p_projectName) :
 	projectPath(p_projectPath),

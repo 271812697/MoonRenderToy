@@ -50,7 +50,7 @@ namespace MOON
 			vertex(_position, sizeStack.back(), _color);
 		}
 		//void draw
-		void drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale, const std::string& mesh, bool longterm = false);
+		void drawOneMesh(const Eigen::Vector3f& translation, const Eigen::Matrix3f& rotation, const Eigen::Vector3f& scale, const std::string& mesh, bool longterm = false);
 		void drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
 			Eigen::Vector3f& color,
 			const std::string& mesh, bool longterm = false);
@@ -58,8 +58,8 @@ namespace MOON
 			Eigen::Vector3f translation, Eigen::Vector3f scale, const std::string& mesh, bool longterm = false);
 		void drawOneMesh(
 			Eigen::Vector3f translation, Eigen::Vector3f scale, Eigen::Vector3f& color, const std::string& mesh, bool longterm = false);
-		void drawOneMesh(Eigen::Matrix4f& model, const std::string& mesh, bool longterm = false);
-		void drawOneMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm = false);
+		void drawOneMesh(const Eigen::Matrix4f& model, const std::string& mesh, bool longterm = false);
+		void drawOneMesh(const Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm = false);
 		void drawOneFixScaleMesh(
 			Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm = false);
 		void drawPoint(const Eigen::Vector3f& _position, float _size, Eigen::Vector4<uint8_t> _color);
@@ -290,9 +290,10 @@ namespace MOON
 		std::vector<DrawList> drawLists;
 
 		//Long-term lasting
-		std::vector<MeshInstance> drawLongTermMeshList;
+		std::vector<PolygonInstance> drawLongTermMeshList;
 		//short lasting
-		std::vector<MeshInstance> drawMeshList;
+		std::vector<PolygonInstance> drawMeshList;
+		std::unordered_map<std::string, Polygon*>mPreStorePolygon;
 		
 		bool enableLit;
 		bool sortCalled;
