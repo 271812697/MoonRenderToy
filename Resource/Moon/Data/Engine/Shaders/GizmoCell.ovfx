@@ -1,6 +1,7 @@
 #feature WITH_EDGE
 #feature CUSTOM_PROJECT
 #feature CUSTOM_VIEWPORT
+#feature FIXED_SCALE
 
 #shader vertex
 #version 450 core
@@ -29,12 +30,28 @@ void main()
 {
     vData.color = aColor.rgba; // swizzle to correct endianness
     vData.pos= aPositionSize.xyz;
-    vData.normal=aNormal;
+    //the follow doesn't use CUSTOM_PROJECT
+    #if defined(FIXED_SCALE)
+        //orth
+        if(ubo_CameraType==0){
+          float ratio=400.0/(ubo_Projection[1][1]*ubo_ScreenHeight);
+          vData.pos=vData.pos*ratio;
+        }
+        else{
+          vec4 viewPos= ubo_View * uModelMatrix*vec4(vData.pos,1.0f);
+          viewPos.z/=viewPos.w;
+          float h=viewPos.z*1/ubo_Projection[1][1];
+          float ratio=400.0*abs(h)/ubo_ScreenHeight;
+          vData.pos=vData.pos*ratio;
+        }
+    #endif
+    vData.normal=normalize(mat3(uModelMatrix)*aNormal);
+
     vData.uv=aUv;
 #if defined(CUSTOM_PROJECT)
-    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(aPositionSize.xyz, 1.0);
+    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(vData.pos, 1.0);
 #else
-    gl_Position = ubo_Projection * ubo_View * uModelMatrix*vec4(aPositionSize.xyz, 1.0);
+    gl_Position = ubo_Projection * ubo_View * uModelMatrix*vec4(vData.pos, 1.0);
 #endif
    
  
@@ -161,6 +178,7 @@ void main()
     float emix = clamp(0.5 + 0.5*1.5 - min( min( edist[0], edist[1]), edist[2]), 0.0, 1.0);
     albedo.rgb = mix(albedo.rgb, vec3(0.3,0.3,1.0), emix);
 #endif
+
     vec3 viewDir=vec3(uViewMatrix[0][2],uViewMatrix[1][2],uViewMatrix[2][2]);
     vec3 lightDir=viewDir;
     vec3 N=fs_in.normal;

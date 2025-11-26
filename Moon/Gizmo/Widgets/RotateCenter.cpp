@@ -12,12 +12,11 @@ namespace MOON {
 	{
 		auto rc = m_sceneView->GetRoaterCenter();
 		Eigen::Vector3f center = { rc.x,rc.y,rc.z };
-		renderer->translation(renderer->makeId("rotaterCenter"), center);
 		//drawOneMesh(Eigen::Vector3f & translation, Eigen::Matrix3f & rotation, Eigen::Vector3f & scale, const std::string & mesh, bool longterm = false);
 		renderer->drawOneMesh(
 			center,
 			Eigen::Matrix3f::Identity(),
-			Eigen::Vector3f{ 0.2f,0.2f,0.2f },
+			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"Axis");
 	}
 }

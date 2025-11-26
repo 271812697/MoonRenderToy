@@ -4035,7 +4035,7 @@ namespace MOON
 		p_pso.depthTest = true;
 		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
 		driver->SetPipelineState(p_pso);
-		mCellMaterial->SetFeatures({"WITH_EDGE"});
+		mCellMaterial->SetFeatures({"WITH_EDGE","FIXED_SCALE"});
 		for (auto& drawMesh : drawMeshList)
 		{
 			auto polygon = mPreStorePolygon[drawMesh.mesh];
