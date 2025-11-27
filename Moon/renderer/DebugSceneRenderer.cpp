@@ -678,5 +678,5 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
-	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
+	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Opaque);
 }

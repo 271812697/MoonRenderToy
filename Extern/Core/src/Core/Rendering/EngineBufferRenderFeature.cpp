@@ -6,16 +6,31 @@
 
 namespace
 {
-	struct EngineUBO{
-		Maths::FMatrix4    ubo_Model;
+	struct CameraInfo
+	{
 		Maths::FMatrix4    ubo_View;
 		Maths::FMatrix4    ubo_Projection;
 		Maths::FVector3    ubo_ViewPos;
-		int     ubo_CameraType; //0 orth,1 pers
+		int					ubo_CameraType; //0 orth,1 pers
+	};
+	struct ViewInfo
+	{
 		float   ubo_Time;
-		int ubo_screenWidth;
-		int ubo_screenHeigh;
-		float ubo_pad;
+		int		ubo_screenWidth;
+		int		ubo_screenHeigh;
+		float	ubo_pad;
+	};
+	struct ClipPlane
+	{
+		Maths::FVector4 plane;
+		static unsigned long long offset;
+	};
+	unsigned long long ClipPlane::offset = sizeof(Maths::FMatrix4)+ sizeof(CameraInfo) + sizeof(ViewInfo);
+	struct EngineUBO{
+		Maths::FMatrix4    ubo_Model;
+		CameraInfo ubo_CameraInfo;
+		ViewInfo ubo_CustomInfo;
+		ClipPlane ubo_plane;
 		Maths::FMatrix4    ubo_UserMatrix;
 
 	};
@@ -36,23 +51,27 @@ Core::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
 
 void Core::Rendering::EngineBufferRenderFeature::SetCamera(const ::Rendering::Entities::Camera& p_camera)
 {
-	struct
-	{
-		Maths::FMatrix4 viewMatrix;
-		Maths::FMatrix4 projectionMatrix;
-		Maths::FVector3 cameraPosition;
-		int cameraType;
-	} uboDataPage{
-		.viewMatrix = Maths::FMatrix4::Transpose(p_camera.GetViewMatrix()),
-		.projectionMatrix = Maths::FMatrix4::Transpose(p_camera.GetProjectionMatrix()),
-		.cameraPosition = p_camera.GetPosition(),
-		.cameraType = p_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC ? 0 : 1
+     CameraInfo uboDataPage{
+		.ubo_View= Maths::FMatrix4::Transpose(p_camera.GetViewMatrix()),
+		.ubo_Projection = Maths::FMatrix4::Transpose(p_camera.GetProjectionMatrix()),
+		.ubo_ViewPos = p_camera.GetPosition(),
+		.ubo_CameraType = p_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC ? 0 : 1
 	};
 
 	m_engineBuffer->Upload(&uboDataPage, ::Rendering::HAL::BufferMemoryRange{
 		.offset = sizeof(Maths::FMatrix4), // Skip uploading the first matrix (Model matrix)
 		.size = sizeof(uboDataPage)
 	});
+}
+
+void Core::Rendering::EngineBufferRenderFeature::SetClipPlane(float x, float y, float z, float w)
+{
+	
+	Maths::FVector4 plane = {x,y,z,w};
+	m_engineBuffer->Upload(&plane, ::Rendering::HAL::BufferMemoryRange{
+	.offset = ClipPlane::offset, // Skip uploading the first matrix (Model matrix)
+	.size = sizeof(ClipPlane)
+		});
 }
 
 void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
@@ -64,24 +83,18 @@ void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering:
 
 	struct
 	{
-		Maths::FMatrix4 viewMatrix;
-		Maths::FMatrix4 projectionMatrix;
-		Maths::FVector3 cameraPosition;
-		int cameraType;
-		float elapsedTime;
-		int screenWidth;
-		int screenHeight;
-		float pad;
+		CameraInfo cameraInfo;
+		ViewInfo viewInfo;
+	} uboDataPage;
+	
+	uboDataPage.cameraInfo.ubo_View = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetViewMatrix());
+	uboDataPage.cameraInfo.ubo_Projection = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetProjectionMatrix());
+	uboDataPage.cameraInfo.ubo_ViewPos = p_frameDescriptor.camera->GetPosition();
+	uboDataPage.cameraInfo.ubo_CameraType = p_frameDescriptor.camera->GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC ? 0 : 1;
+	uboDataPage.viewInfo.ubo_Time = elapsedTime.count();
+	uboDataPage.viewInfo.ubo_screenWidth = p_frameDescriptor.renderWidth;
+	uboDataPage.viewInfo.ubo_screenHeigh = p_frameDescriptor.renderHeight;
 
-	} uboDataPage{
-		.viewMatrix = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetViewMatrix()),
-		.projectionMatrix = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetProjectionMatrix()),
-		.cameraPosition = p_frameDescriptor.camera->GetPosition(),
-		.cameraType= p_frameDescriptor.camera->GetProjectionMode()== ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC?0:1,
-		.elapsedTime = elapsedTime.count(),
-		.screenWidth=p_frameDescriptor.renderWidth,
-		.screenHeight= p_frameDescriptor.renderHeight
-	};
 	
 	m_engineBuffer->Upload(&uboDataPage, ::Rendering::HAL::BufferMemoryRange{
 		.offset = sizeof(Maths::FMatrix4), // Skip uploading the first matrix (Model matrix)

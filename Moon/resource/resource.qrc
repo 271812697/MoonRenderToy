@@ -58,6 +58,7 @@
 		<file>icons/CheckError.png</file>
 		<file>icons/info.png</file>
         <file>icons/pqRuler.svg</file>
+        <file>icons/pqClip.svg</file>
     </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>

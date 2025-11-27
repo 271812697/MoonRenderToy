@@ -911,7 +911,7 @@ namespace MOON
 		Eigen::Vector3f zaxis = xaxis.cross(normal).normalized();
 
 		alphaStack.push_back(1.0f);
-		sizeStack.push_back(1.0f);
+		sizeStack.push_back(3.0f);
 		pushEnableSorting(true);
 		begin(PrimitiveModeLines);
 		for (int x = 0; x <= gridSize * scale; ++x)
@@ -1172,14 +1172,13 @@ namespace MOON
 		unsigned int planeOriginCircle = makeId("planeCircle");
 
 		Eigen::Vector3f mouse = cameraParam.rayOrigin + cameraParam.rayDirection;
-		float wordSize = pixelsToWorldSize(mouse, 3);
+		
 		float worldHeight = pixelsToWorldSize(planeOrigin, 50);
 		static float cirleDetectRadius = 5;//
 		//pixelsToWorldSize(planeOrigin, 40);
 
 
 		colorStack.push_back(Color_Red);
-		drawCircleFilled(mouse, cameraParam.viewDirectioin, wordSize, 20);
 		colorStack.pop_back();
 
 
@@ -1194,7 +1193,7 @@ namespace MOON
 
 		drawArrow(planeArrow, planeOrigin, normal, worldHeight, Color_Green);
 		drawPoint(planeOrigin, 15, planeOriginId == hotId ? Color_Gold : Color_White);
-		alphaStack.push_back(0.5);
+		alphaStack.push_back(0.2);
 		colorStack.push_back(planeOriginCircle == hotId ? Color_Green : Color_White);
 		pushEnableSorting(true);
 		drawCircleFilled(planeOrigin, normal, cirleDetectRadius, 40);
