@@ -9,6 +9,7 @@
 #include "Settings/DebugSetting.h"
 #include "Gizmo/Widgets/RotateCenter.h"
 #include "Gizmo/Widgets/Measurement.h"
+#include "Gizmo/Widgets/ClipPlane.h"
 
 struct GizmoRenderSettings
 {
@@ -21,6 +22,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 		{
 			mWidgets["RotateCenter"] = new MOON::RotateCenter("RotateCenter", &GetService(Editor::Panels::SceneView));
 			mWidgets["Measure"] = new MOON::Measurement("Measure", &GetService(Editor::Panels::SceneView));
+			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane", &GetService(Editor::Panels::SceneView));
 		}
 		~GizmoRenderPassInternal()
 		{
@@ -31,7 +33,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 		void enableGizmoWidget(const std::string& name, bool flag)
 		{
 			if (mWidgets.find(name) != mWidgets.end()) {
-				mWidgets[name]->setEnabled(flag);
+				mWidgets[name]->setActive(flag);
 			}
 		}
 

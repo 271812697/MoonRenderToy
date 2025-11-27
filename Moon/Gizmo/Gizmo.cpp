@@ -3739,12 +3739,12 @@ namespace MOON
 				rayDirectionNormalized.y(), rayDirectionNormalized.z(), 0.0f);
 			rayDirection = Eigen::Vector3f(it.x(), it.y(), it.z());
 		}
-
+		
 		cameraParam.viewportWidth = w;
 		cameraParam.viewportHeight = h;
 		///
 		cameraParam.projectY = 2.0 / proj(1, 1);
-		cameraParam.orthProj = true;
+		cameraParam.orthProj = isOrth;
 		cameraParam.eye = vieweye;
 		/// for Orth
 		cameraParam.viewDirectioin = viewforward;

@@ -13,6 +13,7 @@
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "Gizmo/Gizmo.h"
+#include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "core/log.h"
 
 namespace MOON {
@@ -67,6 +68,7 @@ namespace MOON {
 		{
 			if (mSceneView != nullptr)
 				mSceneView->ReceiveEvent(evt);
+			RenderWindowInteractor::Instance()->ReceiveEvent(evt);
 			return true;
 		}
 		void resizeEvent(QResizeEvent* event)
@@ -75,6 +77,7 @@ namespace MOON {
 			mViewHeight = event->size().height();
 			if (mSceneView != nullptr)
 				mSceneView->Resize(mViewWidth, mViewHeight);
+			RenderWindowInteractor::Instance()->UpdateSize(mViewWidth,mViewHeight);
 		}
 		void onSwitchScene(const QString& path)
 		{
@@ -139,6 +142,7 @@ namespace MOON {
 	bool ViewerWidget::event(QEvent* evt)
 	{
 		mInternal->event(evt);
+		
 		return QOpenGLWidget::event(evt);
 	}
 

@@ -5,14 +5,11 @@
 #include <unordered_map>
 #include "Gizmo/GizmoType.h"
 #include "Rendering/Resources/Texture.h"
-
-
 namespace Editor {
 	namespace Panels {
 		class SceneView;
 	}
 }
-
 namespace Rendering::Data
 {
 	class Material;
@@ -152,12 +149,12 @@ namespace MOON
 
 
 		CameraParam& getCameraParam();
-		void newFrame(Editor::Panels::SceneView* view);
+		
 		void test();
 		void drawUnsort();
 		void drawSort();
 		void drawMesh();
-
+		void newFrame(Editor::Panels::SceneView* view);
 		void endFrame();
 		void newImgui();
 		void endImgui();

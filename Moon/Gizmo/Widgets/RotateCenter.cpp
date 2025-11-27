@@ -1,12 +1,20 @@
 ﻿#include "Gizmo/Widgets/RotateCenter.h"
 #include "Gizmo/Gizmo.h"
 #include "renderer/SceneView.h"
+
+#include "Gizmo/Interactive/ExecuteCommand.h"
+#include "Gizmo/Interactive/RenderWindowInteractor.h"
 namespace MOON {
 	RotateCenter::RotateCenter(const std::string& name, Editor::Panels::SceneView* view) :GizmoWidget(name), m_sceneView(view)
 	{
+		m_rightButtonPressObserver=this->Interactor->AddObserver(ExecuteCommand::RightButtonPressEvent, this, &RotateCenter::onMouseRightButtonPressed, 0.0f);
+		m_rightButtonReleaseObserver=this->Interactor->AddObserver(ExecuteCommand::RightButtonReleaseEvent, this, &RotateCenter::onMouseRightButtonReleased, 0.0f);
+
 	}
 	RotateCenter::~RotateCenter()
 	{
+		delete m_rightButtonPressObserver.command;
+		delete m_rightButtonReleaseObserver.command;
 	}
 	void RotateCenter::onUpdate()
 	{
@@ -19,4 +27,13 @@ namespace MOON {
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"Axis");
 	}
+	void RotateCenter::onMouseRightButtonPressed()
+	{
+		setVisible(true);
+	}
+	void RotateCenter::onMouseRightButtonReleased()
+	{
+		setVisible(false);
+	}
+
 }

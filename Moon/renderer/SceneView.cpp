@@ -61,8 +61,14 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
-		float pi = 3.14159265359f;
+
+		
 		auto& ac = GetSelectedActor();
+		auto name=ac.GetName();
+		if (name== "PointLight1"|| name == "PointLight2"|| name == "PointLight3"|| name == "PointLight4") {
+			return;
+		}
+		float pi = 3.14159265359f;
 		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
 		//ac.GetComponent<:Core::ECS::Components::>();
 		auto target = ac.transform.GetWorldPosition();
