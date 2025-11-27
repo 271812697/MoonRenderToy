@@ -1,15 +1,23 @@
 #feature WITH_EDGE
+#feature CUSTOM_PROJECT
+#feature CUSTOM_VIEWPORT
+#feature FIXED_SCALE
 
 #shader vertex
 #version 450 core
+
+#include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
+
 layout(location=0) in vec4 aPositionSize;
 layout(location=1) in vec4 aColor;
 layout(location=2) in vec3 aNormal;
 layout(location=3) in vec2 aUv; 
 
 uniform mat4 uModelMatrix;
+#if defined(CUSTOM_PROJECT)
 uniform mat4 uViewMatrix;
 uniform mat4 uVProjMatrix;
+#endif
 
 out VSOutPut{
     vec3 pos;
@@ -22,9 +30,31 @@ void main()
 {
     vData.color = aColor.rgba; // swizzle to correct endianness
     vData.pos= aPositionSize.xyz;
-    vData.normal=aNormal;
+    //the follow doesn't use CUSTOM_PROJECT
+    #if defined(FIXED_SCALE)
+        //orth
+        if(ubo_CameraType==0){
+          float ratio=400.0/(ubo_Projection[1][1]*ubo_ScreenHeight);
+          vData.pos=vData.pos*ratio;
+        }
+        else{
+          vec4 viewPos= ubo_View * uModelMatrix*vec4(vData.pos,1.0f);
+          viewPos.z/=viewPos.w;
+          float h=viewPos.z*1/ubo_Projection[1][1];
+          float ratio=400.0*abs(h)/ubo_ScreenHeight;
+          vData.pos=vData.pos*ratio;
+        }
+    #endif
+    vData.normal=normalize(mat3(uModelMatrix)*aNormal);
+
     vData.uv=aUv;
-    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(aPositionSize.xyz, 1.0);
+#if defined(CUSTOM_PROJECT)
+    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(vData.pos, 1.0);
+#else
+    gl_Position = ubo_Projection * ubo_View * uModelMatrix*vec4(vData.pos, 1.0);
+#endif
+   
+ 
 
 }
 #shader geomerty
@@ -51,18 +81,30 @@ out GS_OUT{
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
+
+#if defined(CUSTOM_VIEWPORT)
 uniform float uViewPortSize;
+#endif
+
 uniform usamplerBuffer edgeTexture;
 
 void main() 
 {
     vec2 pos[4];
+    
+    #if defined(CUSTOM_VIEWPORT)
     vec2 viewS=vec2(ubo_ScreenWidth-uViewPortSize,ubo_ScreenHeight-uViewPortSize);
+    #endif
+    
     for (int i = 0; i < 3; i++)
     {
         pos[i] = gl_in[i].gl_Position.xy/gl_in[i].gl_Position.w;
         pos[i] = pos[i]*vec2(0.5) + vec2(0.5);
-        pos[i] = pos[i]*vec2(uViewPortSize,uViewPortSize)+viewS;
+        #if defined(CUSTOM_VIEWPORT)
+            pos[i] = pos[i]*vec2(uViewPortSize,uViewPortSize)+viewS;
+        #else
+            pos[i] = pos[i]*vec2(ubo_ScreenWidth,ubo_ScreenHeight);     
+        #endif
     }
     pos[3] = pos[0];  
 
@@ -136,6 +178,7 @@ void main()
     float emix = clamp(0.5 + 0.5*1.5 - min( min( edist[0], edist[1]), edist[2]), 0.0, 1.0);
     albedo.rgb = mix(albedo.rgb, vec3(0.3,0.3,1.0), emix);
 #endif
+
     vec3 viewDir=vec3(uViewMatrix[0][2],uViewMatrix[1][2],uViewMatrix[2][2]);
     vec3 lightDir=viewDir;
     vec3 N=fs_in.normal;

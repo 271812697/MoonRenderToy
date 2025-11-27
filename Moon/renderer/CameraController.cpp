@@ -355,7 +355,7 @@ void Editor::Core::CameraController::HandleMousePressed()
 	if (input.IsMouseButtonPressed(Editor::Panels::MouseButton::MOUSE_BUTTON_RIGHT))
 	{
 		m_rightMousePressed = true;
-		m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", true);;
+		//m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", true);;
 	}
 }
 
@@ -378,7 +378,7 @@ void Editor::Core::CameraController::HandleMouseReleased()
 	{
 		m_rightMousePressed = false;
 		m_firstMouse = true;
-		m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", false);;
+		//m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", false);;
 
 	}
 }

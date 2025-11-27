@@ -21,6 +21,7 @@ namespace MOON
 
 	static QtImGui::RenderRef imref = nullptr;
 	static ImPlotContext* ctx = nullptr;
+	static bool isBeginImgui = false;
 
 	static Maths::FMatrix4 ToFMatrix4(const Eigen::Matrix4f& mat) {
 		Eigen::Matrix4f temp = mat;
@@ -126,7 +127,8 @@ namespace MOON
 	}
 	void Gizmo::preStoreMesh()
 	{
-
+		mPreStorePolygon["Axis"] = &ViewAxis();
+		mPreStorePolygon["ViewCube"] = &ViewCube();
 	}
 	void Gizmo::prepareGl()
 	{
@@ -137,6 +139,8 @@ namespace MOON
 		mTriangleMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));
 		mCellMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GizmoCell.ovfx"]);
 		mCellMaterial->AddFeature("WITH_EDGE");
+		mCellMaterial->AddFeature("CUSTOM_PROJECT");
+		mCellMaterial->AddFeature("CUSTOM_VIEWPORT");
 		mLitMaterial = new Rendering::Data::Material(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
 		mLitMaterial->SetBackfaceCulling(false);;
 		mLitMaterial->SetCastShadows(false);
@@ -298,10 +302,10 @@ namespace MOON
 
 
 
-	void Gizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
+	void Gizmo::drawOneMesh(const Eigen::Vector3f& translation,const Eigen::Matrix3f& rotation, const Eigen::Vector3f& scale,
 		const std::string& mesh, bool longterm)
 	{
-		//drawOneMesh(Coord3(translation, rotation, scale), mesh, longterm);
+		drawOneMesh(Coord3(translation, rotation, scale), mesh, longterm);
 	}
 
 	void Gizmo::drawOneMesh(Eigen::Vector3f& translation, Eigen::Matrix3f& rotation, Eigen::Vector3f& scale,
@@ -322,7 +326,7 @@ namespace MOON
 		//drawOneMesh(Coord3(translation, Eigen::Matrix3f::Identity(), scale), mesh, color, longterm);
 	}
 
-	void Gizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& name, bool longterm)
+	void Gizmo::drawOneMesh(const Eigen::Matrix4f& model, const std::string& name, bool longterm)
 	{
 		if (longterm)
 		{
@@ -334,7 +338,7 @@ namespace MOON
 		}
 	}
 
-	void Gizmo::drawOneMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
+	void Gizmo::drawOneMesh(const Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
 	{
 		if (longterm)
 		{
@@ -348,7 +352,7 @@ namespace MOON
 
 	void Gizmo::drawOneFixScaleMesh(Eigen::Matrix4f& model, const std::string& mesh, Eigen::Vector3f& color, bool longterm)
 	{
-		MeshInstance me = { mesh, model, color };
+		PolygonInstance me = { mesh, model, color };
 		me.fixScaled = true;
 		if (longterm)
 		{
@@ -3735,12 +3739,12 @@ namespace MOON
 				rayDirectionNormalized.y(), rayDirectionNormalized.z(), 0.0f);
 			rayDirection = Eigen::Vector3f(it.x(), it.y(), it.z());
 		}
-
+		
 		cameraParam.viewportWidth = w;
 		cameraParam.viewportHeight = h;
 		///
 		cameraParam.projectY = 2.0 / proj(1, 1);
-		cameraParam.orthProj = true;
+		cameraParam.orthProj = isOrth;
 		cameraParam.eye = vieweye;
 		/// for Orth
 		cameraParam.viewDirectioin = viewforward;
@@ -3991,7 +3995,7 @@ namespace MOON
 					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
 				}
 			}
-			
+			mCellMaterial->SetFeatures({ "WITH_EDGE","CUSTOM_PROJECT","CUSTOM_VIEWPORT"});
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewCube.model));
 			mCellMaterial->SetProperty("uViewMatrix", view);
 			mCellMaterial->SetProperty("uVProjMatrix", proj);
@@ -4012,6 +4016,35 @@ namespace MOON
 	}
 	void Gizmo::drawMesh()
 	{
+		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
+		auto p_pso = driver->CreatePipelineState();
+		p_pso.stencilTest = true;
+		p_pso.stencilWriteMask = 0xFF;
+		p_pso.stencilFuncRef = 1;
+		p_pso.stencilFuncMask = 0xFF;
+		p_pso.stencilOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.colorWriting.mask = 0x00;
+		p_pso.depthWriting = true;
+		p_pso.colorWriting.mask = 0xFF;
+		p_pso.blending = true;
+		p_pso.blendingEquation = Rendering::Settings::EBlendingEquation::FUNC_ADD;
+		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.culling = 0;
+		p_pso.depthTest = true;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		driver->SetPipelineState(p_pso);
+		mCellMaterial->SetFeatures({"WITH_EDGE","FIXED_SCALE"});
+		for (auto& drawMesh : drawMeshList)
+		{
+			auto polygon = mPreStorePolygon[drawMesh.mesh];
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(drawMesh.model));
+			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			polygon->bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);
+		}
 	}
 
 
@@ -4030,6 +4063,10 @@ namespace MOON
 	}
 	void Gizmo::newImgui()
 	{
+		if (isBeginImgui) {
+			return;
+		}
+		isBeginImgui = true;
 		QtImGui::newFrame(imref);
 		ImPlot::SetCurrentContext(ctx);
 	}
@@ -4037,6 +4074,7 @@ namespace MOON
 	{
 		ImGui::Render();
 		QtImGui::render(imref);
+		isBeginImgui = false;
 	}
 	void Gizmo::clear()
 	{

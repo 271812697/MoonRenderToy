@@ -1,25 +1,30 @@
 ﻿#pragma once
+#include "Gizmo/Interactive/AbstractWidget.h"
 #include <string>
 
 namespace MOON
 {
 	class Gizmo;
-	class GizmoWidget
+	class GizmoWidget : public AbstractWidget
 	{
 	public:
 		GizmoWidget(const std::string& name);
 		virtual ~GizmoWidget();
 		const std::string& getName() const { return mName; }
-		bool isEnabled() const { return mActive; }
-		void setEnabled(bool flag) { mActive = flag; onSetEnable(flag); }
+		bool isActived() const { return mActive; }
+		void setActive(bool flag);
+		void setVisible(bool flag);
 		void update();
 		virtual void onUpdate();
-		virtual void onSetEnable(bool flag);
+		virtual void onSetActive(bool flag);
 	protected:
 		std::string mName;	
+		//mActive 
 		bool mActive = true;
+		bool mVisible = true;
 		bool mPreflag = false;
 		bool mCurflag = false;
 		Gizmo* renderer= nullptr;
+		
 	};
 }
