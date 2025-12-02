@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <map>
 #include <memory>
@@ -19,7 +19,7 @@ namespace PathTrace
 	protected:
 		Quad* quad;
 		Scene* scene;
-		// GPUÊı¾İ
+		// GPUæ•°æ®
 		unsigned int BVHBuffer;
 		unsigned int BVHTex;
 		unsigned int vertexIndicesBuffer;
@@ -35,20 +35,17 @@ namespace PathTrace
 		unsigned int envMapTex;
 		unsigned int envMapCDFTex;
 
-		// Ö¡»º³å
+		// å¸§ç¼“å†²
 		/*
-		pathTracefbo        »æÖÆÒ»¸öÍßÆ¬µÄ½á¹û
-		pathTraceFBOLowRes  ´ÖÂÔÔ¤ÀÀ
-		accumFBO            ´æ·Å¹âÏßµÄÀÛ¼ÓºÍ
-		outputFBO           ½«Â·¾¶µÄÀÛ¼ÓºÍ×öÆ½¾ùºÍÉ«µ÷Ó³Éä
+		pathTracefbo        ç»˜åˆ¶ä¸€ä¸ªç“¦ç‰‡çš„ç»“æœ
+		pathTraceFBOLowRes  ç²—ç•¥é¢„è§ˆ
+		accumFBO            å­˜æ”¾å…‰çº¿çš„ç´¯åŠ å’Œ
+		outputFBO           å°†è·¯å¾„çš„ç´¯åŠ å’Œåšå¹³å‡å’Œè‰²è°ƒæ˜ å°„
 		*/
 		std::shared_ptr<asset::FBO> pathTracefbo;
 		std::shared_ptr<asset::FBO> pathTraceFBOLowRes;
 		std::shared_ptr<asset::FBO> accumFBO;
 		std::shared_ptr<asset::FBO> outputFBO;
-		std::shared_ptr<asset::FBO> rasterMsaaFBO;
-		std::shared_ptr<asset::FBO> rasterFBO;
-
 		// Shaders
 		std::string shadersDirectory;
 
@@ -56,16 +53,10 @@ namespace PathTrace
 		std::shared_ptr<asset::Shader> pathTraceShaderLowRes;
 		std::shared_ptr<asset::Shader> outputShader;
 		std::shared_ptr<asset::Shader> tonemapShader;
-		std::shared_ptr<asset::Shader> pbrShader;
-		std::shared_ptr<asset::Shader> lineShader;
-		std::map<unsigned int, asset::UBO> UBOs;  // indexed by uniform buffer's binding point
-		//Ô¤¼ÆËãIBL
-		std::shared_ptr<asset::Texture> irradiance_map;
-		std::shared_ptr<asset::Texture> prefiltered_map;
-		std::shared_ptr<asset::Texture> BRDF_LUT;
+		
+	
 
-
-		// ÌùÍ¼
+		// è´´å›¾
 		unsigned int pathTraceTextureLowRes;
 		unsigned int pathTraceTexture;
 		unsigned int accumTexture;
@@ -100,10 +91,10 @@ namespace PathTrace
 
 		void ResizeRenderer();
 		void ReloadShaders();
-		void RenderPBR();
+		
 		void Render();
 		void Present();
-		void PresentPBR();
+		
 		void SaveFrame();
 		void SaveScene();
 		void Update(float secondsElapsed);
@@ -115,6 +106,5 @@ namespace PathTrace
 		void InitGPUDataBuffers();
 		void InitFBOs();
 		void InitShaders();
-		void PreRaster();
 	};
 }

@@ -2,7 +2,6 @@
 #include "Gizmo/MathUtil/MathUtil.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/ResourceManagement/TextureManager.h"
-#include "Core/Global/ServiceLocator.h"
 #include "Rendering/Resources/Texture.h"
 #include "Rendering/Resources/Mesh.h"
 #include "Rendering/Resources/Model.h"
