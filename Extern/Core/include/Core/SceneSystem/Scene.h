@@ -56,14 +56,13 @@ namespace Core::SceneSystem
 		void BuildSceneBvh();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint);
 		::Rendering::Geometry::Bvh* GetBvh();
-
+		BvhService* GetBvhService() { return bvhService; }
 	private:
 		int64_t m_availableID = 1;
 		bool m_isPlaying = false;
 		std::vector<ECS::Actor*> m_actors;
 		FastAccessComponents m_fastAccessComponents;
 		BvhService*bvhService=nullptr;
-
 		::Rendering::Geometry::bbox m_sceneBoundingBox;
 	};
 }

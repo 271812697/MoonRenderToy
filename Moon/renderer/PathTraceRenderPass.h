@@ -31,7 +31,7 @@ namespace Editor::Rendering
 		::Rendering::Resources::Texture* vertexIndicesTex = nullptr;
 		::Rendering::Resources::Texture* verticesTex = nullptr;
 		::Rendering::Resources::Texture* normalsTex = nullptr;
-		::Rendering::Resources::Texture* uvTex = nullptr;
+
 		::Rendering::Resources::Texture* materialsTex = nullptr;
 		::Rendering::Resources::Texture* transformsTex = nullptr;
 		::Rendering::Resources::Texture* lightsTex = nullptr;

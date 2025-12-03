@@ -114,8 +114,6 @@ namespace MOON {
 		else
 		{
 			auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadResource(sceneName);
-
-
 			Core::Resources::Material* tempMat = new Core::Resources::Material();
 			Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
 			tempMat->SetBackfaceCulling(false);;
@@ -134,12 +132,10 @@ namespace MOON {
 
 			auto& actor = scene->CreateActor();
 			actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-
 			actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
 			auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 			materilaRener.SetMaterialAtIndex(0, *tempMat);
 			materilaRener.UpdateMaterialList();
-
 		}
 		scene->BuildSceneBvh();
 	}
