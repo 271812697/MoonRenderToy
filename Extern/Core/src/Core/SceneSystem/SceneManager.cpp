@@ -47,7 +47,7 @@ void Core::SceneSystem::SceneManager::LoadDefaultScene()
 {
 	UnloadCurrentScene();
 	m_currentScene.reset(new Scene());
-	m_currentScene->AddDefaultCamera();
+	
 	m_currentScene->AddDefaultLights();
 
 	//m_currentScene->AddDefaultReflections();
