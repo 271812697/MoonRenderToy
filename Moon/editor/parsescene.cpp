@@ -15,13 +15,10 @@
 
 namespace MOON {
 	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
-
 		float elevation = a / 180.0 * 3.14159265;
 		float azimuth = b / 180.0 * 3.14159265;
 		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 	}
-
-
 	void addSphereLight(Core::SceneSystem::Scene* scene) {
 		//auto node = DebugSettings::instance().getNode("showLight");
 		DebugSettings::instance().addCallBack("showLight", "default", [scene](NodeBase* self) {

@@ -12,6 +12,7 @@
 
 namespace Core::SceneSystem
 {
+	class BvhService;
 	class Scene : public API::ISerializable
 	{
 	public:
@@ -61,8 +62,8 @@ namespace Core::SceneSystem
 		bool m_isPlaying = false;
 		std::vector<ECS::Actor*> m_actors;
 		FastAccessComponents m_fastAccessComponents;
-		::Rendering::Geometry::Bvh* m_sceneBvh = nullptr;
-		std::vector<int>m_modelRenderIndex;
+		BvhService*bvhService=nullptr;
+
 		::Rendering::Geometry::bbox m_sceneBoundingBox;
 	};
 }

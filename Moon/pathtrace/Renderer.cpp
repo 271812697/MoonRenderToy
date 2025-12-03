@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 #include "Camera.h"
 #include "Texture.h"
 #include "Quad.h"
@@ -16,7 +16,6 @@ namespace PathTrace {
 
 
 }
-inline bool raster = false;
 namespace PathTrace
 {
 	// 加载shader的源码
@@ -84,7 +83,6 @@ namespace PathTrace
 
 		InitFBOs();
 		InitShaders();
-		PreRaster();
 	}
 
 	Renderer::~Renderer()
@@ -247,12 +245,8 @@ namespace PathTrace
 		glDeleteTextures(1, &tileOutputTexture[1]);
 		glDeleteTextures(1, &denoisedTexture);
 
-
-
 		delete[] denoiserInputFramePtr;
 		delete[] frameOutputPtr;
-
-
 
 		InitFBOs();
 		InitShaders();
@@ -288,18 +282,6 @@ namespace PathTrace
 		outputFBO.reset();
 		outputFBO = std::make_shared<asset::FBO>(renderSize.x, renderSize.y);
 
-		rasterFBO.reset();
-		rasterFBO = std::make_shared<asset::FBO>(renderSize.x, renderSize.y);
-		rasterFBO->AddColorTexture(1);
-		rasterFBO->AddDepStTexture();
-		rasterMsaaFBO.reset();
-		rasterMsaaFBO = std::make_shared<asset::FBO>(renderSize.x, renderSize.y);
-		rasterMsaaFBO->AddColorTexture(1, true);
-		rasterMsaaFBO->AddDepStRenderBuffer(true);
-
-
-
-
 		glGenTextures(1, &pathTraceTexture);
 		glBindTexture(GL_TEXTURE_2D, pathTraceTexture);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tileWidth, tileHeight, 0, GL_RGBA, GL_FLOAT, 0);
@@ -318,7 +300,6 @@ namespace PathTrace
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		pathTraceFBOLowRes->SetColorTexture(0, pathTraceTextureLowRes);
-
 
 		glGenTextures(1, &accumTexture);
 		glBindTexture(GL_TEXTURE_2D, accumTexture);
@@ -359,9 +340,6 @@ namespace PathTrace
 	void Renderer::ReloadShaders()
 	{
 		InitShaders();
-	}
-	void Renderer::PreRaster() {
-
 	}
 	void Renderer::InitShaders()
 	{
@@ -474,21 +452,15 @@ namespace PathTrace
 		pathTraceShaderLowRes.reset();
 		outputShader.reset();
 		tonemapShader.reset();
-		pbrShader.reset();
-		lineShader.reset();
 		pathTraceShader = std::make_shared<asset::Shader>();
 		pathTraceShaderLowRes = std::make_shared<asset::Shader>();
 		outputShader = std::make_shared<asset::Shader>();
 		tonemapShader = std::make_shared<asset::Shader>();
-		pbrShader = std::make_shared<asset::Shader>();
-		lineShader = std::make_shared<asset::Shader>();
 
 		pathTraceShader->LoadFromSource(pathTraceShaderSrcObj);
 		pathTraceShaderLowRes->LoadFromSource(pathTraceShaderLowResSrcObj);
 		outputShader->LoadFromSource(outputShaderSrcObj);
 		tonemapShader->LoadFromSource(tonemapShaderSrcObj);
-		pbrShader->LoadFromSource(pbrShaderSrcObj);
-		lineShader->LoadFromSource(lineShaderSrcObj);
 
 		GLuint shaderObject;
 		pathTraceShader->Bind();
@@ -546,102 +518,10 @@ namespace PathTrace
 		glUniform1i(glGetUniformLocation(outputShader->ID(), "imgTex"), 0);
 		outputShader->Unbind();
 	}
-	void Renderer::RenderPBR() {
-
-		rasterMsaaFBO->Clear();
-		rasterMsaaFBO->Bind();
-		pbrShader->Bind();
-		irradiance_map->Bind(17);
-		prefiltered_map->Bind(18);
-		BRDF_LUT->Bind(19);
-		float viewMatrix[16];
-		float projMatrix[16];
-		scene->mCamera->computeViewProjectionMatrix(viewMatrix, projMatrix, 1.0f * renderSize.x / renderSize.y);
-		glProgramUniformMatrix4fv(pbrShader->ID(), 1001, 1, GL_FALSE, viewMatrix);
-		glProgramUniformMatrix4fv(pbrShader->ID(), 1002, 1, GL_FALSE, projMatrix);
-		glProgramUniform3fv(pbrShader->ID(), 1003, 1, &scene->mCamera->position.x);
-
-		//设置场景中光源的数量
-		glProgramUniform1i(pbrShader->ID(), 932, scene->lights.size());
-
-		unsigned int model[2] = { 1,0 };
-		glProgramUniform2uiv(pbrShader->ID(), 999, 1, model);
-		for (auto& meshinstace : scene->meshInstances) {
-			Mesh* mesh = scene->meshes[meshinstace.meshID];
-			auto& mat = scene->materials[meshinstace.materialID];
-			float scale[2] = { 1.0,1.0 };
-			float anisotropy[3] = { 0.0,0.0,0.0 };
-			// shared properties
-			glProgramUniform3fv(pbrShader->ID(), 912, 1, &mat.baseColor.x);
-			glProgramUniform1f(pbrShader->ID(), 913, mat.roughness);
-			glProgramUniform1f(pbrShader->ID(), 914, 1.0f);
-			glProgramUniform3fv(pbrShader->ID(), 915, 1, &mat.emission.x);
-			glProgramUniform2fv(pbrShader->ID(), 916, 1, scale);
-			glProgramUniform1f(pbrShader->ID(), 928, mat.alphaCutoff);
-
-			// standard model
-			glProgramUniform1f(pbrShader->ID(), 917, mat.metallic);
-			glProgramUniform1f(pbrShader->ID(), 918, mat.specTrans);
-			glProgramUniform1f(pbrShader->ID(), 919, mat.anisotropic);
-			glProgramUniform3fv(pbrShader->ID(), 920, 1, anisotropy);
-
-			// refraction model
-			glProgramUniform1f(pbrShader->ID(), 921, mat.specTrans);
-			glProgramUniform1f(pbrShader->ID(), 922, mat.ior);
-			glProgramUniform1f(pbrShader->ID(), 923, mat.mediumDensity);
-			glProgramUniform3fv(pbrShader->ID(), 924, 1, &mat.mediumColor.x);
-
-			// additive clear coat layer
-			glProgramUniform1f(pbrShader->ID(), 929, mat.clearcoat);
-			glProgramUniform1f(pbrShader->ID(), 930, mat.clearcoatGloss);
-
-			if (mat.baseColorTexId != -1) {
-				glBindTextureUnit(20, scene->textures[mat.baseColorTexId]->id);
-				pbrShader->SetUniform(900U, true);
-			}
-			else {
-				pbrShader->SetUniform(900U, false);
-			}
-
-			if (mat.normalmapTexID != -1) {
-				glBindTextureUnit(21, scene->textures[mat.normalmapTexID]->id);
-				pbrShader->SetUniform(901U, true);
-			}
-			else {
-				pbrShader->SetUniform(901U, false);
-			}
-
-			if (mat.metallicRoughnessTexID != -1) {
-				glBindTextureUnit(23, scene->textures[mat.metallicRoughnessTexID]->id);
-				pbrShader->SetUniform(903U, true);
-			}
-			else {
-				pbrShader->SetUniform(903U, false);
-			}
-			if (mat.emissionmapTexID != -1) {
-				glBindTextureUnit(25, scene->textures[mat.emissionmapTexID]->id);
-				pbrShader->SetUniform(905U, true);
-			}
-			else {
-				pbrShader->SetUniform(905U, false);
-			}
-			glProgramUniformMatrix4fv(pbrShader->ID(), 1000, 1, GL_FALSE, &meshinstace.transform.data[0][0]);
-			mesh->Draw();
-		}
-		pbrShader->Unbind();
-		rasterMsaaFBO->Unbind();
-
-		rasterFBO->Clear();
-		asset::FBO::CopyColor(*rasterMsaaFBO, 0, *rasterFBO, 0);
-
-	}
 
 	void Renderer::Render()
 	{
-		if (raster) {
-			RenderPBR();
-			return;
-		}
+
 
 		if (!scene->dirty && scene->renderOptions.maxSpp != -1 && sampleCounter >= scene->renderOptions.maxSpp)
 			return;
@@ -683,14 +563,7 @@ namespace PathTrace
 			outputFBO->Unbind();
 		}
 	}
-	void Renderer::PresentPBR() {
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, rasterFBO->GetColorTexture(0).ID());
-		quad->Draw(outputShader.get());
 
-	}
 
 	void Renderer::SaveFrame()
 	{
@@ -728,13 +601,6 @@ namespace PathTrace
 
 	void Renderer::Present()
 	{
-		if (raster) {
-			PresentPBR();
-			return;
-
-		}
-
-
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
