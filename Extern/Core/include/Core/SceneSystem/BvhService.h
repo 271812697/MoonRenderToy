@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include <string>
 #include <Rendering/Geometry/bvh.h>
+#include <Rendering/HAL/Texture.h>
 namespace Rendering::Resources {
 	class Mesh;
 }
+
 namespace Core::Resources {
 	class Material;
 }
@@ -139,6 +141,7 @@ namespace Core::SceneSystem
 			Maths::FVector3 LRLeaf;
 		};
 		void AddMaterial(::Core::Resources::Material* material);
+		int AddTexture(::Rendering::HAL::Texture*);
 		void ProcessBLAS();
 		void ProcessTLAS();
 		int ProcessBLASNodes(const ::Rendering::Geometry::Bvh::Node* node);
@@ -172,6 +175,9 @@ namespace Core::SceneSystem
 
 		// Lights
 		std::vector<Light> lights;
+
+		// textures
+		std::vector<::Rendering::HAL::Texture*> textures;
 	};
 
 }

@@ -2,6 +2,8 @@
 #include <string>
 #include <tinyxml2.h>
 #include <tracy/Tracy.hpp>
+#include <Rendering/HAL/TextureHandle.h>
+#include <Rendering/Resources/Texture.h>
 #include <Core/ECS/Components/CAmbientSphereLight.h>
 #include <Core/ECS/Components/CDirectionalLight.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
@@ -22,6 +24,25 @@ namespace Core::SceneSystem
 		tempMat->SetProperty("u_Roughness", material.roughness);
 		tempMat->SetProperty("u_RefractionIndex", material.ior);
 		tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+
+		// Albedo Texture
+		auto albedo = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + albedoTexName, true);
+		tempMat->SetProperty("u_AlbedoMap", albedo);
+
+
+		// MetallicRoughness Texture
+		auto roughness = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+		tempMat->SetProperty("u_RoughnessMap", roughness);
+		auto emission = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + emissionTexName, true);
+		tempMat->SetProperty("u_EmissiveMap", roughness);
+		auto metallicMap = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
+		tempMat->SetProperty("u_MetallicMap", metallicMap);
+		// Normal Map Texture
+		auto normalTex = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + normalTexName, true);
+		tempMat->SetProperty("u_NormalMap", normalTex);
+		if (normalTex)
+			tempMat->AddFeature("NORMAL_MAPPING");
+
 		*/
 		Material tempMat;
 		auto& propsMap=material->GetProperties();
@@ -48,7 +69,92 @@ namespace Core::SceneSystem
 		if (it != propsMap.end()) {
 			tempMat.ior = std::get<float>(it->second.value);
 		}
+
+		//Albedo Texture
+		it = propsMap.find("u_AlbedoMap");
+		if (it!=propsMap.end()) {
+			::Rendering::HAL::Texture* handle = nullptr;
+			if (auto textureHandle = std::get_if<::Rendering::HAL::TextureHandle*>(&it->second.value))
+			{
+				handle = static_cast<::Rendering::HAL::Texture*>(*textureHandle);
+			}
+			else if (auto texture = std::get_if<::Rendering::Resources::Texture*>(&it->second.value))
+			{
+				if (*texture != nullptr)
+				{
+					handle = &(*texture)->GetTexture();					
+				}
+			}
+			if (handle) {
+				tempMat.baseColorTexId=AddTexture(handle);
+			}
+		}
+		it = propsMap.find("u_RoughnessMap");
+		if (it != propsMap.end()) {
+			::Rendering::HAL::Texture* handle = nullptr;
+			if (auto textureHandle = std::get_if<::Rendering::HAL::TextureHandle*>(&it->second.value))
+			{
+				handle = static_cast<::Rendering::HAL::Texture*>(*textureHandle);
+			}
+			else if (auto texture = std::get_if<::Rendering::Resources::Texture*>(&it->second.value))
+			{
+				if (*texture != nullptr)
+				{
+					handle = &(*texture)->GetTexture();
+				}
+			}
+			if (handle) {
+				tempMat.metallicRoughnessTexID = AddTexture(handle);
+			}
+		}
+		it = propsMap.find("u_EmissiveMap");
+		if (it != propsMap.end()) {
+			::Rendering::HAL::Texture* handle = nullptr;
+			if (auto textureHandle = std::get_if<::Rendering::HAL::TextureHandle*>(&it->second.value))
+			{
+				handle = static_cast<::Rendering::HAL::Texture*>(*textureHandle);
+			}
+			else if (auto texture = std::get_if<::Rendering::Resources::Texture*>(&it->second.value))
+			{
+				if (*texture != nullptr)
+				{
+					handle = &(*texture)->GetTexture();
+				}
+			}
+			if (handle) {
+				tempMat.emissionmapTexID = AddTexture(handle);
+			}
+		}
+		it = propsMap.find("u_NormalMap");
+		if (it != propsMap.end()) {
+			::Rendering::HAL::Texture* handle = nullptr;
+			if (auto textureHandle = std::get_if<::Rendering::HAL::TextureHandle*>(&it->second.value))
+			{
+				handle = static_cast<::Rendering::HAL::Texture*>(*textureHandle);
+			}
+			else if (auto texture = std::get_if<::Rendering::Resources::Texture*>(&it->second.value))
+			{
+				if (*texture != nullptr)
+				{
+					handle = &(*texture)->GetTexture();
+				}
+			}
+			if (handle) {
+				tempMat.normalmapTexID= AddTexture(handle);
+			}
+		}
 		materials.push_back(tempMat);
+	}
+	int BvhService::AddTexture(::Rendering::HAL::Texture* tex)
+	{
+		int id = -1;
+		// Check if texture was already loaded
+		for (int i = 0; i < textures.size(); i++)
+			if (textures[i] == tex)
+				return i;
+		id = textures.size();
+		textures.push_back(tex);
+		return id;
 	}
 	void BvhService::ProcessBLAS() {
 			int nodeCnt = 0;
@@ -200,6 +306,14 @@ namespace Core::SceneSystem
 			meshes.clear();
 			nodes.clear();
 			bvhRootStartIndices.clear();
+			materials.clear();
+			lights.clear();
+			topLevelBvh = nullptr;
+			transforms.clear();
+			textures.clear();
+			verticesUVX.clear();
+			normalsUVY.clear();
+			vertIndices.clear();
 			curNode = 0;
 			curTriIndex = 0;
 			topLevelIndex = 0;

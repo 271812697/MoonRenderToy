@@ -163,6 +163,22 @@ void Rendering::HAL::GLTexture::Upload(const void* p_data, Settings::EFormat p_f
 	assert(IsValid()&&"Cannot upload data to a texture before it has been allocated");
 	assert(p_data&&"Cannot upload texture data from a null pointer");
 
+	//currently only support for rbga with float and byte
+	if (p_format == Settings::EFormat::RGBA) {
+		int size = 0;
+		if (p_type == Settings::EPixelDataType::FLOAT) {
+			size  =(m_textureContext.desc.height * m_textureContext.desc.width * 16);
+			texData.resize(size);
+			memcpy(texData.data(), p_data, size);
+		}
+		if (p_type == Settings::EPixelDataType::UNSIGNED_BYTE) {
+			size = (m_textureContext.desc.height * m_textureContext.desc.width *4);
+			texData.resize(size);
+			memcpy(texData.data(),p_data,size);
+		}
+		
+	}
+	;
 	if (IsMutable())
 	{
 		m_textureContext.desc.mutableDesc.value().data = p_data;
@@ -254,6 +270,16 @@ void Rendering::HAL::GLTexture::SetBorderColor(const Maths::FVector4& p_color)
 	glTextureParameterfv(m_context.id, GL_TEXTURE_BORDER_COLOR, &p_color.x);
 }
 
+template<>
+int Rendering::HAL::GLTexture::GetWidth()
+{
+	return m_textureContext.desc.width;
+}
+template<>
+int Rendering::HAL::GLTexture::GetHeight()
+{
+	return m_textureContext.desc.height;
+}
 template<>
 const std::string& Rendering::HAL::GLTexture::GetDebugName() const
 {

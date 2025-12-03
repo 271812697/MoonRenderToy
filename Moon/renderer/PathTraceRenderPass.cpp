@@ -104,6 +104,12 @@ namespace Editor::Rendering {
 	};
 	PathTraceRenderPass::PathTraceRenderPass(::Rendering::Core::CompositeRenderer& p_renderer): ::Rendering::Core::ARenderPass(p_renderer)
 	{
+		envMap = new EnvironmentMap();
+		envMap->LoadMap(PATH_TRACE_HDR_PATH"/outdoor.hdr");
+	}
+	PathTraceRenderPass::~PathTraceRenderPass()
+	{
+		delete envMap;
 	}
 	void PathTraceRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 	{
@@ -214,11 +220,39 @@ namespace Editor::Rendering {
 			gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
 			gltexture->Allocate(desc);
 			lightsTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
-
-
+		
 		}
 
+		// Enviroment Texture
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32F;
+		desc.width = envMap->width;
+		desc.height = envMap->height;
+		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
+		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
+		desc.buffetLen = envMap->width * envMap->height*sizeof(Maths::FVector3);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.format = ::Rendering::Settings::EFormat::RGB,
+			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
+			.data = envMap->img
+		};
+		envMapTex = new ::Rendering::Resources::Texture();
+		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		gltexture->Allocate(desc);
+		envMapTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
 
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::R32F;
+		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
+		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
+		desc.buffetLen = envMap->width * envMap->height * sizeof(float);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.format = ::Rendering::Settings::EFormat::RED,
+			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
+			.data = envMap->cdf
+		};
+		envMapCDFTex = new ::Rendering::Resources::Texture();
+		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		gltexture->Allocate(desc);
+		envMapCDFTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
 
 	}
 	void PathTraceRenderPass::InitShaders() {

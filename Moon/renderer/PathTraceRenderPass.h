@@ -12,10 +12,12 @@ namespace Rendering {
 }
 namespace Editor::Rendering
 {
+	class EnvironmentMap;
 	class PathTraceRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
 		PathTraceRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		~PathTraceRenderPass();
 		void InitGPUDataBuffers();
 		void InitFBOs();
 		void InitShaders();
@@ -38,6 +40,7 @@ namespace Editor::Rendering
 		::Rendering::Resources::Texture* textureMapsArrayTex = nullptr;
 		::Rendering::Resources::Texture* envMapTex = nullptr;
 		::Rendering::Resources::Texture* envMapCDFTex = nullptr;
+		EnvironmentMap* envMap;
 
 		::Rendering::HAL::Framebuffer pathTracefbo;
 		::Rendering::HAL::Framebuffer pathTraceFBOLowRes;
