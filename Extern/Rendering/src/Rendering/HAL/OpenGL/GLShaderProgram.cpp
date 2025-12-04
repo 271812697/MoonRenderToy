@@ -193,6 +193,8 @@ void Rendering::HAL::GLShaderProgram::QueryUniforms()
 			case SAMPLER_2D: return std::make_any<Resources::Texture*>(nullptr);
 			case SAMPLER_CUBE: return std::make_any<Resources::Texture*>(nullptr);
 			case SAMPLER_BUFFER: return std::make_any<Resources::Texture*>(nullptr);
+			case SAMPLER_2DARRAY: return std::make_any<Resources::Texture*>(nullptr);
+			case INTSAMPLER_BUFFER: return std::make_any<Resources::Texture*>(nullptr);
 			case UINTSAMPLER_BUFFER: return std::make_any<Resources::Texture*>(nullptr);
 			default: return std::nullopt;
 			}

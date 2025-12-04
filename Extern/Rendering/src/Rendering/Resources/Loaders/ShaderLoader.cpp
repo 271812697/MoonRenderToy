@@ -381,10 +381,49 @@ void main()
 
 		return std::nullopt;
 	}
+	ShaderLoadResult LoadShader(
+		const ShaderInputInfo& p_shaderInputInfo,
+		const std::string& p_filePath,
+		Rendering::Resources::Loaders::ShaderLoader::FilePathParserCallback p_pathParser
+	);
+	ShaderLoadResult LoadShader(const std::string& p_source, Rendering::Resources::Loaders::ShaderLoader::FilePathParserCallback p_pathParser)
+	{
 
-	/**
-	* Loads a shader file (ovfx) and its included files (ovfxh) recursively.
-	*/
+		std::istringstream iss(p_source);
+		std::stringstream buffer;
+		std::string line;
+
+		while (std::getline(iss, line))
+		{
+			const std::string trimmedLine = Trim(line);
+
+			if (trimmedLine.starts_with(Grammar::kIncludeToken))
+			{
+				// If the line contains #include, process the included file
+				if (const auto includeFilePath = ParseIncludeDirective(line))
+				{
+					// Recursively load the included file
+					const std::string realIncludeFilePath = p_pathParser ? p_pathParser(includeFilePath.value()) : includeFilePath.value();
+					const auto result = LoadShader(ShaderInputInfo{}, realIncludeFilePath, p_pathParser);
+					buffer << result.source << std::endl;
+				}
+				else
+				{
+					std::cout << "[Shader Loading] Invalid #include directive in file: \"{}\"" << std::endl;;
+				}
+			}
+			else
+			{
+				// If the line does not contain #include, just append it to the buffer
+				buffer << line << std::endl;
+			}
+		}
+		return {
+			.inputInfo ={},
+			.source = buffer.str()
+		};
+	}
+
 	ShaderLoadResult LoadShader(
 		const ShaderInputInfo& p_shaderInputInfo,
 		const std::string& p_filePath,
@@ -674,6 +713,14 @@ namespace Rendering::Resources::Loaders
 	{
 		auto result = CompileShaderFromSources(p_vertexShader, p_fragmentShader, p_geomertyShader);
 		return new Shader({}, std::move(result.variants));
+	}
+
+	Shader* ShaderLoader::CreateFromSource(const std::string& p_sourceShader, Rendering::Resources::Loaders::ShaderLoader::FilePathParserCallback p_pathParser)
+	{
+		auto shaderLoadResult =LoadShader(p_sourceShader,p_pathParser);
+		ShaderParseResult shaderParseResult=ParseShader(shaderLoadResult);
+		auto result=AssembleShader(shaderParseResult);
+		return new Shader("", std::move(result.variants));
 	}
 
 	void ShaderLoader::Recompile(Shader& p_shader, const std::string& p_filePath, FilePathParserCallback p_pathParser)

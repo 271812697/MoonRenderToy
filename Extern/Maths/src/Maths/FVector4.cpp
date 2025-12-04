@@ -16,6 +16,10 @@ Maths::FVector4::FVector4(const Maths::FVector3& p_vector, float p_w) : x(p_vect
 Maths::FVector4::FVector4(const FVector4& p_toCopy) : x(p_toCopy.x), y(p_toCopy.y), z(p_toCopy.z), w(p_toCopy.w)
 {
 }
+Maths::FVector3 Maths::FVector4::ToFVector3() const
+{
+	return FVector3(x, y, z);
+}
 
 Maths::FVector4 Maths::FVector4::operator-() const
 {

@@ -15,7 +15,7 @@ namespace Core::ResourceManagement
 		* @param p_path
 		*/
 		virtual ::Rendering::Resources::Shader* CreateResource(const std::string & p_path) override;
-
+		::Rendering::Resources::Shader* CreateFromSource(const std::string& p_source) ;
 		/**
 		* Destroy the given resource
 		* @param p_resource

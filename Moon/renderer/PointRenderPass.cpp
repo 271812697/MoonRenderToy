@@ -48,6 +48,7 @@ void Editor::Rendering::PointRenderPass::Draw(::Rendering::Data::PipelineState p
 			m_PointMaterial.SetGPUInstances(selectMesh->GetVertexCount());
 			auto stateMask = m_PointMaterial.GenerateStateMask();
 			::Rendering::Entities::Drawable element;
+			
 			element.mesh = *sphere->GetMeshes()[0];
 			element.material = m_PointMaterial;
 			element.stateMask = stateMask;

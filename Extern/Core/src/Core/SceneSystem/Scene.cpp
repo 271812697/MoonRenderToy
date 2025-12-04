@@ -9,10 +9,12 @@
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ResourceManagement/ModelManager.h>
 #include <Core/SceneSystem/Scene.h>
+#include <Core/SceneSystem/BvhService.h>
+
 
 Core::SceneSystem::Scene::Scene()
 {
-
+	bvhService = new BvhService();
 }
 
 Core::SceneSystem::Scene::~Scene()
@@ -23,7 +25,7 @@ Core::SceneSystem::Scene::~Scene()
 	});
 
 	m_actors.clear();
-	delete m_sceneBvh;
+	delete bvhService;
 }
 
 void Core::SceneSystem::Scene::AddDefaultCamera()
@@ -364,31 +366,67 @@ void Core::SceneSystem::Scene::OnDeserialize(tinyxml2::XMLDocument & p_doc, tiny
 void Core::SceneSystem::Scene::BuildSceneBvh()
 {
 	ZoneScoped;
-	if (m_sceneBvh) {
-		delete m_sceneBvh;
-	}
-	m_sceneBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
-	// Collect all model renderers' bounds
-	m_modelRenderIndex.clear();
+	bvhService->Clear();
 	int i = 0;
 	std::vector<::Rendering::Geometry::bbox> bounds;
+	std::vector<MeshInstance>meshInstances;
+	std::vector<Core::Resources::Material*>matrialLists;
+	std::vector<::Rendering::Resources::Mesh*>sceneMeshes;
 	for (auto modelRenderer : m_fastAccessComponents.modelRenderers)
 	{
 		if (modelRenderer->owner.IsActive())
 		{
+			
 			auto model=modelRenderer->GetModel();
-			if (model) {
-				auto box = modelRenderer->GetBoundingBox();
-				if (box.isValid()) {
-					bounds.push_back(box);
-					m_modelRenderIndex.push_back(i);				
+			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
+			if (model&&mat) {
+				auto matrix = modelRenderer->owner.transform.GetWorldMatrix();	
+				for (auto& m: model->GetMeshes()) {
+					
+					auto meshInstaceBox=m->GetBoundingBox().transform(matrix);
+					if (meshInstaceBox.isValid()) {
+						bounds.push_back(meshInstaceBox);
+
+						//figure out  the matId
+						int materialId = -1;
+						auto meshMat=mat->GetMaterialAtIndex(m->GetMaterialIndex()[0]);
+						for (int j = 0;j < matrialLists.size();j++) {
+							if (matrialLists[j] == meshMat) {
+								materialId = j;
+								break;
+							}
+						}
+						if (materialId == -1) {
+							materialId = static_cast<int>(matrialLists.size());
+							matrialLists.push_back(meshMat);
+							bvhService->AddMaterial(meshMat);
+						}
+						
+						//figure out the meshId in the sceneMeshes if not find,push back the mesh to sceneMeshes
+						int meshId = -1;
+						for (int i = 0;i < sceneMeshes.size();i++) {
+							if (sceneMeshes[i] == m) {
+								meshId = i;
+								break;
+							}
+						}
+						if (meshId == -1) {
+							meshId = static_cast<int>(sceneMeshes.size());
+							sceneMeshes.push_back(m);
+						}
+
+
+						//push back the mesh instance
+						MeshInstance meshInstance(modelRenderer->owner.GetName(), meshId, matrix, materialId);
+						meshInstances.push_back(meshInstance);
+					}
 				}
 			}
 		}
-		i++;
 	}
 	// Build BVH
-	m_sceneBvh->Build(bounds.data(), static_cast<int>(bounds.size()));
+	bvhService->m_sceneBvh->Build(bounds.data(), static_cast<int>(bounds.size()));
+	bvhService->Process(bvhService->m_sceneBvh,sceneMeshes, meshInstances);
 }
 
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint)
@@ -398,7 +436,7 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 	Maths::FVector3 hitNormal;
 	Maths::FVector3 bary;
 	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
-	stack.push_back(m_sceneBvh->m_root);
+	stack.push_back(bvhService->m_sceneBvh->m_root);
 	while (!stack.empty()) {
 		auto cur = stack.back();stack.pop_back();
 		if (!cur)continue;
@@ -411,48 +449,42 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 			}
 			else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
 				for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
-					int index=m_sceneBvh->m_packed_indices[i];
-					auto modelRenderer = m_fastAccessComponents.modelRenderers[m_modelRenderIndex[index]];
-					auto model = modelRenderer->GetModel();
-					if (model) {
-						auto matrix=modelRenderer->owner.transform.GetWorldMatrix();
-						auto invMatrix = Maths::FMatrix4::Inverse(matrix);
-						auto localRay = ray.Transformed(invMatrix);
-						auto& meshes = model->GetMeshes();
-						for (int i = 0;i < meshes.size();i++) {
-							auto& mesh = meshes[i];
-							auto meshBvh=mesh->GetBvh();
-							std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
-							meshBvhStack.push_back(meshBvh->m_root);
-							while (!meshBvhStack.empty()) {
-								auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
-								if (!meshBvhCur)continue;
-								float meshTempDist = 1e6;
-								if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
-								{
-									if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
-										meshBvhStack.push_back(meshBvhCur->lc);
-										meshBvhStack.push_back(meshBvhCur->rc);
-									}
-									else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
-										for (int j = meshBvhCur->startidx;j < meshBvhCur->startidx + meshBvhCur->numprims;j++) {
-											int triIndex = meshBvh->m_packed_indices[j];
-											Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
-											Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
-											Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
-											float currentTriDist = 1e6;
-											Maths::FVector3 currentHitNormal;
-											Maths::FVector3 currentBary;
-											if (localRay.HitDistance(v0, v1, v2, currentTriDist, &currentHitNormal, &currentBary)) {
-												if (currentTriDist < triDist) {
-													triDist = currentTriDist;
-													hitNormal = currentHitNormal;
-													bary = currentBary;
-													outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
-													outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
-													hit = true;
-												}
-											}
+					int index= bvhService->m_sceneBvh->m_packed_indices[i];
+					int meshId=bvhService->meshInstances[index].meshID;
+					auto matrix = bvhService->meshInstances[index].transform;
+					auto invMatrix = Maths::FMatrix4::Inverse(matrix);
+					auto localRay = ray.Transformed(invMatrix);
+					auto& mesh = bvhService->meshes[meshId];
+					auto meshBvh = mesh->GetBvh();		
+					std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+					meshBvhStack.push_back(meshBvh->m_root);
+					while (!meshBvhStack.empty()) {
+						auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+						if (!meshBvhCur)continue;
+						float meshTempDist = 1e6;
+						if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
+						{
+							if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+								meshBvhStack.push_back(meshBvhCur->lc);
+								meshBvhStack.push_back(meshBvhCur->rc);
+							}
+							else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+								for (int j = meshBvhCur->startidx;j < meshBvhCur->startidx + meshBvhCur->numprims;j++) {
+									int triIndex = meshBvh->m_packed_indices[j];
+									Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
+									Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
+									Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
+									float currentTriDist = 1e6;
+									Maths::FVector3 currentHitNormal;
+									Maths::FVector3 currentBary;
+									if (localRay.HitDistance(v0, v1, v2, currentTriDist, &currentHitNormal, &currentBary)) {
+										if (currentTriDist < triDist) {
+											triDist = currentTriDist;
+											hitNormal = currentHitNormal;
+											bary = currentBary;
+											outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
+											outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
+											hit = true;
 										}
 									}
 								}
@@ -468,5 +500,5 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 
 ::Rendering::Geometry::Bvh* Core::SceneSystem::Scene::GetBvh()
 {
-	return m_sceneBvh;
+	return bvhService->m_sceneBvh;
 }

@@ -7,7 +7,13 @@ Rendering::Resources::Shader* Core::ResourceManagement::ShaderManager::CreateRes
 	Rendering::Resources::Shader* shader = Rendering::Resources::Loaders::ShaderLoader::Create(realPath, pathParserCallback);
 	if (shader)
 		*reinterpret_cast<std::string*>(reinterpret_cast<char*>(shader) + offsetof(Rendering::Resources::Shader, path)) = p_path; // Force the resource path to fit the given path
+	return shader;
+}
 
+::Rendering::Resources::Shader* Core::ResourceManagement::ShaderManager::CreateFromSource(const std::string& p_source)
+{
+	auto pathParserCallback = std::bind(&Core::ResourceManagement::ShaderManager::GetRealPath, this, std::placeholders::_1);
+	Rendering::Resources::Shader* shader = Rendering::Resources::Loaders::ShaderLoader::CreateFromSource(p_source, pathParserCallback);
 	return shader;
 }
 

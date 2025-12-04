@@ -756,7 +756,7 @@ namespace PathTrace
 				auto roughness = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_RoughnessMap", roughness);
 				auto emission = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + emissionTexName, true);
-				tempMat->SetProperty("u_EmissiveMap", roughness);
+				tempMat->SetProperty("u_EmissiveMap", emission);
 				auto metallicMap = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path + metallicRoughnessTexName, true);
 				tempMat->SetProperty("u_MetallicMap", metallicMap);
 				// Normal Map Texture

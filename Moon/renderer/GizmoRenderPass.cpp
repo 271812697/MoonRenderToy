@@ -68,7 +68,6 @@ void Editor::Rendering::GizmoRenderPass::enableGizmoWidget(const std::string& na
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
 		
-	auto& debugSceneDescriptor = m_renderer.GetDescriptor<Editor::Rendering::DebugSceneRenderer::DebugSceneDescriptor>();
 	auto& view = GetService(Editor::Panels::SceneView);;
 	auto& renderer = MOON::Gizmo::instance();
 	renderer.newFrame(&view);

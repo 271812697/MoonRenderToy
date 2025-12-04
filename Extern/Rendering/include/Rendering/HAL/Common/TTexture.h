@@ -75,6 +75,9 @@ namespace Rendering::HAL
 		*/
 		void SetBorderColor(const Maths::FVector4& p_color);
 
+		int GetWidth();
+		int GetHeight();
+
 		/**
 		* Returns the debug name of the texture.
 		*/
@@ -83,7 +86,7 @@ namespace Rendering::HAL
 	public:
 		static Tools::Eventing::Event<TTexture&> CreationEvent;
 		static Tools::Eventing::Event<TTexture&> DestructionEvent;
-
+		std::vector<uint8_t> texData;
 	private:
 		TextureContext m_textureContext;
 	};

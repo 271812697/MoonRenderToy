@@ -33,6 +33,8 @@ namespace Rendering::Resources
 		HAL::VertexArray& getVertexArray();
 		HAL::VertexBuffer& getVertexBuffer();
 		Maths::FVector3 GetVertexPosition(int index);
+		std::vector<Geometry::VertexBVH>& GetVerticesBVH();
+		std::vector<uint32_t>& GetIndices();
 		void BuildBvh();
 		Geometry::Bvh* GetBvh();
 	private:

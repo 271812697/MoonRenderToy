@@ -2,9 +2,10 @@
 #include "Gizmo/Gizmo.h"
 #include "Gizmo/MathUtil/MathUtil.h"
 #include "renderer/SceneView.h"
-
+#include <Core/Rendering/EngineBufferRenderFeature.h>
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
+
 namespace MOON {
 	class ClipPlane::ClipPlaneInternal {
 	public:
@@ -15,7 +16,9 @@ namespace MOON {
 		}
 		~ClipPlaneInternal() {
 			delete clickObserver.command;
+			//delete moveObserver.command;
 		}
+		
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
 				auto acptr=&mSelf->m_sceneView->GetSelectedActor();
@@ -38,6 +41,7 @@ namespace MOON {
 			boxMin = min;
 			boxMax = max;
 			center = (min + max) * 0.5f;
+			extent = (boxMax - boxMin).norm();
 		}
 	private:
 		friend class ClipPlane;
@@ -47,7 +51,9 @@ namespace MOON {
 		Eigen::Vector3f normal = { 0,1,0 };
 		Eigen::Vector3f boxMin = {0,0,0};
 		Eigen::Vector3f boxMax = {0,0,0};
+		float extent = 1.0f;
 		ExecuteCommandPair clickObserver;
+		ExecuteCommandPair moveObserver;
 	};
 
 	ClipPlane::ClipPlane(const std::string& name, Editor::Panels::SceneView* view) :GizmoWidget(name), m_sceneView(view)
@@ -64,16 +70,33 @@ namespace MOON {
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,10);
 		if (renderer->gizmoSpherePlaneTranslationBehavior(renderer->makeId("clip"), m_internal->center, radius, m_internal->normal, 0.0, &pos)) {
-			m_internal->center = pos;
+			//m_internal->center = pos;
 		}
-		RotationMatrixX(m_internal->normal);
-		renderer->gizmoOperateNormalBehavior(renderer->makeId("clipNormal"), m_internal->center, m_internal->center + m_internal->normal * radius * 2.0f, radius/2, &m_internal->normal);
+		//RotationMatrixX(m_internal->normal);
+		//renderer->gizmoOperateNormalBehavior(renderer->makeId("clipNormal"), m_internal->center, m_internal->center + m_internal->normal * radius * 2.0f, radius/2, &m_internal->normal);
 		//drawOneMesh(Eigen::Vector3f & translation, Eigen::Matrix3f & rotation, Eigen::Vector3f & scale, const std::string & mesh, bool longterm = false);
 		renderer->drawOneMesh(
 			m_internal->center,
 			RotationMatrixX(m_internal->normal),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"Axis");
+		//renderer->drawPlaneGrid(
+		//	m_internal->center,
+		//	m_internal->normal,
+		//	1.0,
+		//	m_internal->extent);
+		bool ret=renderer->planeEdit(renderer->makeId("planeEdit"), m_internal->center, m_internal->normal);
+		//renderer->planeEdit();
+		if (ret) {
+			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+			
+			feature.SetClipPlane(
+				m_internal->normal.x(),
+				m_internal->normal.y(),
+				m_internal->normal.z(),
+				-m_internal->normal.dot(m_internal->center)
+				);
+		}
 	}
 
 }

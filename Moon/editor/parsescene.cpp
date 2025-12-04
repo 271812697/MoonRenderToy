@@ -15,13 +15,10 @@
 
 namespace MOON {
 	Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
-
 		float elevation = a / 180.0 * 3.14159265;
 		float azimuth = b / 180.0 * 3.14159265;
 		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 	}
-
-
 	void addSphereLight(Core::SceneSystem::Scene* scene) {
 		//auto node = DebugSettings::instance().getNode("showLight");
 		DebugSettings::instance().addCallBack("showLight", "default", [scene](NodeBase* self) {
@@ -117,8 +114,6 @@ namespace MOON {
 		else
 		{
 			auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadResource(sceneName);
-
-
 			Core::Resources::Material* tempMat = new Core::Resources::Material();
 			Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
 			tempMat->SetBackfaceCulling(false);;
@@ -137,12 +132,10 @@ namespace MOON {
 
 			auto& actor = scene->CreateActor();
 			actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-
 			actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
 			auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 			materilaRener.SetMaterialAtIndex(0, *tempMat);
 			materilaRener.UpdateMaterialList();
-
 		}
 		scene->BuildSceneBvh();
 	}

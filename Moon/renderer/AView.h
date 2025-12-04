@@ -18,6 +18,7 @@ namespace Editor {
 
 			virtual void Update(float p_deltaTime);
 			virtual void InitFrame();
+			
 			void Render();
 			void Present();
 			virtual void DrawFrame();

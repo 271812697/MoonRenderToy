@@ -18,8 +18,10 @@
 #include "GridRenderPass.h"
 #include "OutlineRenderFeature.h"
 #include "PickingRenderPass.h"
+#include "PathTraceRenderPass.h"
 
 #include "Core/Global/ServiceLocator.h"
+#include "Settings/DebugSetting.h"
 #include "renderer/SceneView.h"
 #include <Rendering/Features/DebugShapeRenderFeature.h>
 #include <Rendering/Features/FrameInfoRenderFeature.h>
@@ -299,7 +301,11 @@ public:
 	DebugActorRenderPass(Rendering::Core::CompositeRenderer& p_renderer) : Rendering::Core::ARenderPass(p_renderer),
 		m_debugShapeFeature(m_renderer.GetFeature<Rendering::Features::DebugShapeRenderFeature>())
 	{
-
+		
+		MOON::DebugSettings::instance().addCallBack("debugElements", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			this->SetEnabled(value);
+			});
 	}
 
 protected:
@@ -672,11 +678,11 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddFeature<GizmoRenderFeature, ::Rendering::Features::EFeatureExecutionPolicy::NEVER>();
 
 	AddPass<GridRenderPass>("Grid", ::Rendering::Settings::ERenderPassOrder::Debug);
-	AddPass<DebugCamerasRenderPass>("Debug Cameras", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugReflectionProbesRenderPass>("Debug Reflection Probes", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugLightsRenderPass>("Debug Lights", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
-	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
+	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Opaque);
+	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::Last);
 }

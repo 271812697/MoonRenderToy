@@ -88,6 +88,30 @@ Maths::FVector3 Rendering::Resources::Mesh::GetVertexPosition(int index)
 	return isIndex?m_vertices[m_indices[index]].position: m_vertices[index].position;
 }
 
+std::vector<Rendering::Geometry::VertexBVH>& Rendering::Resources::Mesh::GetVerticesBVH()
+{
+	return m_vertices;
+}
+
+std::vector<uint32_t>& Rendering::Resources::Mesh::GetIndices()
+{
+	return m_indices;
+	//if (isIndex)
+	//{
+	//	
+	//}
+	//else
+	//{
+	//	m_indices.resize(m_vertexCount);
+	//	for (int i = 0; i < m_vertexCount; i++) {
+	//		m_indices[i] = i;
+	//	}
+	//	isIndex = true;
+	//	return m_indices;
+	//}
+	//return {};
+}
+
 void Rendering::Resources::Mesh::BuildBvh()
 {
 	if (m_bvh) {

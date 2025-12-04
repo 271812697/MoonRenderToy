@@ -74,6 +74,37 @@ namespace MOON {
 			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("Measure",value);
 		}
 	};
+	class  ClipCommand : public Command
+	{
+	public:
+		ClipCommand(QObject* parent) :Command(parent) {
+			auto action = new QAction(this);
+			action->setCheckable(true);
+			setAction(action);
+			setIcon(QString::fromUtf8(":/widgets/icons/pqClip.svg"));
+			//createCallBack(CallBackManager::instance(), [this]() {
+			//	this->execute();
+			//	});
+
+
+		}
+	protected:
+		virtual void execute()override {
+			bool value = action()->isChecked();
+			auto& view = GetService(Editor::Panels::SceneView);
+			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("ClipPlane", value);
+			
+			if (view.IsSelectActor()) {
+				auto matList = view.GetSelectedActor().GetComponent<Core::ECS::Components::CMaterialRenderer>();
+				if (matList) {
+					auto mat = matList->GetMaterialAtIndex(0);
+					if (mat && mat->SupportsFeature("CLIP_PLANE")) {
+						mat->EnableFeature("CLIP_PLANE", value);
+					}
+				}
+			}
+		}
+	};
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {
 	public:
 		ViewerWindowTitleBarInternal(ViewerWindowTitleBar* titleBar) :mSelf(titleBar) {
@@ -131,7 +162,8 @@ namespace MOON {
 
 			measure = new MeasureCommand(mSelf);
 			mToolBar->addAction(measure->action());
-
+			clip = new ClipCommand(mSelf);
+			mToolBar->addAction(clip->action());
 		
 		}
 		~ViewerWindowTitleBarInternal() {
@@ -154,6 +186,7 @@ namespace MOON {
 		WireCommand* wire = nullptr;
 		PointsCommand* points = nullptr;
 		MeasureCommand* measure = nullptr;
+		ClipCommand* clip = nullptr;
 	};
 	ViewerWindowTitleBar::ViewerWindowTitleBar(QWidget* parent) :QWidget(parent), mInternal(new ViewerWindowTitleBarInternal(this))
 	{
