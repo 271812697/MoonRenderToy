@@ -15,7 +15,7 @@ namespace Rendering::Settings
 		EFormat format = EFormat::RGBA;
 		EPixelDataType type = EPixelDataType::UNSIGNED_BYTE;
 		const void* data = nullptr;
-
+		int arrayLayers = 0;//use this in case of GL_TEXTURE_2D_ARRAY
 	};
 
 	/**

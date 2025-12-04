@@ -12,7 +12,7 @@
 #include <Core/ResourceManagement/ModelManager.h>
 #include <Core/SceneSystem/Scene.h>
 #include <Core/SceneSystem/BvhService.h>
-
+#include "stb_image/stb_image_resize.h"
 namespace Core::SceneSystem
 {
 	void BvhService::AddMaterial(::Core::Resources::Material* material)
@@ -158,11 +158,9 @@ namespace Core::SceneSystem
 	}
 	void BvhService::ProcessBLAS() {
 			int nodeCnt = 0;
-
 			for (int i = 0; i < meshes.size(); i++)
 				nodeCnt += meshes[i]->GetBvh()->m_nodecnt;
 			topLevelIndex = nodeCnt;
-
 			// reserve space for top level nodes
 			nodeCnt += 2 * meshInstances.size();
 			nodes.resize(nodeCnt);
@@ -296,6 +294,28 @@ namespace Core::SceneSystem
 			transforms.resize(meshInstances.size());
 			for (int i = 0; i < meshInstances.size(); i++)
 				transforms[i] = meshInstances[i].transform;
+			
+			// Copy Textures
+			int reqWidth = renderOptions.texArrayWidth;
+			int reqHeight = renderOptions.texArrayHeight;
+			int texBytes = reqWidth * reqHeight * 4;
+			textureMapsArray.resize(texBytes * textures.size());
+			for (int i = 0; i < textures.size(); i++)
+			{
+				int texWidth = textures[i]->GetWidth();
+				int texHeight = textures[i]->GetHeight();
+				// Resize textures to fit 2D texture array
+				if (texWidth != reqWidth || texHeight != reqHeight)
+				{
+					unsigned char* resizedTex = new unsigned char[texBytes];
+					stbir_resize_uint8(&textures[i]->texData[0], texWidth, texHeight, 0, resizedTex, reqWidth, reqHeight, 0, 4);
+					std::copy(resizedTex, resizedTex + texBytes, &textureMapsArray[i * texBytes]);
+					delete[] resizedTex;
+				}
+				else
+					std::copy(textures[i]->texData.begin(), textures[i]->texData.end(), &textureMapsArray[i * texBytes]);
+			}
+			isDirty = true;
 		}
 		void BvhService::Clear() {
 			if (m_sceneBvh) {
@@ -311,6 +331,7 @@ namespace Core::SceneSystem
 			topLevelBvh = nullptr;
 			transforms.clear();
 			textures.clear();
+			textureMapsArray.clear();
 			verticesUVX.clear();
 			normalsUVY.clear();
 			vertIndices.clear();
@@ -319,6 +340,14 @@ namespace Core::SceneSystem
 			topLevelIndex = 0;
 			// Collect all model renderers' bounds
 			
+		}
+		bool BvhService::DirtyFlag()
+		{
+			return isDirty;
+		}
+		void BvhService::SetDirtyFlag(bool flag)
+		{
+			isDirty = flag;
 		}
 		BvhService::~BvhService() {
 			delete m_sceneBvh;

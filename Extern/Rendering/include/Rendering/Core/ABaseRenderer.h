@@ -7,13 +7,8 @@
 #include "Rendering/Entities/Drawable.h"
 #include "Rendering/Settings/EBlitFlags.h"
 #include "Rendering/Context/Driver.h"
-
 namespace Rendering::Core
 {
-	/**
-	* A simple base renderer that doesn't handle any object binding, but provide a strong base for other renderers
-	* to implement their own logic.
-	*/
 	class ABaseRenderer : public IRenderer
 	{
 	public:
@@ -111,13 +106,16 @@ namespace Rendering::Core
 			Rendering::Data::PipelineState p_pso,
 			const Entities::Drawable& p_drawable
 		);
-
+	public:
+		Rendering::Resources::Mesh m_unitQuad;
 	protected:
+		
+
 		Data::FrameDescriptor m_frameDescriptor;
 		Context::Driver& m_driver;
 		Rendering::HAL::Texture m_emptyTexture2D;
 		Rendering::HAL::Texture m_emptyTextureCube;
-		Rendering::Resources::Mesh m_unitQuad;
+		
 		Rendering::Data::PipelineState m_basePipelineState;
 		bool m_isDrawing;
 		Rendering::Resources::Shader* m_presentShader;

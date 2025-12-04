@@ -5,13 +5,26 @@
 namespace Rendering::Resources {
 	class Mesh;
 }
-
 namespace Core::Resources {
 	class Material;
 }
 namespace Core::SceneSystem
 {
 	class Scene;
+	enum AlphaMode
+	{
+		Opaque,
+		Blend,
+		Mask
+	};
+
+	enum MediumType
+	{
+		None,
+		Absorb,
+		Scatter,
+		Emissive
+	};
 	struct MeshInstance
 	{
 
@@ -131,6 +144,78 @@ namespace Core::SceneSystem
 		float area;
 		float type;
 	};
+	struct RenderOptions
+	{
+		RenderOptions()
+		{
+			renderResolution = Maths::FVector2(1280, 720);
+			windowResolution = Maths::FVector2(1280, 720);
+			uniformLightCol = Maths::FVector3(0.3f, 0.3f, 0.3f);
+			backgroundCol = Maths::FVector3(1.0f, 1.0f, 1.0f);
+			tileWidth = 100;
+			tileHeight = 100;
+			maxDepth = 2;
+			maxSpp = -1;
+			RRDepth = 2;
+			texArrayWidth = 2048;
+			texArrayHeight = 2048;
+			denoiserFrameCnt = 20;
+			enableRR = true;
+			enableDenoiser = false;
+			enableTonemap = true;
+			enableAces = false;
+			openglNormalMap = true;
+			enableEnvMap = false;
+			enableUniformLight = false;
+			hideEmitters = false;
+			enableBackground = false;
+			transparentBackground = false;
+			independentRenderSize = false;
+			enableRoughnessMollification = false;
+			enableVolumeMIS = false;
+			optLight = false;
+			optAlphaTest = false;
+			optMedium = false;
+
+
+			envMapIntensity = 1.0f;
+			envMapRot = 0.0f;
+			roughnessMollificationAmt = 0.0f;
+		}
+
+		Maths::FVector2 renderResolution;
+		Maths::FVector2 windowResolution;
+		Maths::FVector3 uniformLightCol;
+		Maths::FVector3 backgroundCol;
+		int tileWidth;
+		int tileHeight;
+		int maxDepth;
+		int maxSpp;
+		int RRDepth;
+		int texArrayWidth;
+		int texArrayHeight;
+		int denoiserFrameCnt;
+		bool optLight;
+		bool optAlphaTest;
+		bool optMedium;
+		bool enableRR;
+		bool enableDenoiser;
+		bool enableTonemap;
+		bool enableAces;
+		bool simpleAcesFit;
+		bool openglNormalMap;
+		bool enableEnvMap;
+		bool enableUniformLight;
+		bool hideEmitters;
+		bool enableBackground;
+		bool transparentBackground;
+		bool independentRenderSize;
+		bool enableRoughnessMollification;
+		bool enableVolumeMIS;
+		float envMapIntensity;
+		float envMapRot;
+		float roughnessMollificationAmt;
+	};
 	class BvhService {
 	public:
 		BvhService() = default;
@@ -150,9 +235,13 @@ namespace Core::SceneSystem
 		void UpdateTLAS(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<MeshInstance>& instances);
 		void Process(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances);
 		void Clear();
+		bool DirtyFlag();
+		void SetDirtyFlag(bool flag);
 		~BvhService();
 	public:
+		bool isDirty = false;
 		friend class Scene;
+		RenderOptions renderOptions;
 		::Rendering::Geometry::Bvh* m_sceneBvh = nullptr;
 		int topLevelIndex = 0;
 		int nodeTexWidth;
@@ -178,6 +267,7 @@ namespace Core::SceneSystem
 
 		// textures
 		std::vector<::Rendering::HAL::Texture*> textures;
+		std::vector<unsigned char> textureMapsArray;
 	};
 
 }

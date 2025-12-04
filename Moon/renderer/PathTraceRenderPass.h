@@ -18,9 +18,13 @@ namespace Editor::Rendering
 	public:
 		PathTraceRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
 		~PathTraceRenderPass();
+	    
+		void DestoryResource();
+		void BuildBvhResources();
 		void InitGPUDataBuffers();
 		void InitFBOs();
 		void InitShaders();
+		virtual void ResizeRenderer(int width, int height)override;
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 	private:
@@ -45,14 +49,14 @@ namespace Editor::Rendering
 		::Rendering::HAL::Framebuffer pathTracefbo;
 		::Rendering::HAL::Framebuffer pathTraceFBOLowRes;
 		::Rendering::HAL::Framebuffer accumFBO;
-		::Rendering::HAL::Framebuffer outputFBO;
+		::Rendering::HAL::Framebuffer outputFBO[2];
 
 
 		Maths::FVector2 renderSize;
-		Maths::FVector2  windowSize;
-		Maths::FVector2  tile;
-		Maths::FVector2  numTiles;
-		Maths::FVector2  invNumTiles;
+		Maths::FVector2 windowSize;
+		Maths::FVector2 tile;
+		Maths::FVector2 numTiles;
+		Maths::FVector2 invNumTiles;
 		int tileWidth;
 		int tileHeight;
 		int currentBuffer;
@@ -60,8 +64,8 @@ namespace Editor::Rendering
 		int sampleCounter;
 		float pixelRatio;
 
-		float* denoiserInputFramePtr;
-		float* frameOutputPtr;
+		float* denoiserInputFramePtr=nullptr;
+		float* frameOutputPtr=nullptr;
 		bool denoised;
 		bool initialized;
 	};

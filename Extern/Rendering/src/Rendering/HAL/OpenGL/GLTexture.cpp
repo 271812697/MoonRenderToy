@@ -75,16 +75,25 @@ void Rendering::HAL::GLTexture::Allocate(const Settings::TextureDesc& p_desc)
 					mutableDesc.data
 				);
 			}
-			else
+			else if(m_context.type == GL_TEXTURE_2D_MULTISAMPLE)
 			{
 				glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, EnumToValue<GLenum>(desc.internalFormat), desc.width, desc.height, GL_TRUE);
-				//glTextureStorage2DMultisample(
-				//	m_context.id,
-				//	4,
-				//	EnumToValue<GLenum>(desc.internalFormat),
-				//	desc.width,
-				//	desc.height,
-				//	GL_TRUE);
+
+			}
+			else if (m_context.type == GL_TEXTURE_2D_ARRAY)
+			{
+				glTexImage3D(
+					m_context.type,
+					0,
+					EnumToValue<GLenum>(desc.internalFormat),
+					desc.width,
+					desc.height,
+					mutableDesc.arrayLayers,
+					0,
+					EnumToValue<GLenum>(mutableDesc.format),
+					EnumToValue<GLenum>(mutableDesc.type),
+					mutableDesc.data
+				);
 			}
 
 			Unbind();

@@ -189,7 +189,11 @@ void Rendering::Data::Material::Bind(
 		{
 			program.SetUniform<FMatrix4>(name, std::get<FMatrix4>(value));
 		}
-		else if (uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE|| uniformType ==SAMPLER_BUFFER ||uniformType==UINTSAMPLER_BUFFER)
+		else if (
+			uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE
+			|| uniformType ==SAMPLER_BUFFER ||uniformType==UINTSAMPLER_BUFFER 
+			|| uniformType == SAMPLER_2DARRAY || uniformType == INTSAMPLER_BUFFER
+			)
 		{
 			HAL::TextureHandle* handle = nullptr;
 			if (auto textureHandle = std::get_if<HAL::TextureHandle*>(&value))
@@ -215,7 +219,6 @@ void Rendering::Data::Material::Bind(
 
 void Rendering::Data::Material::Unbind() const
 {
-	
 	m_shader->GetVariant().Unbind();
 }
 
@@ -240,7 +243,6 @@ bool Rendering::Data::Material::TrySetProperty(const std::string& p_name, const 
 		SetProperty(p_name, p_value, p_singleUse);
 		return true;
 	}
-
 	return false;
 }
 
@@ -453,7 +455,6 @@ void Rendering::Data::Material::EnableFeature(const std::string& p_feature,bool 
 	{
 		m_features.erase(p_feature);
 	}
-
 }
 
 bool Rendering::Data::Material::HasFeature(const std::string& p_feature) const
@@ -484,12 +485,10 @@ bool Rendering::Data::Material::SupportsPerspective() const
 bool Rendering::Data::Material::SupportsProjectionMode(Rendering::Settings::EProjectionMode p_projectionMode) const
 {
 	using enum Rendering::Settings::EProjectionMode;
-
 	switch (p_projectionMode)
 	{
 	case ORTHOGRAPHIC: return SupportsOrthographic();
 	case PERSPECTIVE: return SupportsPerspective();
 	}
-
 	return true;
 }

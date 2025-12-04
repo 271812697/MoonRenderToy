@@ -18,6 +18,7 @@
 #include "GridRenderPass.h"
 #include "OutlineRenderFeature.h"
 #include "PickingRenderPass.h"
+#include "PathTraceRenderPass.h"
 
 #include "Core/Global/ServiceLocator.h"
 #include "Settings/DebugSetting.h"
@@ -683,4 +684,5 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
 	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Opaque);
+	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::Last);
 }

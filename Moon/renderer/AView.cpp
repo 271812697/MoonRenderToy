@@ -40,6 +40,8 @@ void Editor::Panels::AView::InitFrame()
 	);
 }
 
+
+
 void Editor::Panels::AView::Render()
 {
 	auto [winWidth, winHeight] = GetSafeSize();
@@ -114,6 +116,7 @@ void Editor::Panels::AView::Resize(int width, int height)
 {
 	mWidth = width;
 	mHeight = height;
+	m_renderer->Resize(width, height);
 }
 
 void Editor::Panels::AView::UnselectActor()

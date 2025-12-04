@@ -348,8 +348,6 @@ namespace PathTrace
 		std::string pathTraceShaderLowResSrcObj = loadShaderSource(shadersDirectory + "/PathTraceLowRes.glsl");
 		std::string outputShaderSrcObj = loadShaderSource(shadersDirectory + "/OutputShader.glsl");
 		std::string tonemapShaderSrcObj = loadShaderSource(shadersDirectory + "/ToneMapShader.glsl");
-		std::string pbrShaderSrcObj = loadShaderSource(shadersDirectory + "/pbr.glsl");
-		std::string lineShaderSrcObj = loadShaderSource(shadersDirectory + "/line.glsl");
 		//分析renderOptions添加向源码中预定义宏
 		std::string pathtraceDefines = "";
 		std::string tonemapDefines = "";
@@ -521,13 +519,9 @@ namespace PathTrace
 
 	void Renderer::Render()
 	{
-
-
 		if (!scene->dirty && scene->renderOptions.maxSpp != -1 && sampleCounter >= scene->renderOptions.maxSpp)
 			return;
-
 		glActiveTexture(GL_TEXTURE0);
-
 		if (scene->dirty)
 		{
 			pathTraceFBOLowRes->Bind();
@@ -541,8 +535,6 @@ namespace PathTrace
 		}
 		else
 		{
-
-
 			pathTracefbo->Bind();
 			glViewport(0, 0, tileWidth, tileHeight);
 			glBindTexture(GL_TEXTURE_2D, accumTexture);

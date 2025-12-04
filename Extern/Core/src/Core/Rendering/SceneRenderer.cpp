@@ -223,7 +223,16 @@ void Core::Rendering::SceneRenderer::BeginFrame(const ::Rendering::Data::FrameDe
 		)
 		});
 }
-
+void Core::Rendering::SceneRenderer::Resize(int width, int height)
+{
+	for (const auto& pass : m_passes | std::views::values)
+	{
+		//if (pass.second->IsEnabled())
+		{
+			pass.second->ResizeRenderer(width,height);;
+		}
+	}
+}
 void Core::Rendering::SceneRenderer::DrawModelWithSingleMaterial(::Rendering::Data::PipelineState p_pso, ::Rendering::Resources::Model& p_model, ::Rendering::Data::Material& p_material, const Maths::FMatrix4& p_modelMatrix)
 {
 	auto stateMask = p_material.GenerateStateMask();
