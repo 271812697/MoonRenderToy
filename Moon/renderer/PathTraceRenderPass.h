@@ -24,9 +24,13 @@ namespace Editor::Rendering
 		void InitGPUDataBuffers();
 		void InitFBOs();
 		void InitShaders();
-		virtual void ResizeRenderer(int width, int height)override;
+		virtual void ResizeRenderer(int width, int height)override;	
+
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+		void Update();
+		void Render();
+		void Present();
 	private:
 		::Rendering::Data::Material pathTraceShader;
 		::Rendering::Data::Material pathTraceShaderLowRes;
@@ -68,5 +72,6 @@ namespace Editor::Rendering
 		float* frameOutputPtr=nullptr;
 		bool denoised;
 		bool initialized;
+		bool refreshFlag = true;
 	};
 }

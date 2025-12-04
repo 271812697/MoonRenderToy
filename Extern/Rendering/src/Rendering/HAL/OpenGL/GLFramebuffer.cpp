@@ -248,7 +248,25 @@ void Rendering::HAL::GLFramebuffer::ReadPixels(
 	);
 	Unbind();
 }
-
+template<>
+void Rendering::HAL::GLFramebuffer::Clear(Settings::EFramebufferAttachment p_attachment,int index)
+{
+	const GLfloat clear_color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	const GLfloat clear_depth = 1.0f;
+	const GLint clear_stencil = 0;
+	// clear one of the color attachments
+	if (p_attachment== Settings::EFramebufferAttachment::COLOR) {
+		glClearNamedFramebufferfv(m_context.id, GL_COLOR, index, clear_color);
+	}
+	// clear the depth buffer
+	else if (p_attachment == Settings::EFramebufferAttachment::DEPTH) {
+		glClearNamedFramebufferfv(m_context.id, GL_DEPTH, 0, &clear_depth);
+	}
+	// clear the stencil buffer
+	else if (p_attachment == Settings::EFramebufferAttachment::STENCIL) {
+		glClearNamedFramebufferiv(m_context.id, GL_STENCIL, 0, &clear_stencil);
+	}
+}
 template<>
 const std::string& Rendering::HAL::GLFramebuffer::GetDebugName() const
 {

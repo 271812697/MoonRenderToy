@@ -165,7 +165,7 @@ namespace Core::SceneSystem
 			enableTonemap = true;
 			enableAces = false;
 			openglNormalMap = true;
-			enableEnvMap = false;
+			enableEnvMap = true;
 			enableUniformLight = false;
 			hideEmitters = false;
 			enableBackground = false;
