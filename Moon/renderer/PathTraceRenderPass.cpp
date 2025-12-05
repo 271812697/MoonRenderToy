@@ -170,6 +170,15 @@ namespace Editor::Rendering {
 			bool value = self->getData<bool>();
 			this->SetEnabled(value);
 			});
+		MOON::DebugSettings::instance().addCallBack("reBuildBvh", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();	
+			if (value) {
+				::Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+				scene->BuildSceneBvh();
+			}
+
+			});
+
 		//InitShaders();
 	}
 	PathTraceRenderPass::~PathTraceRenderPass()
