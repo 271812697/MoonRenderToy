@@ -728,7 +728,7 @@ namespace Editor::Rendering {
 
 		// 更新参数
 		auto cpos=camera->GetPosition();
-		auto cwr=camera->GetTransform().GetWorldRight();
+		auto cwr=-camera->GetTransform().GetWorldRight();
 		auto cwu=camera->GetTransform().GetWorldUp();
 		auto cwf=camera->GetTransform().GetWorldForward();
 		float fov=camera->GetFov()/180.0f*3.15157f;
