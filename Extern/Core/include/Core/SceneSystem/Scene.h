@@ -55,6 +55,7 @@ namespace Core::SceneSystem
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_root) override;
 		void BuildSceneBvh();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint);
+		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, Maths::FVector3& outPoint);
 		::Rendering::Geometry::Bvh* GetBvh();
 		BvhService* GetBvhService() { return bvhService; }
 	private:

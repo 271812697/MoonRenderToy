@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Rendering/Core/ARenderPass.h>
 #include <Rendering/HAL/Framebuffer.h>
+#include <Rendering/HAL/OpenGL/GLTexture.h>
 #include <Rendering/Data/Material.h>
 #include <Maths/FVector3.h>
 namespace Rendering {
@@ -20,31 +21,34 @@ namespace Editor::Rendering
 		~PathTraceRenderPass();
 	    
 		void DestoryResource();
-		void BuildBvhResources();
-		void InitGPUDataBuffers();
-		void InitFBOs();
-		void InitShaders();
-		virtual void ResizeRenderer(int width, int height)override;
+		void UpdateGPUDataBuffers();
+		void UpdateFBOs();
+		void UpdateShaders();
+		virtual void ResizeRenderer(int width, int height)override;	
+
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+		void Update();
+		void Render();
+		void Present();
 	private:
 		::Rendering::Data::Material pathTraceShader;
 		::Rendering::Data::Material pathTraceShaderLowRes;
 		::Rendering::Data::Material outputShader;
 		::Rendering::Data::Material tonemapShader;
 
-		::Rendering::Resources::Texture* BVHTex = nullptr;
-		::Rendering::Resources::Texture* vertexIndicesTex = nullptr;
-		::Rendering::Resources::Texture* verticesTex = nullptr;
-		::Rendering::Resources::Texture* normalsTex = nullptr;
+		::Rendering::HAL::GLTexture* BVHTex = nullptr;
+		::Rendering::HAL::GLTexture* vertexIndicesTex = nullptr;
+		::Rendering::HAL::GLTexture* verticesTex = nullptr;
+		::Rendering::HAL::GLTexture* normalsTex = nullptr;
 
-		::Rendering::Resources::Texture* materialsTex = nullptr;
-		::Rendering::Resources::Texture* transformsTex = nullptr;
-		::Rendering::Resources::Texture* lightsTex = nullptr;
-		::Rendering::Resources::Texture* textureMapsArrayTex = nullptr;
-		::Rendering::Resources::Texture* envMapTex = nullptr;
-		::Rendering::Resources::Texture* envMapCDFTex = nullptr;
-		EnvironmentMap* envMap;
+		::Rendering::HAL::GLTexture* materialsTex = nullptr;
+		::Rendering::HAL::GLTexture* transformsTex = nullptr;
+		::Rendering::HAL::GLTexture* lightsTex = nullptr;
+		::Rendering::HAL::GLTexture* textureMapsArrayTex = nullptr;
+		::Rendering::HAL::GLTexture* envMapTex = nullptr;
+		::Rendering::HAL::GLTexture* envMapCDFTex = nullptr;
+		EnvironmentMap* envMap=nullptr;
 
 		::Rendering::HAL::Framebuffer pathTracefbo;
 		::Rendering::HAL::Framebuffer pathTraceFBOLowRes;
@@ -68,5 +72,6 @@ namespace Editor::Rendering
 		float* frameOutputPtr=nullptr;
 		bool denoised;
 		bool initialized;
+		bool refreshFlag = true;
 	};
 }

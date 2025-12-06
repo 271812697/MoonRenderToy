@@ -1852,8 +1852,9 @@ void main(void)
 	vec2 d = (coordsTile * 2.0 - 1.0) + jitter;
 
 	float scale = tan(camera.fov * 0.5);
-	d.y *= resolution.y / resolution.x * scale;
-	d.x *= scale;
+
+	d.y *=  scale;
+	d.x *= resolution.x  /resolution.y *scale;
 	vec3 rayDir = normalize(d.x * camera.right + d.y * camera.up + camera.forward);
 
 	vec3 focalPoint = camera.focalDist * rayDir;

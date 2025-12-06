@@ -58,15 +58,15 @@ namespace Rendering::Resources
 		* Return all programs
 		*/
 		const Variants& GetVariants() const;
-
+		~Shader() = default;
+		void SetVariants(Variants&& p_variants);
 	private:
 		Shader(
 			const std::string p_path,
 			Variants&& p_variants
 		);
 
-		~Shader() = default;
-		void SetVariants(Variants&& p_variants);
+
 
 	public:
 		const std::string path;

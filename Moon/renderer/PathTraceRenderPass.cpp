@@ -13,6 +13,7 @@
 #include <Rendering/HAL/Profiling.h>
 #include <Rendering/Settings/EPixelDataFormat.h>
 #include <Rendering/Settings/ETextureType.h>
+#include "Settings/DebugSetting.h"
 #include <stb_Image/stb_image.h>
 #include <fstream>
 namespace Editor::Rendering {
@@ -53,6 +54,7 @@ namespace Editor::Rendering {
 		}
 
 		bool LoadMap(const std::string& filename) {
+			stbi_set_flip_vertically_on_load(false);
 			img = stbi_loadf(filename.c_str(), &width, &height, NULL, 3);
 			if (img == nullptr)
 				return false;
@@ -163,73 +165,84 @@ namespace Editor::Rendering {
 		::Core::Rendering::FramebufferUtil::SetupFramebuffer(outputFBO[0], fBColorDesc, false, false, false);
 		::Core::Rendering::FramebufferUtil::SetupFramebuffer(outputFBO[1], fBColorDesc, false, false, false);
 	     
-		InitShaders();
+
+		MOON::DebugSettings::instance().addCallBack("PathTrace", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			this->SetEnabled(value);
+			});
+		MOON::DebugSettings::instance().addCallBack("reBuildBvh", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();	
+			if (value) {
+				::Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+				scene->BuildSceneBvh();
+			}
+			});
+		//we need to init shaders
+		UpdateShaders();
 	}
 	PathTraceRenderPass::~PathTraceRenderPass()
 	{
-		delete envMap;
 		DestoryResource();
 	}
 	void PathTraceRenderPass::DestoryResource()
 	{
-		
+		delete envMap;
+		if(BVHTex)
 		delete BVHTex;
+		if (vertexIndicesTex)
 		delete vertexIndicesTex;
+		if (verticesTex)
 		delete verticesTex;
+		if (normalsTex)
 		delete normalsTex;
+		if (materialsTex)
 		delete materialsTex;
+		if (transformsTex)
 		delete transformsTex;
+		if (lightsTex)
 		delete lightsTex;
-		delete textureMapsArrayTex;
-		delete envMapTex;
-		delete envMapCDFTex;
-
-
-
+		if (textureMapsArrayTex)
+			delete textureMapsArrayTex;
+		if (envMapTex) {
+			delete envMapTex;
+		}
+		if (envMapCDFTex) {
+			delete envMapCDFTex;
+		}
+		//??
 		delete[] denoiserInputFramePtr;
 		delete[] frameOutputPtr;
 	}
-	void PathTraceRenderPass::BuildBvhResources()
-	{
-		DestoryResource();
-		InitGPUDataBuffers();
-	}
-	void PathTraceRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
-	{
-		auto bvhService= GetService(Editor::Panels::SceneView).GetScene()->GetBvhService();
-		if (bvhService->isDirty) {
-			bvhService->isDirty = false;
-			BuildBvhResources();
-		}
-	}
-	void PathTraceRenderPass::InitGPUDataBuffers() {
+	void PathTraceRenderPass::UpdateGPUDataBuffers() {
 		auto& view = GetService(Editor::Panels::SceneView);;
-		auto bvhService= view.GetScene()->GetBvhService();
+		auto bvhService = view.GetScene()->GetBvhService();
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 		// BVH Texture
 		::Rendering::Settings::TextureDesc desc;
 		desc.isTextureBuffer = true;
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32F;
-		desc.buffetLen =  bvhService->nodes.size()* sizeof(::Core::SceneSystem::BvhService::Node);
+		desc.buffetLen = bvhService->nodes.size() * sizeof(::Core::SceneSystem::BvhService::Node);
 		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 			.data = bvhService->nodes.data()
 		};
-		BVHTex = new ::Rendering::Resources::Texture();;
-		auto gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-		gltexture->Allocate(desc);
-		BVHTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+
+		if (BVHTex == nullptr) {
+			BVHTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		BVHTex->Allocate(desc);
+		
 
 		// Vertex Indices Texture
-		desc.internalFormat= ::Rendering::Settings::EInternalFormat::RGB32I;
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32I;
 		desc.buffetLen = bvhService->vertIndices.size() * sizeof(::Core::SceneSystem::Indices);
-		desc.mutableDesc= ::Rendering::Settings::MutableTextureDesc{
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 			.data = bvhService->vertIndices.data()
 		};
-		vertexIndicesTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-		gltexture->Allocate(desc);
-		vertexIndicesTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (vertexIndicesTex == nullptr) {
+			vertexIndicesTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		vertexIndicesTex->Allocate(desc);
 
 		// Vertices Texture
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
@@ -237,10 +250,10 @@ namespace Editor::Rendering {
 		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 			.data = bvhService->verticesUVX.data()
 		};
-		verticesTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-		gltexture->Allocate(desc);
-		verticesTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (verticesTex== nullptr) {
+			verticesTex= new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		verticesTex->Allocate(desc);
 
 		// Normals Texture
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
@@ -248,17 +261,17 @@ namespace Editor::Rendering {
 		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 			.data = bvhService->normalsUVY.data()
 		};
-		normalsTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-		gltexture->Allocate(desc);
-		normalsTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (normalsTex== nullptr) {
+			normalsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		normalsTex->Allocate(desc);
 
 		//Material Texture
 		desc.isTextureBuffer = false;
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
-		desc.width = bvhService->materials.size()*(sizeof(::Core::SceneSystem::Material)/sizeof(Maths::FVector4));
+		desc.width = bvhService->materials.size() * (sizeof(::Core::SceneSystem::Material) / sizeof(Maths::FVector4));
 		desc.height = 1;
-		desc.minFilter= ::Rendering::Settings::ETextureFilteringMode::NEAREST;
+		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
 		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
 		desc.buffetLen = bvhService->materials.size() * sizeof(::Core::SceneSystem::Material);
 		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
@@ -266,11 +279,11 @@ namespace Editor::Rendering {
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
 			.data = bvhService->materials.data()
 		};
-		materialsTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-		gltexture->Allocate(desc);
-		materialsTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
-		
+		if (materialsTex== nullptr) {
+			materialsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		materialsTex->Allocate(desc);
+
 		// Transform Texture
 		desc.isTextureBuffer = false;
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
@@ -285,10 +298,10 @@ namespace Editor::Rendering {
 			.data = bvhService->transforms.data()
 
 		};
-		transformsTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-		gltexture->Allocate(desc);
-		transformsTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (transformsTex== nullptr) {
+			transformsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		transformsTex->Allocate(desc);
 
 		// Lights Texture
 		if (!bvhService->lights.empty()) {
@@ -304,11 +317,10 @@ namespace Editor::Rendering {
 				.data = bvhService->lights.data()
 
 			};
-			lightsTex = new ::Rendering::Resources::Texture();
-			gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-			gltexture->Allocate(desc);
-			lightsTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
-		
+			if (lightsTex== nullptr) {
+				lightsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+			}
+			lightsTex->Allocate(desc);
 		}
 
 		// Enviroment Texture
@@ -317,16 +329,16 @@ namespace Editor::Rendering {
 		desc.height = envMap->height;
 		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
 		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
-		desc.buffetLen = envMap->width * envMap->height*sizeof(Maths::FVector3);
+		desc.buffetLen = envMap->width * envMap->height * sizeof(Maths::FVector3);
 		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 			.format = ::Rendering::Settings::EFormat::RGB,
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
 			.data = envMap->img
 		};
-		envMapTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-		gltexture->Allocate(desc);
-		envMapTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (envMapTex== nullptr) {
+			envMapTex= new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		envMapTex->Allocate(desc);
 
 		desc.internalFormat = ::Rendering::Settings::EInternalFormat::R32F;
 		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
@@ -337,10 +349,10 @@ namespace Editor::Rendering {
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
 			.data = envMap->cdf
 		};
-		envMapCDFTex = new ::Rendering::Resources::Texture();
-		gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-		gltexture->Allocate(desc);
-		envMapCDFTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+		if (envMapCDFTex== nullptr) {
+			envMapCDFTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		envMapCDFTex->Allocate(desc);
 
 		// Scene Textures
 		if (!bvhService->textures.empty()) {
@@ -356,19 +368,19 @@ namespace Editor::Rendering {
 				.data = bvhService->textureMapsArray.data(),
 				.arrayLayers = static_cast<int>(bvhService->textures.size())
 			};
-			textureMapsArrayTex = new ::Rendering::Resources::Texture();
-			gltexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2DARRAY);
-			gltexture->Allocate(desc);
-			textureMapsArrayTex->SetTexture(std::unique_ptr<::Rendering::HAL::Texture>(gltexture));
+			if (textureMapsArrayTex== nullptr) {
+				textureMapsArrayTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2DARRAY);
+			}
+			textureMapsArrayTex->Allocate(desc);
 		}
 	}
-	void PathTraceRenderPass::InitShaders() {
-		
+	void PathTraceRenderPass::UpdateShaders() {
+
 		static std::string pathTraceShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/PathTrace.ovfx");
 		static std::string pathTraceShaderLowResSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/PathTraceLowRes.ovfx");
 		static std::string outputShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/Output.ovfx");
 		static std::string tonemapShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/ToneMap.ovfx");
-		
+
 		static std::unordered_map<std::string, std::unique_ptr<::Rendering::Resources::Shader>>pathTraceShaderMap;
 		static std::unordered_map<std::string, std::unique_ptr<::Rendering::Resources::Shader>>pathTraceShaderLowResMap;
 		static std::unordered_map<std::string, std::unique_ptr<::Rendering::Resources::Shader>>outputShaderMap;
@@ -379,9 +391,9 @@ namespace Editor::Rendering {
 		std::string tempOutputShaderSrcObj = outputShaderSrcObj;
 		std::string tempTonemapShaderSrcObj = tonemapShaderSrcObj;
 
-		
+
 		auto& view = GetService(Editor::Panels::SceneView);;
-		auto bvhService = view.GetScene()->GetBvhService();		
+		auto bvhService = view.GetScene()->GetBvhService();
 		//分析renderOptions添加向源码中预定义宏
 		std::string pathtraceDefines = "";
 		std::string tonemapDefines = "";
@@ -453,6 +465,7 @@ namespace Editor::Rendering {
 		if (pathtraceDefines.size() > 0)
 		{
 			size_t idx = tempPathTraceShaderSrcObj.find("#shader fragment");
+			idx = tempPathTraceShaderSrcObj.find("#version", idx);
 			if (idx != -1)
 				idx = tempPathTraceShaderSrcObj.find("\n", idx);
 			else
@@ -460,6 +473,7 @@ namespace Editor::Rendering {
 			tempPathTraceShaderSrcObj.insert(idx + 1, pathtraceDefines);
 
 			idx = tempPathTraceShaderLowResSrcObj.find("#shader fragment");
+			idx = tempPathTraceShaderLowResSrcObj.find("#version", idx);
 			if (idx != -1)
 				idx = tempPathTraceShaderLowResSrcObj.find("\n", idx);
 			else
@@ -470,6 +484,7 @@ namespace Editor::Rendering {
 		if (tonemapDefines.size() > 0)
 		{
 			size_t idx = tempTonemapShaderSrcObj.find("#shader fragment");
+			idx = tempTonemapShaderSrcObj.find("#version", idx);
 			if (idx != -1)
 				idx = tempTonemapShaderSrcObj.find("\n", idx);
 			else
@@ -481,7 +496,7 @@ namespace Editor::Rendering {
 			pathTraceShader.SetShader(pathTraceShaderMap[pathtraceDefines].get());
 		}
 		else {
-			auto shader=::Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager.CreateFromSource(tempPathTraceShaderSrcObj);
+			auto shader = ::Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager.CreateFromSource(tempPathTraceShaderSrcObj);
 			pathTraceShaderMap[pathtraceDefines] = std::unique_ptr<::Rendering::Resources::Shader>(shader);
 			pathTraceShader.SetShader(pathTraceShaderMap[pathtraceDefines].get());
 		}
@@ -494,7 +509,7 @@ namespace Editor::Rendering {
 			pathTraceShaderLowResMap[pathtraceDefines] = std::unique_ptr<::Rendering::Resources::Shader>(shader);
 			pathTraceShaderLowRes.SetShader(pathTraceShaderLowResMap[pathtraceDefines].get());
 		}
-		
+
 		if (tonemapShaderMap.find(tonemapDefines) != tonemapShaderMap.end()) {
 			tonemapShader.SetShader(tonemapShaderMap[tonemapDefines].get());
 		}
@@ -515,16 +530,18 @@ namespace Editor::Rendering {
 	}
 	void PathTraceRenderPass::ResizeRenderer(int width, int height)
 	{
-		InitFBOs();
+		refreshFlag = true;
+		UpdateFBOs();
 	}
-	void PathTraceRenderPass::InitFBOs() {
+	void PathTraceRenderPass::UpdateFBOs() {
+		//resume fbo
 		sampleCounter = 1;
 		currentBuffer = 0;
 		frameCounter = 1;
 		auto& view = GetService(Editor::Panels::SceneView);;
 		auto bvhService = view.GetScene()->GetBvhService();
-		auto [w,h] = view.GetSafeSize();
-		renderSize = { static_cast<float>(w) ,static_cast<float>(h)  };
+		auto [w, h] = view.GetSafeSize();
+		renderSize = { static_cast<float>(w) ,static_cast<float>(h) };
 		windowSize = renderSize;
 
 		tileWidth = bvhService->renderOptions.tileWidth;
@@ -539,11 +556,309 @@ namespace Editor::Rendering {
 		tile.x = -1;
 		tile.y = numTiles.y - 1;
 
-		pathTracefbo.Resize(tileWidth,tileHeight);
+		pathTracefbo.Resize(tileWidth, tileHeight);
 		pathTraceFBOLowRes.Resize(static_cast<int>(windowSize.x * pixelRatio), static_cast<int>(windowSize.y * pixelRatio));
 		accumFBO.Resize(static_cast<int>(renderSize.x), static_cast<int>(renderSize.y));
 		outputFBO[0].Resize(static_cast<int>(renderSize.x), static_cast<int>(renderSize.y));
 		outputFBO[1].Resize(static_cast<int>(renderSize.x), static_cast<int>(renderSize.y));
+	
+	}
+	void PathTraceRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
+	{
+		auto bvhService= GetService(Editor::Panels::SceneView).GetScene()->GetBvhService();
+		if (bvhService->isDirty) {
+			bvhService->isDirty = false;
+			UpdateGPUDataBuffers();
+		}
+		Update();
+		Render();
+		Present();
+	}
+	void PathTraceRenderPass::Update() {
+		auto& view = GetService(Editor::Panels::SceneView);;
+		auto bvhService = view.GetScene()->GetBvhService();
+		if (!refreshFlag && bvhService->renderOptions.maxSpp != -1 && sampleCounter >= bvhService->renderOptions.maxSpp)
+			return;
+		auto camera=view.GetCamera();
+		//更新场景
+		//if (scene->instancesModified)
+		//{
+		//	// Transform
+		//	glBindTexture(GL_TEXTURE_2D, transformsTex);
+		//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (sizeof(Mat4) / sizeof(Vec4)) * scene->transforms.size(), 1, 0, GL_RGBA, GL_FLOAT, &scene->transforms[0]);
+
+		//	// Material
+		//	glBindTexture(GL_TEXTURE_2D, materialsTex);
+		//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, (sizeof(Material) / sizeof(Vec4)) * scene->materials.size(), 1, 0, GL_RGBA, GL_FLOAT, &scene->materials[0]);
+
+		//	// BVH
+		//	int index = scene->bvhTranslator.topLevelIndex;
+		//	int offset = sizeof(RadeonRays::BvhTranslator::Node) * index;
+		//	int size = sizeof(RadeonRays::BvhTranslator::Node) * (scene->bvhTranslator.nodes.size() - index);
+		//	glBindBuffer(GL_TEXTURE_BUFFER, BVHBuffer);
+		//	glBufferSubData(GL_TEXTURE_BUFFER, offset, size, &scene->bvhTranslator.nodes[index]);
+		//}
+
+		// 更新环境贴图
+		//if (scene->envMapModified)
+		//{
+
+		//	if (scene->envMap != nullptr)
+		//	{
+		//		glBindTexture(GL_TEXTURE_2D, envMapTex);
+		//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, scene->envMap->width, scene->envMap->height, 0, GL_RGB, GL_FLOAT, scene->envMap->img);
+
+		//		glBindTexture(GL_TEXTURE_2D, envMapCDFTex);
+		//		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, scene->envMap->width, scene->envMap->height, 0, GL_RED, GL_FLOAT, scene->envMap->cdf);
+
+		//		GLuint shaderObject;
+		//		pathTraceShader->Bind();
+		//		shaderObject = pathTraceShader->ID();
+		//		glUniform2f(glGetUniformLocation(shaderObject, "envMapRes"), (float)scene->envMap->width, (float)scene->envMap->height);
+		//		glUniform1f(glGetUniformLocation(shaderObject, "envMapTotalSum"), scene->envMap->totalSum);
+		//		pathTraceShader->Unbind();
+
+		//		pathTraceShaderLowRes->Bind();
+		//		shaderObject = pathTraceShaderLowRes->ID();
+		//		glUniform2f(glGetUniformLocation(shaderObject, "envMapRes"), (float)scene->envMap->width, (float)scene->envMap->height);
+		//		glUniform1f(glGetUniformLocation(shaderObject, "envMapTotalSum"), scene->envMap->totalSum);
+		//		pathTraceShaderLowRes->Unbind();
+		//	}
+		//}
+
+		// 降噪处理
+		//if (bvhService->renderOptions.enableDenoiser && sampleCounter > 1)
+		//{
+		//	//每间隔降噪
+		//	if (!denoised || (frameCounter % (bvhService->renderOptions.denoiserFrameCnt * (numTiles.x * numTiles.y)) == 0))
+		//	{
+		//		glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
+		//		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, denoiserInputFramePtr);
+		//		memcpy(frameOutputPtr, denoiserInputFramePtr, renderSize.x * renderSize.y * 16);
+		//		oidn::DeviceRef device = oidn::newDevice();
+		//		device.commit();
+
+
+		//		oidn::FilterRef filter = device.newFilter("RT"); // generic ray tracing filter
+		//		filter.setImage("color", denoiserInputFramePtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
+		//		filter.setImage("output", frameOutputPtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
+		//		filter.set("hdr", false);
+		//		filter.commit();
+		//		filter.execute();
+		//		const char* errorMessage;
+		//		if (device.getError(errorMessage) != oidn::Error::None)
+		//			std::cout << "Error: " << errorMessage << std::endl;
+		//		glBindTexture(GL_TEXTURE_2D, denoisedTexture);
+		//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, renderSize.x, renderSize.y, 0, GL_RGBA, GL_FLOAT, frameOutputPtr);
+
+		//		denoised = true;
+		//	}
+		//}
+		//else
+		//	denoised = false;
+
+		// 重新开始计算，重置参数
+		if (refreshFlag)
+		{
+			tile.x = -1;
+			tile.y = numTiles.y - 1;
+			sampleCounter = 1;
+			denoised = false;
+			frameCounter = 1;
+			accumFBO.Clear(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+		}
+		else //走向下一个瓦片绘制
+		{
+			frameCounter++;
+			tile.x++;
+			if (tile.x >= numTiles.x)
+			{
+				tile.x = 0;
+				tile.y--;
+				if (tile.y < 0)
+				{
+					// 算完一帧，切换当前绘制缓冲，样本数加一
+					tile.x = 0;
+					tile.y = numTiles.y - 1;
+					sampleCounter++;
+					currentBuffer = 1 - currentBuffer;
+				}
+			}
+		}
+
+		// 更新参数
+		auto cpos=camera->GetPosition();
+		auto cwr=-camera->GetTransform().GetWorldRight();
+		auto cwu=camera->GetTransform().GetWorldUp();
+		auto cwf=camera->GetTransform().GetWorldForward();
+		float fov=camera->GetFov()/180.0f*3.15157f;
+		float focalDist=camera->GetNear();
+		float aperture = 0.0f;
+
+		
+		//set shader unifoms
+		pathTraceShader.SetProperty("resolution", Maths::FVector2(renderSize.x, renderSize.y));
+		pathTraceShader.SetProperty("invNumTiles", Maths::FVector2(invNumTiles.x, invNumTiles.y));
+		pathTraceShader.SetProperty("camera.position",cpos);
+		pathTraceShader.SetProperty("camera.right", cwr);
+		pathTraceShader.SetProperty("camera.up",cwu );
+		pathTraceShader.SetProperty("camera.forward", cwf);
+		pathTraceShader.SetProperty("camera.fov", fov);
+		pathTraceShader.SetProperty("camera.focalDist", focalDist);
+		pathTraceShader.SetProperty("camera.aperture", aperture);
+		pathTraceShader.SetProperty("enableEnvMap",envMap == nullptr ? false : bvhService->renderOptions.enableEnvMap );
+		pathTraceShader.SetProperty("envMapIntensity", bvhService->renderOptions.envMapIntensity);
+		pathTraceShader.SetProperty("envMapRot", bvhService->renderOptions.envMapRot / 360.0f);
+		pathTraceShader.SetProperty("maxDepth", bvhService->renderOptions.maxDepth);
+		pathTraceShader.SetProperty("tileOffset", Maths::FVector2((float)tile.x * invNumTiles.x, (float)tile.y * invNumTiles.y));
+		pathTraceShader.SetProperty("uniformLightCol", bvhService->renderOptions.uniformLightCol);
+		pathTraceShader.SetProperty("roughnessMollificationAmt", bvhService->renderOptions.roughnessMollificationAmt);
+		pathTraceShader.SetProperty("frameNum", frameCounter);
+
+		pathTraceShaderLowRes.SetProperty("resolution", Maths::FVector2(renderSize.x, renderSize.y));
+		pathTraceShaderLowRes.SetProperty("camera.position", cpos);
+		pathTraceShaderLowRes.SetProperty("camera.right", cwr);
+		pathTraceShaderLowRes.SetProperty("camera.up", cwu);
+		pathTraceShaderLowRes.SetProperty("camera.forward", cwf);
+		pathTraceShaderLowRes.SetProperty("camera.fov", fov);
+		pathTraceShaderLowRes.SetProperty("camera.focalDist", focalDist);
+		pathTraceShaderLowRes.SetProperty("camera.aperture", aperture);
+		pathTraceShaderLowRes.SetProperty("enableEnvMap", envMap == nullptr ? false : bvhService->renderOptions.enableEnvMap);
+		pathTraceShaderLowRes.SetProperty("envMapIntensity", bvhService->renderOptions.envMapIntensity);
+		pathTraceShaderLowRes.SetProperty("envMapRot", bvhService->renderOptions.envMapRot / 360.0f);
+		pathTraceShaderLowRes.SetProperty("maxDepth", bvhService->renderOptions.maxDepth);
+		pathTraceShaderLowRes.SetProperty("uniformLightCol", bvhService->renderOptions.uniformLightCol);
+		pathTraceShaderLowRes.SetProperty("roughnessMollificationAmt", bvhService->renderOptions.roughnessMollificationAmt);
+
+		tonemapShader.SetProperty("invSampleCounter",1.0f / (sampleCounter));
+		tonemapShader.SetProperty("enableTonemap",bvhService->renderOptions.enableTonemap);
+		tonemapShader.SetProperty("enableAces",bvhService->renderOptions.enableAces);
+		tonemapShader.SetProperty("simpleAcesFit", bvhService->renderOptions.simpleAcesFit);
+		tonemapShader.SetProperty("backgroundCol", bvhService->renderOptions.backgroundCol);
+		tonemapShader.SetProperty("pathTraceTexture", &accumFBO.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value());
+
+		// set BVH Resources uniforms
+		if (envMap) {
+			pathTraceShader.SetProperty("envMapRes", Maths::FVector2(envMap->width, envMap->height));
+			pathTraceShader.SetProperty("envMapTotalSum", envMap->totalSum);
+		}
+		pathTraceShader.SetProperty("topBVHIndex", bvhService->topLevelIndex);
+		pathTraceShader.SetProperty("numOfLights", (int)bvhService->lights.size());
+		pathTraceShader.SetProperty("accumTexture", &accumFBO.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value());
+		pathTraceShader.SetProperty("BVH", BVHTex);
+		pathTraceShader.SetProperty("vertexIndicesTex", vertexIndicesTex);
+		pathTraceShader.SetProperty("verticesTex", verticesTex);
+		pathTraceShader.SetProperty("normalsTex", normalsTex);
+		pathTraceShader.SetProperty("materialsTex", materialsTex);
+		pathTraceShader.SetProperty("transformsTex", transformsTex);
+		pathTraceShader.SetProperty("lightsTex", lightsTex);
+		pathTraceShader.SetProperty("textureMapsArrayTex", textureMapsArrayTex);
+		pathTraceShader.TrySetProperty("envMapTex", envMapTex);
+		pathTraceShader.TrySetProperty("envMapCDFTex", envMapCDFTex);
+
+		if (envMap) {
+			pathTraceShaderLowRes.SetProperty("envMapRes", Maths::FVector2(envMap->width, envMap->height));
+			pathTraceShaderLowRes.SetProperty("envMapTotalSum", envMap->totalSum);
+		}
+		pathTraceShaderLowRes.SetProperty("topBVHIndex", bvhService->topLevelIndex);
+		pathTraceShaderLowRes.SetProperty("numOfLights", (int)bvhService->lights.size());
+		pathTraceShaderLowRes.SetProperty("accumTexture", &accumFBO.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value());
+		pathTraceShaderLowRes.SetProperty("BVH", BVHTex);
+		pathTraceShaderLowRes.SetProperty("vertexIndicesTex", vertexIndicesTex);
+		pathTraceShaderLowRes.SetProperty("verticesTex", verticesTex);
+		pathTraceShaderLowRes.SetProperty("normalsTex", normalsTex);
+		pathTraceShaderLowRes.SetProperty("materialsTex", materialsTex);
+		pathTraceShaderLowRes.SetProperty("transformsTex", transformsTex);
+		pathTraceShaderLowRes.SetProperty("lightsTex", lightsTex);
+		pathTraceShaderLowRes.SetProperty("textureMapsArrayTex", textureMapsArrayTex);
+		pathTraceShaderLowRes.TrySetProperty("envMapTex", envMapTex);
+		pathTraceShaderLowRes.TrySetProperty("envMapCDFTex", envMapCDFTex);
+    }
+	void PathTraceRenderPass::Render() {
+		auto& view = GetService(Editor::Panels::SceneView);;
+		auto bvhService = view.GetScene()->GetBvhService();
+		if (!refreshFlag && bvhService->renderOptions.maxSpp != -1 && sampleCounter >= bvhService->renderOptions.maxSpp)
+			return;
+		if (refreshFlag)
+		{
+			::Rendering::Entities::Drawable blit;
+			blit.mesh = m_renderer.m_unitQuad;
+			blit.material = pathTraceShaderLowRes;
+			blit.stateMask.depthWriting = false;
+			blit.stateMask.colorWriting = true;
+			blit.stateMask.blendable = false;
+			blit.stateMask.frontfaceCulling = false;
+			blit.stateMask.backfaceCulling = false;
+			blit.stateMask.depthTest = false;
+			
+			auto pso = m_renderer.CreatePipelineState();
+			pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::ALWAYS;
+			pathTraceFBOLowRes.Bind();
+			glViewport(0, 0, windowSize.x * pixelRatio, windowSize.y * pixelRatio);
+			m_renderer.DrawEntity(pso, blit);
+		
+			pathTraceFBOLowRes.Unbind();
+			//scene->instancesModified = false;
+			refreshFlag = false;
+			//scene->envMapModified = false;
+		}
+		else
+		{
+			::Rendering::Entities::Drawable blit;
+			blit.mesh = m_renderer.m_unitQuad;
+			blit.material = pathTraceShader;
+			blit.stateMask.depthWriting = false;
+			blit.stateMask.colorWriting = true;
+			blit.stateMask.blendable = false;
+			blit.stateMask.frontfaceCulling = false;
+			blit.stateMask.backfaceCulling = false;
+			blit.stateMask.depthTest = false;
+			auto pso = m_renderer.CreatePipelineState();
+			pathTracefbo.Bind();
+			glViewport(0, 0, tileWidth, tileHeight);
+			m_renderer.DrawEntity(pso, blit);
+			pathTracefbo.Unbind();
+
+			glNamedFramebufferReadBuffer(pathTracefbo.GetID(), GL_COLOR_ATTACHMENT0);
+			glNamedFramebufferDrawBuffer(accumFBO.GetID(), GL_COLOR_ATTACHMENT0);
+			glBlitNamedFramebuffer(pathTracefbo.GetID(), accumFBO.GetID(), 0, 0, tileWidth, tileHeight, tileWidth * tile.x, tileHeight * tile.y,
+				tileWidth * tile.x + tileWidth, tileHeight * tile.y + tileHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+
+			outputFBO[currentBuffer].Bind();
+			blit.material = tonemapShader;
+			glViewport(0, 0, renderSize.x, renderSize.y);
+			m_renderer.DrawEntity(pso, blit);
+			outputFBO[currentBuffer].Unbind();
+		}
+	}
+	void PathTraceRenderPass::Present() {
+		glViewport(0, 0, windowSize.x , windowSize.y);
+		auto& view = GetService(Editor::Panels::SceneView);;
+		auto bvhService = view.GetScene()->GetBvhService();
+		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		//glClearDepth(1.0);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glViewport(0, 0, renderSize.x, renderSize.y);
+		//glActiveTexture(GL_TEXTURE0);
+		auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+		mssaaframebuffer.Bind();
+		if (refreshFlag || sampleCounter == 1)
+		{
+			m_renderer.Present(pathTraceFBOLowRes);
+			//glBindTexture(GL_TEXTURE_2D,);
+			//quad->Draw(tonemapShader.get());
+		}
+		else
+		{
+			//if (scene->renderOptions.enableDenoiser && denoised)
+			//	glBindTexture(GL_TEXTURE_2D, denoisedTexture);
+			//else
+				//glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
+			m_renderer.Present(outputFBO[1-currentBuffer]);
+			//quad->Draw(outputShader.get());
+		}
+
 	}
 }
 

@@ -515,6 +515,9 @@ namespace PathTrace
 		outputShader->Bind();
 		glUniform1i(glGetUniformLocation(outputShader->ID(), "imgTex"), 0);
 		outputShader->Unbind();
+		tonemapShader->Bind();
+		glUniform1i(glGetUniformLocation(tonemapShader->ID(), "pathTraceTexture"), 0);
+		tonemapShader->Unbind();
 	}
 
 	void Renderer::Render()
@@ -648,8 +651,6 @@ namespace PathTrace
 
 	void Renderer::Update(float secondsElapsed)
 	{
-
-
 		if (!scene->dirty && scene->renderOptions.maxSpp != -1 && sampleCounter >= scene->renderOptions.maxSpp)
 			return;
 		//更新场景
@@ -704,7 +705,6 @@ namespace PathTrace
 			//每间隔降噪
 			if (!denoised || (frameCounter % (scene->renderOptions.denoiserFrameCnt * (numTiles.x * numTiles.y)) == 0))
 			{
-
 				glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
 				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, denoiserInputFramePtr);
 				memcpy(frameOutputPtr, denoiserInputFramePtr, renderSize.x * renderSize.y * 16);
@@ -717,15 +717,10 @@ namespace PathTrace
 				filter.setImage("output", frameOutputPtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
 				filter.set("hdr", false);
 				filter.commit();
-
 				filter.execute();
-
-
 				const char* errorMessage;
 				if (device.getError(errorMessage) != oidn::Error::None)
 					std::cout << "Error: " << errorMessage << std::endl;
-
-
 				glBindTexture(GL_TEXTURE_2D, denoisedTexture);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, renderSize.x, renderSize.y, 0, GL_RGBA, GL_FLOAT, frameOutputPtr);
 

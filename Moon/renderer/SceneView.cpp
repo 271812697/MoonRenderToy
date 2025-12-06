@@ -4,6 +4,7 @@
 #include "PickingRenderPass.h"
 #include "Core/Global/ServiceLocator.h"
 #include "SceneView.h"
+#include "Settings/DebugSetting.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -225,6 +226,8 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 {
 	auto[x,y]=input.GetMousePosition();
 	auto ray = GetCamera()->GetMouseRay(x, y);
+	bool flag=MOON::DebugSettings::instance().getOrDefault<bool>("BvhRayHit",false);
+	if(!flag)return GetScene()->RayIteratorHit(ray, out);
 	return GetScene()->RayHit(ray,out);
 }
 
