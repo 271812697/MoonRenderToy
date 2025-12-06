@@ -9,6 +9,7 @@ namespace Rendering {
 		class Texture;
 		class Mesh;
 		class Model;
+		class Shader;
 	}
 }
 namespace Editor::Rendering
@@ -32,10 +33,14 @@ namespace Editor::Rendering
 		void Render();
 		void Present();
 	private:
+		//path trace
 		::Rendering::Data::Material pathTraceShader;
 		::Rendering::Data::Material pathTraceShaderLowRes;
 		::Rendering::Data::Material outputShader;
 		::Rendering::Data::Material tonemapShader;
+		//line split output to screen
+		::Rendering::Resources::Shader* lineOutputShader;
+		::Rendering::Data::Material lineOutputMat;
 
 		::Rendering::HAL::GLTexture* BVHTex = nullptr;
 		::Rendering::HAL::GLTexture* vertexIndicesTex = nullptr;

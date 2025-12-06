@@ -259,12 +259,6 @@ void Editor::Core::CameraController::HandleCameraOrbit(
 	//m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
 	float offsetY =  m_ypr.x - oldprx;
 	float offsetX =  m_ypr.y - oldpry;
-	//Maths::FTransform pivotTransform(center);
-	//Maths::FTransform cameraTransform(m_orbitStartOffset);
-	//cameraTransform.SetParent(pivotTransform);
-	//pivotTransform.RotateLocal(Maths::FQuaternion(m_ypr));
-	//m_camera.SetPosition(cameraTransform.GetWorldPosition());
-	//m_camera.SetRotation(cameraTransform.GetWorldRotation());
 	Maths::FTransform pivotTransform(center);
 	Maths::FTransform cameraTransform=m_camera.GetTransform();
 	cameraTransform.SetParent(pivotTransform);
@@ -290,20 +284,17 @@ void Editor::Core::CameraController::HandleCameraZoom()
 
 	if (m_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::PERSPECTIVE)
 	{
-		
 		m_camera.PersertiveZoom(verticalScroll);
 	}
 	else
 	{
 		m_camera.OrthZoom(verticalScroll,x,y);
 	}
-
 }
 
 void Editor::Core::CameraController::HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse)
 {
 	//auto mouseOffset = p_mouseOffset * m_mouseSensitivity;
-
 
 	//m_ypr.y -= mouseOffset.x;
 	//m_ypr.x += -mouseOffset.y;
@@ -355,7 +346,6 @@ void Editor::Core::CameraController::HandleMousePressed()
 	if (input.IsMouseButtonPressed(Editor::Panels::MouseButton::MOUSE_BUTTON_RIGHT))
 	{
 		m_rightMousePressed = true;
-		//m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", true);;
 	}
 }
 
@@ -378,7 +368,5 @@ void Editor::Core::CameraController::HandleMouseReleased()
 	{
 		m_rightMousePressed = false;
 		m_firstMouse = true;
-		//m_view.GetRenderer().GetPass<::Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("RotateCenter", false);;
-
 	}
 }

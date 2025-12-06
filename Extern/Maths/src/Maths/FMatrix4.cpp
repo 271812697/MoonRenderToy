@@ -167,6 +167,17 @@ bool Maths::FMatrix4::AreEquals(const FMatrix4& p_left, const FMatrix4& p_right)
 	return memcmp(&p_left, &p_right, 16 * sizeof(float)) == 0;
 }
 
+bool Maths::FMatrix4::AreAlmostEquals(const FMatrix4& p_left, const FMatrix4& p_right)
+{
+	static float eps = 1e-6;
+	for (int i = 0; i < 16;i++) {
+		if (abs(p_left.data[i] - p_right.data[i]) > eps) {
+			return false;
+		}
+	}
+	return true;
+}
+
 Maths::FMatrix4 Maths::FMatrix4::Add(const FMatrix4& p_left, float p_scalar)
 {
 	FMatrix4 result(p_left);

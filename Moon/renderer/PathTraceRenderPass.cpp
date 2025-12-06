@@ -14,6 +14,8 @@
 #include <Rendering/Settings/EPixelDataFormat.h>
 #include <Rendering/Settings/ETextureType.h>
 #include "Settings/DebugSetting.h"
+#include "Gizmo/Widgets/SplitScreen.h"
+#include "Gizmo/Gizmo.h"
 #include <stb_Image/stb_image.h>
 #include <fstream>
 namespace Editor::Rendering {
@@ -179,10 +181,48 @@ namespace Editor::Rendering {
 			});
 		//we need to init shaders
 		UpdateShaders();
+		std::string v = R"(
+#version 450 core
+
+layout(location = 0) in vec2 geo_Pos;
+layout(location = 1) in vec2 geo_TexCoords;
+
+out vec2 TexCoords;
+
+void main()
+{
+    TexCoords = geo_TexCoords;
+    gl_Position = vec4(geo_Pos, 0.0, 1.0);
+}
+)";
+		std::string f = R"(
+#version 450 core
+
+in vec2 TexCoords;
+out vec4 FRAGMENT_COLOR;
+
+uniform sampler2D _InputTexture;
+uniform vec3 uLineEquation;
+
+void main()
+{
+    float offset=gl_FragCoord.x*uLineEquation.x+ gl_FragCoord.y*uLineEquation.y+uLineEquation.z;
+    if(offset>0.0){
+       discard;
+    }
+    FRAGMENT_COLOR = texture(_InputTexture, TexCoords);
+}
+
+)";
+		
+		lineOutputShader = ::Rendering::Resources::Loaders::ShaderLoader::CreateFromSource(v, f);
+		lineOutputMat.SetShader(lineOutputShader);
+		
 	}
 	PathTraceRenderPass::~PathTraceRenderPass()
 	{
 		DestoryResource();
+
 	}
 	void PathTraceRenderPass::DestoryResource()
 	{
@@ -209,6 +249,7 @@ namespace Editor::Rendering {
 		if (envMapCDFTex) {
 			delete envMapCDFTex;
 		}
+		delete lineOutputShader;
 		//??
 		delete[] denoiserInputFramePtr;
 		delete[] frameOutputPtr;
@@ -575,11 +616,15 @@ namespace Editor::Rendering {
 		Present();
 	}
 	void PathTraceRenderPass::Update() {
-		auto& view = GetService(Editor::Panels::SceneView);;
+		auto& view = GetService(Editor::Panels::SceneView);
+		auto camera=view.GetCamera();
+		if (camera->IsCameraViewMatrixChange()) {
+			refreshFlag = true;
+		}
 		auto bvhService = view.GetScene()->GetBvhService();
 		if (!refreshFlag && bvhService->renderOptions.maxSpp != -1 && sampleCounter >= bvhService->renderOptions.maxSpp)
 			return;
-		auto camera=view.GetCamera();
+		
 		//更新场景
 		//if (scene->instancesModified)
 		//{
@@ -843,9 +888,16 @@ namespace Editor::Rendering {
 		//glActiveTexture(GL_TEXTURE0);
 		auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 		mssaaframebuffer.Bind();
+		Maths::FVector3 equ = {0,1,-200};
+		auto splitScreenWidget=MOON::Gizmo::instance().getGizmoWidgetAS<MOON::SplitScreen>("SplitScreen");
+		if (splitScreenWidget) {
+			splitScreenWidget->getLineEquation(&equ.x);
+			lineOutputMat.SetProperty("uLineEquation",equ);
+		}
+
 		if (refreshFlag || sampleCounter == 1)
 		{
-			m_renderer.Present(pathTraceFBOLowRes);
+			m_renderer.Present(pathTraceFBOLowRes, lineOutputMat);
 			//glBindTexture(GL_TEXTURE_2D,);
 			//quad->Draw(tonemapShader.get());
 		}
@@ -855,7 +907,8 @@ namespace Editor::Rendering {
 			//	glBindTexture(GL_TEXTURE_2D, denoisedTexture);
 			//else
 				//glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
-			m_renderer.Present(outputFBO[1-currentBuffer]);
+
+			m_renderer.Present(outputFBO[1-currentBuffer], lineOutputMat);
 			//quad->Draw(outputShader.get());
 		}
 

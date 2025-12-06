@@ -62,8 +62,6 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
-
-		
 		auto& ac = GetSelectedActor();
 		auto name=ac.GetName();
 		if (name== "PointLight1"|| name == "PointLight2"|| name == "PointLight3"|| name == "PointLight4") {

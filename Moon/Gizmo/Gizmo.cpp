@@ -3631,6 +3631,19 @@ namespace MOON
 		pos.y() = Clamp<float>(pos.y(), 0.0f, cameraParam.viewportHeight);
 		return ret;
 	}
+	bool Gizmo::drawLineSplit(unsigned int id, Eigen::Vector2f& a, Eigen::Vector2f& b)
+	{
+		pushId(id);
+	    auto drawList=ImGui::GetForegroundDrawList();
+		drawList->AddCircleFilled(ImVec2(a.x(),a.y()),5, IM_COL32(255, 255, 0, 255));
+		drawList->AddCircleFilled(ImVec2(b.x(), b.y()), 5, IM_COL32(255, 255, 0, 255));
+		drawList->AddLine(ImVec2(a.x(), a.y()), ImVec2(b.x(), b.y()), IM_COL32(255, 255, 0, 255));
+		bool ret = false;
+		ret |= drawTranslate2D(makeId("Start"),a);
+		ret |= drawTranslate2D(makeId("End"), b);
+		popId();
+		return ret;
+	}
 	Eigen::Vector2f Gizmo::worldToScreen(const Eigen::Vector3f& pos)
 	{
 		Eigen::Vector3f p=MatrixMulPoint(cameraParam.viewProj,pos);
@@ -4256,6 +4269,14 @@ namespace MOON
 		if (widget) {
 			mGizmoWidgets.erase(widget->getName());
 		}
+	}
+
+	GizmoWidget* Gizmo::getGizmoWidget(const std::string& name)
+	{
+		if (mGizmoWidgets.find(name)!=mGizmoWidgets.end()) {
+			return mGizmoWidgets[name];
+		}
+		return nullptr;
 	}
 
 	int Gizmo::findLayerIndex(unsigned int _id) const

@@ -50,7 +50,6 @@ namespace MOON {
 		}
 		void paintGL() {
 			mSceneView->Update(0.01);
-			
 			if (mSwitchScene) {
 				mSwitchScene = false;
 				parser->ParsePathTraceScene(mScenePath.toStdString());
@@ -62,7 +61,6 @@ namespace MOON {
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			Gizmo::instance().endImgui();
-
 		}
 		bool event(QEvent* evt)
 		{
