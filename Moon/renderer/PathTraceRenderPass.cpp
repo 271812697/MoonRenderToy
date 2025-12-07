@@ -609,6 +609,7 @@ void main()
 		auto bvhService= GetService(Editor::Panels::SceneView).GetScene()->GetBvhService();
 		if (bvhService->isDirty) {
 			bvhService->isDirty = false;
+			refreshFlag = true;
 			UpdateGPUDataBuffers();
 		}
 		Update();

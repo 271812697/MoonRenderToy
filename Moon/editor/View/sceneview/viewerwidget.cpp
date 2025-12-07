@@ -61,6 +61,7 @@ namespace MOON {
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			Gizmo::instance().endImgui();
+			mSceneView->getInutState().ClearEvents();
 		}
 		bool event(QEvent* evt)
 		{

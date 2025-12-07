@@ -81,6 +81,7 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+		if(sceneBvh!=nullptr)
 		stack.push_back(sceneBvh->m_root);
 		while (!stack.empty()) {
 			auto cur = stack.back(); stack.pop_back();

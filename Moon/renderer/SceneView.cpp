@@ -55,7 +55,7 @@ Editor::Panels::SceneView::SceneView
 void Editor::Panels::SceneView::Update(float p_deltaTime)
 {
 	AViewControllable::Update(p_deltaTime);
-	input.ClearEvents();
+	
 	auto headLight = GetScene()->FindActorByName("HeadLight");
 	if (!headLight) {
 		return;
@@ -271,9 +271,11 @@ bool IsResizing()
 
 void Editor::Panels::SceneView::HandleActorPicking()
 {
-	if (input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
+	
+	if (m_gizmoOperations.IsPicking()&&input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();
+		GetScene()->BuildSceneBvh();
 	}
 
 	if (!m_gizmoOperations.IsPicking())

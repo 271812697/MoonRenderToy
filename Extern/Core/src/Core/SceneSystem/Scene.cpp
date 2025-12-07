@@ -376,6 +376,9 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 	{
 		if (modelRenderer->owner.IsActive())
 		{
+			if (modelRenderer->owner.GetName() == "Skysphere") {
+				continue;
+			}
 			
 			auto model=modelRenderer->GetModel();
 			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
@@ -437,6 +440,7 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 	Maths::FVector3 hitNormal;
 	Maths::FVector3 bary;
 	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+	if(bvhService->m_sceneBvh!=nullptr)
 	stack.push_back(bvhService->m_sceneBvh->m_root);
 	while (!stack.empty()) {
 		auto cur = stack.back();stack.pop_back();
