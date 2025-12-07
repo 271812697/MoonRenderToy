@@ -1441,16 +1441,16 @@ void GetMaterial(inout State state, in Ray r)
 	// Normal Map
 	if (texIDs.z >= 0)
 	{
-		vec3 texNormal = texture(textureMapsArrayTex, vec3(state.texCoord, texIDs.z)).rgb;
+		//vec3 texNormal = texture(textureMapsArrayTex, vec3(state.texCoord, texIDs.z)).rgb;
 
 #ifdef OPT_OPENGL_NORMALMAP
-		texNormal.y = 1.0 - texNormal.y;
+		//texNormal.y = 1.0 - texNormal.y;
 #endif
-		texNormal = normalize(texNormal * 2.0 - 1.0);
+		//texNormal = normalize(texNormal * 2.0 - 1.0);
 
-		vec3 origNormal = state.normal;
-		state.normal = normalize(state.tangent * texNormal.x + state.bitangent * texNormal.y + state.normal * texNormal.z);
-		state.ffnormal = dot(origNormal, r.direction) <= 0.0 ? state.normal : -state.normal;
+		//vec3 origNormal = state.normal;
+		//state.normal = normalize(state.tangent * texNormal.x + state.bitangent * texNormal.y + state.normal * texNormal.z);
+		//state.ffnormal = dot(origNormal, r.direction) <= 0.0 ? state.normal : -state.normal;
 	}
 
 #ifdef OPT_ROUGHNESS_MOLLIFICATION

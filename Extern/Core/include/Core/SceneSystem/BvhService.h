@@ -157,8 +157,8 @@ namespace Core::SceneSystem
 			maxDepth = 2;
 			maxSpp = -1;
 			RRDepth = 2;
-			texArrayWidth = 2048;
-			texArrayHeight = 2048;
+			texArrayWidth = 512;
+			texArrayHeight = 512;
 			denoiserFrameCnt = 20;
 			enableRR = true;
 			enableDenoiser = false;
