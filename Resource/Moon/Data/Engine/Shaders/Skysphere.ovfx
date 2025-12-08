@@ -12,21 +12,19 @@ layout (location = 1) in vec2 geo_TexCoords;
 
 out VS_OUT
 {
-    vec3 FragPos;
-    vec2 TexCoords;
+    vec3 dir;
 } vs_out;
 
 void main()
 {
-    vs_out.FragPos = geo_Pos;
-    vs_out.TexCoords = geo_TexCoords;
+    vs_out.dir = geo_Pos;
     //Perspective(const float p_fov, const float p_aspectRatio, const float p_zNear, const float p_zFar)
     mat4 p=ubo_Projection;
     if(ubo_CameraType==0){
        p=Perspective(60.0,1.5,0.1,1000.0);
     }
    
-    gl_Position = p *ubo_View  * vec4(ubo_ViewPos + vs_out.FragPos, 1.0);
+    gl_Position = p *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
 }
 
 #shader fragment
@@ -37,8 +35,7 @@ void main()
 
 in VS_OUT
 {
-    vec3 FragPos;
-    vec2 TexCoords;
+    vec3 dir;
 } fs_in;
 
 uniform vec4 u_Diffuse = vec4(1.0);
@@ -55,7 +52,9 @@ uniform vec4 _OutlineColor;
 #endif
 
 out vec4 FRAGMENT_COLOR;
-
+#define PI         3.14159265358979323
+#define INV_PI     0.31830988618379067
+#define INV_TWO_PI 0.15915494309189533
 void main()
 {
 #if defined(PICKING_PASS)
@@ -65,7 +64,11 @@ void main()
     // The skysphere cannot be outlined.
     discard;
 #else
-    vec2 texCoords = TileAndOffsetTexCoords(fs_in.TexCoords, u_TextureTiling, u_TextureOffset);
+    vec3 d=normalize(fs_in.dir);
+    float theta = acos(clamp(d.y, -1.0, 1.0));
+	vec2 uv = vec2((PI + atan(d.z, d.x)) * INV_TWO_PI, 1.0-theta * INV_PI);
+
+    vec2 texCoords = TileAndOffsetTexCoords(uv, u_TextureTiling, u_TextureOffset);
     FRAGMENT_COLOR = texture(u_DiffuseMap, texCoords) * u_Diffuse;
 #endif
 }

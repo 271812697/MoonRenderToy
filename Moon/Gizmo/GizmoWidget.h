@@ -1,7 +1,11 @@
 ﻿#pragma once
 #include "Gizmo/Interactive/AbstractWidget.h"
 #include <string>
-
+namespace Editor {
+	namespace Panels {
+		class SceneView;
+	}
+}
 namespace MOON
 {
 	class Gizmo;
@@ -25,6 +29,6 @@ namespace MOON
 		bool mPreflag = false;
 		bool mCurflag = false;
 		Gizmo* renderer= nullptr;
-		
+		Editor::Panels::SceneView* m_sceneView = nullptr;
 	};
 }

@@ -56,7 +56,7 @@ namespace MOON {
 		ExecuteCommandPair moveObserver;
 	};
 
-	ClipPlane::ClipPlane(const std::string& name, Editor::Panels::SceneView* view) :GizmoWidget(name), m_sceneView(view)
+	ClipPlane::ClipPlane(const std::string& name) :GizmoWidget(name)
 	, m_internal(new ClipPlaneInternal(this)){
 	
 	}

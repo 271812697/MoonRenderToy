@@ -77,6 +77,7 @@ void main()
 }
 
 )";
+	//not free the m_presentShader shader?
 	m_presentShader = Rendering::Resources::Loaders::ShaderLoader::CreateFromSource(v, f);
 	m_presentMaterial.SetShader(m_presentShader);
 }
@@ -209,13 +210,22 @@ void Rendering::Core::ABaseRenderer::Blit(
 
 void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src)
 {
-	ZoneScoped;
+	Present(p_src, m_presentMaterial);
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src,Rendering::Data::Material& mat)
+{
 	const auto colorTex = p_src.GetAttachment<HAL::Texture>(Settings::EFramebufferAttachment::COLOR);
+	Present(colorTex.value(),mat);
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Texture& p_src, Rendering::Data::Material& mat)
+{
+	ZoneScoped;
 	
-	m_presentMaterial.SetProperty("_InputTexture", &colorTex.value());
+	
+	mat.SetProperty("_InputTexture", &p_src);
 	Rendering::Entities::Drawable blit;
 	blit.mesh = m_unitQuad;
-	blit.material = m_presentMaterial;
+	blit.material = mat;
 	blit.stateMask.depthWriting = false;
 	blit.stateMask.colorWriting = true;
 	blit.stateMask.blendable = false;
@@ -258,6 +268,10 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src)
 		m_driver.Draw(pso, mesh.value(), blit.primitiveMode, gpuInstances);
 		material->Unbind();
 	}
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Texture& p_src)
+{	
+	Present(p_src, m_presentMaterial);
 }
 bool Rendering::Core::ABaseRenderer::IsDrawable(const Entities::Drawable& p_drawable) const
 {

@@ -269,7 +269,7 @@ namespace Core::SceneSystem
 			// Copy transforms
 			transforms.resize(meshInstances.size());
 			for (int i = 0; i < meshInstances.size(); i++)
-				transforms[i] = meshInstances[i].transform;
+				transforms[i] = Maths::FMatrix4::Transpose(meshInstances[i].transform);
 			
 			// Copy Textures
 			int reqWidth = renderOptions.texArrayWidth;

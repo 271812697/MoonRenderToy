@@ -1459,8 +1459,8 @@ void GetMaterial(inout State state, in Ray r)
 #endif
 
 	// Emission Map
-	if (texIDs.w >= 0)
-		mat.emission = pow(texture(textureMapsArrayTex, vec3(state.texCoord, texIDs.w)).rgb, vec3(2.2));
+	//if (texIDs.w >= 0)
+	//	mat.emission = pow(texture(textureMapsArrayTex, vec3(state.texCoord, texIDs.w)).rgb, vec3(2.2));
 
 	float aspect = sqrt(1.0 - mat.anisotropic * 0.9);
 	mat.ax = max(0.001, mat.roughness / aspect);

@@ -316,7 +316,7 @@ void main()
     const float metallic = 1.0 - specular;
     const float roughness = 1.0 - glossiness;
 #else
-    const float metallic = texture(u_MetallicMap, texCoords).r * u_Metallic;
+    const float metallic = texture(u_MetallicMap, texCoords).b* u_Metallic;
     const float roughness = texture(u_RoughnessMap, texCoords).g * u_Roughness;
 #endif
 

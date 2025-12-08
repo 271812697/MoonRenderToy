@@ -90,6 +90,9 @@ namespace Rendering::Core
 			Rendering::Settings::EBlitFlags p_flags = Rendering::Settings::EBlitFlags::DEFAULT
 		);
 		void Present(Rendering::HAL::Framebuffer& p_src);
+		void Present(Rendering::HAL::Framebuffer& p_src, Rendering::Data::Material& mat);
+		void Present(Rendering::HAL::Texture& p_src, Rendering::Data::Material& mat);
+		void Present(Rendering::HAL::Texture& p_src);
 		/**
 		* Returns true if the entity is drawable. Should be used before submitting an entity.
 		* @param p_drawable

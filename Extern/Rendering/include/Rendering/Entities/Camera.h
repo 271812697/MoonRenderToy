@@ -26,6 +26,7 @@ namespace Rendering::Entities
 		float GetNear() const;
 		float GetFar() const;
 		const Maths::FVector3& GetClearColor() const;
+		bool IsCameraViewMatrixChange();
 		bool GetClearColorBuffer() const;
 		bool GetClearDepthBuffer() const;
 		bool GetClearStencilBuffer() const;
@@ -62,6 +63,7 @@ namespace Rendering::Entities
 		Maths::FMatrix4 CalculateViewMatrix() const;
 	private:
 		Rendering::Data::Frustum m_frustum;
+		Maths::FMatrix4 m_preViewMatrix;
 		Maths::FMatrix4 m_viewMatrix;
 		Maths::FMatrix4 m_projectionMatrix;
 		Rendering::Settings::EProjectionMode m_projectionMode;

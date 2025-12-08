@@ -33,6 +33,7 @@ void Rendering::Entities::Camera::CacheProjectionMatrix(uint16_t p_windowWidth, 
 
 void Rendering::Entities::Camera::CacheViewMatrix()
 {
+	m_preViewMatrix = m_viewMatrix;
 	m_viewMatrix = CalculateViewMatrix();
 }
 
@@ -74,6 +75,11 @@ float Rendering::Entities::Camera::GetFar() const
 const Maths::FVector3 & Rendering::Entities::Camera::GetClearColor() const
 {
 	return m_clearColor;
+}
+
+bool Rendering::Entities::Camera::IsCameraViewMatrixChange() 
+{
+	return !Maths::FMatrix4::AreAlmostEquals(m_viewMatrix,m_preViewMatrix);
 }
 
 bool Rendering::Entities::Camera::GetClearColorBuffer() const

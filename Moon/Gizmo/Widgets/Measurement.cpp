@@ -17,7 +17,7 @@ namespace MOON {
 	};
 	std::vector<Measure> g_measures;
 	bool selectingStart = false;
-	Measurement::Measurement(const std::string& name, Editor::Panels::SceneView* view) :GizmoWidget(name), m_sceneView(view)
+	Measurement::Measurement(const std::string& name) :GizmoWidget(name)
 	{
 		// Define widget events
 		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::NoModifier, 0,

@@ -17,22 +17,43 @@ namespace Editor::Panels {
 
 	bool InputState::IsKeyPressed(KeyBoard p_key)
 	{
-		return m_keyEvents.find(p_key) != m_keyEvents.end() && m_keyEvents.at(p_key) == KeyState::Down;
+		return m_preKeyEvents[p_key] == KeyState::Up && m_keyEvents.at(p_key) == KeyState::Down;
 	}
 
 	bool InputState::IsKeyReleased(KeyBoard p_key)
+	{
+		return m_preKeyEvents[p_key] == KeyState::Down && m_keyEvents.at(p_key) == KeyState::Up;
+	}
+
+	bool InputState::IsKeyDown(KeyBoard p_key)
+	{
+		return m_keyEvents.find(p_key) != m_keyEvents.end() && m_keyEvents.at(p_key) == KeyState::Down;
+		
+	}
+
+	bool InputState::IsKeyUp(KeyBoard p_key)
 	{
 		return m_keyEvents.find(p_key) != m_keyEvents.end() && m_keyEvents.at(p_key) == KeyState::Up;
 	}
 
 	bool InputState::IsMouseButtonPressed(MouseButton p_button)
 	{
-		return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_DOWN;
+		return m_preMouseButtonEvents[p_button] == MouseButtonState::MOUSE_UP && m_mouseButtonEvents[p_button] == MouseButtonState::MOUSE_DOWN;
 	}
 
 	bool InputState::IsMouseButtonReleased(MouseButton p_button)
 	{
-		return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_UP;
+		return m_preMouseButtonEvents[p_button] == MouseButtonState::MOUSE_DOWN && m_mouseButtonEvents[p_button] == MouseButtonState::MOUSE_UP;
+	}
+
+	bool InputState::IsMouseButtonDown(MouseButton p_button)
+	{
+		return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_DOWN;
+	}
+
+	bool InputState::IsMouseButtonUp(MouseButton p_button)
+	{
+	    return m_mouseButtonEvents.find(p_button) != m_mouseButtonEvents.end() && m_mouseButtonEvents.at(p_button) == MouseButtonState::MOUSE_UP;
 	}
 
 	std::pair<double, double> InputState::GetMousePosition()
@@ -47,6 +68,8 @@ namespace Editor::Panels {
 
 	void InputState::ClearEvents()
 	{
+		m_preKeyEvents = m_keyEvents;
+		m_preMouseButtonEvents = m_mouseButtonEvents;
 		//m_keyEvents.clear();
 		//m_mouseButtonEvents.clear();
 		m_scrollData = { 0.0, 0.0 };

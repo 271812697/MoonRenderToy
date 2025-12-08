@@ -145,6 +145,7 @@ namespace MOON
 			std::vector<std::pair<Eigen::Vector3f, Eigen::Vector3f>>& polygon);
 		//methods drawing in screenspace!
 		bool drawTranslate2D(unsigned int id, Eigen::Vector2f& pos);
+		bool drawLineSplit(unsigned int id, Eigen::Vector2f& a, Eigen::Vector2f& b);
 		Eigen::Vector2f worldToScreen(const Eigen::Vector3f& pos);
 
 
@@ -212,6 +213,12 @@ namespace MOON
 		void cancleDrawTask(const std::string& name);
 		void addGizmoWidget(GizmoWidget* widget);
 		void removeGizmoWidget(GizmoWidget* widget);
+		GizmoWidget* getGizmoWidget(const std::string&name);
+
+		template<class T>
+		T* getGizmoWidgetAS(const std::string& name) {
+			return dynamic_cast<T*>(getGizmoWidget(name));
+		}
 		bool isKeyDown(Key key) const
 		{
 			return keyDownCurr[key];

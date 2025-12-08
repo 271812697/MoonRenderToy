@@ -1,12 +1,15 @@
 ﻿#include "GizmoWidget.h"
 #include "Gizmo/Gizmo.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
+#include "Core/Global/ServiceLocator.h"
+#include "renderer/SceneView.h"
 namespace MOON {
 	GizmoWidget::GizmoWidget(const std::string& name):mName(name)
 	{
 		Gizmo::instance().addGizmoWidget(this);;
 		renderer = &Gizmo::instance();
 		SetInteractor(RenderWindowInteractor::Instance());
+		m_sceneView = &GetService(Editor::Panels::SceneView);
 	}
 	GizmoWidget::~GizmoWidget()
 	{

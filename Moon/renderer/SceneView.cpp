@@ -55,15 +55,13 @@ Editor::Panels::SceneView::SceneView
 void Editor::Panels::SceneView::Update(float p_deltaTime)
 {
 	AViewControllable::Update(p_deltaTime);
-	input.ClearEvents();
+	
 	auto headLight = GetScene()->FindActorByName("HeadLight");
 	if (!headLight) {
 		return;
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
-
-		
 		auto& ac = GetSelectedActor();
 		auto name=ac.GetName();
 		if (name== "PointLight1"|| name == "PointLight2"|| name == "PointLight3"|| name == "PointLight4") {
@@ -273,9 +271,11 @@ bool IsResizing()
 
 void Editor::Panels::SceneView::HandleActorPicking()
 {
-	if (input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
+	
+	if (m_gizmoOperations.IsPicking()&&input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();
+		GetScene()->BuildSceneBvh();
 	}
 
 	if (!m_gizmoOperations.IsPicking())

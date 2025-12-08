@@ -3585,10 +3585,7 @@ namespace MOON
 	}
 	bool Gizmo::drawTranslate2D(unsigned int id, Eigen::Vector2f& pos)
 	{
-
-		auto c1 = ImGui::ColorConvertFloat4ToU32({ 0.8156f, 0.9215f, 1.0f, 1.0f });
-		auto c2 = ImGui::ColorConvertFloat4ToU32({ 1, 1, 0, 1 });
-		float radius = 4.0f;
+		float radius = 10.0f;
 
 		bool ret = false;
 		bool hitFlag = (pos - cameraParam.cursor).norm() < radius;
@@ -3629,6 +3626,33 @@ namespace MOON
 		}
 		pos.x() = Clamp<float>(pos.x(), 0.0f, cameraParam.viewportWidth);
 		pos.y() = Clamp<float>(pos.y(), 0.0f, cameraParam.viewportHeight);
+		return ret;
+	}
+	bool Gizmo::drawLineSplit(unsigned int id, Eigen::Vector2f& a, Eigen::Vector2f& b)
+	{
+		pushId(id);
+	    static ImU32 c1 = ImGui::ColorConvertFloat4ToU32({ 1, 1, 0, 1 });
+		static ImU32 c2 = ImGui::ColorConvertFloat4ToU32({ 0.0f, 0.9215f, 1.0f, 1.0f });
+		static unsigned int sid = makeId("Start");
+		static unsigned int eid = makeId("End");
+		static unsigned int mid = makeId("Mid");
+		Eigen::Vector2f m = (a + b) / 2;
+		Eigen::Vector2f delta = m - a;
+	    auto drawList=ImGui::GetForegroundDrawList();
+		drawList->AddCircleFilled(ImVec2(a.x(),a.y()),8,isHot2D(sid)?c1:c2);
+		drawList->AddCircleFilled(ImVec2(b.x(), b.y()), 8, isHot2D(eid) ? c1 : c2);
+		drawList->AddCircleFilled(ImVec2(m.x(), m.y()), 8, isHot2D(mid) ? c1 : c2);
+		drawList->AddLine(ImVec2(a.x(), a.y()), ImVec2(b.x(), b.y()), IM_COL32(255, 255, 0, 255));
+		bool ret = false;
+		ret |= drawTranslate2D(sid,a);
+		ret |= drawTranslate2D(eid, b);
+		if(drawTranslate2D(mid, m)){
+			ret = true;
+			a = m - delta;
+			b = m + delta;
+		}
+		
+		popId();
 		return ret;
 	}
 	Eigen::Vector2f Gizmo::worldToScreen(const Eigen::Vector3f& pos)
@@ -3756,25 +3780,23 @@ namespace MOON
 		cameraParam.proj = proj;
 		cameraParam.viewProj = proj * view;
 
-		bool ctrlDown = inputState.IsKeyPressed(Editor::Panels::Control);
+		bool ctrlDown = inputState.IsKeyDown(Editor::Panels::Control);
 
-		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_LEFT);
-		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_MIDDLE);
-		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonPressed(Editor::Panels::MOUSE_BUTTON_RIGHT);
+		cameraParam.keyDown[MouseLeft] = inputState.IsMouseButtonDown(Editor::Panels::MOUSE_BUTTON_LEFT);
+		cameraParam.keyDown[MouseMiddle] = inputState.IsMouseButtonDown(Editor::Panels::MOUSE_BUTTON_MIDDLE);
+		cameraParam.keyDown[MouseRight] = inputState.IsMouseButtonDown(Editor::Panels::MOUSE_BUTTON_RIGHT);
 		cameraParam.keyDown[ActionControl] = ctrlDown;
 
-		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYL);
+		cameraParam.keyDown[KeyL] = ctrlDown && inputState.IsKeyDown(Editor::Panels::KEYL);
 
-		cameraParam.keyDown[KeyT] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYT);
-		cameraParam.keyDown[KeyR] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYR);
-		cameraParam.keyDown[KeyS] = ctrlDown && inputState.IsKeyPressed(Editor::Panels::KEYS);
+		cameraParam.keyDown[KeyT] = ctrlDown && inputState.IsKeyDown(Editor::Panels::KEYT);
+		cameraParam.keyDown[KeyR] = ctrlDown && inputState.IsKeyDown(Editor::Panels::KEYR);
+		cameraParam.keyDown[KeyS] = ctrlDown && inputState.IsKeyDown(Editor::Panels::KEYS);
 
 		cameraParam.snapTranslation = 0.0f;
 		cameraParam.snapRotation = 0.0f;
 		cameraParam.snapScale = 0.0f;
 		memcpy(keyDownCurr, cameraParam.keyDown, KeyCount); // must copy in case m_keyDown is updated after reset (e.g. by an app callback)
-		
-
 	}
 
 	void Gizmo::test()
@@ -4256,6 +4278,14 @@ namespace MOON
 		if (widget) {
 			mGizmoWidgets.erase(widget->getName());
 		}
+	}
+
+	GizmoWidget* Gizmo::getGizmoWidget(const std::string& name)
+	{
+		if (mGizmoWidgets.find(name)!=mGizmoWidgets.end()) {
+			return mGizmoWidgets[name];
+		}
+		return nullptr;
 	}
 
 	int Gizmo::findLayerIndex(unsigned int _id) const

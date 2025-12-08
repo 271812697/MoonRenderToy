@@ -10,6 +10,7 @@
 #include "Gizmo/Widgets/RotateCenter.h"
 #include "Gizmo/Widgets/Measurement.h"
 #include "Gizmo/Widgets/ClipPlane.h"
+#include "Gizmo/Widgets/SplitScreen.h"
 
 struct GizmoRenderSettings
 {
@@ -20,9 +21,10 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 		GizmoRenderPassInternal(Editor::Rendering::GizmoRenderPass* gizmoPass):
 			mSelf(gizmoPass)
 		{
-			mWidgets["RotateCenter"] = new MOON::RotateCenter("RotateCenter", &GetService(Editor::Panels::SceneView));
-			mWidgets["Measure"] = new MOON::Measurement("Measure", &GetService(Editor::Panels::SceneView));
-			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane", &GetService(Editor::Panels::SceneView));
+			mWidgets["RotateCenter"] = new MOON::RotateCenter("RotateCenter");
+			mWidgets["Measure"] = new MOON::Measurement("Measure");
+			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane");
+			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
 		}
 		~GizmoRenderPassInternal()
 		{
@@ -79,6 +81,7 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+		if(sceneBvh!=nullptr)
 		stack.push_back(sceneBvh->m_root);
 		while (!stack.empty()) {
 			auto cur = stack.back(); stack.pop_back();
