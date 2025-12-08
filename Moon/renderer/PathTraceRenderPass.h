@@ -53,8 +53,10 @@ namespace Editor::Rendering
 		::Rendering::HAL::GLTexture* textureMapsArrayTex = nullptr;
 		::Rendering::HAL::GLTexture* envMapTex = nullptr;
 		::Rendering::HAL::GLTexture* envMapCDFTex = nullptr;
+
 		EnvironmentMap* envMap=nullptr;
 
+		::Rendering::HAL::GLTexture* denoisedTexture=nullptr;
 		::Rendering::HAL::Framebuffer pathTracefbo;
 		::Rendering::HAL::Framebuffer pathTraceFBOLowRes;
 		::Rendering::HAL::Framebuffer accumFBO;

@@ -161,7 +161,7 @@ namespace Core::SceneSystem
 			texArrayHeight = 512;
 			denoiserFrameCnt = 20;
 			enableRR = true;
-			enableDenoiser = false;
+			enableDenoiser =true;
 			enableTonemap = true;
 			enableAces = false;
 			openglNormalMap = true;

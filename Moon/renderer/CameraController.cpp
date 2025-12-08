@@ -311,17 +311,17 @@ void Editor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime)
 	{
 		float velocity = m_cameraMoveSpeed * p_deltaTime * 2.0f;
 
-		if (input.IsKeyPressed(Editor::Panels::KEYW))
+		if (input.IsKeyDown(Editor::Panels::KEYW))
 			m_targetSpeed += m_camera.transform->GetWorldForward() * velocity;
-		if (input.IsKeyPressed(Editor::Panels::KEYS))
+		if (input.IsKeyDown(Editor::Panels::KEYS))
 			m_targetSpeed += m_camera.transform->GetWorldForward() * -velocity;
-		if (input.IsKeyPressed(Editor::Panels::KEYA))
+		if (input.IsKeyDown(Editor::Panels::KEYA))
 			m_targetSpeed += m_camera.transform->GetWorldRight() * velocity;
-		if (input.IsKeyPressed(Editor::Panels::KEYD))
+		if (input.IsKeyDown(Editor::Panels::KEYD))
 			m_targetSpeed += m_camera.transform->GetWorldRight() * -velocity;
-		if (input.IsKeyPressed(Editor::Panels::KEYE))
+		if (input.IsKeyDown(Editor::Panels::KEYE))
 			m_targetSpeed += {0.0f, velocity, 0.0f};
-		if (input.IsKeyPressed(Editor::Panels::KEYQ))
+		if (input.IsKeyDown(Editor::Panels::KEYQ))
 			m_targetSpeed += {0.0f, -velocity, 0.0f};
 
 	}

@@ -214,13 +214,18 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src)
 }
 void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src,Rendering::Data::Material& mat)
 {
-	ZoneScoped;
 	const auto colorTex = p_src.GetAttachment<HAL::Texture>(Settings::EFramebufferAttachment::COLOR);
-
-	mat.SetProperty("_InputTexture", &colorTex.value());
+	Present(colorTex.value(),mat);
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Texture& p_src, Rendering::Data::Material& mat)
+{
+	ZoneScoped;
+	
+	
+	mat.SetProperty("_InputTexture", &p_src);
 	Rendering::Entities::Drawable blit;
 	blit.mesh = m_unitQuad;
-	blit.material =mat;
+	blit.material = mat;
 	blit.stateMask.depthWriting = false;
 	blit.stateMask.colorWriting = true;
 	blit.stateMask.blendable = false;
@@ -263,6 +268,10 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src,
 		m_driver.Draw(pso, mesh.value(), blit.primitiveMode, gpuInstances);
 		material->Unbind();
 	}
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Texture& p_src)
+{	
+	Present(p_src, m_presentMaterial);
 }
 bool Rendering::Core::ABaseRenderer::IsDrawable(const Entities::Drawable& p_drawable) const
 {

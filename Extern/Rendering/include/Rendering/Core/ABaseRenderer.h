@@ -91,6 +91,8 @@ namespace Rendering::Core
 		);
 		void Present(Rendering::HAL::Framebuffer& p_src);
 		void Present(Rendering::HAL::Framebuffer& p_src, Rendering::Data::Material& mat);
+		void Present(Rendering::HAL::Texture& p_src, Rendering::Data::Material& mat);
+		void Present(Rendering::HAL::Texture& p_src);
 		/**
 		* Returns true if the entity is drawable. Should be used before submitting an entity.
 		* @param p_drawable

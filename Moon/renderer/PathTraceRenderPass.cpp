@@ -16,6 +16,7 @@
 #include "Settings/DebugSetting.h"
 #include "Gizmo/Widgets/SplitScreen.h"
 #include "Gizmo/Gizmo.h"
+#include "pathtrace/oidn/include/OpenImageDenoise/oidn.hpp"
 #include <stb_Image/stb_image.h>
 #include <fstream>
 namespace Editor::Rendering {
@@ -139,7 +140,8 @@ namespace Editor::Rendering {
 		::Rendering::HAL::Framebuffer{"BloomSamplingBuffer1"} }
 	{
 		envMap = new EnvironmentMap();
-		envMap->LoadMap(PATH_TRACE_HDR_PATH"/outdoor.hdr");
+		
+		envMap->LoadMap(PROJECT_ENGINE_PATH"/Textures/PureSky.hdr");
 		pixelRatio = 0.25f;
 
 		auto fBColorDesc = ::Rendering::Settings::TextureDesc{
@@ -249,6 +251,8 @@ void main()
 		if (envMapCDFTex) {
 			delete envMapCDFTex;
 		}
+		if (denoisedTexture)
+			delete denoisedTexture;
 		delete lineOutputShader;
 		//??
 		delete[] denoiserInputFramePtr;
@@ -404,7 +408,7 @@ void main()
 			desc.width = bvhService->renderOptions.texArrayWidth;
 			desc.height = bvhService->renderOptions.texArrayHeight;
 			desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-				.format = ::Rendering::Settings::EFormat::BGRA,
+				.format = ::Rendering::Settings::EFormat::RGBA,
 				.type = ::Rendering::Settings::EPixelDataType::UNSIGNED_BYTE,
 				.data = bvhService->textureMapsArray.data(),
 				.arrayLayers = static_cast<int>(bvhService->textures.size())
@@ -572,7 +576,32 @@ void main()
 	void PathTraceRenderPass::ResizeRenderer(int width, int height)
 	{
 		refreshFlag = true;
+		delete[] denoiserInputFramePtr;
+		delete[] frameOutputPtr;
 		UpdateFBOs();
+
+		auto desc = ::Rendering::Settings::TextureDesc{
+			.width = static_cast<unsigned int>(width), // Unknown size at this point
+			.height = static_cast<unsigned int>(height),
+			.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+			.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+			.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+			.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+			.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+			.useMipMaps = false,
+			.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+				.format = ::Rendering::Settings::EFormat::RGBA,
+				.type = ::Rendering::Settings::EPixelDataType::FLOAT
+		}
+		};
+		if (denoisedTexture == nullptr) {
+			denoisedTexture = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		denoisedTexture->Allocate(desc);
+		
+		denoiserInputFramePtr = new float[renderSize.x * renderSize.y * 16];
+		frameOutputPtr = new float[renderSize.x * renderSize.y * 16];
+
 	}
 	void PathTraceRenderPass::UpdateFBOs() {
 		//resume fbo
@@ -673,35 +702,36 @@ void main()
 		//}
 
 		// 降噪处理
-		//if (bvhService->renderOptions.enableDenoiser && sampleCounter > 1)
-		//{
-		//	//每间隔降噪
-		//	if (!denoised || (frameCounter % (bvhService->renderOptions.denoiserFrameCnt * (numTiles.x * numTiles.y)) == 0))
-		//	{
-		//		glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
-		//		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, denoiserInputFramePtr);
-		//		memcpy(frameOutputPtr, denoiserInputFramePtr, renderSize.x * renderSize.y * 16);
-		//		oidn::DeviceRef device = oidn::newDevice();
-		//		device.commit();
+		if (bvhService->renderOptions.enableDenoiser && sampleCounter > 1)
+		{
+			//每间隔降噪
+			if (!denoised || (frameCounter % (bvhService->renderOptions.denoiserFrameCnt * int(numTiles.x * numTiles.y)) == 0))
+			{
+				auto texture=&outputFBO[1 - currentBuffer].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value();
+				glBindTexture(GL_TEXTURE_2D, texture->GetID());
+				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, denoiserInputFramePtr);
+				memcpy(frameOutputPtr, denoiserInputFramePtr, renderSize.x * renderSize.y * 16);
+				oidn::DeviceRef device = oidn::newDevice();
+				device.commit();
 
 
-		//		oidn::FilterRef filter = device.newFilter("RT"); // generic ray tracing filter
-		//		filter.setImage("color", denoiserInputFramePtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
-		//		filter.setImage("output", frameOutputPtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
-		//		filter.set("hdr", false);
-		//		filter.commit();
-		//		filter.execute();
-		//		const char* errorMessage;
-		//		if (device.getError(errorMessage) != oidn::Error::None)
-		//			std::cout << "Error: " << errorMessage << std::endl;
-		//		glBindTexture(GL_TEXTURE_2D, denoisedTexture);
-		//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, renderSize.x, renderSize.y, 0, GL_RGBA, GL_FLOAT, frameOutputPtr);
+				oidn::FilterRef filter = device.newFilter("RT"); // generic ray tracing filter
+				filter.setImage("color", denoiserInputFramePtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
+				filter.setImage("output", frameOutputPtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
+				filter.set("hdr", false);
+				filter.commit();
+				filter.execute();
+				const char* errorMessage;
+				if (device.getError(errorMessage) != oidn::Error::None)
+					std::cout << "Error: " << errorMessage << std::endl;
+				glBindTexture(GL_TEXTURE_2D, denoisedTexture->GetID());
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, renderSize.x, renderSize.y, 0, GL_RGBA, GL_FLOAT, frameOutputPtr);
 
-		//		denoised = true;
-		//	}
-		//}
-		//else
-		//	denoised = false;
+				denoised = true;
+			}
+		}
+		else
+			denoised = false;
 
 		// 重新开始计算，重置参数
 		if (refreshFlag)
@@ -904,15 +934,18 @@ void main()
 		}
 		else
 		{
-			//if (scene->renderOptions.enableDenoiser && denoised)
-			//	glBindTexture(GL_TEXTURE_2D, denoisedTexture);
-			//else
-				//glBindTexture(GL_TEXTURE_2D, tileOutputTexture[1 - currentBuffer]);
+			if (bvhService->renderOptions.enableDenoiser && denoised)
+			{
+				m_renderer.Present(*denoisedTexture,lineOutputMat);
 
-			m_renderer.Present(outputFBO[1-currentBuffer], lineOutputMat);
+			}
+			else
+			{
+				m_renderer.Present(outputFBO[1-currentBuffer], lineOutputMat);
+
+			}
 			//quad->Draw(outputShader.get());
 		}
-
 	}
 }
 
