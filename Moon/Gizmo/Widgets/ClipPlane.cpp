@@ -79,7 +79,7 @@ namespace MOON {
 			m_internal->center,
 			RotationMatrixX(m_internal->normal),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
-			"Axis");
+			"GizmoAxis");
 		//renderer->drawPlaneGrid(
 		//	m_internal->center,
 		//	m_internal->normal,

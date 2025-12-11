@@ -128,6 +128,7 @@ namespace MOON
 	void Gizmo::preStoreMesh()
 	{
 		mPreStorePolygon["Axis"] = &ViewAxis();
+		mPreStorePolygon["GizmoAxis"] = &GizmoAxis();
 		mPreStorePolygon["ViewCube"] = &ViewCube();
 	}
 	void Gizmo::prepareGl()
