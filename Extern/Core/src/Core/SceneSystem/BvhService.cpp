@@ -159,6 +159,7 @@ namespace Core::SceneSystem
 		}
 		void BvhService::ProcessTLAS() {
 			curNode = topLevelIndex;
+
 			ProcessTLASNodes(topLevelBvh->m_root);
 		}
 		int BvhService::ProcessBLASNodes(const ::Rendering::Geometry::Bvh::Node* node) {
@@ -223,7 +224,11 @@ namespace Core::SceneSystem
 
 		}
 		void BvhService::Process(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances) {
+			if (topLevelBvh->m_root ==nullptr) {
+				return;
+			}
 			this->topLevelBvh = topLevelBvh;
+			
 			meshes = sceneMeshes;
 			meshInstances = instances;
 			ProcessBLAS();

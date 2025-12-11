@@ -66,7 +66,6 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
-		
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,10);
 		if (renderer->gizmoSpherePlaneTranslationBehavior(renderer->makeId("clip"), m_internal->center, radius, m_internal->normal, 0.0, &pos)) {
@@ -85,6 +84,13 @@ namespace MOON {
 		//	m_internal->normal,
 		//	1.0,
 		//	m_internal->extent);
+		//(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _snap, float _worldRadius, float _worldSize, float* _out_)
+		static float angle = 1.0f;
+		renderer->gizmoAxislAngleBehavior(renderer->makeId("planeEdite"), 
+			m_internal->center, m_internal->normal,0,7,1,&angle);
+		renderer->gizmoAxislAngleDraw(
+			renderer->makeId("planeEdite"), m_internal->center, m_internal->normal, 7,
+			angle, { 255,255,255,255 }, 1.0);
 		bool ret=renderer->planeEdit(renderer->makeId("planeEdit"), m_internal->center, m_internal->normal);
 		//renderer->planeEdit();
 		if (ret) {

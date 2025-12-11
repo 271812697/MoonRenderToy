@@ -313,6 +313,10 @@ namespace MOON {
 
 			auto arrow = GetService(Editor::Core::Context).editorResources->GetModel("Arrow_Translate");
 			auto sphere = GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
+			auto cil= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/res.obj");
+			poly.addModel(cil, Maths::FMatrix4::Identity, { 255,255,0,255 });
+			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisX(90), {0,0,255,255});
+			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisY(90), {255,0,255,255});
 			poly.addModel(arrow, model, { 0,0,255,255 });
 			poly.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
 			poly.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });

@@ -1969,6 +1969,8 @@ namespace MOON
 				sizeStack.push_back(gizmoSizePixels);
 				// pushSize(m_gizmoSizePixels);
 				drawArrow(_origin, _origin + delta * _worldRadius);
+				drawArrow(_origin, _origin + gizmoStateVec3.normalized() * _worldRadius);
+				
 				sizeStack.pop_back();
 				colorStack.pop_back();
 
@@ -1990,11 +1992,18 @@ namespace MOON
 		sizeStack.push_back(gizmoSizePixels);
 		matrixStack.push_back(matrixStack.back() * LookAt(_origin, _origin + _axis));
 		// pushMatrix(getMatrix() * LookAt(_origin, _origin + _axis, m_appData.m_worldUp));
+		float sRad = fmod(gizmoStateFloat, TwoPi);
+		float eRad= fmod(_angle, TwoPi);
+		drawPoint(Eigen::Vector3f(cosf(eRad) * _worldRadius, sinf(eRad) * _worldRadius, 0.0f),30);
 		begin(PrimitiveModeLineLoop);
 		const int detail = estimateLevelOfDetail(_origin, _worldRadius, 32, 128);
+		
+		if (sRad > eRad) {
+			std::swap(sRad,eRad);
+		}
 		for (int i = 0; i < detail; ++i)
 		{
-			float rad = TwoPi * ((float)i / (float)detail);
+			float rad = sRad +(eRad-sRad)* ((float)i / (float)detail);
 			vertex(Eigen::Vector3f(cosf(rad) * _worldRadius, sinf(rad) * _worldRadius, 0.0f));
 
 			// post-modify the alpha for parts of the ring occluded by the sphere
