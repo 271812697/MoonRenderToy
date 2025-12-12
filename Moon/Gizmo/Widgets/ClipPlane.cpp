@@ -49,6 +49,9 @@ namespace MOON {
 		Core::ECS::Actor* ac = nullptr;
 		Eigen::Vector3f center = {0,0,0};
 		Eigen::Vector3f normal = { 0,1,0 };
+		Eigen::Vector3f xAxis = {1,0,0};
+		Eigen::Vector3f yAxis = { 0,1,0 };
+		Eigen::Vector3f zAxis = { 0,0,1 };
 		Eigen::Vector3f boxMin = {0,0,0};
 		Eigen::Vector3f boxMax = {0,0,0};
 		float extent = 1.0f;
@@ -68,41 +71,62 @@ namespace MOON {
 	{
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,10);
-		if (renderer->gizmoSpherePlaneTranslationBehavior(renderer->makeId("clip"), m_internal->center, radius, m_internal->normal, 0.0, &pos)) {
-			//m_internal->center = pos;
-		}
+		float worldHeight = renderer->pixelsToWorldSize(m_internal->center, 170);
+
 		//RotationMatrixX(m_internal->normal);
 		//renderer->gizmoOperateNormalBehavior(renderer->makeId("clipNormal"), m_internal->center, m_internal->center + m_internal->normal * radius * 2.0f, radius/2, &m_internal->normal);
 		//drawOneMesh(Eigen::Vector3f & translation, Eigen::Matrix3f & rotation, Eigen::Vector3f & scale, const std::string & mesh, bool longterm = false);
 		renderer->drawOneMesh(
 			m_internal->center,
-			RotationMatrixX(m_internal->normal),
+			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"GizmoAxis");
-		//renderer->drawPlaneGrid(
-		//	m_internal->center,
-		//	m_internal->normal,
-		//	1.0,
-		//	m_internal->extent);
-		//(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _axis, float _snap, float _worldRadius, float _worldSize, float* _out_)
-		static float angle = 1.0f;
-		renderer->gizmoAxislAngleBehavior(renderer->makeId("planeEdite"), 
-			m_internal->center, m_internal->normal,0,7,1,&angle);
-		renderer->gizmoAxislAngleDraw(
-			renderer->makeId("planeEdite"), m_internal->center, m_internal->normal, 7,
-			angle, { 255,255,255,255 }, 1.0);
-		bool ret=renderer->planeEdit(renderer->makeId("planeEdit"), m_internal->center, m_internal->normal);
-		//renderer->planeEdit();
-		if (ret) {
-			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
-			
-			feature.SetClipPlane(
-				m_internal->normal.x(),
-				m_internal->normal.y(),
-				m_internal->normal.z(),
-				-m_internal->normal.dot(m_internal->center)
-				);
+		
+		//gizmoSphereRotateInCircleBehavior(unsigned int _id, const Eigen::Vector3f & _origin, float _radius, const Eigen::Vector3f & axis, Eigen::Vector3f * _out_)
+		Eigen::Vector3f scenter = m_internal->center + m_internal->yAxis* worldHeight;
+		renderer->drawSphereFilled(scenter,0.2);
+		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditz"),
+			m_internal->center, 0.2, m_internal->zAxis,
+			&scenter
+		)) {
+			m_internal->yAxis = (scenter - m_internal->center).normalized();
+			m_internal->xAxis = m_internal->yAxis.cross(m_internal->zAxis);
 		}
+
+		scenter = m_internal->center + m_internal->xAxis* worldHeight;
+		renderer->drawSphereFilled(scenter, 0.2);
+		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEdity"),
+			m_internal->center, 0.2, m_internal->yAxis,
+			&scenter
+		)) {
+			m_internal->xAxis = (scenter - m_internal->center).normalized();
+			m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
+		}
+
+		scenter = m_internal->center + m_internal->zAxis * worldHeight;
+		renderer->drawSphereFilled(scenter, 0.2);
+		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditx"),
+			m_internal->center, 0.2, m_internal->xAxis,
+			&scenter
+		)) {
+			m_internal->zAxis = (scenter - m_internal->center).normalized();
+			m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
+		}
+
+
+		
+		bool ret=renderer->planeEdit(renderer->makeId("planeEdit"), m_internal->center, m_internal->zAxis);
+		//renderer->planeEdit();
+		//if (ret) {
+		//	auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+		//	
+		//	feature.SetClipPlane(
+		//		m_internal->zAxis.x(),
+		//		m_internal->zAxis.y(),
+		//		m_internal->zAxis.z(),
+		//		-m_internal->zAxis.dot(m_internal->center)
+		//		);
+		//}
 	}
 
 }

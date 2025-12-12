@@ -141,6 +141,7 @@ namespace MOON
 	Eigen::Matrix4f AlignZ(const Eigen::Vector3f& _axis, const Eigen::Vector3f& _up = Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 	Eigen::Matrix4f LookAt(const Eigen::Vector3f& _from, const Eigen::Vector3f& _to, const Eigen::Vector3f& _up);
 	Eigen::Matrix3f RotationMatrix(const Eigen::Vector3f& axis, float rads);
+	Eigen::Matrix3f RotationMatrix(const Eigen::Vector3f& x, const Eigen::Vector3f& y, const Eigen::Vector3f& z );
 	Eigen::Matrix3f RotationMatrixX(const Eigen::Vector3f& axis);
 	Eigen::Matrix4f RotationMatrix(const Eigen::Vector3f& point, const Eigen::Vector3f& axis, float rads);
 	Eigen::Matrix3f EulerXYZToMatrix(const Eigen::Vector3f& angles);

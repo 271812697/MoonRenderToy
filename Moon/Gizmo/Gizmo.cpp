@@ -1186,7 +1186,7 @@ namespace MOON
 
 		ret |= gizmoSpherePlaneTranslationBehavior(planeOriginId, planeOrigin, pixelsToWorldSize(planeOrigin, 15), normal, cameraParam.snapTranslation, outOrigin);
 		ret |= gizmoCircleAxisTranslationBehavior(planeOriginCircle, planeOrigin, cirleDetectRadius, normal, cameraParam.snapTranslation, outOrigin);
-		ret |= gizmoOperateNormalBehavior(planeArrow, planeOrigin, planeOrigin + normal * worldHeight, pixelsToWorldSize(planeOrigin, 3), outNormal);
+		//ret |= gizmoOperateNormalBehavior(planeArrow, planeOrigin, planeOrigin + normal * worldHeight, pixelsToWorldSize(planeOrigin, 3), outNormal);
 
 		planeOrigin = *outOrigin;
 
@@ -1851,7 +1851,10 @@ namespace MOON
 				Eigen::Vector3f delta = (intersection - _origin).normalized();
 				float sign = storedVec.cross(delta).dot(_axis);
 				float angle = acosf(Clamp(delta.dot(storedVec), -1.0f, 1.0f));
+				
 				*_out_ = Snap(storedAngle + copysignf(angle, sign), _snap);
+				//*_out_ = Snap(*_out_ + copysignf(angle, sign), _snap);
+				//storedVec = delta;
 				return true;
 			}
 			else
@@ -1867,6 +1870,7 @@ namespace MOON
 				{
 					makeActive(_id);
 					storedVec = (intersection - _origin).normalized();
+					gizmoStateStartAngle = storedVec;
 					storedAngle = Snap(*_out_, cameraParam.snapRotation);
 				}
 			}
@@ -1990,21 +1994,25 @@ namespace MOON
 		}
 		colorStack.push_back(color);
 		sizeStack.push_back(gizmoSizePixels);
-		matrixStack.push_back(matrixStack.back() * LookAt(_origin, _origin + _axis));
+		//matrixStack.push_back(matrixStack.back() * LookAt(_origin, _origin + _axis));
 		// pushMatrix(getMatrix() * LookAt(_origin, _origin + _axis, m_appData.m_worldUp));
-		float sRad = fmod(gizmoStateFloat, TwoPi);
-		float eRad= fmod(_angle, TwoPi);
+		float sRad = fmod(gizmoStateFloat, TwoPi);//gizmoStateFloat;
+		float eRad = fmod(_angle, TwoPi);//_angle;
 		drawPoint(Eigen::Vector3f(cosf(eRad) * _worldRadius, sinf(eRad) * _worldRadius, 0.0f),30);
 		begin(PrimitiveModeLineLoop);
 		const int detail = estimateLevelOfDetail(_origin, _worldRadius, 32, 128);
-		
+		auto x = gizmoStateVec3.normalized();
+		auto y=x.cross(_axis);
+
 		if (sRad > eRad) {
-			std::swap(sRad,eRad);
+			//std::swap(sRad,eRad);
 		}
+		
 		for (int i = 0; i < detail; ++i)
 		{
-			float rad = sRad +(eRad-sRad)* ((float)i / (float)detail);
-			vertex(Eigen::Vector3f(cosf(rad) * _worldRadius, sinf(rad) * _worldRadius, 0.0f));
+			float rad = -(eRad-sRad)* ((float)i / (float)detail);
+			vertex(cosf(rad)* _worldRadius* x + sinf(rad) * _worldRadius * y);
+			//vertex(Eigen::Vector3f(cosf(rad) * _worldRadius, sinf(rad) * _worldRadius, 0.0f));
 
 			// post-modify the alpha for parts of the ring occluded by the sphere
 			VertexData& vd = getCurrentVertexList()->back();
@@ -2014,7 +2022,7 @@ namespace MOON
 			vd.color(0) = vd.color(0) * d;
 		}
 		end();
-		matrixStack.pop_back();
+		//matrixStack.pop_back();
 		sizeStack.pop_back();
 		colorStack.pop_back();
 	}
@@ -2133,6 +2141,70 @@ namespace MOON
 			makeHot(_id, tr, intersects);
 		}
 
+		return false;
+	}
+
+	bool Gizmo::gizmoSphereRotateInCircleBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& axis, Eigen::Vector3f* _out_, bool inPlane)
+	{
+		Ray ray(cameraParam.rayOrigin, cameraParam.rayDirection);
+		Sphere sphere(*_out_, _radius);
+		float a = (sphere.m_origin - _origin).dot(axis);
+		float b= (sphere.m_origin - _origin).norm();
+		//ImGui::Text("%f %f" ,a,b);
+		;
+
+		float tr, t1;
+		bool intersects = Intersect(ray, sphere, tr, t1);
+
+
+		if (_id == activeId)
+		{
+			if (isKeyDown(ActionSelect))
+			{
+				auto p=inPlane? _origin :_origin + axis * gizmoVec2.x();
+				Plane plane(axis, p);
+
+				float v;
+				bool intersects = Intersect(ray, plane, v);
+
+				Eigen::Vector3f intersection = ray.m_origin + ray.m_direction *v;
+				*_out_= (intersection - p).normalized()* gizmoVec2.y()+p;
+				
+				return true;
+			}
+			else
+			{
+				makeActive(IdInvalid);
+			}
+		}
+		else if (_id == hotId)
+		{
+			if (intersects)
+			{
+				updateDepth(tr);
+				if (isKeyDown(ActionSelect))
+				{
+					makeActive(_id);
+					float offset = (sphere.m_origin - _origin).dot(axis);
+					gizmoVec2 .x() = inPlane?0: offset;
+					
+					{
+						// compute radius in plane perpendicular to axis
+						float d = (sphere.m_origin - _origin).norm();
+						gizmoVec2.y() = sqrtf(fabs(d * d - offset * offset));
+					}
+
+				}
+			}
+			else
+			{
+				resetId();
+			}
+		}
+		else
+		{
+			makeHot(_id, tr, intersects);
+		}
 		return false;
 	}
 

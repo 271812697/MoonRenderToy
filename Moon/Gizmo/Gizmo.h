@@ -127,6 +127,7 @@ namespace MOON
 		int  estimateLevelOfDetail(const Eigen::Vector3f& _position, float _worldSize, int _min = 4, int _max = 256);
 		bool gizmoSpherePlaneTranslationBehavior(unsigned _id, const Eigen::Vector3 < float >& _origin, float _radius, const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_);
 		bool gizmoCircleAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_);
+		bool gizmoSphereRotateInCircleBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& _normal, Eigen::Vector3f* _out_,bool inPlane=true);
 		bool gizmoSphereAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f& _origin, float _radius, const Eigen::Vector3f& _normal, float _snap, Eigen::Vector3f* _out_);
 		bool gizmoOperateNormalBehavior(unsigned int _id, const Eigen::Vector3f& _origin, const Eigen::Vector3f& _end, float _worldSize, Eigen::Vector3f* _out_);
 		bool planeClip(unsigned int _id, Eigen::Vector3f& _translation_, Eigen::Vector3f& _normal, float& _scale, const Eigen::Vector3f& minBox, const Eigen::Vector3f& maxBox, bool opeartorNormal, bool drawCircle);
@@ -267,6 +268,7 @@ namespace MOON
 		unsigned int appActiveId;
 		unsigned int appHotId;
 		Eigen::Vector3f gizmoStateVec3;
+		Eigen::Vector3f gizmoStateStartAngle;
 		Eigen::Matrix3f gizmoStateMat3;
 		Eigen::Vector2f gizmoCursor;
 		Eigen::Vector2f gizmoVec2;
