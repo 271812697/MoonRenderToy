@@ -13,8 +13,69 @@
 #include <Core/SceneSystem/Scene.h>
 #include <Core/SceneSystem/BvhService.h>
 #include "stb_image/stb_image_resize.h"
+#include <fstream>
 namespace Core::SceneSystem
 {
+	bool exportObjOnlyVertices(
+		const std::string& filename,
+		const float* vertices,
+		const unsigned int* indices,
+		size_t vertexCount,
+		size_t indexCount
+	) {
+		// 前置校验
+		if (vertices == nullptr || indices == nullptr) {
+			std::cerr << "错误：顶点/索引数组为空！" << std::endl;
+			return false;
+		}
+		if (vertexCount == 0 || indexCount == 0) {
+			std::cerr << "错误：顶点/索引数量不能为0！" << std::endl;
+			return false;
+		}
+		if (indexCount % 3 != 0) {
+			std::cerr << "错误：索引数量必须是3的倍数（三角面）！当前数量：" << indexCount << std::endl;
+			return false;
+		}
+
+		try {
+			// 打开文件（覆盖写入）
+			std::ofstream objFile(filename);
+			if (!objFile.is_open()) {
+				throw std::runtime_error("无法打开文件：" + filename);
+			}
+
+			// 写入文件头（可选，方便查看信息）
+			objFile << "# 自动生成的OBJ模型（仅顶点坐标）\n";
+			objFile << "# 顶点数：" << vertexCount << " | 三角面数：" << (indexCount / 3) << "\n\n";
+
+			// 第一步：写入顶点坐标（OBJ格式：v x y z）
+			for (size_t i = 0; i < vertexCount; ++i) {
+				size_t offset = i * 3; // 每个顶点占3个float（x,y,z）
+				objFile << "v "
+					<< vertices[offset] << " "    // x
+					<< vertices[offset + 1] << " "// y
+					<< vertices[offset + 2] << "\n";// z
+			}
+			objFile << "\n"; // 空行分隔，提升可读性
+
+			// 第二步：写入三角面索引（OBJ索引从1开始，需+1转换）
+			for (size_t i = 0; i < indexCount; i += 3) {
+				objFile << "f "
+					<< (indices[i] + 1) << " "    // 第一个顶点索引
+					<< (indices[i + 1] + 1) << " "// 第二个顶点索引
+					<< (indices[i + 2] + 1) << "\n";// 第三个顶点索引
+			}
+
+			// 关闭文件
+			objFile.close();
+			std::cout << "✅ OBJ文件导出成功！路径：" << filename << std::endl;
+			return true;
+		}
+		catch (const std::exception& e) {
+			std::cerr << "❌ 导出失败：" << e.what() << std::endl;
+			return false;
+		}
+	}
 	void BvhService::AddMaterial(::Core::Resources::Material* material)
 	{
 		Material tempMat;
@@ -121,7 +182,7 @@ namespace Core::SceneSystem
 
 		materials.push_back(tempMat);
 	}
-	int BvhService::AddTexture(::Rendering::HAL::Texture* tex)
+	int	 BvhService::AddTexture(::Rendering::HAL::Texture* tex)
 	{
 		int id = -1;
 		// Check if texture was already loaded
@@ -253,7 +314,6 @@ namespace Core::SceneSystem
 						int v2 = indexArr[(index * 3 + 1)] + verticesCnt;
 						int v3 = indexArr[(index * 3 + 2)] + verticesCnt;
 						vertIndices.push_back(Indices{ v1, v2, v3 });
-
 					}
 					else
 					{
@@ -262,7 +322,6 @@ namespace Core::SceneSystem
 						int v3 = (index * 3 + 2) + verticesCnt;
 						vertIndices.push_back(Indices{ v1, v2, v3 });
 					}
-
 				}
 				auto& vertexData=meshes[i]->GetVerticesBVH();
 				for (int k = 0;k < vertexData.size();k++) {
@@ -297,6 +356,33 @@ namespace Core::SceneSystem
 					std::copy(textures[i]->texData.begin(), textures[i]->texData.end(), &textureMapsArray[i * texBytes]);
 			}
 			isDirty = true;
+			SaveAsObj("res.obj");
+		}
+		void BvhService::SaveAsObj(const std::string& path)
+		{
+			std::vector<Maths::FVector3>vertices;
+			std::vector<unsigned int>indices;
+			for (int i = 0; i <meshInstances.size(); i++) {
+				int meshId =meshInstances[i].meshID;
+				auto matrix = meshInstances[i].transform;
+				auto& mesh =meshes[meshId];
+				int numTrs = mesh->GetIndexCount() ? mesh->GetIndexCount() / 3 : mesh->GetVertexCount() / 3;
+				for (int triIndex = 0; triIndex < numTrs; triIndex++) {
+					Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
+					Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
+					Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
+					vertices.push_back(Maths::FMatrix4::MulPoint(matrix, v0));
+					vertices.push_back(Maths::FMatrix4::MulPoint(matrix, v1));
+					vertices.push_back(Maths::FMatrix4::MulPoint(matrix, v2));
+				}
+			}
+			indices.resize(vertices.size());
+			for (int i = 0; i < indices.size(); i++) {
+				indices[i] = i;
+			}
+			//exportObjOnlyVertices(path,(float*)vertices.data(),indices.data(),vertices.size(),indices.size());
+
+			
 		}
 		void BvhService::Clear() {
 			if (m_sceneBvh) {

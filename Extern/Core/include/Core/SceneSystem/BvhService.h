@@ -234,6 +234,7 @@ namespace Core::SceneSystem
 
 		void UpdateTLAS(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<MeshInstance>& instances);
 		void Process(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances);
+		void SaveAsObj(const std::string&path);
 		void Clear();
 		bool DirtyFlag();
 		void SetDirtyFlag(bool flag);

@@ -232,6 +232,12 @@ namespace MOON
 		{
 			return !keyDownCurr[key] && keyDownPrev[key];
 		}
+		void pushAlpha(float value);
+		void popAlpha();
+		void pushColor(const Eigen::Vector4<uint8_t>& color);
+		void popColor();
+		void pushSize(float value);
+		void popSize();
 	private:
 		 Editor::Panels::SceneView* renderView = nullptr;
 

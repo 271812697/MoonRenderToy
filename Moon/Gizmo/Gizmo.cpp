@@ -4370,6 +4370,36 @@ namespace MOON
 		return nullptr;
 	}
 
+	void Gizmo::pushAlpha(float value)
+	{
+		alphaStack.push_back(value);
+	}
+
+	void Gizmo::popAlpha()
+	{
+		alphaStack.pop_back();
+	}
+
+	void Gizmo::pushColor(const Eigen::Vector4<uint8_t>& color)
+	{
+		colorStack.push_back(color);
+	}
+
+	void Gizmo::popColor()
+	{
+		colorStack.pop_back();
+	}
+
+	void Gizmo::pushSize(float value)
+	{
+		sizeStack.push_back(value);
+	}
+
+	void Gizmo::popSize()
+	{
+		sizeStack.pop_back();
+	}
+
 	int Gizmo::findLayerIndex(unsigned int _id) const
 	{
 		for (int i = 0; i < (int)layerIdMap.size(); ++i)
