@@ -638,6 +638,14 @@ namespace MOON
 			_axis.z()* _axis.z() + (1.0f - _axis.z() * _axis.z()) * c;
 		return ret;
 	}
+	Eigen::Matrix3f RotationMatrix(const Eigen::Vector3f& x, const Eigen::Vector3f& y, const Eigen::Vector3f& z)
+	{
+		Eigen::Matrix3f ret;
+		ret.block(0, 0, 3, 1) = x.normalized();
+		ret.block(0, 1, 3, 1) = y.normalized();
+		ret.block(0, 2, 3, 1) = z.normalized();
+		return ret;
+	}
 	Eigen::Matrix3f RotationMatrixX(const Eigen::Vector3f& axis)
 	{
 		const Eigen::Vector3f r = { 1, 0, 0 };

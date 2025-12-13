@@ -523,7 +523,7 @@ bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& r
 			float meshTempDist = 1e6;
 			if (localRay.HitDistance(mesh->GetBvh()->Bounds(), meshTempDist))
 			{	
-				mesh->GetBvh()->Bounds();
+				
 				for (int triIndex = 0;triIndex < numTrs;triIndex++) {
 		
 					Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
@@ -544,7 +544,6 @@ bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& r
 					}		
 				}
 			}
-
 		}	
 	}
 	return hit;

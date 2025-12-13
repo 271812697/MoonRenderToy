@@ -220,4 +220,5 @@ namespace MOON
 	};
 	Polygon& ViewCube();
 	Polygon& ViewAxis();
+	Polygon& GizmoAxis();
 }

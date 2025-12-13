@@ -36,8 +36,9 @@ namespace Maths
 		FMatrix4 operator/(const FMatrix4& p_other) const;
 		FMatrix4& operator/=(const FMatrix4& p_other);
 		float& operator()(uint8_t p_row, uint8_t p_column);
-		FMatrix4 RotateOnAxisY(float p_rotation);
-		FMatrix4 RotateOnAxisX(float p_rotation);
+		FMatrix4 RotateOnAxisY(float p_rotation)const;
+		FMatrix4 RotateOnAxisX(float p_rotation)const;
+		FMatrix4 RotateOnAxisZ(float p_rotation)const;
 		static bool AreEquals(const FMatrix4& p_left, const FMatrix4& p_right);
 		static bool AreAlmostEquals(const FMatrix4& p_left, const FMatrix4& p_right);
 		static FMatrix4 Add(const FMatrix4& p_left, float p_scalar);

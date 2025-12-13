@@ -4,6 +4,8 @@ This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+![image-20251208205509317](README.assets/image-20251208205509317.png)
+
 ![image-20251123193430587](README.assets/image-20251123193430587.png)
 
 ![image-20251104222642971](README.assets/image-20251104222642971.png)
@@ -28,8 +30,8 @@ This is a renderer written based on Qt+Opengl
 
 Here are a lot of things to do:
 
-- [ ] Added animation effects to camera perspective adjustment
+- [x] Added animation effects to camera perspective adjustment
 - [ ] Render options panel
 - [ ] Materials panel
-- [ ] Visibility Control and Selection Interactions
+- [x] Visibility Control and Selection Interactions
 

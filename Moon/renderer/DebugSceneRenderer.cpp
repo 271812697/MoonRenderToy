@@ -677,7 +677,7 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddFeature<OutlineRenderFeature, ::Rendering::Features::EFeatureExecutionPolicy::NEVER>();
 	AddFeature<GizmoRenderFeature, ::Rendering::Features::EFeatureExecutionPolicy::NEVER>();
 
-	AddPass<GridRenderPass>("Grid", ::Rendering::Settings::ERenderPassOrder::Debug);
+	
 	AddPass<DebugReflectionProbesRenderPass>("Debug Reflection Probes", ::Rendering::Settings::ERenderPassOrder::Debug);
 	AddPass<DebugLightsRenderPass>("Debug Lights", ::Rendering::Settings::ERenderPassOrder::Debug);
 	
@@ -686,5 +686,6 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::Last);
 	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
     AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last);
+	AddPass<GridRenderPass>("Grid", ::Rendering::Settings::ERenderPassOrder::Last);
 
 }

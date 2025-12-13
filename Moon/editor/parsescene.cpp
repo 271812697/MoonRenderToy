@@ -90,15 +90,19 @@ namespace MOON {
 
 
 	void ParseScene::ParsePathTraceScene(const std::string& path) {
-
-		GetService(Editor::Core::Context).sceneManager.LoadDefaultScene();
 		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+		if (scene== nullptr) {
+			 GetService(Editor::Core::Context).sceneManager.LoadDefaultScene();
+			 scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+			 scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
+		     scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
+			 addSphereLight(scene);
+		}
+	
 		if (scene == nullptr) {
 			return;
 		}
-		scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
-		scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
-		addSphereLight(scene);
+
 		std::string sceneName = path;
 		std::string ext = sceneName.substr(sceneName.find_last_of(".") + 1);
 		Mat4 xform;
@@ -113,23 +117,30 @@ namespace MOON {
 		}
 		else
 		{
-			auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadResource(sceneName);
-			Core::Resources::Material* tempMat = new Core::Resources::Material();
-			Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(sceneName, tempMat);
-			tempMat->SetBackfaceCulling(false);;
-			tempMat->SetCastShadows(false);
-			tempMat->SetReceiveShadows(false);
+			
+			auto model = GetService(Core::ResourceManagement::ModelManager).LoadResource(sceneName);
+			Core::Resources::Material* tempMat =GetService(Core::ResourceManagement::MaterialManager).GetResource(sceneName);
+			if (tempMat == nullptr) {
+				tempMat = new Core::Resources::Material();
+				GetService(Core::ResourceManagement::MaterialManager).RegisterResource(sceneName, tempMat);
 
-			tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-			tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+				tempMat->SetBackfaceCulling(false);;
+				tempMat->SetCastShadows(false);
+				tempMat->SetReceiveShadows(false);
 
-			tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-			tempMat->SetProperty("u_Roughness", 0.1f);
-			tempMat->SetProperty("u_Metallic", 0.1f);
-			// Emission
-			tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-			tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
+				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+				tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
+				tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+				tempMat->SetProperty("u_Roughness", 0.1f);
+				tempMat->SetProperty("u_Metallic", 0.1f);
+				// Emission
+				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
+
+			}
+			
+		
 			auto& actor = scene->CreateActor();
 			actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
 			actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);

@@ -73,15 +73,21 @@ namespace MOON {
 				vData.push_back(vd1);
 				vData.push_back(vd2);
 				vData.push_back(vd3);
-				if (j == 2) {
-					edgeValue.push_back(drawEdge ? 6:0);
-				}
-				else if (j == cell.vertex.size() - 1) {
-					edgeValue.push_back(drawEdge ? 3:0);
+				if (drawEdge) {
+					if (j == 2) {
+						edgeValue.push_back(cell.vertex.size()==3?7:6);
+					}
+					else if (j == cell.vertex.size() - 1) {
+						edgeValue.push_back( 3);
+					}
+					else
+					{
+						edgeValue.push_back( 2);
+					}
 				}
 				else
 				{
-					edgeValue.push_back(drawEdge ? 2:0);
+					edgeValue.push_back(0);
 				}
 			}
 		}
@@ -294,5 +300,61 @@ namespace MOON {
 			viewAxis.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
 		}
 		return viewAxis;
+	}
+	Polygon& GizmoAxis()
+	{
+		static Polygon poly;
+		if (poly.cellArray.size() == 0) {
+			float halflen = 3.0f;
+			Maths::FMatrix4 model =
+				Maths::FMatrix4::Translation({ 0,0,0 }) *
+				Maths::FMatrix4::Scaling({ 6,6,6 });
+			poly.drawEdge = false;
+
+			auto arrow = GetService(Editor::Core::Context).editorResources->GetModel("Arrow_Translate");
+			auto sphere = GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
+			auto cil= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/res.obj");
+			poly.addModel(cil, Maths::FMatrix4::Identity, { 255,255,0,255 });
+			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisX(90), {0,0,255,255});
+			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisY(90), {255,0,255,255});
+			poly.addModel(arrow, model, { 0,0,255,255 });
+			poly.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
+			poly.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });
+			poly.addModel(sphere, Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 0.5f,0.5f,0.5f }), { 255,255,0,255 });
+			float quadlen = 3.0;
+			float quadoffset = 1.0;
+			//y axis
+			Cell cell;
+			cell.addPoint({ quadoffset,0,quadoffset }, { 0,0 });
+			cell.addPoint({ quadoffset+quadlen,0,quadoffset  }, { 0,0 });
+			cell.addPoint({ quadoffset + quadlen,0,quadoffset +quadlen }, { 0,0 });
+			cell.addPoint({ quadoffset,0,quadoffset +quadlen }, { 0,0 });
+			cell.n = {0,1,0};
+			poly.cellArray.push_back(cell);
+			
+			//x axis
+			cell.clear();
+			cell.addPoint({ 0,quadoffset,quadoffset }, { 0,0 });
+			cell.addPoint({ 0,quadoffset + quadlen,quadoffset  }, { 0,0 });
+			cell.addPoint({ 0,quadoffset + quadlen,quadoffset + quadlen }, { 0,0 });
+			cell.addPoint({ 0,quadoffset ,quadoffset + quadlen }, { 0,0 });
+			cell.n = { 1,0,0 };
+			poly.cellArray.push_back(cell);
+
+			//z axis
+			cell.clear();
+			cell.addPoint({ quadoffset,quadoffset,0 }, { 0,0 });
+			cell.addPoint({ quadoffset + quadlen,quadoffset,0}, { 0,0 });
+			cell.addPoint({ quadoffset + quadlen,quadoffset + quadlen,0 }, { 0,0 });
+			cell.addPoint({ quadoffset ,quadoffset + quadlen,0}, { 0,0 });
+			cell.n = { 0,0,1 };
+			poly.cellArray.push_back(cell);
+
+			poly.model = Eigen::Matrix4f::Identity();
+		
+			poly.initGpuBuffer();
+			poly.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+		}
+		return poly;
 	}
 }
