@@ -91,16 +91,17 @@ namespace MOON {
 
 	void ParseScene::ParsePathTraceScene(const std::string& path) {
 		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
-		if (scene== nullptr) {
-			 GetService(Editor::Core::Context).sceneManager.LoadDefaultScene();
-			 scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
-			 scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
-		     scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
-			 addSphereLight(scene);
-		}
-	
 		if (scene == nullptr) {
 			return;
+		}
+		static bool addLightFlag = false;
+		if (!addLightFlag) {
+			addLightFlag = true;
+			GetService(Editor::Core::Context).sceneManager.LoadDefaultScene();
+			scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
+			scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
+		    scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
+			addSphereLight(scene);
 		}
 
 		std::string sceneName = path;
