@@ -29,6 +29,8 @@ uniform vec2 invNumTiles;
 uniform sampler2D accumTexture;
 uniform samplerBuffer BVH;
 uniform isamplerBuffer vertexIndicesTex;
+uniform isamplerBuffer meshTriangleInfoTex;
+uniform usamplerBuffer triangleInfoTex;
 uniform samplerBuffer verticesTex;
 uniform samplerBuffer normalsTex;
 uniform sampler2D materialsTex;
@@ -149,6 +151,8 @@ struct State
 
 	vec2 texCoord;
 	int matID;
+	uint tid;
+	int mid;
 	Material mat;
 	Medium medium;
 };
@@ -855,6 +859,7 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 	bool BLAS = false;
 
 	ivec3 triID = ivec3(-1);
+	int tempMeshid=-1;
 	mat4 transMat;
 	mat4 transform;
 	vec3 bary;
@@ -900,6 +905,8 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 
 				if (all(greaterThanEqual(uvt, vec4(0.0))) && uvt.z < t)
 				{
+					state.tid=leftIndex + i;
+					state.mid=tempMeshid;
 					t = uvt.z;
 					triID = vertIndices;
 					state.matID = currMatID;
@@ -918,7 +925,7 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 			vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 3, 0), 0).xyzw;
 
 			transMat = mat4(r1, r2, r3, r4);
-
+			tempMeshid=-leaf - 1;
 			rTrans.origin = vec3(inverse(transMat) * vec4(r.origin, 1.0));
 			rTrans.direction = vec3(inverse(transMat) * vec4(r.direction, 0.0));
 
@@ -988,7 +995,7 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 	if (triID.x != -1)
 	{
 		state.isEmitter = false;
-
+        //meshTriangleInfoTex
 		// Normals
 		vec4 n0 = texelFetch(normalsTex, triID.x);
 		vec4 n1 = texelFetch(normalsTex, triID.y);
@@ -1394,6 +1401,20 @@ void GetMaterial(inout State state, in Ray r)
 	vec4 param8 = texelFetch(materialsTex, ivec2(index + 7, 0), 0);
 
 	mat.baseColor = param1.rgb;
+	ivec3 mfo=texelFetch(meshTriangleInfoTex,state.mid).xyz;
+	if(mfo.x!=-1){
+		//mat.baseColor =vec3(1,1,0);
+		for(int i=0;i<mfo.y;i++){
+			int j=mfo.x+i;
+			uint tid=texelFetch(triangleInfoTex,j).g+mfo.z;
+			
+			if(tid==state.tid){
+				mat.baseColor =vec3(1,0,0);
+				break;
+			}
+		}
+	}
+
 	mat.anisotropic = param1.w;
 
 	mat.emission = param2.rgb;

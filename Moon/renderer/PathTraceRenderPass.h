@@ -23,6 +23,7 @@ namespace Editor::Rendering
 	    
 		void DestoryResource();
 		void UpdateGPUDataBuffers();
+		void UpdateTriangleInfoBuffer();
 		void UpdateFBOs();
 		void UpdateShaders();
 		virtual void ResizeRenderer(int width, int height)override;	
@@ -46,6 +47,8 @@ namespace Editor::Rendering
 		::Rendering::HAL::GLTexture* vertexIndicesTex = nullptr;
 		::Rendering::HAL::GLTexture* verticesTex = nullptr;
 		::Rendering::HAL::GLTexture* normalsTex = nullptr;
+		::Rendering::HAL::GLTexture* meshInfoTex = nullptr;
+		::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
 
 		::Rendering::HAL::GLTexture* materialsTex = nullptr;
 		::Rendering::HAL::GLTexture* transformsTex = nullptr;

@@ -144,6 +144,17 @@ namespace Core::SceneSystem
 		float area;
 		float type;
 	};
+	struct TriangleInfo {
+		uint32_t color=0;
+		uint32_t info=0;//24->tid,1->visble
+		
+	};
+	struct MeshTriangleInfo
+	{
+		int start=-1;
+		int num=-1;
+		int baseOffset = -1;
+	};
 	struct RenderOptions
 	{
 		RenderOptions()
@@ -238,9 +249,11 @@ namespace Core::SceneSystem
 		void Clear();
 		bool DirtyFlag();
 		void SetDirtyFlag(bool flag);
+		void AddTriangleInfo(int mid,const TriangleInfo& info);
 		~BvhService();
 	public:
 		bool isDirty = false;
+		bool isTriangleDirty = false;
 		friend class Scene;
 		RenderOptions renderOptions;
 		::Rendering::Geometry::Bvh* m_sceneBvh = nullptr;
@@ -259,6 +272,12 @@ namespace Core::SceneSystem
 		std::vector<Maths::FVector4> verticesUVX; // Vertex + texture Coord (u/s)
 		std::vector<Maths::FVector4> normalsUVY; // Normal + texture Coord (v/t)
 		std::vector<Maths::FMatrix4> transforms;
+
+		std::vector<TriangleInfo>triangleInfo;
+		std::vector<MeshTriangleInfo>meshTriangleInfo;
+		std::unordered_map<int, std::vector<TriangleInfo>>triangleInfoMap;
+
+
 
 		// Materials
 		std::vector<Material> materials;

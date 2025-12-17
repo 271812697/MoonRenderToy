@@ -419,6 +419,38 @@ void main()
 			textureMapsArrayTex->Allocate(desc);
 		}
 	}
+	void PathTraceRenderPass::UpdateTriangleInfoBuffer()
+	{
+		auto& view = GetService(Editor::Panels::SceneView);;
+		auto bvhService = view.GetScene()->GetBvhService();
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+		// MeshTriangleInfo Texture
+		::Rendering::Settings::TextureDesc desc;
+		desc.isTextureBuffer = true;
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32I;
+		desc.buffetLen = bvhService->meshTriangleInfo.size() * sizeof(::Core::SceneSystem::MeshTriangleInfo);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.data = bvhService->meshTriangleInfo.data()
+		};
+
+		if (meshInfoTex == nullptr) {
+			meshInfoTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		meshInfoTex->Allocate(desc);
+
+
+		// TriangleInfo Texture
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RG32UI;
+		desc.buffetLen = bvhService->triangleInfo.size() * sizeof(::Core::SceneSystem::TriangleInfo);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.data = bvhService->triangleInfo.data()
+		};
+		if (triangleInfoTex == nullptr) {
+			triangleInfoTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		triangleInfoTex->Allocate(desc);
+	}
 	void PathTraceRenderPass::UpdateShaders() {
 
 		static std::string pathTraceShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/PathTrace.ovfx");
@@ -641,6 +673,11 @@ void main()
 			refreshFlag = true;
 			UpdateGPUDataBuffers();
 		}
+		if (bvhService->isTriangleDirty) {
+			bvhService->isTriangleDirty = false;
+			refreshFlag = true;
+			UpdateTriangleInfoBuffer();
+		}
 		Update();
 		Render();
 		Present();
@@ -825,6 +862,8 @@ void main()
 		pathTraceShader.SetProperty("vertexIndicesTex", vertexIndicesTex);
 		pathTraceShader.SetProperty("verticesTex", verticesTex);
 		pathTraceShader.SetProperty("normalsTex", normalsTex);
+		pathTraceShader.SetProperty("meshTriangleInfoTex", meshInfoTex);
+		pathTraceShader.SetProperty("triangleInfoTex", triangleInfoTex);
 		pathTraceShader.SetProperty("materialsTex", materialsTex);
 		pathTraceShader.SetProperty("transformsTex", transformsTex);
 		pathTraceShader.SetProperty("lightsTex", lightsTex);
