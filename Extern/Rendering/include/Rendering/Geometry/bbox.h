@@ -36,6 +36,9 @@ namespace Rendering::Geometry
 
 		FVector3 center()  const;
 		FVector3 extents() const;
+		float lengthX()const;
+		float lengthY()const;
+		float lengthZ()const;
 		bool isValid()const;
 		bool contains(FVector3 const& p) const;
 

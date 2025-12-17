@@ -48,7 +48,7 @@ void Editor::Panels::AView::Render()
 	auto camera = GetCamera();
 	auto scene = GetScene();
 
-	if (winWidth > 0 && winHeight > 0 && camera && scene)
+	if (winWidth > 1 && winHeight > 1 && camera && scene)
 	{
 		FrameMarkStart(name.c_str());
 

@@ -82,7 +82,7 @@ if(OpenCASCADE_FOUND)
     set(
         OpenCASCADE_TOOLKITS
         # FoundationClasses
-        TKernel TKMath
+        TKernel TKMath TKOffset TKFillet
         # ModelingData
         TKG2d TKG3d TKGeomBase TKBRep
         # ModelingAlgorithms

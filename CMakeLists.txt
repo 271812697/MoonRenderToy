@@ -85,7 +85,7 @@ if(OpenCASCADE_FOUND)
     list(
         APPEND MayoCore_LinkLibraries
         # FoundationClasses
-        TKernel TKMath
+        TKernel TKMath TKOffset TKFillet
         # ModelingData
         TKG2d TKG3d TKGeomBase TKBRep
         # ModelingAlgorithms
@@ -120,32 +120,8 @@ if(OpenCASCADE_FOUND)
         if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.8.0)
             list(APPEND MayoIO_LinkLibraries TKDEOBJ TKDEGLTF)
         endif()
-    else()
-        list(
-            REMOVE_ITEM MayoIO_SourceFiles
-            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_base_mesh.cpp
-            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_gltf_reader.cpp
-            ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_obj_reader.cpp
-        )
-        message(STATUS "glTF reader disabled because OpenCascade < v7.4")
-        message(STATUS "OBJ reader disabled because OpenCascade < v7.4")
     endif()
 
-    if(OpenCASCADE_VERSION VERSION_LESS 7.5.0)
-        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_gltf_writer.cpp)
-        message(STATUS "glTF writer disabled because OpenCascade < v7.5")
-    endif()
-
-    if(OpenCASCADE_VERSION VERSION_LESS 7.6.0)
-        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_obj_writer.cpp)
-        message(STATUS "OBJ writer disabled because OpenCascade < v7.6")
-    endif()
-
-    # VRML support
-    if(OpenCASCADE_VERSION VERSION_LESS 7.7.0)
-        list(REMOVE_ITEM MayoIO_SourceFiles ${PROJECT_SOURCE_DIR}/src/io_occ/io_occ_vrml_reader.cpp)
-        message(STATUS "VRML reader disabled because OpenCascade < v7.7")
-    endif()
 endif()
 
 add_subdirectory(Extern)

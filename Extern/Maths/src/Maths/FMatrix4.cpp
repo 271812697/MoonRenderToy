@@ -150,6 +150,14 @@ float& Maths::FMatrix4::operator()(uint8_t p_row, uint8_t p_column)
 			"Invalid index : " + std::to_string(p_row) + "," + std::to_string(p_column) + " is out of range");
 	return data[4 * p_row + p_column];
 }
+float Maths::FMatrix4::operator()(uint8_t p_row, uint8_t p_column)const
+{
+	if (p_row >= 4 || p_column >= 4)
+		throw std::out_of_range(
+			"Invalid index : " + std::to_string(p_row) + "," + std::to_string(p_column) + " is out of range");
+	return data[4 * p_row + p_column];
+}
+
 
 Maths::FMatrix4 Maths::FMatrix4::RotateOnAxisY(float p_rotation)const 
 {

@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include <Eigen/Core>	
+using Vector3f = Eigen::Vector3f;
+using Vector3d = Eigen::Vector3d;
 namespace Maths
 {
 
@@ -84,8 +87,6 @@ namespace Maths
 		static FVector3 Clamp(const FVector3& a, const FVector3& min, const FVector3& max);
 		static float AngleBetween(const FVector3& p_from, const FVector3& p_to);
 	};
-	
-	
 	inline FVector3 operator*(float scalar, const Maths::FVector3& v)
 	{
 		return Maths::FVector3(v.x * scalar, v.y * scalar, v.z * scalar);
