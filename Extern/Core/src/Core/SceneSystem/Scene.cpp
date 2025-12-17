@@ -435,8 +435,10 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint)
 {
 	ZoneScoped;
-	float triDist = 1e6;
+	float triDist = 1e9;
 	bool hit = false;
+	int mid = -1;
+	int tid = -1;
 	Maths::FVector3 hitNormal;
 	Maths::FVector3 bary;
 	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
@@ -445,7 +447,7 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 	while (!stack.empty()) {
 		auto cur = stack.back();stack.pop_back();
 		if (!cur)continue;
-		float tempDist = 1e6;
+		float tempDist = 1e9;
 		if (ray.HitDistance(cur->bounds, tempDist)) 
 		{
 			if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
@@ -490,6 +492,8 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 											outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
 											outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
 											hit = true;
+											mid = meshId;
+											tid = j;// triIndex;
 										}
 									}
 								}
@@ -499,6 +503,10 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 				}
 			}
 		}
+	}
+	if (hit) {
+		
+		bvhService->AddTriangleInfo(mid, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
 	}
 	return hit;
 }

@@ -2,7 +2,7 @@
 
 namespace Rendering::Geometry
 {
-static  float M_INFINITY = 1e6;
+static  float M_INFINITY = 1e9;
 Maths::FVector3 Ray::ClosestPoint(const Ray& ray) const
 {
     // Algorithm based on http://paulbourke.net/geometry/lineline3d/

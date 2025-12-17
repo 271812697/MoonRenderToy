@@ -3,6 +3,7 @@
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include "GizmoRenderPass.h"
 #include "Core/Global/ServiceLocator.h"
+#include "core/SceneSystem/BvhService.h"
 #include "renderer/DebugSceneRenderer.h"
 #include "renderer/SceneView.h"
 #include "Gizmo/Gizmo.h"
@@ -11,6 +12,7 @@
 #include "Gizmo/Widgets/Measurement.h"
 #include "Gizmo/Widgets/ClipPlane.h"
 #include "Gizmo/Widgets/SplitScreen.h"
+#include "Qtimgui/imgui/imgui.h"
 
 struct GizmoRenderSettings
 {
@@ -80,6 +82,10 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();
+		auto bvhService=view.GetScene()->GetBvhService();
+		for (auto& tfo:bvhService->triangleInfo) {
+			ImGui::Text("tri id %d",tfo.info);;
+		}
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
 		if(sceneBvh!=nullptr)
 		stack.push_back(sceneBvh->m_root);
