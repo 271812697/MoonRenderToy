@@ -1,4 +1,5 @@
 ﻿#include "io_occ_step.h"
+#include "Geomerty/TopoShape.h"
 #include "Core/SceneSystem/Scene.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
@@ -201,62 +202,128 @@ namespace MOON {
                 std::cerr << "STEP 文件中未找到有效形状" << std::endl;
             }
 
-            std::vector<TopoDS_Face> faces;
-            CollectFaces(shape, faces);
-            size_t vertexOffset = 0;
-            std::vector<Maths::FVector3> positions;
-            std::vector<Maths::FVector3> normals;
-            std::vector<Maths::FVector2> uvs;
-            std::vector<unsigned int> indices;
-            for (auto& f : faces) {
-                std::vector<gp_Pnt> vertices;
-                std::vector<unsigned int> tempIndices;
-                DiscretizeFace(f, vertices, tempIndices);
-               
-                if (vertices.empty() || tempIndices.empty()) {
-                    continue;
+            TopoShape topo(shape);
+            
+            std::vector<Domain> domains;
+            
+            topo.getDomainfaces(domains,1.0);
+            for (int i = 0;i < domains.size();i++) {
+                std::vector<Maths::FVector3> positions;
+                //std::vector<Maths::FVector3> normals;
+                std::vector<Maths::FVector2> uvs;   
+                std::vector<unsigned int>indices;
+                positions.reserve(domains[i].points.size());
+                indices.resize(domains[i].facets.size()*3);
+                for (int k = 0;k < domains[i].points.size();k++) {
+                    positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
                 }
-                // 计算并转换法线
-                std::vector<gp_Dir> occNormals;
-                ComputeNormals(vertices, tempIndices, occNormals);
-                // 转换为引擎类型：positions, normals, uvs
-                for (const auto& p : vertices) positions.push_back(Maths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
-                for (const auto& n : occNormals) normals.push_back(Maths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
-                // 生成简单的平面 UV（可选）
-                GeneratePlanarUVs(vertices, occNormals, uvs);
-                for (const auto& id : tempIndices) {
-                    indices.push_back(id+vertexOffset);
+                for (int k = 0;k < domains[i].facets.size();k++) {
+                    indices[3 * k] = domains[i].facets[k].I1;
+                    indices[3 * k + 1] = domains[i].facets[k].I2;
+                    indices[3 * k + 2] = domains[i].facets[k].I3;
                 }
-                vertexOffset += vertices.size();
+                std::string pathName = filePath;
+                pathName += std::to_string(i);
+                auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(pathName, positions, indices);
+                // 创建并注册默认材质
+                Core::Resources::Material* tempMat = new Core::Resources::Material();
+                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(pathName, tempMat);
+                tempMat->SetBackfaceCulling(false);
+                tempMat->SetCastShadows(false);
+                tempMat->SetReceiveShadows(false);
 
+                tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
+                tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f });
+
+                tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+                tempMat->SetProperty("u_Roughness", 1.f);
+                tempMat->SetProperty("u_Metallic", 0.0f);
+                // Emission
+                tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+                tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+                tempMat->AddFeature("WITH_EDGE");
+                // 在场景中创建 Actor 并绑定模型/材质
+                auto& actor = scene->CreateActor();
+                actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
+                auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+                materilaRener.SetMaterialAtIndex(0, *tempMat);
+                materilaRener.UpdateMaterialList();
+            
             }
+            //std::vector<Vector3d>& Points, std::vector<Vector3d>& Normals, std::vector<unsigned int>indices
+           
+           
+
+            
+            //positions.reserve(pos.size());
+            ////indices.resize(faces.size()*3);
+            //for (int i = 0;i < pos.size();i++) {
+            //    positions.emplace_back(Maths::FVector3{ static_cast<float>(pos[i].x()),static_cast<float>(pos[i].y()),static_cast<float>(pos[i].z()) });
+            //    normals.emplace_back(Maths::FVector3{ static_cast<float>(nor[i].x()),static_cast<float>(nor[i].y()),static_cast<float>(nor[i].z()) });
+            //}
+            //for (int i = 0;i < faces.size();i++) {
+            //    indices[3 * i] = faces[i].I1;
+            //    indices[3 * i+1] = faces[i].I2;
+            //    indices[3 * i+2] = faces[i].I3;
+            //}
+            //auto model=Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions,normals ,indices);
+
+            //std::vector<TopoDS_Face> faces;
+            //CollectFaces(shape, faces);
+            //size_t vertexOffset = 0;
+            //std::vector<Maths::FVector3> positions;
+            //std::vector<Maths::FVector3> normals;
+            //std::vector<Maths::FVector2> uvs;
+            //std::vector<unsigned int> indices;
+            //for (auto& f : faces) {
+            //    std::vector<gp_Pnt> vertices;
+            //    std::vector<unsigned int> tempIndices;
+            //    DiscretizeFace(f, vertices, tempIndices);
+            //   
+            //    if (vertices.empty() || tempIndices.empty()) {
+            //        continue;
+            //    }
+            //    // 计算并转换法线
+            //    std::vector<gp_Dir> occNormals;
+            //    ComputeNormals(vertices, tempIndices, occNormals);
+            //    // 转换为引擎类型：positions, normals, uvs
+            //    for (const auto& p : vertices) positions.push_back(Maths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
+            //    for (const auto& n : occNormals) normals.push_back(Maths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
+            //    // 生成简单的平面 UV（可选）
+            //    GeneratePlanarUVs(vertices, occNormals, uvs);
+            //    for (const auto& id : tempIndices) {
+            //        indices.push_back(id+vertexOffset);
+            //    }
+            //    vertexOffset += vertices.size();
+
+            //}
 
             // 使用 ModelManager 把 mesh 注册到资源系统（使用与 glTF 加载处相同的重载）
-            auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
+           // auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
 
-            // 创建并注册默认材质
-            Core::Resources::Material* tempMat = new Core::Resources::Material();
-            Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
-            tempMat->SetBackfaceCulling(false);
-            tempMat->SetCastShadows(false);
-            tempMat->SetReceiveShadows(false);
+            //// 创建并注册默认材质
+            //Core::Resources::Material* tempMat = new Core::Resources::Material();
+            //Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
+            //tempMat->SetBackfaceCulling(false);
+            //tempMat->SetCastShadows(false);
+            //tempMat->SetReceiveShadows(false);
 
-            tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
-            tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
+            //tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
+            //tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
 
-            tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-            tempMat->SetProperty("u_Roughness", 1.f);
-            tempMat->SetProperty("u_Metallic", 0.0f);
-            // Emission
-            tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-            tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-            tempMat->AddFeature("WITH_EDGE");
-            // 在场景中创建 Actor 并绑定模型/材质
-            auto& actor = scene->CreateActor();
-            actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-            auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-            materilaRener.SetMaterialAtIndex(0, *tempMat);
-            materilaRener.UpdateMaterialList();
+            //tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+            //tempMat->SetProperty("u_Roughness", 1.f);
+            //tempMat->SetProperty("u_Metallic", 0.0f);
+            //// Emission
+            //tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+            //tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+            //tempMat->AddFeature("WITH_EDGE");
+            //// 在场景中创建 Actor 并绑定模型/材质
+            //auto& actor = scene->CreateActor();
+            //actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
+            //auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+            //materilaRener.SetMaterialAtIndex(0, *tempMat);
+            //materilaRener.UpdateMaterialList();
         }
     }
 }

@@ -2150,13 +2150,8 @@ namespace MOON
 		Sphere sphere(*_out_, _radius);
 		float a = (sphere.m_origin - _origin).dot(axis);
 		float b= (sphere.m_origin - _origin).norm();
-		//ImGui::Text("%f %f" ,a,b);
-		;
-
 		float tr, t1;
 		bool intersects = Intersect(ray, sphere, tr, t1);
-
-
 		if (_id == activeId)
 		{
 			if (isKeyDown(ActionSelect))

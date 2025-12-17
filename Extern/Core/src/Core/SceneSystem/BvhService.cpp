@@ -381,8 +381,6 @@ namespace Core::SceneSystem
 				indices[i] = i;
 			}
 			//exportObjOnlyVertices(path,(float*)vertices.data(),indices.data(),vertices.size(),indices.size());
-
-			
 		}
 		void BvhService::Clear() {
 			if (m_sceneBvh) {

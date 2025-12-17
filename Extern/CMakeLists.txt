@@ -117,7 +117,10 @@ if(NOT TARGET math)
     "${math_SOURCE_DIR_}/*.h")
     source_group(TREE "${math_SOURCE_DIR_}" FILES ${math_impl} ${math_head})
     add_library(math STATIC ${math_impl} ${math_head})
-    target_include_directories(math PUBLIC $<BUILD_INTERFACE:${math_SOURCE_DIR_}/include>)
+    target_include_directories(math PUBLIC 
+    $<BUILD_INTERFACE:${math_SOURCE_DIR_}/include>
+    ${EIGEN3_INCLUDE_DIR}
+    )
     set_target_properties(math PROPERTIES FOLDER ${lib_folder}/math)
 endif()
 

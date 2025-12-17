@@ -1,5 +1,7 @@
 ﻿#pragma once
-#include "Maths/FVector3.h"
+#include "Geomerty/GeoData.h"
+#include "Maths/FMatrix4.h"
+#include "Rendering/Geometry/bbox.h"
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -21,31 +23,53 @@ class gp_Vec;
 namespace MOON {
 	class TopoShape {
 	public:
-		struct Line { uint32_t I1; uint32_t I2; };
-		struct Facet { uint32_t I1; uint32_t I2; uint32_t I3; };
-		struct Domain {
-			std::vector<Maths::FVector3> points;
-			std::vector<Facet> facets;
-		};
+
 		TopoShape(const TopoDS_Shape& shape = TopoDS_Shape());
 		~TopoShape();
-		/** Get points from object with given accuracy */
-		void getPoints(std::vector<Maths::FVector3>& Points,
-			std::vector<Maths::FVector3>& Normals,
+        double getAccuracy() const;
+		void getPoints(std::vector<Vector3d>& Points,
+			std::vector<Vector3d>& Normals,
 			double Accuracy,
 			uint16_t flags = 0) const ;
-		void getFaces(std::vector<Maths::FVector3>& Points,
+        void getFaces(std::vector<Vector3d>& Points,
+            std::vector<Vector3d>& Normals,
+            std::vector<unsigned int>&indices,
+            double Accuracy,
+            uint16_t flags = 0) const;
+        /** Get lines from object with given accuracy */
+        void getLines(std::vector<Vector3d>& Points,
+            std::vector<Line>& lines,
+            double Accuracy,
+            uint16_t flags = 0) const;
+		void getFaces(std::vector<Vector3d>& Points,
 			std::vector<Facet>& faces,
 			double Accuracy,
 			uint16_t flags = 0) const ;
-		void setFaces(const std::vector<Maths::FVector3>& Points,
+		void setFaces(const std::vector<Vector3d>& Points,
 			const std::vector<Facet>& faces,
 			double tolerance = 1.0e-06);  // NOLINT
+        void getDomainfaces(std::vector<Domain>&domains, double accuracy)const;
 		void getDomains(std::vector<Domain>&) const;
-
+        void setTransform(const Maths::FMatrix4& rclTrf) ;
+        /// get the transformation of the CasCade Shape
+        Maths::FMatrix4 getTransform() const ;
+        Rendering::Geometry::bbox getBoundBox() const;
+        bool getCenterOfGravity(Vector3d& center) const;
+        static void convertTogpTrsf(const Maths::FMatrix4& mtrx, gp_Trsf& trsf);
+        static void convertToMatrix(const gp_Trsf& trsf, Maths::FMatrix4& mtrx);
+        static Maths::FMatrix4 convert(const gp_Trsf& trsf);
+        static gp_Trsf convert(const Maths::FMatrix4& mtrx);
         static TopoDS_Shape& move(TopoDS_Shape& tds, const TopLoc_Location& loc);
         static TopoDS_Shape& locate(TopoDS_Shape& tds, const TopLoc_Location& loc);
-	private:
+    private:
+        /** Get lines from sub-shape */
+        void getLinesFromSubShape(const TopoDS_Shape& shape,
+            std::vector<Vector3d>& vertices,
+            std::vector<Line>& lines) const;
+        void getFacesFromDomains(const std::vector<Domain>& domains,
+            std::vector<Vector3d>& vertices,
+            std::vector<Facet>& faces) const;
+    private:
 
         class ShapeProtector : public TopoDS_Shape
         {

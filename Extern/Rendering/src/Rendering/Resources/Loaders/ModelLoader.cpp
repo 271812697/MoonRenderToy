@@ -206,7 +206,32 @@ Rendering::Resources::Model* Rendering::Resources::Loaders::ModelLoader::LoadFro
 			vertices[index].texCoords[1] = 0.0f;
 		}
 	}
-	result->m_meshes.push_back(new Mesh(vertices, i, 0));
+	std::vector<uint32_t>indices(i.size());;
+	for (int k = 0;k < i.size();k++) {
+		indices[k] = k;
+	}
+	result->m_meshes.push_back(new Mesh(vertices, indices, 0));
+	result->m_materialNames.push_back("Default");
+	result->ComputeBoundingSphere();
+	return result;
+}
+Rendering::Resources::Model* Rendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<unsigned int>& i)
+{
+	Model* result = new Model("Memory");
+	std::vector<Geometry::Vertex> vertices(vertex.size());
+	std::vector<uint32_t> indices = i;
+	for (int k = 0; k < vertices.size(); k++) {
+		vertices[k].position[0] = vertex[k].x;
+		vertices[k].position[1] = vertex[k].y;
+		vertices[k].position[2] = vertex[k].z;
+		vertices[k].normals[0] = normal[k].x;
+		vertices[k].normals[1] = normal[k].y;
+		vertices[k].normals[2] = normal[k].z;
+		vertices[k].texCoords[0] = 0;
+		vertices[k].texCoords[1] = 0;
+	}
+	GenerateTangents(vertices.data(), sizeof(Geometry::Vertex), indices.data(), 4, 0, indices.size(), 20, 12, 32);
+	result->m_meshes.push_back(new Mesh(vertices, indices, 0));
 	result->m_materialNames.push_back("Default");
 	result->ComputeBoundingSphere();
 	return result;

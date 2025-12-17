@@ -36,6 +36,7 @@ namespace Maths
 		FMatrix4 operator/(const FMatrix4& p_other) const;
 		FMatrix4& operator/=(const FMatrix4& p_other);
 		float& operator()(uint8_t p_row, uint8_t p_column);
+		float operator()(uint8_t p_row, uint8_t p_column)const;
 		FMatrix4 RotateOnAxisY(float p_rotation)const;
 		FMatrix4 RotateOnAxisX(float p_rotation)const;
 		FMatrix4 RotateOnAxisZ(float p_rotation)const;

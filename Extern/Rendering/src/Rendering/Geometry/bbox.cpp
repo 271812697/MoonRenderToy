@@ -3,6 +3,18 @@ namespace Rendering::Geometry
 {
 	FVector3 bbox::center()  const { return (pmax + pmin) * 0.5f; }
 	FVector3 bbox::extents() const { return pmax - pmin; }
+	float bbox::lengthX() const
+	{
+		return pmax.x-pmin.x;
+	}
+	float bbox::lengthY() const
+	{
+		return pmax.y - pmin.y;
+	}
+	float bbox::lengthZ() const
+	{
+		return pmax.z - pmin.z;
+	}
 	bool bbox::isValid()const
 	{
 		return pmax.x >= pmin.x &&
