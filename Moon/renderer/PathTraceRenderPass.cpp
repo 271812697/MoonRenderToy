@@ -237,6 +237,10 @@ void main()
 		delete verticesTex;
 		if (normalsTex)
 		delete normalsTex;
+		if (meshInfoTex)
+			delete meshInfoTex;
+		if (triangleInfoTex)
+			delete triangleInfoTex;
 		if (materialsTex)
 		delete materialsTex;
 		if (transformsTex)

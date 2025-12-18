@@ -1,6 +1,7 @@
 #feature SPECULAR_WORKFLOW
 #feature WITH_EDGE
 #feature CLIP_PLANE
+#feature TRIANGLE_INFO
 
 
 #shader vertex
@@ -183,6 +184,11 @@ uniform bool u_AlphaDithering = false;
 uniform bool u_BuiltInToneMapping = false;
 uniform bool u_BuiltInGammaCorrection = false;
 
+#if defined(TRIANGLE_INFO)
+uniform usamplerBuffer triangleInfoTex;
+uniform int trifoLen=0;
+#endif
+
 uniform sampler2D _ShadowMap;
 uniform mat4 _LightSpaceMatrix;
 uniform samplerCube _EnvironmentMap;
@@ -209,16 +215,18 @@ void main()
     {
         discard;
     }
-
-    int i=0;
-    while(true){
-        uint upbound=texelFetch(domainRangeTex,i).r;
-        if(gl_PrimitiveID<upbound){ 
-            albedo.rgb=texelFetch(domainColorTex,i).rgb;
+    albedo.rgb=texelFetch(domainColorTex,gl_PrimitiveID%12).rgb;
+#if defined(TRIANGLE_INFO)
+    for(int i=0;i<trifoLen;i++){
+        uint tid=texelFetch(triangleInfoTex,i).g;
+        if(gl_PrimitiveID==tid){
+            albedo.rgb=vec3(1,1,1);
             break;
         }
-        i++;
     }
+#endif
+   
+
 
     if (u_AlphaDithering && Dithering(albedo.a, gl_FragCoord.xy) < 0)
     {

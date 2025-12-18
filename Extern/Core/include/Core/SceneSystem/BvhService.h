@@ -28,8 +28,8 @@ namespace Core::SceneSystem
 	struct MeshInstance
 	{
 
-		MeshInstance(std::string name, int meshId, const Maths::FMatrix4& xform, int matId)
-			: name(name)
+		MeshInstance(int64_t aci, int meshId, const Maths::FMatrix4& xform, int matId)
+			: actorID(aci)
 			, meshID(meshId)
 			, transform(xform), localform(xform)
 			, materialID(matId)
@@ -40,7 +40,7 @@ namespace Core::SceneSystem
 
 		Maths::FMatrix4 transform;
 		Maths::FMatrix4 localform;
-		std::string name;
+		int64_t	actorID;
 
 		int materialID;
 		int meshID;
@@ -229,7 +229,7 @@ namespace Core::SceneSystem
 	};
 	class BvhService {
 	public:
-		BvhService() = default;
+		BvhService(Scene* sc) ;
 		struct Node
 		{
 			Maths::FVector3 bboxmin;
@@ -250,7 +250,10 @@ namespace Core::SceneSystem
 		bool DirtyFlag();
 		void SetDirtyFlag(bool flag);
 		void AddTriangleInfo(int mid,const TriangleInfo& info);
+		void UpdateTriangleInfo();
 		~BvhService();
+	private:
+		Scene* scene;
 	public:
 		bool isDirty = false;
 		bool isTriangleDirty = false;

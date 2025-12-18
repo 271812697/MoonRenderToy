@@ -14,7 +14,7 @@
 
 Core::SceneSystem::Scene::Scene()
 {
-	bvhService = new BvhService();
+	bvhService = new BvhService(this);
 }
 
 Core::SceneSystem::Scene::~Scene()
@@ -121,6 +121,7 @@ void Core::SceneSystem::Scene::Update(float p_deltaTime)
 	ZoneScoped;
 	auto actors = m_actors;
 	std::for_each(actors.begin(), actors.end(), std::bind(std::mem_fn(&ECS::Actor::OnUpdate), std::placeholders::_1, p_deltaTime));
+	bvhService->UpdateTriangleInfo();
 }
 
 void Core::SceneSystem::Scene::FixedUpdate(float p_deltaTime)
@@ -420,7 +421,7 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 
 
 						//push back the mesh instance
-						MeshInstance meshInstance(modelRenderer->owner.GetName(), meshId, matrix, materialId);
+						MeshInstance meshInstance(modelRenderer->owner.GetID(), meshId, matrix, materialId);
 						meshInstances.push_back(meshInstance);
 					}
 				}
@@ -439,6 +440,7 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 	bool hit = false;
 	int mid = -1;
 	int tid = -1;
+	int instanceId = -1;
 	Maths::FVector3 hitNormal;
 	Maths::FVector3 bary;
 	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
@@ -493,7 +495,8 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 											outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
 											hit = true;
 											mid = meshId;
-											tid = j;// triIndex;
+											instanceId = index;
+											tid =  triIndex;//j;
 										}
 									}
 								}
@@ -505,8 +508,7 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 		}
 	}
 	if (hit) {
-		
-		bvhService->AddTriangleInfo(mid, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
+		bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
 	}
 	return hit;
 }
@@ -516,6 +518,9 @@ bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& r
 	ZoneScoped;
 	float triDist = 1e6;
 	bool hit = false;
+	int mid = -1;
+	int instanceId = -1;
+	int tid = -1;
 	Maths::FVector3 hitNormal;
 	Maths::FVector3 bary;
 	float tempDist = 1e6;
@@ -547,12 +552,18 @@ bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& r
 							bary = currentBary;
 							outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
 							outPoint = Maths::FMatrix4::MulPoint(matrix, outPoint);
+							mid = meshId;
+							tid = triIndex;
+							instanceId = i;
 							hit = true;
 						}
 					}		
 				}
 			}
 		}	
+	}
+	if (hit) {
+		bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
 	}
 	return hit;
 }

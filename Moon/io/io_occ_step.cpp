@@ -264,7 +264,7 @@ namespace MOON {
              tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
              tempMat->AddFeature("WITH_EDGE");
             // 在场景中创建 Actor 并绑定模型/材质
-            auto& actor = scene->CreateActor("Root");
+            auto& actor = scene->CreateActor("Root","Geomerty");
           
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
             auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
