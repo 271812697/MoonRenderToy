@@ -84,9 +84,10 @@ namespace MOON {
 			"GizmoAxis");
 		
 		Eigen::Vector3f scenter = m_internal->center + m_internal->yAxis* worldHeight;
-		//renderer->drawSphereFilled(scenter,0.2);
+		float sRadius = renderer->pixelsToWorldSize(scenter, 10);
+        renderer->drawSphereFilled(scenter, sRadius);
 		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditz"),
-			m_internal->center, 0.2, m_internal->zAxis,
+			m_internal->center, sRadius, m_internal->zAxis,
 			&scenter
 		)) {
 			ret = true;
@@ -95,9 +96,10 @@ namespace MOON {
 		}
 
 		scenter = m_internal->center + m_internal->xAxis* worldHeight;
-		//renderer->drawSphereFilled(scenter, 0.2);
+		sRadius = renderer->pixelsToWorldSize(scenter, 10);
+		renderer->drawSphereFilled(scenter, sRadius);
 		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEdity"),
-			m_internal->center, 0.2, m_internal->yAxis,
+			m_internal->center, sRadius, m_internal->yAxis,
 			&scenter
 		)) {
 			ret = true;
@@ -106,9 +108,10 @@ namespace MOON {
 		}
 
 		scenter = m_internal->center + m_internal->zAxis * worldHeight;
-		//renderer->drawSphereFilled(scenter, 0.2);
+		sRadius=renderer->pixelsToWorldSize(scenter, 10);
+		renderer->drawSphereFilled(scenter, sRadius);
 		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditx"),
-			m_internal->center, 0.2, m_internal->xAxis,
+			m_internal->center, sRadius, m_internal->xAxis,
 			&scenter
 		)) {
 			ret = true;

@@ -175,7 +175,6 @@ namespace MOON {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
             // 1. 创建 STEP 读取器
             STEPControl_Reader reader;
-
             // 2. 读取 STEP 文件
             TCollection_AsciiString fileName(filePath);
             IFSelect_ReturnStatus status = reader.ReadFile(fileName.ToCString());
@@ -203,127 +202,101 @@ namespace MOON {
             }
 
             TopoShape topo(shape);
-            
             std::vector<Domain> domains;
-            
+            static Maths::FVector4 colors[] = {
+                { 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
+                { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
+                 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
+                  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
+                   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
+                    { 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
+            };
             topo.getDomainfaces(domains,1.0);
+            std::vector<Maths::FVector3> positions; 
+            std::vector<unsigned int>indices;
+            struct Range
+            {
+                unsigned int upbound;
+            };
+            std::vector<Range>domainRange;
+            std::vector<Maths::FVector4>domainColor;
+			unsigned int vertexOffset = 0;
+            unsigned int indexOffset = 0;
+            int cnt = 0;
+            domainRange.reserve(domains.size());
+            std::vector<Core::ECS::Actor*>domainActors;
             for (int i = 0;i < domains.size();i++) {
-                std::vector<Maths::FVector3> positions;
-                //std::vector<Maths::FVector3> normals;
-                std::vector<Maths::FVector2> uvs;   
-                std::vector<unsigned int>indices;
-                positions.reserve(domains[i].points.size());
-                indices.resize(domains[i].facets.size()*3);
+                domainRange.emplace_back(Range{ indexOffset/3+static_cast<unsigned int>(domains[i].facets.size()) });
+				domainColor.push_back(colors[cnt]);  
+                cnt = (cnt + 1) % 12;
+                positions.reserve(positions.size()+domains[i].points.size());
+                indices.resize(indexOffset +domains[i].facets.size()*3);
                 for (int k = 0;k < domains[i].points.size();k++) {
                     positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
                 }
                 for (int k = 0;k < domains[i].facets.size();k++) {
-                    indices[3 * k] = domains[i].facets[k].I1;
-                    indices[3 * k + 1] = domains[i].facets[k].I2;
-                    indices[3 * k + 2] = domains[i].facets[k].I3;
+                    indices[indexOffset +3 * k] = domains[i].facets[k].I1+vertexOffset;
+                    indices[indexOffset+3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
+                    indices[indexOffset+3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
                 }
-                std::string pathName = filePath;
-                pathName += std::to_string(i);
-                auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(pathName, positions, indices);
-                // 创建并注册默认材质
-                Core::Resources::Material* tempMat = new Core::Resources::Material();
-                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(pathName, tempMat);
-                tempMat->SetBackfaceCulling(false);
-                tempMat->SetCastShadows(false);
-                tempMat->SetReceiveShadows(false);
-
-                tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
-                tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f });
-
-                tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-                tempMat->SetProperty("u_Roughness", 1.f);
-                tempMat->SetProperty("u_Metallic", 0.0f);
-                // Emission
-                tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-                tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-                tempMat->AddFeature("WITH_EDGE");
-                // 在场景中创建 Actor 并绑定模型/材质
-                auto& actor = scene->CreateActor();
-                actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-                auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                materilaRener.SetMaterialAtIndex(0, *tempMat);
-                materilaRener.UpdateMaterialList();
-            
+				vertexOffset = positions.size();
+                indexOffset = indices.size();
+                auto& actor = scene->CreateActor(std::to_string(i));
+				domainActors.push_back(&actor);
             }
-            //std::vector<Vector3d>& Points, std::vector<Vector3d>& Normals, std::vector<unsigned int>indices
-           
-           
+             auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, indices);
+             // 创建并注册默认材质
+             Core::Resources::Material* tempMat = new Core::Resources::Material();
+             Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
+             tempMat->SetBackfaceCulling(false);
+             tempMat->SetCastShadows(false);
+             tempMat->SetReceiveShadows(false);
 
-            
-            //positions.reserve(pos.size());
-            ////indices.resize(faces.size()*3);
-            //for (int i = 0;i < pos.size();i++) {
-            //    positions.emplace_back(Maths::FVector3{ static_cast<float>(pos[i].x()),static_cast<float>(pos[i].y()),static_cast<float>(pos[i].z()) });
-            //    normals.emplace_back(Maths::FVector3{ static_cast<float>(nor[i].x()),static_cast<float>(nor[i].y()),static_cast<float>(nor[i].z()) });
-            //}
-            //for (int i = 0;i < faces.size();i++) {
-            //    indices[3 * i] = faces[i].I1;
-            //    indices[3 * i+1] = faces[i].I2;
-            //    indices[3 * i+2] = faces[i].I3;
-            //}
-            //auto model=Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions,normals ,indices);
+             tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
+         
+             tempMat->SetProperty("u_Albedo", colors[0]);
 
-            //std::vector<TopoDS_Face> faces;
-            //CollectFaces(shape, faces);
-            //size_t vertexOffset = 0;
-            //std::vector<Maths::FVector3> positions;
-            //std::vector<Maths::FVector3> normals;
-            //std::vector<Maths::FVector2> uvs;
-            //std::vector<unsigned int> indices;
-            //for (auto& f : faces) {
-            //    std::vector<gp_Pnt> vertices;
-            //    std::vector<unsigned int> tempIndices;
-            //    DiscretizeFace(f, vertices, tempIndices);
-            //   
-            //    if (vertices.empty() || tempIndices.empty()) {
-            //        continue;
-            //    }
-            //    // 计算并转换法线
-            //    std::vector<gp_Dir> occNormals;
-            //    ComputeNormals(vertices, tempIndices, occNormals);
-            //    // 转换为引擎类型：positions, normals, uvs
-            //    for (const auto& p : vertices) positions.push_back(Maths::FVector3{ (float)p.X(), (float)p.Y(), (float)p.Z() });           
-            //    for (const auto& n : occNormals) normals.push_back(Maths::FVector3{ (float)n.X(), (float)n.Y(), (float)n.Z() });
-            //    // 生成简单的平面 UV（可选）
-            //    GeneratePlanarUVs(vertices, occNormals, uvs);
-            //    for (const auto& id : tempIndices) {
-            //        indices.push_back(id+vertexOffset);
-            //    }
-            //    vertexOffset += vertices.size();
+             tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+             tempMat->SetProperty("u_Roughness", 0.3f);
+             tempMat->SetProperty("u_Metallic", 0.1f);
+             // Emission
+             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+             tempMat->AddFeature("WITH_EDGE");
+            // 在场景中创建 Actor 并绑定模型/材质
+            auto& actor = scene->CreateActor("Root");
+          
+            actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
+            auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+            materilaRener.SetMaterialAtIndex(0, *tempMat);
+            materilaRener.UpdateMaterialList();
 
-            //}
+            for (auto* acptr : domainActors) {
+                acptr->SetParent(actor);
+            }
 
-            // 使用 ModelManager 把 mesh 注册到资源系统（使用与 glTF 加载处相同的重载）
-           // auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
+            //these two tex have leaks!!!!
+            //domain colors Tex
+            ::Rendering::Settings::TextureDesc desc;
+            desc.isTextureBuffer = true;
+            desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+            desc.buffetLen = domainColor.size()*sizeof(Maths::FVector4);
+            desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+                .data = domainColor.data()
+            };
+            ::Rendering::HAL::GLTexture*  domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+			domainColorTex->Allocate(desc);
 
-            //// 创建并注册默认材质
-            //Core::Resources::Material* tempMat = new Core::Resources::Material();
-            //Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
-            //tempMat->SetBackfaceCulling(false);
-            //tempMat->SetCastShadows(false);
-            //tempMat->SetReceiveShadows(false);
-
-            //tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\StandardSurfaceWithEdge.ovfx"]);
-            //tempMat->SetProperty("u_Albedo", Maths::FVector4{ 140.0/255.0f, 180.0f/255.0f, 216.0f/255.0f, 1.0f });
-
-            //tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-            //tempMat->SetProperty("u_Roughness", 1.f);
-            //tempMat->SetProperty("u_Metallic", 0.0f);
-            //// Emission
-            //tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-            //tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-            //tempMat->AddFeature("WITH_EDGE");
-            //// 在场景中创建 Actor 并绑定模型/材质
-            //auto& actor = scene->CreateActor();
-            //actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-            //auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-            //materilaRener.SetMaterialAtIndex(0, *tempMat);
-            //materilaRener.UpdateMaterialList();
+            //domain range Tex
+            desc.internalFormat = ::Rendering::Settings::EInternalFormat::R32UI;
+            desc.buffetLen =domainRange.size() * sizeof(Range);
+            desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+                .data = domainRange.data()
+            };
+            ::Rendering::HAL::GLTexture* domainRangeTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+            domainRangeTex->Allocate(desc);
+            tempMat->SetProperty("domainColorTex",domainColorTex);
+            tempMat->SetProperty("domainRangeTex", domainRangeTex);
         }
     }
 }

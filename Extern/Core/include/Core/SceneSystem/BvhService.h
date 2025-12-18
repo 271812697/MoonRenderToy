@@ -146,7 +146,7 @@ namespace Core::SceneSystem
 	};
 	struct TriangleInfo {
 		uint32_t color=0;
-		uint32_t info=0;//24->tid,1->visble
+		uint32_t info=0;//tid
 		
 	};
 	struct MeshTriangleInfo
