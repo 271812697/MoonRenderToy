@@ -213,26 +213,27 @@ namespace MOON {
             };
             topo.getDomainfaces(domains,1.0);
             std::vector<Maths::FVector3> positions; 
+            std::vector<Maths::FVector2>uvs;
             std::vector<unsigned int>indices;
             struct Range
             {
                 unsigned int upbound;
             };
-            std::vector<Range>domainRange;
+            
             std::vector<Maths::FVector4>domainColor;
 			unsigned int vertexOffset = 0;
             unsigned int indexOffset = 0;
             int cnt = 0;
-            domainRange.reserve(domains.size());
             std::vector<Core::ECS::Actor*>domainActors;
             for (int i = 0;i < domains.size();i++) {
-                domainRange.emplace_back(Range{ indexOffset/3+static_cast<unsigned int>(domains[i].facets.size()) });
 				domainColor.push_back(colors[cnt]);  
                 cnt = (cnt + 1) % 12;
                 positions.reserve(positions.size()+domains[i].points.size());
+                uvs.reserve(uvs.size()+ domains[i].points.size());
                 indices.resize(indexOffset +domains[i].facets.size()*3);
                 for (int k = 0;k < domains[i].points.size();k++) {
                     positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
+					uvs.emplace_back(Maths::FVector2{ i*1.0f,0.0f });
                 }
                 for (int k = 0;k < domains[i].facets.size();k++) {
                     indices[indexOffset +3 * k] = domains[i].facets[k].I1+vertexOffset;
@@ -244,7 +245,7 @@ namespace MOON {
                 auto& actor = scene->CreateActor(std::to_string(i));
 				domainActors.push_back(&actor);
             }
-             auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, indices);
+             auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions,uvs, indices);
              // 创建并注册默认材质
              Core::Resources::Material* tempMat = new Core::Resources::Material();
              Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
@@ -286,17 +287,7 @@ namespace MOON {
             };
             ::Rendering::HAL::GLTexture*  domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
 			domainColorTex->Allocate(desc);
-
-            //domain range Tex
-            desc.internalFormat = ::Rendering::Settings::EInternalFormat::R32UI;
-            desc.buffetLen =domainRange.size() * sizeof(Range);
-            desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-                .data = domainRange.data()
-            };
-            ::Rendering::HAL::GLTexture* domainRangeTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-            domainRangeTex->Allocate(desc);
             tempMat->SetProperty("domainColorTex",domainColorTex);
-            tempMat->SetProperty("domainRangeTex", domainRangeTex);
         }
     }
 }

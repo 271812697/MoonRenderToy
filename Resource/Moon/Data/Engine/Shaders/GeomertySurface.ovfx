@@ -193,7 +193,6 @@ uniform sampler2D _ShadowMap;
 uniform mat4 _LightSpaceMatrix;
 uniform samplerCube _EnvironmentMap;
 
-uniform usamplerBuffer domainRangeTex;
 uniform samplerBuffer domainColorTex;
 
 out vec4 FRAGMENT_COLOR;
@@ -215,7 +214,10 @@ void main()
     {
         discard;
     }
-    albedo.rgb=texelFetch(domainColorTex,gl_PrimitiveID%12).rgb;
+    
+    int domainIndex=int(round(fs_in.TexCoords.x));
+    albedo.rgb=texelFetch(domainColorTex,domainIndex).rgb;
+
 #if defined(TRIANGLE_INFO)
     for(int i=0;i<trifoLen;i++){
         uint tid=texelFetch(triangleInfoTex,i).g;

@@ -176,6 +176,46 @@ Rendering::Resources::Model* Rendering::Resources::Loaders::ModelLoader::LoadFro
 	return result;
 
 }
+Rendering::Resources::Model* Rendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i)
+{
+	Model* result = new Model("Memory");
+	int numFaces = i.size() / 3;
+
+	std::vector<Geometry::Vertex> vertices(numFaces * 3);
+	for (int k = 0; k < numFaces; k++) {
+		for (int m = 0; m < 3; m++) {
+			int index = 3 * k + m;
+			vertices[index].position[0] = vertex[i[index]].x;
+			vertices[index].position[1] = vertex[i[index]].y;
+			vertices[index].position[2] = vertex[i[index]].z;
+			vertices[index].texCoords[0] = uv[i[index]].x;
+			vertices[index].texCoords[1] = uv[i[index]].y;
+		}
+		Maths::FVector3 edge1 = Maths::FVector3::Substract(Maths::FVector3(vertices[3 * k + 1].position[0], vertices[3 * k + 1].position[1], vertices[3 * k + 1].position[2]),
+			Maths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+		Maths::FVector3 edge2 = Maths::FVector3::Substract(Maths::FVector3(vertices[3 * k + 2].position[0], vertices[3 * k + 2].position[1], vertices[3 * k + 2].position[2]),
+			Maths::FVector3(vertices[3 * k + 0].position[0], vertices[3 * k + 0].position[1], vertices[3 * k + 0].position[2]));
+
+		Maths::FVector3 normal = Maths::FVector3::Cross(edge1, edge2);
+
+		normal = Maths::FVector3::Normalize(normal);
+		for (int m = 0; m < 3; m++) {
+			int index = 3 * k + m;
+			vertices[index].normals[0] = normal.x;
+			vertices[index].normals[1] = normal.y;
+			vertices[index].normals[2] = normal.z;
+		}
+	}
+	std::vector<uint32_t>indices(i.size());;
+	for (int k = 0;k < i.size();k++) {
+		indices[k] = k;
+	}
+	result->m_meshes.push_back(new Mesh(vertices, indices, 0));
+	result->m_materialNames.push_back("Default");
+	result->ComputeBoundingSphere();
+	return result;
+}
+
 Rendering::Resources::Model* Rendering::Resources::Loaders::ModelLoader::LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<unsigned int>& i)
 {
 	Model* result = new Model("Memory");

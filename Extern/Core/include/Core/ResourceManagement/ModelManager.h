@@ -32,8 +32,10 @@ namespace Core::ResourceManagement
 		::Rendering::Resources::Model* LoadFromMemory(const std::string& name, const std::vector<float>& v, const std::vector<unsigned int>& i);
 		::Rendering::Resources::Model* LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<unsigned int>& i);
 		::Rendering::Resources::Model* LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i);
+		::Rendering::Resources::Model* LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i);
 		::Rendering::Resources::Model* LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<unsigned int>& i);
 		::Rendering::Resources::Model* LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i);
+		::Rendering::Resources::Model* LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i);
 		::Rendering::Resources::Model* LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<unsigned int>& i);
 	};
 }
