@@ -2,7 +2,6 @@
 #include <QWidget>
 #include <QTreeWidgetItem>
 namespace MOON {
-	
 	class SettingWidget : public QWidget
 	{
 	public:

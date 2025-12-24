@@ -91,6 +91,7 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 		GetScene()->FindActorByName("PointLight3")->transform.SetWorldPosition(p3);
 		GetScene()->FindActorByName("PointLight4")->transform.SetWorldPosition(p4);
 	}
+	GetScene()->Update(p_deltaTime);
 }
 
 void Editor::Panels::SceneView::InitFrame()

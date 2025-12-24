@@ -76,6 +76,9 @@ namespace Core::SceneSystem
 			return false;
 		}
 	}
+	BvhService::BvhService(Scene* sc):scene(sc)
+	{
+	}
 	void BvhService::AddMaterial(::Core::Resources::Material* material)
 	{
 		Material tempMat;
@@ -179,7 +182,6 @@ namespace Core::SceneSystem
 				}
 			}		
 		}
-
 		materials.push_back(tempMat);
 	}
 	int	 BvhService::AddTexture(::Rendering::HAL::Texture* tex)
@@ -220,7 +222,6 @@ namespace Core::SceneSystem
 		}
 	void BvhService::ProcessTLAS() {
 		curNode = topLevelIndex;
-
 		ProcessTLASNodes(topLevelBvh->m_root);
 	}
 	int BvhService::ProcessBLASNodes(const ::Rendering::Geometry::Bvh::Node* node) {
@@ -328,13 +329,10 @@ namespace Core::SceneSystem
 			}
 			verticesCnt += vertexData.size();
 		}
-
-		
 		// Copy transforms
 		transforms.resize(meshInstances.size());
 		for (int i = 0; i < meshInstances.size(); i++)
 			transforms[i] = Maths::FMatrix4::Transpose(meshInstances[i].transform);
-			
 		// Copy Textures
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
@@ -415,39 +413,96 @@ namespace Core::SceneSystem
 	{
 		isDirty = flag;
 	}
-	void BvhService::AddTriangleInfo(int mid,const TriangleInfo& info)
+	void BvhService::AddTriangleInfo(int instanceId,const TriangleInfo& info)
 	{
-		for (int i = 0; i < triangleInfoMap[mid].size(); i++) {
-			if ((triangleInfoMap[mid][i].info)== (info.info)) {
+		for (int i = 0; i < triangleInfoMap[instanceId].size(); i++) {
+			if ((triangleInfoMap[instanceId][i].info)== (info.info)) {
 				return;
 			}
 		}
-		triangleInfoMap[mid].push_back(info);
+		triangleInfoMap[instanceId].push_back(info);
 		isTriangleDirty = true;
 
 		//batch triangleInfo
-		int baseOffset = 0;
+		int triOffset = 0;
 		meshTriangleInfo.clear();
 		triangleInfo.clear();
+		std::vector<unsigned int>baseOffset(meshes.size(),0);
 		meshTriangleInfo.resize(meshes.size());
 		for (int i = 0; i < meshTriangleInfo.size(); i++) {
-			if (triangleInfoMap[i].size() > 0) {
-				meshTriangleInfo[i].start = triangleInfo.size();
-				meshTriangleInfo[i].num = triangleInfoMap[i].size();
-				triangleInfo.insert(triangleInfo.end(), triangleInfoMap[i].begin(), triangleInfoMap[i].end());
+			meshTriangleInfo[i].start = -1;
+			meshTriangleInfo[i].num = -1;
+			baseOffset[i] = triOffset;
+			triOffset+= meshes[i]->GetBvh()->GetNumIndices();
+		}
+		for (auto& it : triangleInfoMap) {
+			if (it.second.size() > 0) {
+				int mid = meshInstances[it.first].meshID;
+				meshTriangleInfo[mid].start = triangleInfo.size();
+				meshTriangleInfo[mid].num = it.second.size();
+				triangleInfo.insert(triangleInfo.end(), it.second.begin(), it.second.end());
+				meshTriangleInfo[mid].baseOffset = baseOffset[mid];
 			}
-			else
-			{
-				meshTriangleInfo[i].start = -1;
-				meshTriangleInfo[i].num = -1;;
-			}
-			meshTriangleInfo[i].baseOffset = baseOffset;
-			baseOffset+= meshes[i]->GetBvh()->GetNumIndices();
+		}
 
+	}
+	void BvhService::UpdateTriangleInfo()
+	{
+		if (isTriangleDirty) {
+			for (auto& it : triangleInfoMap) {
+				if (it.second.size() > 0) {
+					auto instanceId = it.first;
+					auto mid = meshInstances[instanceId].meshID;
+					auto actorId = meshInstances[instanceId].actorID;
+					auto actor = scene->FindActorByID(actorId);
+					if (actor->GetTag() == "Geomerty") {
+						auto matList = actor->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+						if (matList) {
+							auto mat = matList->GetMaterialAtIndex(0);
+							if (mat) {
+								mat->AddFeature("TRIANGLE_INFO");
+								auto& tfo=it.second;
+								::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;	
+								// TriangleInfo Texture
+								::Rendering::Settings::TextureDesc desc;
+								desc.isTextureBuffer = true;
+								desc.internalFormat = ::Rendering::Settings::EInternalFormat::RG32UI;
+								desc.buffetLen = tfo.size() * sizeof(::Core::SceneSystem::TriangleInfo);
+								desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+									.data = tfo.data()
+								};
+								int ss = tfo.size();
+								mat->SetProperty("trifoLen",ss);
+								const ::Rendering::Data::MaterialProperty prop=mat->GetProperty("triangleInfoTex").value();
+								if (std::holds_alternative<::Rendering::Resources::Texture*>(prop.value)) {
+									
+									auto v = std::get<::Rendering::Resources::Texture*>(prop.value);
+
+									if (v == nullptr) {
+
+										triangleInfoTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+										triangleInfoTex->Allocate(desc);
+										mat->SetProperty("triangleInfoTex", triangleInfoTex);
+									}
+									else
+									{
+										v->GetTexture().Allocate(desc);
+									}
+								}
+								else
+								{
+									auto v = std::get<::Rendering::HAL::TextureHandle*>(prop.value);
+									::Rendering::HAL::GLTexture* ttex = static_cast<::Rendering::HAL::GLTexture*>(v);
+									ttex->Allocate(desc);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	BvhService::~BvhService() {
 		delete m_sceneBvh;
 	}
-
 }

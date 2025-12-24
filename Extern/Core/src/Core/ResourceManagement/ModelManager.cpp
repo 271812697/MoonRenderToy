@@ -79,6 +79,10 @@ Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMem
 {
 	return Rendering::Resources::Loaders::ModelLoader::LoadFromMemory(vertex, normal, uv, i);
 }
+Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMemory(const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& i)
+{
+	return Rendering::Resources::Loaders::ModelLoader::LoadFromMemory(vertex, uv, i);
+}
 
 ::Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector3>& normal, const std::vector<unsigned int>& i)
 {
@@ -93,6 +97,13 @@ Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMem
 	RegisterResource(name, model);
 	return model;
 }
+Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<Maths::FVector2>& uv, const std::vector<unsigned int>& index)
+{
+	auto model = LoadFromMemory(vertex, uv, index);
+	RegisterResource(name, model);
+	return model;
+}
+
 
 Rendering::Resources::Model* Core::ResourceManagement::ModelManager::LoadFromMemory(const std::string& name, const std::vector<Maths::FVector3>& vertex, const std::vector<unsigned int>& index)
 {

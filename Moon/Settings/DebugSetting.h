@@ -95,7 +95,6 @@ public:
 		return &data;
 	}
 protected:
-	
 	T data;
 };
 class DebugSettings {
@@ -171,17 +170,14 @@ public:
 	bool addCallBack(const std::string& key, const std::string& name,std::function<void(NodeBase* self)>fn);
 	NodeBase* getNode(const std::string& key);
 	~DebugSettings();
-
 	std::unordered_map<std::string, std::vector<int>>& getGroup();
 	std::vector<NodeBase*>& getRegistry();
-
 private:
 	DebugSettings();
 private:
 	int mNextIndex = 0;
 	std::vector<NodeBase*>mRegistry;
 	std::unordered_map<std::string, int>mIndexMap;
-	
 	std::unordered_map<std::string, std::vector<int>>mGroup;
 };
 }

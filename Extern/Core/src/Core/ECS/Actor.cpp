@@ -231,7 +231,6 @@ void Core::ECS::Actor::OnUpdate(float p_deltaTime)
 	if (IsActive())
 	{
 		std::for_each(m_components.begin(), m_components.end(), [&](auto element) { element->OnUpdate(p_deltaTime); });
-
 	}
 }
 
