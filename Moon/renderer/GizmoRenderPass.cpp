@@ -71,21 +71,11 @@ void Editor::Rendering::GizmoRenderPass::enableGizmoWidget(const std::string& na
 
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
-		
 	auto& view = GetService(Editor::Panels::SceneView);;
 	auto& renderer = MOON::Gizmo::instance();
 	renderer.newFrame(&view);
-	//Maths::FVector3 out;
-	//if (view.MouseHit(out)) {
-	//	renderer.drawPoint({ out.x,out.y,out.z }, 15, Eigen::Vector4<uint8_t>{255,0,255,255});
-	//}
-
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();
-		auto bvhService=view.GetScene()->GetBvhService();
-		for (auto& tfo:bvhService->triangleInfo) {
-			ImGui::Text("tri id %d",tfo.info);;
-		}
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
 		if(sceneBvh!=nullptr)
 		stack.push_back(sceneBvh->m_root);
@@ -105,6 +95,5 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 			renderer.drawAlignedBox({ pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });
 		}
 	}
-
 	renderer.endFrame();
 }

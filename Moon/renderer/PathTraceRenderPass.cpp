@@ -181,6 +181,26 @@ namespace Editor::Rendering {
 				scene->BuildSceneBvh();
 			}
 			});
+		MOON::DebugSettings::instance().addCallBack("Denoise", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableDenoiser = value;
+			});
+		MOON::DebugSettings::instance().addCallBack("enableRR", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableRR = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("enableEnvMap", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableEnvMap = value;
+			needUpdateShader = true;
+			});
 		//we need to init shaders
 		UpdateShaders();
 		std::string v = R"(
@@ -487,8 +507,6 @@ void main()
 			pathtraceDefines += "#define OPT_LIGHTS\n";
 			bvhService->renderOptions.optLight = true;
 		}
-
-
 		if (bvhService->renderOptions.enableRR)
 		{
 			pathtraceDefines += "#define OPT_RR\n";
@@ -515,7 +533,6 @@ void main()
 			pathtraceDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 			tonemapDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 		}
-
 		for (int i = 0; i < bvhService->materials.size(); i++)
 		{
 			if ((int)bvhService->materials[i].alphaMode != ::Core::SceneSystem::AlphaMode::Opaque)
@@ -525,7 +542,6 @@ void main()
 				break;
 			}
 		}
-
 		if (bvhService->renderOptions.enableRoughnessMollification)
 			pathtraceDefines += "#define OPT_ROUGHNESS_MOLLIFICATION\n";
 
@@ -541,7 +557,6 @@ void main()
 
 		if (bvhService->renderOptions.enableVolumeMIS)
 			pathtraceDefines += "#define OPT_VOL_MIS\n";
-
 
 		if (pathtraceDefines.size() > 0)
 		{
@@ -677,11 +692,17 @@ void main()
 			refreshFlag = true;
 			UpdateGPUDataBuffers();
 		}
+		if (needUpdateShader) {
+			needUpdateShader = false;
+			refreshFlag = true;
+			UpdateShaders();
+		}
+		/*
 		if (bvhService->isTriangleDirty) {
 			bvhService->isTriangleDirty = false;
 			refreshFlag = true;
 			UpdateTriangleInfoBuffer();
-		}
+		}*/
 		Update();
 		Render();
 		Present();
@@ -937,13 +958,10 @@ void main()
 			glViewport(0, 0, tileWidth, tileHeight);
 			m_renderer.DrawEntity(pso, blit);
 			pathTracefbo.Unbind();
-
 			glNamedFramebufferReadBuffer(pathTracefbo.GetID(), GL_COLOR_ATTACHMENT0);
 			glNamedFramebufferDrawBuffer(accumFBO.GetID(), GL_COLOR_ATTACHMENT0);
 			glBlitNamedFramebuffer(pathTracefbo.GetID(), accumFBO.GetID(), 0, 0, tileWidth, tileHeight, tileWidth * tile.x, tileHeight * tile.y,
 				tileWidth * tile.x + tileWidth, tileHeight * tile.y + tileHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-
 			outputFBO[currentBuffer].Bind();
 			blit.material = tonemapShader;
 			glViewport(0, 0, renderSize.x, renderSize.y);
@@ -955,11 +973,6 @@ void main()
 		glViewport(0, 0, windowSize.x , windowSize.y);
 		auto& view = GetService(Editor::Panels::SceneView);;
 		auto bvhService = view.GetScene()->GetBvhService();
-		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		//glClearDepth(1.0);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//glViewport(0, 0, renderSize.x, renderSize.y);
-		//glActiveTexture(GL_TEXTURE0);
 		auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 		mssaaframebuffer.Bind();
 		Maths::FVector3 equ = {0,1,-200};
@@ -972,8 +985,6 @@ void main()
 		if (refreshFlag || sampleCounter == 1)
 		{
 			m_renderer.Present(pathTraceFBOLowRes, lineOutputMat);
-			//glBindTexture(GL_TEXTURE_2D,);
-			//quad->Draw(tonemapShader.get());
 		}
 		else
 		{
@@ -985,9 +996,7 @@ void main()
 			else
 			{
 				m_renderer.Present(outputFBO[1-currentBuffer], lineOutputMat);
-
 			}
-			//quad->Draw(outputShader.get());
 		}
 	}
 }

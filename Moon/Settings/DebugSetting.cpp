@@ -5,7 +5,6 @@
 #include "qtWidgets/checkbox.h"
 #include <QSlider>
 namespace MOON {
-
 	static std::unordered_map<size_t,std::string >mHashCode;
 	class NodeBoolWidget:public SlidingCheckBox {
 	public:
@@ -25,11 +24,32 @@ namespace MOON {
 		{
 			QSlider* slider = new QSlider(Qt::Horizontal, parent);
 			slider->setRange(0, 100); // 整数范围
+			QObject::connect(slider, &QSlider::valueChanged, [this](int v) {
+				float val=v / 100.0f * (mMaxValue - mMinValue) + mMinValue;
+				this->setData<float>(val);
+				});
 			return slider;
 		}
 	private:
 		float mMinValue;
 		float mMaxValue;
+	};
+	class DragInt :public NodeData<int> {
+	public:
+		DragInt(int v, int a, int b, const char* n) :NodeData(v, n), mMinValue(a), mMaxValue(b) {
+		}
+		virtual QWidget* createWidget(QWidget* parent)override
+		{
+			QSlider* slider = new QSlider(Qt::Horizontal, parent);
+			slider->setRange(mMinValue, mMaxValue); // 整数范围
+			QObject::connect(slider, &QSlider::valueChanged, [this](int v) {
+				this->setData<int>(v);
+			});
+			return slider;
+		}
+	private:
+		int mMinValue;
+		int mMaxValue;
 	};
 	class InputString :public NodeData<std::string> {
 	public:
@@ -93,16 +113,7 @@ namespace MOON {
 		}
 
 	};
-	class DragInt :public NodeData<int> {
-	public:
-		DragInt(int v, int a, int b, const char* n):NodeData(v,n),mMinValue(a),mMaxValue(b) {
-			
-		}
 
-	private:
-		int mMinValue;
-		int mMaxValue;
-	};
 	template <typename T,size_t size>
 	class RangeSettingN :public NodeData<std::array<T, size>> {
 	public:
@@ -241,12 +252,29 @@ namespace MOON {
 		add("View", "showGrid", false);
 		add("View", "showBvh", false);
 		add("View", "debugElements", false);
-		add("View", "PathTrace", false);
-		add("View", "reBuildBvh", false);
 		add("View", "BvhRayHit", true);
 		add("View", new DragFloat(0.5, 0.5, 10.0, "zoom speed"));
-		add("Line",new DragFloat(0.5,0.5,1.0,"linewidth"));
-		add("Batch",new InputString("path","path"));
+		add("PathTracing", "PathTrace", false);
+		add("PathTracing", "reBuildBvh", false);
+		add("PathTracing", "Denoise", true);
+		
+		add("PathTracing", "enableRR", true);
+		add("PathTracing", "enableTonemap", true);
+		add("PathTracing", "enableAces", false);
+		add("PathTracing", "openglNormalMap", true);
+		add("PathTracing", "enableEnvMap", true);
+		add("PathTracing", "enableUniformLight", false);
+		add("PathTracing", "hideEmitters", false);
+		add("PathTracing", "enableBackground", false);
+		add("PathTracing", "transparentBackground", false);
+
+		add("PathTracing", "independentRenderSize", false);
+		add("PathTracing", "enableRoughnessMollification", false);
+		add("PathTracing", "enableVolumeMIS", false);
+		add("PathTracing", "optLight", false);
+		add("PathTracing", "optAlphaTest", false);
+		add("PathTracing", "optMedium", false);
+
 		
 	}
 	bool NodeBase::valueChange()

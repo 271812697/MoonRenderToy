@@ -30,8 +30,6 @@ namespace MOON {
 		SettingWidgetInternal(SettingWidget* tree) :mSelf(tree) {
 			
 		}		
-
-
 		void setUp() {
 			// 主布局
 			QHBoxLayout* mainLayout = new QHBoxLayout(mSelf);
@@ -54,8 +52,6 @@ namespace MOON {
 				QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << QString::fromStdString(g.first));
 				m_navTree->addTopLevelItem(item);
 			}
-
-
 			// 右侧内容区域
 			m_contentStack = new QStackedWidget(mSelf);
 

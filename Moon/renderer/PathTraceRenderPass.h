@@ -83,5 +83,6 @@ namespace Editor::Rendering
 		bool denoised;
 		bool initialized;
 		bool refreshFlag = true;
+		bool needUpdateShader = false;
 	};
 }

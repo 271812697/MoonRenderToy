@@ -212,7 +212,7 @@ int main()
 	auto renderer = engine->createRenderer();
 	auto scene = engine->createScene();
 	auto view = engine->createView();
-	auto swapchain = engine->createSwapChain(window, 0);
+	auto swapchain = engine->createSwapChain(scene, 0);
 	view->setName("Main View");
 
 	auto setup = [&]() {
@@ -277,13 +277,14 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 
-		engine->execute();
+		
 		static double t = 0.0f;
 		t += 0.0016;
 		animate(engine, view, t);
 		bool flag = renderer->beginFrame(swapchain);
 		renderer->render(view);
 		renderer->endFrame();
+		engine->execute();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
