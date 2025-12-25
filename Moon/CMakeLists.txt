@@ -47,7 +47,6 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         assimp
         tinygltf
         core
-        Dump
         ${MayoCore_LinkLibraries}
         ${MayoIO_LinkLibraries}
 )

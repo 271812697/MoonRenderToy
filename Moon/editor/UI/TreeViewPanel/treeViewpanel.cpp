@@ -5,8 +5,6 @@
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
-#include "pathtrace/PathTrace.h"
-#include "pathtrace/Scene.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
 #include <QHeaderView>
