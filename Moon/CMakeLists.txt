@@ -47,7 +47,6 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         assimp
         tinygltf
         core
-        Dump
         ${MayoCore_LinkLibraries}
         ${MayoIO_LinkLibraries}
 )
@@ -56,15 +55,13 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${ThirdPartyDir}
     ${Mayo_IncludeDirectories}
+    ${LibDIR}/oidn/include
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
 set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
 set(OIDN_LIBRARIES "OpenImageDenoise")
-target_link_directories(${TARGET_NAME} PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib
-)
 
 
 
@@ -74,8 +71,9 @@ target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES})
 
 
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(COPY ${LibDIR}/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${LibDIR}/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set(PATH_TRACE_SCENE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\pathtrace\\scenes\\")
 file(TO_CMAKE_PATH "${PATH_TRACE_SCENE_PATH}" PATH_TRACE_SCENE_PATH_CMAKE)

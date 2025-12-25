@@ -36,6 +36,7 @@ set(CMAKE_AUTORCC ON)
 option (TRACY_ENABLE "" ON)
 option (TRACY_ON_DEMAND "" ON)
 set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
+set(LibDIR "${PROJECT_SOURCE_DIR}/lib")
 
 ##########
 # OpenCascade
@@ -126,5 +127,3 @@ endif()
 
 add_subdirectory(Extern)
 add_subdirectory(Moon)
-add_subdirectory(Tools)
-
