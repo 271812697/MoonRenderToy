@@ -16,7 +16,7 @@
 #include "Settings/DebugSetting.h"
 #include "Gizmo/Widgets/SplitScreen.h"
 #include "Gizmo/Gizmo.h"
-#include "pathtrace/oidn/include/OpenImageDenoise/oidn.hpp"
+#include "OpenImageDenoise/oidn.hpp"
 #include <stb_Image/stb_image.h>
 #include <fstream>
 namespace Editor::Rendering {

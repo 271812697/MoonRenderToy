@@ -3,8 +3,6 @@
 #include "Core/SceneSystem/Scene.h"
 #include "renderer/Context.h"
 #include "treeViewpanel.h"
-#include "pathtrace/PathTrace.h"
-#include "pathtrace/Scene.h"
 
 
 namespace MOON {
@@ -85,31 +83,8 @@ namespace MOON {
 	}
 	void EntityTreeModel::onPathRootChange()
 	{
-		auto scene = PathTrace::PathTraceRender::instance().GetScene();
-		auto& meshInstancesRoots = scene->getMeshInstancesRoots();
-		auto& meshInstances = scene->getMeshInstances();
-		auto& meshInstancesTree = scene->getMeshInstancesTree();
-		if (scene != nullptr) {
-			mInternl->pathRoot->removeRows(0, mInternl->pathRoot->rowCount());
-			for (int i = 0; i < meshInstancesRoots.size(); i++) {
-
-				std::vector<QStandardItem*> root = { mInternl->pathRoot };
-				std::vector<int> node = { meshInstancesRoots[i] };
-				while (!node.empty()) {
-					int nodeId = node.back(); node.pop_back();
-					QStandardItem* parent = root.back(); root.pop_back();
-					QStandardItem* temp = new QStandardItem;
-					temp->setText(QString::fromStdString(meshInstances[nodeId].name));
-					temp->setCheckable(true);
-					temp->setCheckState(Qt::CheckState::Checked);
-					parent->setChild(parent->rowCount(), temp);
-					for (auto& child : meshInstancesTree[nodeId]) {
-						node.push_back(child);
-						root.push_back(temp);
-					}
-				}
-			}
-		}
+		
+		
 	}
 	QStandardItem* EntityTreeModel::sceneRoot()
 	{

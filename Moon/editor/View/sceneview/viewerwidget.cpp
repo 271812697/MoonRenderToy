@@ -7,8 +7,7 @@
 #include "renderer/SceneView.h"
 
 #include "Core/Global/ServiceLocator.h"
-#include "pathtrace/Scene.h"
-#include "pathtrace/PathTrace.h"
+
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
@@ -34,7 +33,8 @@ namespace MOON {
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
 			
-			mScenePath = QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
+		
+			mScenePath = PROJECT_ENGINE_PATH"/pathrace/scenes/teapot1.scene";// QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");
