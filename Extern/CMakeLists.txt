@@ -21,12 +21,6 @@ if(NOT TARGET spdlog)
     set_target_properties(spdlog PROPERTIES FOLDER ${lib_folder}/spdlog)
 endif()
 
-if(NOT TARGET glm_static)
-    add_subdirectory(glm)
-    set_target_properties(glm_static PROPERTIES FOLDER ${lib_folder}/glm_static)
-endif()
-
-
 if(NOT TARGET std_image)
     set(std_image_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/stb_Image)
     file(GLOB_RECURSE std_image_impl CONFIGURE_DEPENDS  
@@ -153,7 +147,7 @@ if(NOT TARGET core)
     "${core_SOURCE_DIR_}/*.h")
     source_group(TREE "${core_SOURCE_DIR_}" FILES ${core_impl} ${core_head})
     add_library(core STATIC ${core_impl} ${core_head})
-    target_link_libraries(core PUBLIC tools)
+    #target_link_libraries(core PUBLIC tools)
     target_link_libraries(core PUBLIC std_image)
     target_link_libraries(core PUBLIC glad)
 
