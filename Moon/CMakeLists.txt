@@ -28,12 +28,9 @@ target_link_libraries(${TARGET_NAME} PUBLIC
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC
-        glad
         spdlog
-        std_image
-        assimp
+        MoonRender
         tinygltf
-        core
         ${MayoCore_LinkLibraries}
         ${MayoIO_LinkLibraries}
 )

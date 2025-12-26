@@ -116,3 +116,5 @@ endif()
 
 add_subdirectory(Extern)
 add_subdirectory(Moon)
+add_subdirectory(MoonRender)
+

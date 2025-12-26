@@ -61,18 +61,6 @@ if(NOT TARGET tinygltf)
     target_include_directories(tinygltf PUBLIC $<BUILD_INTERFACE:${tinygltf_SOURCE_DIR_}/include>)
     set_target_properties(tinygltf PROPERTIES FOLDER ${lib_folder}/tinygltf)
 endif()
-
-if(NOT TARGET tools)   
-    set(tools_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Tools)
-    file(GLOB_RECURSE tools_impl CONFIGURE_DEPENDS  
-    "${tools_SOURCE_DIR_}/*.cpp")
-    file(GLOB_RECURSE tools_head CONFIGURE_DEPENDS  
-    "${tools_SOURCE_DIR_}/*.h")
-    source_group(TREE "${tools_SOURCE_DIR_}" FILES ${tools_impl} ${tools_head})
-    add_library(tools STATIC ${tools_impl} ${tools_head})
-    set_target_properties(tools PROPERTIES FOLDER ${lib_folder}/tools)
-    target_include_directories(tools PUBLIC $<BUILD_INTERFACE:${tools_SOURCE_DIR_}/include>)
-endif()
 if(NOT TARGET tinyxml2)   
     set(tinyxml2_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2)
     file(GLOB_RECURSE tinyxml2_impl CONFIGURE_DEPENDS  
@@ -102,61 +90,4 @@ if(NOT TARGET tracy)
     )
     target_include_directories(tracy PUBLIC $<BUILD_INTERFACE:${tracy_SOURCE_DIR_}>)
     set_target_properties(tracy PROPERTIES FOLDER ${lib_folder}/tracy)
-endif()
-if(NOT TARGET math)
-    set(math_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Maths)
-    file(GLOB_RECURSE math_impl CONFIGURE_DEPENDS  
-    "${math_SOURCE_DIR_}/*.cpp")
-    file(GLOB_RECURSE math_head CONFIGURE_DEPENDS  
-    "${math_SOURCE_DIR_}/*.h")
-    source_group(TREE "${math_SOURCE_DIR_}" FILES ${math_impl} ${math_head})
-    add_library(math STATIC ${math_impl} ${math_head})
-    target_include_directories(math PUBLIC 
-    $<BUILD_INTERFACE:${math_SOURCE_DIR_}/include>
-    ${EIGEN3_INCLUDE_DIR}
-    )
-    set_target_properties(math PROPERTIES FOLDER ${lib_folder}/math)
-endif()
-
-
-
-if(NOT TARGET rendering)
-    set(rendering_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Rendering)
-    file(GLOB_RECURSE rendering_impl CONFIGURE_DEPENDS  
-    "${rendering_SOURCE_DIR_}/*.cpp")
-    file(GLOB_RECURSE rendering_head CONFIGURE_DEPENDS  
-    "${rendering_SOURCE_DIR_}/*.h" "${rendering_SOURCE_DIR_}/*.inl")
-    source_group(TREE "${rendering_SOURCE_DIR_}" FILES ${rendering_impl} ${rendering_head})
-    add_library(rendering STATIC ${rendering_impl} ${rendering_head})
-    target_link_libraries(rendering PUBLIC tools)
-    target_link_libraries(rendering PUBLIC assimp)
-    target_link_libraries(rendering PUBLIC glad)
-    target_link_libraries(rendering PUBLIC std_image)
-    target_link_libraries(rendering PUBLIC math)
-    target_link_libraries(rendering PUBLIC tracy)
-    target_compile_definitions(rendering PUBLIC GRAPHICS_API_OPENGL)
-    
-    target_include_directories(rendering PUBLIC $<BUILD_INTERFACE:${rendering_SOURCE_DIR_}/include>)
-    set_target_properties(rendering PROPERTIES FOLDER ${lib_folder}/rendering)
-endif()
-if(NOT TARGET core)
-    set(core_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/Core)
-    file(GLOB_RECURSE core_impl CONFIGURE_DEPENDS  
-    "${core_SOURCE_DIR_}/*.cpp" "${core_SOURCE_DIR_}/*.inl")
-    file(GLOB_RECURSE core_head CONFIGURE_DEPENDS  
-    "${core_SOURCE_DIR_}/*.h")
-    source_group(TREE "${core_SOURCE_DIR_}" FILES ${core_impl} ${core_head})
-    add_library(core STATIC ${core_impl} ${core_head})
-    #target_link_libraries(core PUBLIC tools)
-    target_link_libraries(core PUBLIC std_image)
-    target_link_libraries(core PUBLIC glad)
-
-    target_link_libraries(core PUBLIC math)
-    target_link_libraries(core PUBLIC rendering)
-    target_link_libraries(core PUBLIC tinyxml2)
-    target_include_directories(core PUBLIC $<BUILD_INTERFACE:${core_SOURCE_DIR_}/include>)
-    target_include_directories(core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sol/include>)
-    set_target_properties(core PROPERTIES FOLDER ${lib_folder}/core)
-    target_compile_options(core PRIVATE /bigobj )
-    #target_compile_options(core PRIVATE /bigobj )
 endif()
