@@ -133,34 +133,37 @@ namespace MOON {
 		{
 			
 			auto model = GetService(Core::ResourceManagement::ModelManager).LoadResource(sceneName);
-			Core::Resources::Material* tempMat =GetService(Core::ResourceManagement::MaterialManager).GetResource(sceneName);
-			if (tempMat == nullptr) {
-				tempMat = new Core::Resources::Material();
-				GetService(Core::ResourceManagement::MaterialManager).RegisterResource(sceneName, tempMat);
+			if (model) {
+				Core::Resources::Material* tempMat =GetService(Core::ResourceManagement::MaterialManager).GetResource(sceneName);
+				if (tempMat == nullptr) {
+					tempMat = new Core::Resources::Material();
+					GetService(Core::ResourceManagement::MaterialManager).RegisterResource(sceneName, tempMat);
 
-				tempMat->SetBackfaceCulling(false);;
-				tempMat->SetCastShadows(false);
-				tempMat->SetReceiveShadows(false);
+					tempMat->SetBackfaceCulling(false);;
+					tempMat->SetCastShadows(false);
+					tempMat->SetReceiveShadows(false);
 
-				tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-				tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+					tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
+					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
-				tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-				tempMat->SetProperty("u_Roughness", 0.1f);
-				tempMat->SetProperty("u_Metallic", 0.1f);
-				// Emission
-				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
+					tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+					tempMat->SetProperty("u_Roughness", 0.1f);
+					tempMat->SetProperty("u_Metallic", 0.1f);
+					// Emission
+					tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+					tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
 
-			}
+				}
 			
 		
-			auto& actor = scene->CreateActor();
-			actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
-			//actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
-			auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-			materilaRener.SetMaterialAtIndex(0, *tempMat);
-			materilaRener.UpdateMaterialList();
+				auto& actor = scene->CreateActor(sceneName);
+				actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
+				//actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
+				auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+				materilaRener.SetMaterialAtIndex(0, *tempMat);
+				materilaRener.UpdateMaterialList();
+			}
+
 		}
 		//scene->BuildSceneBvh();
 	}
