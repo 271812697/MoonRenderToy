@@ -60,6 +60,30 @@ namespace MOON {
 		}
 		isDirty = true;
 	}
+	int Polygon::getBlockId(const std::string& name)
+	{
+		auto it = blockNameToIndex.find(name);
+		if (it != blockNameToIndex.end()) {
+			return it->second;
+		}
+		return -1;
+	}
+	void Polygon::setBlockColor(int index, const Maths::FVector4& color)
+	{
+		blockColor[index] = color;
+		blockColorDirty = true;
+	}
+	void Polygon::addCell(const Cell& cell)
+	{
+		cellArray.push_back(cell);
+		cellArray.back().blockId = nextBlockId;
+	}
+	void Polygon::switchNextBlock(const Maths::FVector4& color,const std::string& name)
+	{
+		blockColor.push_back(color);
+		blockNameToIndex[name] = nextBlockId;
+		nextBlockId++;
+	}
 	void Polygon::submit()
 	{
 		std::vector<VertexData> vData;
@@ -67,9 +91,9 @@ namespace MOON {
 		for (int i = 0;i < cellArray.size();i++) {
 			Cell& cell = cellArray[i];
 			for (int j = 2;j < cell.vertex.size();j++) {
-				VertexData vd1(cell.vertex[0], cell.color, cell.n, cell.uv[0]);
-				VertexData vd2(cell.vertex[j - 1], cell.color, cell.n, cell.uv[j - 1]);
-				VertexData vd3(cell.vertex[j], cell.color, cell.n, cell.uv[j]);
+				VertexData vd1(cell.vertex[0],cell.blockId, cell.color, cell.n, cell.uv[0]);
+				VertexData vd2(cell.vertex[j - 1] , cell.blockId, cell.color, cell.n, cell.uv[j - 1]);
+				VertexData vd3(cell.vertex[j] , cell.blockId, cell.color, cell.n, cell.uv[j]);
 				vData.push_back(vd1);
 				vData.push_back(vd2);
 				vData.push_back(vd3);
@@ -105,16 +129,38 @@ namespace MOON {
 		desc.mutableDesc= Rendering::Settings::MutableTextureDesc{
 				.data=edgeValue.data()
 		};
-		edgeTexture = new Rendering::Resources::Texture();;//new  OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER, "tbo");
-		auto gltexture=new Rendering::HAL::GLTexture(Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-		gltexture->Allocate(desc);
-		edgeTexture->SetTexture(std::unique_ptr<Rendering::HAL::Texture>(gltexture));
+		if (edgeTexture == nullptr) {
+			edgeTexture = new Rendering::Resources::Texture();;//new  OvRendering::HAL::GLTexture(OvRendering::Settings::ETextureType::TEXTURE_BUFFER, "tbo");
+			auto gltexture=new Rendering::HAL::GLTexture(Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+			gltexture->Allocate(desc);
+			edgeTexture->SetTexture(std::unique_ptr<Rendering::HAL::Texture>(gltexture));
+		}
 	}
 	void Polygon::bind()
 	{
 		if (isDirty) {
 			isDirty = false;
 			submit();
+		}
+		if (blockColorDirty) {
+			blockColorDirty = false;
+			::Rendering::Settings::TextureDesc desc;
+			desc.isTextureBuffer = true;
+			desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+			desc.buffetLen = nextBlockId * sizeof(Maths::FVector4);
+			desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+				.data = blockColor.data()
+			};
+			if (blockTexture == nullptr) {
+				blockTexture = new Rendering::Resources::Texture();;
+				auto domainColorTex = new ::Rendering::HAL::GLTexture(Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+				domainColorTex->Allocate(desc);
+				blockTexture->SetTexture(std::unique_ptr<Rendering::HAL::Texture>(domainColorTex));
+			}
+			else
+			{
+				blockTexture->GetTexture().Allocate(desc);
+			}
 		}
 		glBindVertexArray(vao);
 	}
@@ -137,6 +183,7 @@ namespace MOON {
 			auto v1 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+1));
 			auto v2 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+2));
 			cellArray.push_back(Cell({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z },c));
+			cellArray.back().blockId = nextBlockId;
 		}
 	}
 	void Polygon::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
@@ -289,9 +336,13 @@ namespace MOON {
 			auto arrow = GetService(Editor::Core::Context).editorResources->GetModel("Arrow_Translate");
 			auto sphere= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
 			viewAxis.addModel(arrow, model, { 0,0,255,255 });
+			viewAxis.switchNextBlock({0,0,1,1});
 			viewAxis.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
+			viewAxis.switchNextBlock({ 1,0,0,1 });
 			viewAxis.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });
+			viewAxis.switchNextBlock({ 0,1,0,1 });
 			viewAxis.addModel(sphere, Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 0.5f,0.5f,0.5f }), { 255,255,0,255 });
+			viewAxis.switchNextBlock({ 1,1,0,1 });
 			viewAxis.model = Eigen::Matrix4f::Identity();
 			viewAxis.model(0, 3) = -halflen;
 			viewAxis.model(1, 3) = -halflen;
@@ -315,12 +366,19 @@ namespace MOON {
 			auto sphere = GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
 			auto cil= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/res.obj");
 			poly.addModel(cil, Maths::FMatrix4::Identity, { 255,255,0,255 });
+			poly.switchNextBlock({ 1,1,0,1 },"XAxis");
 			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisX(90), {0,0,255,255});
+			poly.switchNextBlock({ 0,0,1,1 },"YAxis");
 			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisY(90), {255,0,255,255});
+			poly.switchNextBlock({ 1,0,1,1 } , "ZAxis");
 			poly.addModel(arrow, model, { 0,0,255,255 });
+			poly.switchNextBlock({ 0,0,1,1 },"ZArrow");
 			poly.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
+			poly.switchNextBlock({ 1,0,0,1 },"XArrow");
 			poly.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });
+			poly.switchNextBlock({ 0,1,0,1 },"YArrow");
 			poly.addModel(sphere, Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 0.5f,0.5f,0.5f }), { 255,255,0,255 });
+			poly.switchNextBlock({ 1,1,0,1 });
 			float quadlen = 3.0;
 			float quadoffset = 1.0;
 			//y axis
@@ -330,7 +388,9 @@ namespace MOON {
 			cell.addPoint({ quadoffset + quadlen,0,quadoffset +quadlen }, { 0,0 });
 			cell.addPoint({ quadoffset,0,quadoffset +quadlen }, { 0,0 });
 			cell.n = {0,1,0};
-			poly.cellArray.push_back(cell);
+			poly.addCell(cell);
+			poly.switchNextBlock({0,1,0,1},"YPlane");
+			
 			
 			//x axis
 			cell.clear();
@@ -339,8 +399,8 @@ namespace MOON {
 			cell.addPoint({ 0,quadoffset + quadlen,quadoffset + quadlen }, { 0,0 });
 			cell.addPoint({ 0,quadoffset ,quadoffset + quadlen }, { 0,0 });
 			cell.n = { 1,0,0 };
-			poly.cellArray.push_back(cell);
-
+			poly.addCell(cell);
+			poly.switchNextBlock({ 1,0,0,1 },"XPlane");
 			//z axis
 			cell.clear();
 			cell.addPoint({ quadoffset,quadoffset,0 }, { 0,0 });
@@ -348,7 +408,9 @@ namespace MOON {
 			cell.addPoint({ quadoffset + quadlen,quadoffset + quadlen,0 }, { 0,0 });
 			cell.addPoint({ quadoffset ,quadoffset + quadlen,0}, { 0,0 });
 			cell.n = { 0,0,1 };
-			poly.cellArray.push_back(cell);
+			poly.addCell(cell);
+			poly.switchNextBlock({ 0,0,1,1 },"ZPlane");
+
 
 			poly.model = Eigen::Matrix4f::Identity();
 		

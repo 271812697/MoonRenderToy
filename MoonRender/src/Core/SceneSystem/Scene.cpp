@@ -507,9 +507,9 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths
 			}
 		}
 	}
-	if (hit) {
-		bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
-	}
+	//if (hit) {
+	//	bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
+	//}
 	return hit;
 }
 
@@ -562,9 +562,9 @@ bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& r
 			}
 		}	
 	}
-	if (hit) {
-		bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
-	}
+	//if (hit) {
+	//	bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
+	//}
 	return hit;
 }
 
