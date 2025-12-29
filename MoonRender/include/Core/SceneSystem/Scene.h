@@ -6,13 +6,13 @@
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/ECS/Components/CPostProcessStack.h>
 #include <Core/ECS/Components/CReflectionProbe.h>
+#include <Core/SceneSystem/BvhService.h>
 #include <Rendering/Geometry/bbox.h>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/Geometry/ray.h>
 
 namespace Core::SceneSystem
 {
-	class BvhService;
 	class Scene : public API::ISerializable
 	{
 	public:
@@ -54,8 +54,9 @@ namespace Core::SceneSystem
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_root) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_root) override;
 		void BuildSceneBvh();
-		bool RayHit(const ::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint);
-		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, Maths::FVector3& outPoint);
+		
+		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		::Rendering::Geometry::Bvh* GetBvh();
 		BvhService* GetBvhService() { return bvhService; }
 	private:

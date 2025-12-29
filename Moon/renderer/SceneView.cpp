@@ -225,9 +225,19 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 {
 	auto[x,y]=input.GetMousePosition();
 	auto ray = GetCamera()->GetMouseRay(x, y);
+	::Core::SceneSystem::HitRes res;
 	bool flag=MOON::DebugSettings::instance().getOrDefault<bool>("BvhRayHit",false);
-	if(!flag)return GetScene()->RayIteratorHit(ray, out);
-	return GetScene()->RayHit(ray,out);
+	if (!flag) { 
+		if (GetScene()->RayIteratorHit(ray, res)){
+			out=res.hitPoint;
+			return true;
+		}
+		return false;
+	}
+	if (GetScene()->RayHit(ray, res)) {
+		out = res.hitPoint;
+	}
+	return false;
 }
 
 ::Rendering::Geometry::Ray Editor::Panels::SceneView::GetMouseRay()
