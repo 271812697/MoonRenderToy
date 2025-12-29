@@ -1,6 +1,5 @@
 ﻿#include "openFile.h"
 #include "editor/View/sceneview/viewerwidget.h"
-#include "editor/View/pathtrace/pathtraceWidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include <QtWidgets/QFileDialog>
@@ -12,9 +11,8 @@ namespace MOON {
 	{
 		
 		auto& viewer = GetService(ViewerWidget);
-		auto& pathTrace = GetService(PathTraceWidget);
+		
 		connect(this, &OpenFileCommand::sceneChange, &viewer, &ViewerWidget::onSceneChange);
-		connect(this, &OpenFileCommand::sceneChange, &pathTrace, &PathTraceWidget::onSceneChange);
 		auto openfile=new QAction(this);
 		setAction(openfile);
 		openfile->setObjectName(QString::fromUtf8("actionFileOpen"));

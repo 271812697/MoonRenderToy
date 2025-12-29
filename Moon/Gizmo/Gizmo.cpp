@@ -4133,12 +4133,13 @@ namespace MOON
 		p_pso.depthTest = true;
 		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
 		driver->SetPipelineState(p_pso);
-		mCellMaterial->SetFeatures({"WITH_EDGE","FIXED_SCALE"});
+		mCellMaterial->SetFeatures({"WITH_EDGE","FIXED_SCALE","BLOCK_COLOR"});
 		for (auto& drawMesh : drawMeshList)
 		{
 			auto polygon = mPreStorePolygon[drawMesh.mesh];
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(drawMesh.model));
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
+			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			polygon->bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);

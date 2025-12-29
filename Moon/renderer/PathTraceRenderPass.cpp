@@ -16,7 +16,7 @@
 #include "Settings/DebugSetting.h"
 #include "Gizmo/Widgets/SplitScreen.h"
 #include "Gizmo/Gizmo.h"
-#include "pathtrace/oidn/include/OpenImageDenoise/oidn.hpp"
+#include "OpenImageDenoise/oidn.hpp"
 #include <stb_Image/stb_image.h>
 #include <fstream>
 namespace Editor::Rendering {
@@ -201,6 +201,93 @@ namespace Editor::Rendering {
 			bvhService->renderOptions.enableEnvMap = value;
 			needUpdateShader = true;
 			});
+		MOON::DebugSettings::instance().addCallBack("enableUniformLight", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableUniformLight = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("hideEmitters", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.hideEmitters = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("enableBackground", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableBackground= value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("transparentBackground", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.transparentBackground = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("independentRenderSize", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.independentRenderSize = value;
+			
+			});
+		MOON::DebugSettings::instance().addCallBack("enableRoughnessMollification", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableRoughnessMollification = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("enableVolumeMIS", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.enableVolumeMIS = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("optAlphaTest", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.optAlphaTest = value;
+			needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("optMedium", "Default", [this](MOON::NodeBase* self) {
+			bool value = self->getData<bool>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.optMedium = value;
+			needUpdateShader = true;
+			});
+		
+		MOON::DebugSettings::instance().addCallBack("denoiserFrameCnt", "Default", [this](MOON::NodeBase* self) {
+			int value = self->getData<int>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.denoiserFrameCnt = value;
+			refreshFlag = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("envMapIntensity", "Default", [this](MOON::NodeBase* self) {
+			float value = self->getData<float>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.envMapIntensity = value;
+			refreshFlag = true;
+			//needUpdateShader = true;
+			});
+		MOON::DebugSettings::instance().addCallBack("roughnessMollificationAmt", "Default", [this](MOON::NodeBase* self) {
+			float value = self->getData<float>();
+			auto& view = GetService(Editor::Panels::SceneView);;
+			auto bvhService = view.GetScene()->GetBvhService();
+			bvhService->renderOptions.roughnessMollificationAmt = value;
+			refreshFlag = true;
+			//needUpdateShader = true;
+				});
 		//we need to init shaders
 		UpdateShaders();
 		std::string v = R"(
@@ -533,27 +620,27 @@ void main()
 			pathtraceDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 			tonemapDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 		}
-		for (int i = 0; i < bvhService->materials.size(); i++)
-		{
-			if ((int)bvhService->materials[i].alphaMode != ::Core::SceneSystem::AlphaMode::Opaque)
-			{
-				pathtraceDefines += "#define OPT_ALPHA_TEST\n";
-				bvhService->renderOptions.optAlphaTest = true;
-				break;
-			}
-		}
+		//for (int i = 0; i < bvhService->materials.size(); i++)
+		//{
+		//	if ((int)bvhService->materials[i].alphaMode != ::Core::SceneSystem::AlphaMode::Opaque)
+		//	{
+		//		pathtraceDefines += "#define OPT_ALPHA_TEST\n";
+		//		bvhService->renderOptions.optAlphaTest = true;
+		//		break;
+		//	}
+		//}
 		if (bvhService->renderOptions.enableRoughnessMollification)
 			pathtraceDefines += "#define OPT_ROUGHNESS_MOLLIFICATION\n";
 
-		for (int i = 0; i < bvhService->materials.size(); i++)
-		{
-			if ((int)bvhService->materials[i].mediumType != ::Core::SceneSystem::MediumType::None)
-			{
-				pathtraceDefines += "#define OPT_MEDIUM\n";
-				bvhService->renderOptions.optMedium = true;
-				break;
-			}
-		}
+		//for (int i = 0; i < bvhService->materials.size(); i++)
+		//{
+		//	if ((int)bvhService->materials[i].mediumType != ::Core::SceneSystem::MediumType::None)
+		//	{
+		//		pathtraceDefines += "#define OPT_MEDIUM\n";
+		//		bvhService->renderOptions.optMedium = true;
+		//		break;
+		//	}
+		//}
 
 		if (bvhService->renderOptions.enableVolumeMIS)
 			pathtraceDefines += "#define OPT_VOL_MIS\n";

@@ -5,12 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-if (${QT_VERSION_MAJOR} EQUAL 6)
-  qt_add_resources(RESOURCES ./resource/resource.qrc)
-else()
-  qt5_add_resources(RESOURCES ./resource/resource.qrc)
-endif()
-
+qt5_add_resources(RESOURCES ./resource/resource.qrc)
 file(GLOB_RECURSE Moon_HEAD ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE Moon_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 file(GLOB GLSL ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/shaders/*.*)
@@ -23,31 +18,19 @@ set_target_properties(${TARGET_NAME}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 # Link dependencies    
-if(USE_QT6)
-    target_link_libraries(${TARGET_NAME} PUBLIC
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Widgets
-        Qt${QT_VERSION_MAJOR}::Gui
-        Qt${QT_VERSION_MAJOR}::OpenGLWidgets
-    )
-else()
-    target_link_libraries(${TARGET_NAME} PUBLIC
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Widgets
-        Qt${QT_VERSION_MAJOR}::Gui
-        Qt${QT_VERSION_MAJOR}::OpenGL
-        Qt${QT_VERSION_MAJOR}::Svg
-    )
-endif()
+
 target_link_libraries(${TARGET_NAME} PUBLIC
-        glad
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::OpenGL
+    Qt${QT_VERSION_MAJOR}::Svg
+)
+
+target_link_libraries(${TARGET_NAME} PUBLIC
         spdlog
-        glm_static
-        std_image
-        assimp
+        MoonRender
         tinygltf
-        core
-        Dump
         ${MayoCore_LinkLibraries}
         ${MayoIO_LinkLibraries}
 )
@@ -56,26 +39,22 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${ThirdPartyDir}
     ${Mayo_IncludeDirectories}
+    ${LibDIR}/oidn/include
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
 set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
 set(OIDN_LIBRARIES "OpenImageDenoise")
-target_link_directories(${TARGET_NAME} PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib
-)
-
-
-
 
 # Link dependencies    
+target_link_directories(${TARGET_NAME}
+    PRIVATE "${CMAKE_SOURCE_DIR}/lib/oidn/lib"
+)
+message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
 target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES})
-
-
-
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${LibDIR}/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${LibDIR}/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set(PATH_TRACE_SCENE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\pathtrace\\scenes\\")
 file(TO_CMAKE_PATH "${PATH_TRACE_SCENE_PATH}" PATH_TRACE_SCENE_PATH_CMAKE)
@@ -86,16 +65,12 @@ file(TO_CMAKE_PATH "${PATH_TRACE_SHADER_PATH}" PATH_TRACE_SHADER_PATH_CMAKE)
 target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_SCENE_PATH="${PATH_TRACE_SCENE_PATH_CMAKE}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_HDR_PATH="${PATH_TRACE_HDR_PATH_CMAKE}")
 target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_SHADER_PATH="${PATH_TRACE_SHADER_PATH_CMAKE}")
-
-
 set(PROJECT_ENGINE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Engine\\")
 file(TO_CMAKE_PATH "${PROJECT_ENGINE_PATH}" PROJECT_ENGINE_PATH_CMAKE)
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_ENGINE_PATH="${PROJECT_ENGINE_PATH_CMAKE}")
 set(PROJECT_EDITOR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Editor\\")
 file(TO_CMAKE_PATH "${PROJECT_EDITOR_PATH}" PROJECT_EDITOR_PATH_CMAKE)
 target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_EDITOR_PATH="${PROJECT_EDITOR_PATH_CMAKE}")
-
-
 set(QtPluginsDir "${QT_DIR}/../../../plugins")
 file(GLOB QtPluginIconEnginesDLLs  "${QtPluginsDir}/iconengines/qsvgicon*.dll")
 file(GLOB QtPluginImageFormatsDLLs "${QtPluginsDir}/imageformats/qsvg*.dll")

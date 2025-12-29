@@ -10,8 +10,10 @@ namespace MOON
 		virtual void onUpdate()override;
 		void onMouseRightButtonPressed();
 		void onMouseRightButtonReleased();
+		void onMouseMove();
 	private:
 		ExecuteCommandPair m_rightButtonPressObserver;
 		ExecuteCommandPair m_rightButtonReleaseObserver;
+		ExecuteCommandPair m_mouseMoveObserver;
 	};
 }

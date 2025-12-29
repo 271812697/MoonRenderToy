@@ -271,9 +271,13 @@ namespace MOON {
 		add("PathTracing", "independentRenderSize", false);
 		add("PathTracing", "enableRoughnessMollification", false);
 		add("PathTracing", "enableVolumeMIS", false);
-		add("PathTracing", "optLight", false);
+		
 		add("PathTracing", "optAlphaTest", false);
 		add("PathTracing", "optMedium", false);
+		
+		add("PathTracing", new DragInt(10, 5, 30, "denoiserFrameCnt"));
+		add("PathTracing",new DragFloat(1.0f,0.5f,3.0f,"envMapIntensity"));
+		add("PathTracing",new DragFloat(0.0f,0.0f,1.0f,"roughnessMollificationAmt"));
 
 		
 	}

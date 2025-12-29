@@ -1,27 +1,16 @@
 cmake_minimum_required(VERSION 3.8)
 project(UseQt LANGUAGES C CXX)
 
-option(USE_QT6 "Build with Qt6 (Enabled by default)" OFF)
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
 if(NOT DEFINED EIGEN3_INCLUDE_DIR)
   set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/Extern/eigen-3.4.0")
 endif()
 find_package(Eigen3 3.4.0 REQUIRED)
-
-if(USE_QT6)
-  find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
-  find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui OpenGL OpenGLWidgets Svg)
-else()
-  find_package(QT NAMES Qt5 REQUIRED COMPONENTS Widgets)
-  find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui OpenGL Svg)
-endif()
-
+find_package(QT NAMES Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui OpenGL Svg)
 message(STATUS "QT_VERSION: ${QT_VERSION}, QT_DIR: ${QT_DIR}")
 
 if (${QT_VERSION} VERSION_LESS 5.11.0)
@@ -36,6 +25,7 @@ set(CMAKE_AUTORCC ON)
 option (TRACY_ENABLE "" ON)
 option (TRACY_ON_DEMAND "" ON)
 set(ThirdPartyDir "${PROJECT_SOURCE_DIR}/Extern")
+set(LibDIR "${PROJECT_SOURCE_DIR}/lib")
 
 ##########
 # OpenCascade
@@ -126,5 +116,5 @@ endif()
 
 add_subdirectory(Extern)
 add_subdirectory(Moon)
-add_subdirectory(Tools)
+add_subdirectory(MoonRender)
 

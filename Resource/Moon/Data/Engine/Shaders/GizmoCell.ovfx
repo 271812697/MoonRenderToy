@@ -2,6 +2,7 @@
 #feature CUSTOM_PROJECT
 #feature CUSTOM_VIEWPORT
 #feature FIXED_SCALE
+#feature BLOCK_COLOR
 
 #shader vertex
 #version 450 core
@@ -20,7 +21,7 @@ uniform mat4 uVProjMatrix;
 #endif
 
 out VSOutPut{
-    vec3 pos;
+    vec4 pos;
     vec3 normal;
     vec4 color;
     vec2 uv;
@@ -29,29 +30,29 @@ out VSOutPut{
 void main() 
 {
     vData.color = aColor.rgba; // swizzle to correct endianness
-    vData.pos= aPositionSize.xyz;
+    vData.pos= aPositionSize;
     //the follow doesn't use CUSTOM_PROJECT
     #if defined(FIXED_SCALE)
         //orth
         if(ubo_CameraType==0){
           float ratio=400.0/(ubo_Projection[1][1]*ubo_ScreenHeight);
-          vData.pos=vData.pos*ratio;
+          vData.pos.xyz=vData.pos.xyz*ratio;
         }
         else{
-          vec4 viewPos= ubo_View * uModelMatrix*vec4(vData.pos,1.0f);
+          vec4 viewPos= ubo_View * uModelMatrix*vec4(vData.pos.xyz,1.0f);
           viewPos.z/=viewPos.w;
           float h=viewPos.z*1/ubo_Projection[1][1];
           float ratio=400.0*abs(h)/ubo_ScreenHeight;
-          vData.pos=vData.pos*ratio;
+          vData.pos.xyz=vData.pos.xyz*ratio;
         }
     #endif
     vData.normal=normalize(mat3(uModelMatrix)*aNormal);
 
     vData.uv=aUv;
 #if defined(CUSTOM_PROJECT)
-    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(vData.pos, 1.0);
+    gl_Position = uVProjMatrix*uViewMatrix * uModelMatrix*vec4(vData.pos.xyz, 1.0);
 #else
-    gl_Position = ubo_Projection * ubo_View * uModelMatrix*vec4(vData.pos, 1.0);
+    gl_Position = ubo_Projection * ubo_View * uModelMatrix*vec4(vData.pos.xyz, 1.0);
 #endif
    
  
@@ -64,14 +65,14 @@ void main()
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 
 in VSOutPut{
-    vec3 pos;
+    vec4 pos;
     vec3 normal;
     vec4 color;
     vec2 uv;
 }gs_in[];
 
 out GS_OUT{
-    vec3 pos;
+    vec4 pos;
     vec3 normal;
     vec4 color;
     vec2 uv;
@@ -143,7 +144,7 @@ void main()
 #include ":Shaders/Lighting/PBR.ovfxh"
 #if defined(WITH_EDGE)
 in GS_OUT{
-    vec3 pos;
+    vec4 pos;
     vec3 normal;
     vec4 color;
     vec2 uv;
@@ -151,7 +152,7 @@ in GS_OUT{
 } fs_in;
 #else
 in VSOutPut{
-    vec3 pos;
+    vec4 pos;
     vec3 normal;
     vec4 color;
     vec2 uv;
@@ -161,9 +162,16 @@ in VSOutPut{
 layout(location=0) out vec4 fResult;
 uniform mat4 uViewMatrix;
 uniform sampler2D u_AlbedoMap;
+uniform samplerBuffer blockTexture;
+
 void main() 
 {
     vec4 albedo = texture(u_AlbedoMap, fs_in.uv)*fs_in.color;
+#if defined(BLOCK_COLOR)
+    int domainIndex=int(round(fs_in.pos.w));
+    albedo=texelFetch(blockTexture,domainIndex).rgba;
+#endif
+
 #if defined(WITH_EDGE)
     float edist[3];
     edist[0] = dot(fs_in.edgeEqn[0].xy, gl_FragCoord.xy) + fs_in.edgeEqn[0].w;
@@ -191,5 +199,10 @@ void main()
     vec3 specular=sign(diffuse)*pow(max(dot(N,lightDir),0),100)*0.03*albedo.rgb;
     vec3 col=diffuse+specular;
     //col=pow(col, vec3(2.2));
-    fResult = vec4(col,1.0);	
+    #if defined(BLOCK_COLOR)
+     fResult = vec4(col,albedo.a);	
+    #else
+     fResult = vec4(col,1.0);	   
+    #endif
+
 }

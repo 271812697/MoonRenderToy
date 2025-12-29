@@ -4,6 +4,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
+#include "Core/ECS/Components/CColorBar.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include <STEPControl_Reader.hxx>
 #include <TopoDS_Shape.hxx>
@@ -288,6 +289,8 @@ namespace MOON {
             ::Rendering::HAL::GLTexture*  domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
 			domainColorTex->Allocate(desc);
             tempMat->SetProperty("domainColorTex",domainColorTex);
+            auto& colorBar=actor.AddComponent<Core::ECS::Components::ColorBar>();
+			colorBar.SetColors(domainColor);
         }
     }
 }

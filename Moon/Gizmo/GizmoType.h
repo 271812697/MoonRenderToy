@@ -7,7 +7,9 @@ namespace Rendering {
 		class Mesh;
 		class Model;
 	}
+
 }
+
 namespace MOON
 {
 	class Gizmo;
@@ -49,6 +51,13 @@ namespace MOON
 		}
 		VertexData(const Eigen::Vector3f& p, const Eigen::Vector4<uint8_t>& c, const Eigen::Vector3f& n, const Eigen::Vector2f& texCoord)
 			: positionSize(p.x(), p.y(), p.z(), 1.0)
+			, normal(n)
+			, uv(texCoord)
+			, color(c)
+		{
+		}
+		VertexData(const Eigen::Vector3f& p, float blockId,const Eigen::Vector4<uint8_t>& c, const Eigen::Vector3f& n, const Eigen::Vector2f& texCoord)
+			: positionSize(p.x(), p.y(), p.z(), blockId)
 			, normal(n)
 			, uv(texCoord)
 			, color(c)
@@ -134,6 +143,7 @@ namespace MOON
 	{
 		std::vector<Eigen::Vector3f>vertex;
 		std::vector<Eigen::Vector2f>uv;
+		int blockId=0;
 		Eigen::Vector3f n;
 		Eigen::Vector4<uint8_t> color = { 255,255,255,255 };
 		void clear();
@@ -189,15 +199,24 @@ namespace MOON
 	struct Polygon {
 		std::vector<Cell>cellArray;
 		std::vector<uint8_t>edgeValue;
+		std::vector<Maths::FVector4>blockColor;
+		std::unordered_map<std::string, int>blockNameToIndex;
 		unsigned int vao = 0;
 		unsigned int vbo = 0;
 		unsigned int numVertex = 0;
+		unsigned int nextBlockId=0;
 		bool isDirty = false;
+		bool blockColorDirty = true;
 		bool drawEdge = true;
 		Rendering::Resources::Texture* texture = nullptr;
 		Rendering::Resources::Texture* edgeTexture = nullptr;
+		Rendering::Resources::Texture* blockTexture = nullptr;
 		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color);
+		int getBlockId(const std::string& name);
+		void setBlockColor(int index,const Maths::FVector4& color);
+		void addCell(const Cell& cell);
+		void switchNextBlock(const Maths::FVector4& color={1,1,1,1},const std::string& name="empty");
 		void submit();
 		void bind();
 		Eigen::Vector3f getCellNormal(int index);

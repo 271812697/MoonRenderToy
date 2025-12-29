@@ -1,3 +1,0 @@
-﻿#include "IMesh.h"
-
-
