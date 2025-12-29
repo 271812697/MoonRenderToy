@@ -284,13 +284,9 @@ namespace Core::SceneSystem
 		std::vector<Maths::FVector4> verticesUVX; // Vertex + texture Coord (u/s)
 		std::vector<Maths::FVector4> normalsUVY; // Normal + texture Coord (v/t)
 		std::vector<Maths::FMatrix4> transforms;
-
 		std::vector<TriangleInfo>triangleInfo;
 		std::vector<MeshTriangleInfo>meshTriangleInfo;
 		std::unordered_map<int, std::vector<TriangleInfo>>triangleInfoMap;
-
-
-
 		// Materials
 		std::vector<Material> materials;
 		// Lights
