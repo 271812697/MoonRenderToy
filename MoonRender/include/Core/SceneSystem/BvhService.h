@@ -227,6 +227,13 @@ namespace Core::SceneSystem
 		float envMapRot;
 		float roughnessMollificationAmt;
 	};
+	struct HitRes {
+		Maths::FVector3 hitPoint;
+		Maths::FVector2 hitUv;
+		Maths::FVector3 hitNormal;
+		int actorId = -1;
+		int triangleId = -1;
+	};
 	class BvhService {
 	public:
 		BvhService(Scene* sc) ;
@@ -251,6 +258,8 @@ namespace Core::SceneSystem
 		void SetDirtyFlag(bool flag);
 		void AddTriangleInfo(int mid,const TriangleInfo& info);
 		void UpdateTriangleInfo();
+		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		~BvhService();
 	private:
 		Scene* scene;
@@ -284,10 +293,8 @@ namespace Core::SceneSystem
 
 		// Materials
 		std::vector<Material> materials;
-
 		// Lights
 		std::vector<Light> lights;
-
 		// textures
 		std::vector<::Rendering::HAL::Texture*> textures;
 		std::vector<unsigned char> textureMapsArray;
