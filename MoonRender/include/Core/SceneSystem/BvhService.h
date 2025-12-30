@@ -234,6 +234,10 @@ namespace Core::SceneSystem
 		int actorId = -1;
 		int triangleId = -1;
 	};
+	struct RectPickRes {
+		int actorId = -1;
+		int childId = -1;
+	};
 	class BvhService {
 	public:
 		BvhService(Scene* sc) ;
@@ -260,6 +264,7 @@ namespace Core::SceneSystem
 		void UpdateTriangleInfo();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		std::vector<RectPickRes> RectPick(const Maths::FMatrix4& viewProj, float su, float sv,float eu,float ev);
 		~BvhService();
 	private:
 		Scene* scene;

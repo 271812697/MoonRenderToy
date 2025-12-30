@@ -46,7 +46,7 @@ namespace MOON {
 			static ImU32 c2 = ImGui::ColorConvertFloat4ToU32({ 1, 1, 0, 1.0 });
 			auto drawList=ImGui::GetForegroundDrawList();
 			drawList->AddRectFilled({sx,sy},{ex,ey},c1);
-			drawList->AddRect({ sx,sy }, { ex,ey }, c1,0,0,4.0);
+			drawList->AddRect({ sx,sy }, { ex,ey }, c1,0,0,3.0);
 		}
 
 	}
@@ -79,6 +79,7 @@ namespace MOON {
 		ey = it.second;
 		auto ray=m_sceneView->GetMouseRay();
 		::Core::SceneSystem::HitRes res;
+		
 		if (m_sceneView->GetScene()->RayHit(ray, res)) {
 			int id=round(res.hitUv.x);
 			if (id != eid) {

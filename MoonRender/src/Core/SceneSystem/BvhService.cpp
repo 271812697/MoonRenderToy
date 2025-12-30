@@ -639,6 +639,97 @@ namespace Core::SceneSystem
 		//}
 		return hit;
 	}
+	bool TestTriHitRect(const Maths::FVector2& v0, const Maths::FVector2& v1, const Maths::FVector2& v2, float su, float sv, float eu, float ev) {
+		float minu = std::min(v0.x, v1.x);
+		float maxu = std::max(v0.x, v1.x);
+		float minv = std::min(v0.y, v1.y);
+		float maxv = std::max(v0.y, v1.y);
+		bool flag1 = minu > eu || maxu < su;
+		bool flag2 = minv > ev || maxv < sv;
+		if (!flag1 && !flag2) {
+			return true;
+		}
+		minu = std::min(v0.x, v2.x);
+		maxu = std::max(v0.x, v2.x);
+		minv = std::min(v0.y, v2.y);
+		maxv = std::max(v0.y, v2.y);
+		flag1 = minu > eu || maxu < su;
+		flag2 = minv > ev || maxv < sv;
+		if (!flag1 && !flag2) {
+			return true;
+		}
+		minu = std::min(v1.x, v2.x);
+		maxu = std::max(v1.x, v2.x);
+		minv = std::min(v1.y, v2.y);
+		maxv = std::max(v1.y, v2.y);
+		flag1 = minu > eu || maxu < su;
+		flag2 = minv > ev || maxv < sv;
+		if (!flag1 && !flag2) {
+			return true;
+		}
+		return false;
+	}
+	std::vector<RectPickRes> BvhService::RectPick(const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev)
+	{
+		ZoneScoped;
+		std::vector<RectPickRes> res;
+		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+		if (m_sceneBvh != nullptr)
+			stack.push_back(m_sceneBvh->m_root);
+		while (!stack.empty()) {
+			auto cur = stack.back(); stack.pop_back();
+			if (!cur)continue;
+			auto tbox=cur->bounds.transform(viewProj);
+			bool flag1 = tbox.pmin.x > eu || tbox.pmax.x < su;
+			bool flag2 = tbox.pmin.y > ev || tbox.pmax.y < sv;
+			if (!flag1 && !flag2) {
+				if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+					stack.push_back(cur->lc);
+					stack.push_back(cur->rc);
+				}
+				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+					for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
+						int index = m_sceneBvh->m_packed_indices[i];
+						int meshId = meshInstances[index].meshID;
+						auto matrix = meshInstances[index].transform;
+						auto& mesh = meshes[meshId];
+						auto meshBvh = mesh->GetBvh();
+						std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+						meshBvhStack.push_back(meshBvh->m_root);
+						while (!meshBvhStack.empty()) {
+							auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+							if (!meshBvhCur)continue;
+							auto mbox=meshBvhCur->bounds.transform(matrix).transform(viewProj);
+							if (!(mbox.pmin.x > eu || mbox.pmax.x < su) && !(mbox.pmin.y > ev || mbox.pmax.y < sv)) {
+								if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+									meshBvhStack.push_back(meshBvhCur->lc);
+									meshBvhStack.push_back(meshBvhCur->rc);
+								}
+								else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+									for (int j = meshBvhCur->startidx; j < meshBvhCur->startidx + meshBvhCur->numprims; j++) {
+										int triIndex = meshBvh->m_packed_indices[j];
+										::Rendering::Geometry::VertexBVH v0 = mesh->GetVertexBVH(triIndex * 3);
+										::Rendering::Geometry::VertexBVH v1 = mesh->GetVertexBVH(triIndex * 3 + 1);
+										::Rendering::Geometry::VertexBVH v2 = mesh->GetVertexBVH(triIndex * 3 + 2);
+										Maths::FVector3 ndcV0 = viewProj.MulPoint(matrix.MulPoint(v0.position));
+										Maths::FVector3 ndcV1 = viewProj.MulPoint(matrix.MulPoint(v1.position));
+										Maths::FVector3 ndcV2 = viewProj.MulPoint(matrix.MulPoint(v2.position));
+										if (TestTriHitRect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y },
+											{ ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
+											res.push_back({ (int)meshInstances[index].actorID,(int)v0.texCoords.x});
+										}
+										//test interaction
+
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return res;
+	}
 	BvhService::~BvhService() {
 		delete m_sceneBvh;
 	}
