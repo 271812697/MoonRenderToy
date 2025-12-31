@@ -32,6 +32,7 @@ namespace Rendering::Entities
 		bool GetClearStencilBuffer() const;
 		const Maths::FMatrix4& GetProjectionMatrix() const;
 		const Maths::FMatrix4& GetViewMatrix() const;
+		Maths::FMatrix4 GetViewProjectionMatrix() const;
 		const Maths::FTransform& GetTransform();
 		const Rendering::Data::Frustum& GetFrustum() const;
 		Tools::Utils::OptRef<const Rendering::Data::Frustum> GetGeometryFrustum() const;

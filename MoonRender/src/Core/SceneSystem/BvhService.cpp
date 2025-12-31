@@ -624,6 +624,10 @@ namespace Core::SceneSystem
 								bary = currentBary;
 								outRes.hitPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
 								outRes.hitPoint = Maths::FMatrix4::MulPoint(matrix, outRes.hitPoint);
+								outRes.hitNormal = Maths::FMatrix4::MulDir(matrix, hitNormal);
+								outRes.triangleId = triIndex;
+								outRes.actorId = meshInstances[i].actorID;
+								outRes.hitUv = mesh->GetVertexBVH(triIndex * 3).texCoords;
 								mid = meshId;
 								tid = triIndex;
 								instanceId = i;
@@ -714,12 +718,11 @@ namespace Core::SceneSystem
 										Maths::FVector3 ndcV0 = viewProj.MulPoint(matrix.MulPoint(v0.position));
 										Maths::FVector3 ndcV1 = viewProj.MulPoint(matrix.MulPoint(v1.position));
 										Maths::FVector3 ndcV2 = viewProj.MulPoint(matrix.MulPoint(v2.position));
+										//test intersection
 										if (TestTriHitRect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y },
 											{ ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
-											res.push_back({ (int)meshInstances[index].actorID,(int)v0.texCoords.x});
+											res.push_back({ (int)meshInstances[index].actorID,(int)v0.texCoords.x,triIndex });
 										}
-										//test interaction
-
 									}
 								}
 							}

@@ -101,7 +101,10 @@ const Maths::FMatrix4& Rendering::Entities::Camera::GetProjectionMatrix() const
 {
 	return m_projectionMatrix;
 }
-
+Maths::FMatrix4 Rendering::Entities::Camera::GetViewProjectionMatrix() const
+{
+	return m_projectionMatrix*m_viewMatrix;
+}
 const Maths::FMatrix4& Rendering::Entities::Camera::GetViewMatrix() const
 {
 	return m_viewMatrix;

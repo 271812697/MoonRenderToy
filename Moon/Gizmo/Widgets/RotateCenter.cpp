@@ -65,11 +65,39 @@ namespace MOON {
 		auto it=m_sceneView->getInutState().GetMousePosition();
 		sx=it.first;
 		sy = it.second;
+
+
 	}
 
 	void RotateCenter::onMouseLeftButtonReleased()
 	{
 		drawRect = false;
+		auto[w,h]=m_sceneView->GetSafeSize();
+
+		float su = 2 * (sx) / (float)w - 1;
+		float sv = 2 * (h - sy) / (float)h - 1;
+		float eu = 2 * (ex) / (float)w - 1;
+		float ev = 2 * (h - ey) / (float)h - 1;
+		
+		auto res=m_sceneView->GetScene()->GetBvhService()->RectPick(m_sceneView->GetCamera()->GetViewProjectionMatrix(),
+			std::min(su,eu), std::min(sv, ev), std::max(su, eu), std::max(sv, ev));
+		if (res.size() > 0) {
+			std::unordered_map<uint64_t, std::vector<int>>actorPointMap;
+			for (auto& r : res) {
+				actorPointMap[r.actorId].push_back(r.childId);
+			}
+			for (auto& it : actorPointMap) {
+				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
+				if (actor) {
+					if (actor->GetTag() == "Geomerty") {
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::ColorBar>();
+						if (colorBar) {
+							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
+						}
+					}
+				}
+			}
+		}
 	}
 
 	void RotateCenter::onMouseMove()
@@ -90,7 +118,7 @@ namespace MOON {
 					if (actor->GetTag() == "Geomerty") {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::ColorBar>();
 						if (colorBar) {
-							colorBar->SetColor(eid, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
+							colorBar->SetColor({ eid }, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
 						}
 					}
 				}

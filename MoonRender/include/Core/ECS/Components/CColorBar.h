@@ -11,7 +11,7 @@ namespace Core::ECS::Components
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		void SetColors(const std::vector<Maths::FVector4>& colors);
-		void SetColor(int index, const Maths::FVector4& color);
+		void SetColor(const std::vector<int>& index, const Maths::FVector4& color);
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 	private:

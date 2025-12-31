@@ -46,12 +46,15 @@ void Core::ECS::Components::ColorBar::SetColors(const std::vector<Maths::FVector
 	 //colorChange = true;
 }
 
-void Core::ECS::Components::ColorBar::SetColor(int index, const Maths::FVector4& color)
+void Core::ECS::Components::ColorBar::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
 {
-	if (index >= 0 && index < m_defaultColors.size()) {
-		colorChange = true;
-		m_colors = m_defaultColors;
-		m_colors[index] = color;
+	m_colors = m_defaultColors;
+	for (int i = 0;i < index.size();i++) {
+		int idx = index[i];
+		if (idx >= 0 && idx < m_defaultColors.size()) {
+			colorChange = true;
+			m_colors[idx] = color;
+		}
 	}
 }
 

@@ -237,6 +237,7 @@ namespace Core::SceneSystem
 	struct RectPickRes {
 		int actorId = -1;
 		int childId = -1;
+		int triId = -1;
 	};
 	class BvhService {
 	public:
