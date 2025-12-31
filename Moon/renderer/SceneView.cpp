@@ -236,6 +236,7 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 	}
 	if (GetScene()->RayHit(ray, res)) {
 		out = res.hitPoint;
+		return true;
 	}
 	return false;
 }
