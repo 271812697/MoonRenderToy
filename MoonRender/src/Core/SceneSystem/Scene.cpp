@@ -418,10 +418,8 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 							meshId = static_cast<int>(sceneMeshes.size());
 							sceneMeshes.push_back(m);
 						}
-
-
 						//push back the mesh instance
-						MeshInstance meshInstance(modelRenderer->owner.GetID(), meshId, matrix, materialId);
+						MeshInstance meshInstance(modelRenderer->owner.GetID(),&modelRenderer->owner, meshId, matrix, materialId);
 						meshInstances.push_back(meshInstance);
 					}
 				}
@@ -433,86 +431,6 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 	bvhService->Process(bvhService->m_sceneBvh,sceneMeshes, meshInstances);
 }
 
-//bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray,Maths::FVector3& outPoint)
-//{
-//	ZoneScoped;
-//	float triDist = 1e9;
-//	bool hit = false;
-//	int mid = -1;
-//	int tid = -1;
-//	int instanceId = -1;
-//	Maths::FVector3 hitNormal;
-//	Maths::FVector3 bary;
-//	std::vector<::Rendering::Geometry::Bvh::Node*>stack;
-//	if(bvhService->m_sceneBvh!=nullptr)
-//	stack.push_back(bvhService->m_sceneBvh->m_root);
-//	while (!stack.empty()) {
-//		auto cur = stack.back();stack.pop_back();
-//		if (!cur)continue;
-//		float tempDist = 1e9;
-//		if (ray.HitDistance(cur->bounds, tempDist)) 
-//		{
-//			if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
-//				stack.push_back(cur->lc);
-//				stack.push_back(cur->rc);
-//			}
-//			else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
-//				for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
-//					int index= bvhService->m_sceneBvh->m_packed_indices[i];
-//					int meshId=bvhService->meshInstances[index].meshID;
-//					auto matrix = bvhService->meshInstances[index].transform;
-//					auto invMatrix = Maths::FMatrix4::Inverse(matrix);
-//					auto localRay = ray.Transformed(invMatrix);
-//					auto& mesh = bvhService->meshes[meshId];
-//					auto meshBvh = mesh->GetBvh();		
-//					std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
-//					meshBvhStack.push_back(meshBvh->m_root);
-//					while (!meshBvhStack.empty()) {
-//						auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
-//						if (!meshBvhCur)continue;
-//						float meshTempDist = 1e6;
-//						if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
-//						{
-//							if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
-//								meshBvhStack.push_back(meshBvhCur->lc);
-//								meshBvhStack.push_back(meshBvhCur->rc);
-//							}
-//							else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
-//								for (int j = meshBvhCur->startidx;j < meshBvhCur->startidx + meshBvhCur->numprims;j++) {
-//									int triIndex = meshBvh->m_packed_indices[j];
-//									Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
-//									Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
-//									Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
-//									float currentTriDist = 1e6;
-//									Maths::FVector3 currentHitNormal;
-//									Maths::FVector3 currentBary;
-//									if (localRay.HitDistance(v0, v1, v2, currentTriDist, &currentHitNormal, &currentBary)) {
-//										if (currentTriDist < triDist) {
-//											triDist = currentTriDist;
-//											hitNormal = currentHitNormal;
-//											bary = currentBary;
-//											outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
-//											outPoint = Maths::FMatrix4::MulPoint(matrix,outPoint);
-//											hit = true;
-//											mid = meshId;
-//											instanceId = index;
-//											tid =  triIndex;//j;
-//										}
-//									}
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	//if (hit) {
-//	//	bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
-//	//}
-//	return hit;
-//}
-
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitRes& outRes)
 {
 	return bvhService->RayHit(ray, outRes);
@@ -522,57 +440,6 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitR
 bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& ray,  HitRes& outRes)
 {
 	return bvhService->RayIteratorHit(ray, outRes);
-	//ZoneScoped;
-	//float triDist = 1e6;
-	//bool hit = false;
-	//int mid = -1;
-	//int instanceId = -1;
-	//int tid = -1;
-	//Maths::FVector3 hitNormal;
-	//Maths::FVector3 bary;
-	//float tempDist = 1e6;
-
-	//if (ray.HitDistance(bvhService->m_sceneBvh->Bounds(), tempDist)) {
-	//	for (int i = 0;i < bvhService->meshInstances.size();i++) {
-	//		int meshId = bvhService->meshInstances[i].meshID;
-	//		auto matrix = bvhService->meshInstances[i].transform;
-	//		auto invMatrix = Maths::FMatrix4::Inverse(matrix);
-	//		auto localRay = ray.Transformed(invMatrix);
-	//		auto& mesh = bvhService->meshes[meshId];
-	//		int numTrs=mesh->GetIndexCount()? mesh->GetIndexCount()/3:mesh->GetVertexCount()/3;
-	//		float meshTempDist = 1e6;
-	//		if (localRay.HitDistance(mesh->GetBvh()->Bounds(), meshTempDist))
-	//		{	
-	//			
-	//			for (int triIndex = 0;triIndex < numTrs;triIndex++) {
-	//	
-	//				Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
-	//				Maths::FVector3 v1 = mesh->GetVertexPosition(triIndex * 3 + 1);
-	//				Maths::FVector3 v2 = mesh->GetVertexPosition(triIndex * 3 + 2);
-	//				float currentTriDist = 1e6;
-	//				Maths::FVector3 currentHitNormal;
-	//				Maths::FVector3 currentBary;
-	//				if (localRay.HitDistance(v0, v1, v2, currentTriDist, &currentHitNormal, &currentBary)) {
-	//					if (currentTriDist < triDist) {
-	//						triDist = currentTriDist;
-	//						hitNormal = currentHitNormal;
-	//						bary = currentBary;
-	//						outPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
-	//						outPoint = Maths::FMatrix4::MulPoint(matrix, outPoint);
-	//						mid = meshId;
-	//						tid = triIndex;
-	//						instanceId = i;
-	//						hit = true;
-	//					}
-	//				}		
-	//			}
-	//		}
-	//	}	
-	//}
-	////if (hit) {
-	////	bvhService->AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
-	////}
-	//return hit;
 }
 
 ::Rendering::Geometry::Bvh* Core::SceneSystem::Scene::GetBvh()

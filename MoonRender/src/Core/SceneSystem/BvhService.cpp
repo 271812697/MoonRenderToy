@@ -7,6 +7,7 @@
 #include <Core/ECS/Components/CAmbientSphereLight.h>
 #include <Core/ECS/Components/CDirectionalLight.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
+#include <Core/ECS/Components/CBatchMesh.h>
 #include <Core/Global/ServiceLocator.h>
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ResourceManagement/ModelManager.h>
@@ -16,6 +17,7 @@
 #include <fstream>
 namespace Core::SceneSystem
 {
+
 	bool exportObjOnlyVertices(
 		const std::string& filename,
 		const float* vertices,
@@ -624,6 +626,10 @@ namespace Core::SceneSystem
 								bary = currentBary;
 								outRes.hitPoint = v0 * bary[0] + v1 * bary[1] + v2 * bary[2];
 								outRes.hitPoint = Maths::FMatrix4::MulPoint(matrix, outRes.hitPoint);
+								outRes.hitNormal = Maths::FMatrix4::MulDir(matrix, hitNormal);
+								outRes.triangleId = triIndex;
+								outRes.actorId = meshInstances[i].actorID;
+								outRes.hitUv = mesh->GetVertexBVH(triIndex * 3).texCoords;
 								mid = meshId;
 								tid = triIndex;
 								instanceId = i;
@@ -638,6 +644,81 @@ namespace Core::SceneSystem
 		//	AddTriangleInfo(instanceId, TriangleInfo{ 255u << 24,static_cast<uint32_t>(tid) });
 		//}
 		return hit;
+	}
+
+	std::vector<RectPickRes> BvhService::RectPick(const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev)
+	{
+		ZoneScoped;
+		std::vector<RectPickRes> res;
+		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+		if (m_sceneBvh != nullptr)
+			stack.push_back(m_sceneBvh->m_root);
+		while (!stack.empty()) {
+			auto cur = stack.back(); stack.pop_back();
+			if (!cur)continue;
+			auto tbox=cur->bounds.transform(viewProj);
+			bool flag1 = tbox.pmin.x > eu || tbox.pmax.x < su;
+			bool flag2 = tbox.pmin.y > ev || tbox.pmax.y < sv;
+			if (!flag1 && !flag2) {
+				if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+					stack.push_back(cur->lc);
+					stack.push_back(cur->rc);
+				}
+				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+					for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
+						int index = m_sceneBvh->m_packed_indices[i];
+						auto matrix = meshInstances[index].transform;
+						if (meshInstances[index].actor->GetTag() == "Geomerty") {
+							auto cbatchMesh=meshInstances[index].actor->GetComponent<Core::ECS::Components::CBatchMesh>();
+							const auto& pickRes=cbatchMesh->RectPick(matrix,viewProj,su,sv,eu,ev);
+							res.insert(res.end(),pickRes.begin(),pickRes.end());
+						}
+						else
+						{	
+							int meshId = meshInstances[index].meshID;
+							auto& mesh = meshes[meshId];
+							int actorId=meshInstances[index].actorID;
+							auto meshBvh = mesh->GetBvh();
+							std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+							meshBvhStack.push_back(meshBvh->m_root);
+							bool isHit = false;
+							while (!meshBvhStack.empty()) {
+								auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+								if (!meshBvhCur)continue;
+								auto mbox=meshBvhCur->bounds.transform(matrix).transform(viewProj);
+								if (!(mbox.pmin.x > eu || mbox.pmax.x < su) && !(mbox.pmin.y > ev || mbox.pmax.y < sv)) {
+									if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+										meshBvhStack.push_back(meshBvhCur->lc);
+										meshBvhStack.push_back(meshBvhCur->rc);
+									}
+									else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+										for (int j = meshBvhCur->startidx; j < meshBvhCur->startidx + meshBvhCur->numprims; j++) {
+											int triIndex = meshBvh->m_packed_indices[j];
+											::Rendering::Geometry::VertexBVH v0 = mesh->GetVertexBVH(triIndex * 3);
+											::Rendering::Geometry::VertexBVH v1 = mesh->GetVertexBVH(triIndex * 3 + 1);
+											::Rendering::Geometry::VertexBVH v2 = mesh->GetVertexBVH(triIndex * 3 + 2);
+											Maths::FVector3 ndcV0 = viewProj.MulPoint(matrix.MulPoint(v0.position));
+											Maths::FVector3 ndcV1 = viewProj.MulPoint(matrix.MulPoint(v1.position));
+											Maths::FVector3 ndcV2 = viewProj.MulPoint(matrix.MulPoint(v2.position));
+											//test intersection
+											if (isTriangleAABBIntersect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y },{ ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
+												res.push_back({ actorId,(int)v0.texCoords.x,triIndex });
+												isHit = true;
+												break;
+											}
+										}
+									}
+								}
+								if (isHit) {
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return res;
 	}
 	BvhService::~BvhService() {
 		delete m_sceneBvh;

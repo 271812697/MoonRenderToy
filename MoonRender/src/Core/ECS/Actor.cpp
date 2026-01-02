@@ -109,7 +109,6 @@ int64_t Core::ECS::Actor::GetID() const
 void Core::ECS::Actor::SetParent(Actor& p_parent)
 {
 	DetachFromParent();
-
 	/* Define the given parent as the new parent */
 	m_parent = &p_parent;
 	m_parentID = p_parent.m_actorID;

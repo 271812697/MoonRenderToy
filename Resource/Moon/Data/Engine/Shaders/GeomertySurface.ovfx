@@ -30,7 +30,6 @@ void main()
     vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos, 1.0));
     vs_out.TexCoords = geo_TexCoords;
     vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
-    //vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, geo_Bitangent);
     vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, cross(geo_Normal, geo_Tangent));
 
 
@@ -39,9 +38,8 @@ void main()
 }
 
 #shader geomerty
-
 #version 450 core
-#if defined(WITH_EDGE)
+
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 
 in VS_OUT
@@ -57,11 +55,10 @@ out GS_OUT{
     vec2 TexCoords;
     vec3 Normal;
     mat3 TBN;
-
+#if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
+#endif
 } gs_out;
-//in VS_OUT gs_in [];
-//out GS_OUT gs_out;
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
@@ -70,8 +67,9 @@ layout(triangle_strip, max_vertices = 3) out;
 
 void main() 
 {
-    vec2 pos[4];
 
+#if defined(WITH_EDGE)
+    vec2 pos[4];
     for (int i = 0; i < 3; i++)
     {
         pos[i] = gl_in[i].gl_Position.xy/gl_in[i].gl_Position.w;
@@ -94,23 +92,23 @@ void main()
     //if (edgeValues < 4.0) edgeEqn[2].z = lineWidth;
     //if (mod(edgeValues, 4.0) < 2.0) edgeEqn[1].z = lineWidth;
     //if (mod(edgeValues, 2.0) < 1.0) edgeEqn[0].z = lineWidth;
+#endif
+ 
 
+    vec3 nor=normalize(cross(gs_in[1].FragPos-gs_in[0].FragPos,gs_in[2].FragPos-gs_in[0].FragPos));      
 
     for (int i = 0; i < 3; i++)
     {
         gl_PrimitiveID = gl_PrimitiveIDIn;
-
         gs_out.FragPos=gs_in[i].FragPos;
         gs_out.TexCoords=gs_in[i].TexCoords;
-        gs_out.Normal=gs_in[i].Normal;
+        gs_out.Normal=nor;
         gs_out.TBN=gs_in[i].TBN;
         gl_Position = gl_in[i].gl_Position;
-
         EmitVertex();
     }
     EndPrimitive();
 }
-#endif
 
 
 #shader fragment
@@ -121,32 +119,23 @@ void main()
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 #include ":Shaders/Lighting/PBR.ovfxh"
 
-#if defined(WITH_EDGE)
+
 in GS_OUT
 {
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
     mat3 TBN;
-
+#if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
+#endif
 } fs_in;
 
 // surface with edges
-
 //uniform float lineWidth;
 //uniform vec3 edgeColor;
 //uniform float edgeOpacity;
-#else 
-in VS_OUT
-{
-    vec3 FragPos;
-    vec2 TexCoords;
-    vec3 Normal;
-    mat3 TBN;
 
-} fs_in;
-#endif
 
 
 uniform sampler2D u_AlbedoMap;

@@ -1,5 +1,6 @@
 ﻿#include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/SceneSystem/Intersection.h>
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "Core/Global/ServiceLocator.h"
@@ -236,6 +237,7 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 	}
 	if (GetScene()->RayHit(ray, res)) {
 		out = res.hitPoint;
+		return true;
 	}
 	return false;
 }
