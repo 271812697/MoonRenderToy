@@ -24,7 +24,11 @@ namespace Core::ECS::Components
 		friend class CBatchMesh;
 		CBatchMesh* mSelf = nullptr;
 		bool colorChange = false;
-		std::vector<Maths::FVector4> m_colors;
+		int hoverIndex =-1;
+		std::vector<int> candidatesIndex;
+		Maths::FVector4 candidateColor;
+		Maths::FVector4 hoverColor;
+
 		std::vector<Maths::FVector4> m_defaultColors;
 		::Rendering::Geometry::Bvh* rootBvh = nullptr;
 		std::vector<::Rendering::Geometry::SplitBvh*>subMeshBvhs;
@@ -55,7 +59,14 @@ namespace Core::ECS::Components
 				auto tex = std::get<::Rendering::HAL::TextureHandle*>(prop.value);
 
 				if (tex) {
-					std::vector<Maths::FVector4> colors = mInternal->m_colors;
+					std::vector<Maths::FVector4> colors = mInternal->m_defaultColors;
+	
+					for (auto& idx : mInternal->candidatesIndex) {
+						colors[idx] = mInternal->candidateColor;
+					}
+					if (mInternal->hoverIndex != -1) {
+						colors[mInternal->hoverIndex] = mInternal->hoverColor;
+					}
 					::Rendering::Settings::TextureDesc desc;
 					desc.isTextureBuffer = true;
 					desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
@@ -76,14 +87,24 @@ namespace Core::ECS::Components
 
 	void CBatchMesh::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
 	{
-		mInternal->m_colors = mInternal->m_defaultColors;
-		for (int i = 0; i < index.size(); i++) {
-			int idx = index[i];
-			if (idx >= 0 && idx < mInternal->m_defaultColors.size()) {
-				mInternal->colorChange = true;
-				mInternal->m_colors[idx] = color;
-			}
-		}
+		//mInternal->candidatesIndex.clear();;
+		mInternal->candidatesIndex = index;
+		mInternal->colorChange = true;
+		mInternal->candidateColor = color;
+		//for (int i = 0; i < index.size(); i++) {
+		//	int idx = index[i];
+		//	if (idx >= 0 && idx < mInternal->m_defaultColors.size()) {
+		//		mInternal->colorChange = true;
+		//		mInternal->candidatesIndex.push_back(index);
+		//	}
+		//}
+	}
+
+	void CBatchMesh::SetHoverColor(int index, const Maths::FVector4& color)
+	{
+		mInternal->hoverIndex = index;
+		mInternal->hoverColor = color;
+		mInternal->colorChange = true;
 	}
 
 	void CBatchMesh::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
