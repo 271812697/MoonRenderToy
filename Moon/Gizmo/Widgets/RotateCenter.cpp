@@ -92,7 +92,7 @@ namespace MOON {
 					if (actor->GetTag() == "Geomerty") {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
 						if (colorBar) {
-							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
+							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
 						}
 					}
 				}
@@ -118,7 +118,7 @@ namespace MOON {
 					if (actor->GetTag() == "Geomerty") {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
 						if (colorBar) {
-							colorBar->SetColor({ eid }, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
+							colorBar->SetHoverColor( eid , Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
 						}
 					}
 				}
