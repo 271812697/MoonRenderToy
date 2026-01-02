@@ -4,7 +4,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
-#include "Core/ECS/Components/CColorBar.h"
+#include "Core/ECS/Components/CBatchMesh.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include <STEPControl_Reader.hxx>
 #include <TopoDS_Shape.hxx>
@@ -75,45 +75,55 @@ namespace MOON {
             unsigned int indexOffset = 0;
             int cnt = 0;
             std::vector<Core::ECS::Actor*>domainActors;
+            std::vector<Rendering::Geometry::bbox>domainBoxs;
+            std::vector<uint32_t>domainRange;
             for (int i = 0;i < domains.size();i++) {
-				domainColor.push_back(colors[cnt]);  
-                cnt = (cnt + 1) % 12;
-                positions.reserve(positions.size()+domains[i].points.size());
-                normals.reserve(normals.size()+domains[i].normals.size());
-                uvs.reserve(uvs.size()+ domains[i].points.size());
-                indices.resize(indexOffset +domains[i].facets.size()*3);
-                for (int k = 0;k < domains[i].points.size();k++) {
-                    positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
-					//need to support in further
-                    normals.emplace_back(Maths::FVector3{ 0,0,0 });
-                    uvs.emplace_back(Maths::FVector2{ i*1.0f,0.0f });
+                if (domains[i].facets.size() > 0) {
+				    domainColor.push_back(colors[cnt]);  
+                    cnt = (cnt + 1) % 12;
+                    positions.reserve(positions.size()+domains[i].points.size());
+                    normals.reserve(normals.size()+domains[i].points.size());
+                    uvs.reserve(uvs.size()+ domains[i].points.size());
+                    indices.resize(indexOffset +domains[i].facets.size()*3);
+                    Rendering::Geometry::bbox subBox;
+                    for (int k = 0;k < domains[i].points.size();k++) {
+                        positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
+                        subBox.grow(positions.back());
+                        //need to support in further
+                        normals.emplace_back(Maths::FVector3{ 0,0,0 });
+                        uvs.emplace_back(Maths::FVector2{ i*1.0f,0.0f });
+                    }
+                    for (int k = 0;k < domains[i].facets.size();k++) {
+                        indices[indexOffset +3 * k] = domains[i].facets[k].I1+vertexOffset;
+                        indices[indexOffset+3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
+                        indices[indexOffset+3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
+                    }
+				    vertexOffset = positions.size();
+                    indexOffset = indices.size();
+                    auto& actor = scene->CreateActor(std::to_string(i));
+                    std::string registryName = filePath + std::to_string(i);
+				    domainActors.push_back(&actor);
+            
+                    domainBoxs.push_back(subBox);
+                    domainRange.push_back(indexOffset);
                 }
-                for (int k = 0;k < domains[i].facets.size();k++) {
-                    indices[indexOffset +3 * k] = domains[i].facets[k].I1+vertexOffset;
-                    indices[indexOffset+3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
-                    indices[indexOffset+3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
-                }
-				vertexOffset = positions.size();
-                indexOffset = indices.size();
-                auto& actor = scene->CreateActor(std::to_string(i));
-				domainActors.push_back(&actor);
             }
-             auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions,normals,uvs, indices);
-             // 创建并注册默认材质
-             Core::Resources::Material* tempMat = new Core::Resources::Material();
-             Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
-             tempMat->SetBackfaceCulling(false);
-             tempMat->SetCastShadows(false);
-             tempMat->SetReceiveShadows(false);
-             tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);        
-             tempMat->SetProperty("u_Albedo", colors[0]);
-             tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-             tempMat->SetProperty("u_Roughness", 0.3f);
-             tempMat->SetProperty("u_Metallic", 0.1f);
-             // Emission
-             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-             tempMat->AddFeature("WITH_EDGE");
+            auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions,normals,uvs, indices);
+            // 创建并注册默认材质
+            Core::Resources::Material* tempMat = new Core::Resources::Material();
+            Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
+            tempMat->SetBackfaceCulling(false);
+            tempMat->SetCastShadows(false);
+            tempMat->SetReceiveShadows(false);
+            tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);        
+            tempMat->SetProperty("u_Albedo", colors[0]);
+            tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+            tempMat->SetProperty("u_Roughness", 0.3f);
+            tempMat->SetProperty("u_Metallic", 0.1f);
+            // Emission
+            tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
+            tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+            tempMat->AddFeature("WITH_EDGE");
             // 在场景中创建 Actor 并绑定模型/材质
             auto& actor = scene->CreateActor("Root","Geomerty");
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
@@ -135,8 +145,9 @@ namespace MOON {
             ::Rendering::HAL::GLTexture*  domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
 			domainColorTex->Allocate(desc);
             tempMat->SetProperty("domainColorTex",domainColorTex);
-            auto& colorBar=actor.AddComponent<Core::ECS::Components::ColorBar>();
-			colorBar.SetColors(domainColor);
+            auto& bacthMesh=actor.AddComponent<Core::ECS::Components::CBatchMesh>();
+            bacthMesh.SetColors(domainColor);
+            bacthMesh.BuildBvh(domainBoxs,domainRange);
         }
     }
 }

@@ -4,7 +4,7 @@
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "Qtimgui/imgui/imgui.h"
-#include <Core/ECS/Components/CColorBar.h>
+#include <Core/ECS/Components/CBatchMesh.h>
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -90,7 +90,7 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::ColorBar>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
 						if (colorBar) {
 							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
 						}
@@ -116,7 +116,7 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::ColorBar>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
 						if (colorBar) {
 							colorBar->SetColor({ eid }, Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
 						}

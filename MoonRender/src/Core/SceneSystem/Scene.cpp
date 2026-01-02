@@ -418,10 +418,8 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 							meshId = static_cast<int>(sceneMeshes.size());
 							sceneMeshes.push_back(m);
 						}
-
-
 						//push back the mesh instance
-						MeshInstance meshInstance(modelRenderer->owner.GetID(), meshId, matrix, materialId);
+						MeshInstance meshInstance(modelRenderer->owner.GetID(),&modelRenderer->owner, meshId, matrix, materialId);
 						meshInstances.push_back(meshInstance);
 					}
 				}

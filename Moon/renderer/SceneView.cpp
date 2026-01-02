@@ -1,5 +1,6 @@
 ﻿#include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/SceneSystem/Intersection.h>
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "Core/Global/ServiceLocator.h"

@@ -2,6 +2,8 @@
 #include <string>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/HAL/Texture.h>
+#include <Core/ECS/Actor.h>
+#include <Core/SceneSystem/Intersection.h>
 namespace Rendering::Resources {
 	class Mesh;
 }
@@ -28,11 +30,12 @@ namespace Core::SceneSystem
 	struct MeshInstance
 	{
 
-		MeshInstance(int64_t aci, int meshId, const Maths::FMatrix4& xform, int matId)
+		MeshInstance(int64_t aci, ::Core::ECS::Actor* ac,int meshId, const Maths::FMatrix4& xform, int matId)
 			: actorID(aci)
 			, meshID(meshId)
 			, transform(xform), localform(xform)
-			, materialID(matId)
+			, materialID(matId),
+			actor(ac)
 		{
 			parentID = -1;
 		}
@@ -42,6 +45,7 @@ namespace Core::SceneSystem
 		Maths::FMatrix4 localform;
 		int64_t	actorID;
 
+		::Core::ECS::Actor* actor = nullptr;
 		int materialID;
 		int meshID;
 		int parentID;
@@ -227,18 +231,7 @@ namespace Core::SceneSystem
 		float envMapRot;
 		float roughnessMollificationAmt;
 	};
-	struct HitRes {
-		Maths::FVector3 hitPoint;
-		Maths::FVector2 hitUv;
-		Maths::FVector3 hitNormal;
-		int actorId = -1;
-		int triangleId = -1;
-	};
-	struct RectPickRes {
-		int actorId = -1;
-		int childId = -1;
-		int triId = -1;
-	};
+
 	class BvhService {
 	public:
 		BvhService(Scene* sc) ;
