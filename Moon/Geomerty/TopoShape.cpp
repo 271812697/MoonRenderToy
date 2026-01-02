@@ -507,7 +507,6 @@ namespace MOON {
 
 		for (TopExp_Explorer xp(this->_Shape, TopAbs_FACE); xp.More(); xp.Next()) {
 			TopoDS_Face face = TopoDS::Face(xp.Current());
-
 			std::vector<gp_Pnt> points;
 			std::vector<Poly_Triangle> facets;
 			if (!Tools::getTriangulation(face, points, facets)) {
@@ -521,12 +520,12 @@ namespace MOON {
 				Domain domain;
 				// copy the points
 				domain.points.reserve(points.size());
+				domain.normals.reserve(points.size());
 				for (const auto& it : points) {
 					Standard_Real X, Y, Z;
 					it.Coord(X, Y, Z);
 					domain.points.emplace_back(X, Y, Z);
 				}
-
 				// copy the triangles
 				domain.facets.reserve(facets.size());
 				for (const auto& it : facets) {
@@ -539,7 +538,6 @@ namespace MOON {
 					tria.I3 = N3;
 					domain.facets.push_back(tria);
 				}
-
 				domains.push_back(domain);
 			}
 		}

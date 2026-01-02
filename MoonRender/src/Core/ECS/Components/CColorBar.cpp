@@ -17,8 +17,7 @@ void Core::ECS::Components::ColorBar::OnUpdate(float p_deltaTime)
 {
 	if (colorChange) {
 		colorChange = false;
-		auto mat = owner.GetComponent<Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
-		
+		auto mat = owner.GetComponent<Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);	
 		if (mat) {
 			const ::Rendering::Data::MaterialProperty prop = mat->GetProperty("domainColorTex").value();
 			::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
@@ -42,8 +41,6 @@ void Core::ECS::Components::ColorBar::OnUpdate(float p_deltaTime)
 void Core::ECS::Components::ColorBar::SetColors(const std::vector<Maths::FVector4>& colors)
 {
 	m_defaultColors = colors;
-	 //m_colors = colors; 
-	 //colorChange = true;
 }
 
 void Core::ECS::Components::ColorBar::SetColor(const std::vector<int>& index, const Maths::FVector4& color)

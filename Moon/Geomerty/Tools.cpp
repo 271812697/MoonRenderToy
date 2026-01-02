@@ -1,6 +1,7 @@
 ﻿#include <Standard_Version.hxx>
 #include "Geomerty/Tools.h"
-#include<BRep_Tool.hxx>
+#include <BRep_Tool.hxx>
+#include <gp_Vec3f.hxx>
 namespace MOON {
 	bool Tools::getPolygon3D(const TopoDS_Edge& edge, std::vector<gp_Pnt>& points)
 	{
@@ -98,6 +99,7 @@ namespace MOON {
         TopAbs_Orientation orient = face.Orientation();
 
         Standard_Integer nbNodes = hTria->NbNodes();
+       
         Standard_Integer nbTriangles = hTria->NbTriangles();
 #if OCC_VERSION_HEX < 0x070600
         const TColgp_Array1OfPnt& nodes = hTria->Nodes();
@@ -108,22 +110,19 @@ namespace MOON {
         facets.reserve(nbTriangles);
 
         // cycling through the poly mesh
-        //
         for (int i = 1; i <= nbNodes; i++) {
 #if OCC_VERSION_HEX < 0x070600
             gp_Pnt p = nodes(i);
 #else
             gp_Pnt p = hTria->Node(i);
 #endif
-
             // transform the vertices to the location of the face
             if (!identity) {
                 p.Transform(transf);
+                //nor.Transform(transf);
             }
-
             points.push_back(p);
         }
-
         for (int i = 1; i <= nbTriangles; i++) {
             // Get the triangle
             Standard_Integer n1, n2, n3;
@@ -133,16 +132,12 @@ namespace MOON {
             hTria->Triangle(i).Get(n1, n2, n3);
 #endif
             --n1; --n2; --n3;
-
             // change orientation of the triangles
             if (orient != TopAbs_FORWARD) {
                 std::swap(n1, n2);
             }
-
             facets.emplace_back(n1, n2, n3);
         }
-
         return true;
-
     }
 }

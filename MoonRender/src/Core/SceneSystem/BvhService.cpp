@@ -859,8 +859,7 @@ namespace Core::SceneSystem
 										Maths::FVector3 ndcV1 = viewProj.MulPoint(matrix.MulPoint(v1.position));
 										Maths::FVector3 ndcV2 = viewProj.MulPoint(matrix.MulPoint(v2.position));
 										//test intersection
-										if (isTriangleAABBIntersect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y },
-											{ ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
+										if (isTriangleAABBIntersect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y },{ ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
 											res.push_back({ (int)meshInstances[index].actorID,(int)v0.texCoords.x,triIndex });
 										}
 									}
