@@ -6,6 +6,7 @@
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CBatchMesh.h"
 #include "Core/ResourceManagement/ModelManager.h"
+#include "Gizmo/Gizmo.h"
 #include <STEPControl_Reader.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TCollection_AsciiString.hxx>
@@ -148,6 +149,23 @@ namespace MOON {
             auto& bacthMesh=actor.AddComponent<Core::ECS::Components::CBatchMesh>();
             bacthMesh.SetColors(domainColor);
             bacthMesh.BuildBvh(domainBoxs,domainRange);
+
+            std::vector<Vector3d>linePoints;
+            std::vector<Line>LineRanges;
+            topo.getLines(linePoints,LineRanges,1.0);
+            Gizmo::instance().placeDrawTask("Line", [=]() {
+                Gizmo::instance().pushEnableSorting(true);
+                Gizmo::instance().pushSize(3.0);
+                for (auto& l : LineRanges) {
+                    for (int k = l.I1; k <= l.I2 - 1; k++) {
+                        Gizmo::instance().drawLine(
+                            { static_cast<float>(linePoints[k].x()),static_cast<float>(linePoints[k].y()) ,static_cast<float>(linePoints[k].z()) }
+                        , { static_cast<float>(linePoints[k+1].x()),static_cast<float>(linePoints[k+1].y()) ,static_cast<float>(linePoints[k+1].z()) });
+                    }
+                }
+                Gizmo::instance().popSize();
+                Gizmo::instance().popEnableSorting();
+                });
         }
     }
 }
