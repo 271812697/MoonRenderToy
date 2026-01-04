@@ -21,5 +21,6 @@ namespace Rendering::Data
 
 			uint8_t mask;
 		};
+		float lineWidth = 1.0f;
 	};
 }

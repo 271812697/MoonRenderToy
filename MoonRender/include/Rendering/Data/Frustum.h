@@ -70,7 +70,7 @@ namespace Rendering::Data
 		* @param p_cullingOptions
 		*/
 		std::vector<Rendering::Resources::Mesh*> GetMeshesInFrustum(
-			const Rendering::Resources::Model& p_model,
+			 Rendering::Resources::Model& p_model,
 			const Rendering::Geometry::BoundingSphere& p_modelBoundingSphere,
 			const Maths::FTransform& p_modelTransform,
 			Rendering::Settings::ECullingOptions p_cullingOptions

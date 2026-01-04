@@ -126,7 +126,7 @@ namespace MOON {
             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
             tempMat->AddFeature("WITH_EDGE");
             // 在场景中创建 Actor 并绑定模型/材质
-            auto& actor = scene->CreateActor("Root","Geomerty");
+            auto& actor = scene->CreateActor("RootFace","Geomerty");
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
             auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
             materilaRener.SetMaterialAtIndex(0, *tempMat);
@@ -150,22 +150,63 @@ namespace MOON {
             bacthMesh.SetColors(domainColor);
             bacthMesh.BuildBvh(domainBoxs,domainRange);
 
+
+            //build lines
             std::vector<Vector3d>linePoints;
             std::vector<Line>LineRanges;
             topo.getLines(linePoints,LineRanges,1.0);
-            Gizmo::instance().placeDrawTask("Line", [=]() {
-                Gizmo::instance().pushEnableSorting(true);
-                Gizmo::instance().pushSize(3.0);
-                for (auto& l : LineRanges) {
-                    for (int k = l.I1; k <= l.I2 - 1; k++) {
-                        Gizmo::instance().drawLine(
-                            { static_cast<float>(linePoints[k].x()),static_cast<float>(linePoints[k].y()) ,static_cast<float>(linePoints[k].z()) }
-                        , { static_cast<float>(linePoints[k+1].x()),static_cast<float>(linePoints[k+1].y()) ,static_cast<float>(linePoints[k+1].z()) });
-                    }
-                }
-                Gizmo::instance().popSize();
-                Gizmo::instance().popEnableSorting();
-                });
+            //Gizmo::instance().placeDrawTask("Line", [=]() {
+            //    Gizmo::instance().pushEnableSorting(true);
+            //    Gizmo::instance().pushSize(5.0);
+            //    for (auto& l : LineRanges) {
+            //        for (int k = l.I1; k <= l.I2 - 1; k++) {
+            //            Gizmo::instance().drawLine(
+            //                { static_cast<float>(linePoints[k].x()),static_cast<float>(linePoints[k].y()) ,static_cast<float>(linePoints[k].z()) }
+            //            , { static_cast<float>(linePoints[k + 1].x()),static_cast<float>(linePoints[k + 1].y()) ,static_cast<float>(linePoints[k + 1].z()) });
+            //        }
+            //    }
+            //    Gizmo::instance().popSize();
+            //    Gizmo::instance().popEnableSorting();
+            //    });
+            std::vector<::Rendering::Geometry::Vertex> p_vertices;
+            std::vector<uint32_t>lineIndex;
+			for (auto& l : LineRanges) {
+				for (int k = l.I1; k <= l.I2-1; k++) {
+					lineIndex.push_back(k);
+                    lineIndex.push_back(k+1);
+				}
+			}
+            p_vertices.reserve(linePoints.size());
+            for (auto& p : linePoints) {
+                ::Rendering::Geometry::Vertex v;
+                v.position[0] = static_cast<float>(p.x());
+                v.position[1] = static_cast<float>(p.y());
+                v.position[2] = static_cast<float>(p.z());
+                p_vertices.emplace_back(v);
+            }
+            auto lineMesh = new ::Rendering::Resources::Mesh(
+                p_vertices,
+                lineIndex,
+                0,
+                ::Rendering::Settings::EPrimitiveMode::LINES);
+            auto lineModel = new ::Rendering::Resources::Model(filePath + std::string("_lineModel"));
+			Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(filePath + std::string("_lineModel"), lineModel);
+			lineModel->GetMaterialNames().emplace_back("Default");
+			lineModel->GetMeshes().emplace_back(lineMesh);
+
+            auto& lineActor = scene->CreateActor("RootLine", "GeomertyLine");
+            lineActor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(lineModel);
+			auto& lineRener = lineActor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+			
+			auto lineMat = new Core::Resources::Material();
+			Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath + std::string("_lineMat"), lineMat);
+			lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
+			lineMat->SetBackfaceCulling(false);
+			lineMat->SetCastShadows(false);
+			lineMat->SetReceiveShadows(false);
+            lineMat->SetLineWidth(2.0);
+            lineRener.SetMaterialAtIndex(0,*lineMat);
+			lineRener.UpdateMaterialList();
         }
     }
 }

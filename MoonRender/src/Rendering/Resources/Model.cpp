@@ -69,12 +69,12 @@ void Rendering::Resources::Model::ComputeBoundingBox()
 	}
 }
 
-const std::vector<Rendering::Resources::Mesh*>& Rendering::Resources::Model::GetMeshes() const
+std::vector<Rendering::Resources::Mesh*>& Rendering::Resources::Model::GetMeshes()
 {
 	return m_meshes;
 }
 
-const std::vector<std::string>& Rendering::Resources::Model::GetMaterialNames() const
+ std::vector<std::string>& Rendering::Resources::Model::GetMaterialNames() 
 {
 	return m_materialNames;
 }

@@ -9,6 +9,7 @@
 #include <Rendering/Geometry/bbox.h>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/Resources/IMesh.h>
+#include <Rendering/Settings/EPrimitiveMode.h>
 
 namespace Rendering::Resources
 {
@@ -17,9 +18,10 @@ namespace Rendering::Resources
 	{
 	public:
 		Mesh(
-			std::span<const Geometry::Vertex> p_vertices,
-			std::span<const uint32_t> p_indices,
-			uint32_t p_materialIndex = 0
+			const std::vector<Geometry::Vertex>& p_vertices,
+			const std::vector<uint32_t>& p_indices,
+			uint32_t p_materialIndex = 0,
+			::Rendering::Settings::EPrimitiveMode primitiveMode = Settings::EPrimitiveMode::TRIANGLES
 		);
 		~Mesh();
 		virtual void Bind() const override;
@@ -36,13 +38,16 @@ namespace Rendering::Resources
 		Geometry::VertexBVH GetVertexBVH(int index);
 		std::vector<Geometry::VertexBVH>& GetVerticesBVH();
 		std::vector<uint32_t>& GetIndices();
+		Settings::EPrimitiveMode GetPrimitiveMode() const;
+		void SetPrimitiveMode(Settings::EPrimitiveMode mode) { mPrimitiveMode = mode; }
 		void BuildBvh();
 		Geometry::Bvh* GetBvh();
 	private:
-		void Upload(std::span<const Geometry::Vertex> p_vertices, std::span<const uint32_t> p_indices);
-		void ComputeBoundingSphereAndBox(std::span<const Geometry::Vertex> p_vertices);
+		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
+		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);
 
 	private:
+		::Rendering::Settings::EPrimitiveMode mPrimitiveMode = ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
 		std::vector<uint32_t>m_materialIndex;

@@ -10,17 +10,13 @@
 #include <Core/ECS/Components/CAmbientSphereLight.h>
 #include <Core/Rendering/SceneRenderer.h>
 #include "GizmoBehaviour.h"
-
 #include "Context.h"
 
 namespace Editor::Panels { class AView; }
 
 namespace Editor::Rendering
 {
-	/**
-	* Pride a debug layer on top of the default scene renderer to see "invisible" entities such as
-	* lights, cameras,
-	*/
+
 	class DebugSceneRenderer : public ::Core::Rendering::SceneRenderer
 	{
 	public:
@@ -31,11 +27,6 @@ namespace Editor::Rendering
 			Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
 			std::optional<Editor::Core::GizmoBehaviour::EDirection> highlightedGizmoDirection;
 		};
-
-		/**
-		* Constructor of the Renderer
-		* @param p_driver
-		*/
 		DebugSceneRenderer(::Rendering::Context::Driver& p_driver);
 	};
 }

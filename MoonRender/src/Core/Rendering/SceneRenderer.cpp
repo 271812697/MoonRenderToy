@@ -287,11 +287,12 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 				{
 					material = materials.at(materialIndex);
 				}
-
+				auto primMode=mesh->GetPrimitiveMode();
 				::Rendering::Entities::Drawable drawable{
 					.mesh = *mesh,
 					.material = material,
 					.stateMask = material.has_value() ? material->GenerateStateMask() : ::Rendering::Data::StateMask{},
+					.primitiveMode=primMode,
 				};
 
 				auto bounds = [&]() -> std::optional<::Rendering::Geometry::BoundingSphere> {

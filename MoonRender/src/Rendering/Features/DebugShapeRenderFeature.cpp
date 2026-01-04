@@ -11,7 +11,7 @@ Rendering::Features::DebugShapeRenderFeature::DebugShapeRenderFeature(
 ) :
 	ARenderFeature(p_renderer, p_executionPolicy)
 {
-	constexpr auto kVertices = std::to_array<Geometry::Vertex>({
+	auto kVertices = std::vector<Geometry::Vertex>({
 		{
 			0, 0, 0,
 			0, 0,
@@ -28,7 +28,7 @@ Rendering::Features::DebugShapeRenderFeature::DebugShapeRenderFeature(
 		}
 	});
 
-	constexpr auto kIndices = std::to_array<uint32_t>({ 0, 1 });
+	 auto kIndices = std::vector<uint32_t>({ 0, 1 });
 
 	m_lineMesh = std::make_unique<Resources::Mesh>(
 		kVertices,

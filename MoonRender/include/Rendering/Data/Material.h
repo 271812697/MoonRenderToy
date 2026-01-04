@@ -358,6 +358,7 @@ namespace Rendering::Data
 		* @param p_projectionMode
 		*/
 		bool SupportsProjectionMode(Rendering::Settings::EProjectionMode p_projectionMode) const;
+		void SetLineWidth(float p_width);
 
 	protected:
 		Rendering::Resources::Shader* m_shader = nullptr;
@@ -382,5 +383,6 @@ namespace Rendering::Data
 
 		int m_gpuInstances = 1;
 		int m_drawOrder = 1000;
+		float lineWitdh = 1.0f;
 	};
 }

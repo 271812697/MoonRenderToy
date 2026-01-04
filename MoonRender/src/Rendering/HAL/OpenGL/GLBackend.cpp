@@ -176,6 +176,8 @@ namespace
 		pso.culling = GetBool(GL_CULL_FACE);
 		pso.dither = GetBool(GL_DITHER);
 		pso.polygonOffsetFill = GetBool(GL_POLYGON_OFFSET_FILL);
+		pso.polygonOffsetLine = GetBool(GL_POLYGON_OFFSET_LINE);
+
 		pso.sampleAlphaToCoverage = GetBool(GL_SAMPLE_ALPHA_TO_COVERAGE);
 		pso.depthTest = GetBool(GL_DEPTH_TEST);
 		pso.scissorTest = GetBool(GL_SCISSOR_TEST);
@@ -261,6 +263,11 @@ namespace Rendering::HAL
 	template<>
 	void GLBackend::DrawElements(Settings::EPrimitiveMode p_primitiveMode, uint32_t p_indexCount)
 	{
+		//if (p_primitiveMode == Settings::EPrimitiveMode::LINES) {
+		//	glEnable(GL_POLYGON_OFFSET_LINE);
+		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//	glPolygonOffset(-1,-1);
+		//}
 		glDrawElements(EnumToValue<GLenum>(p_primitiveMode), p_indexCount, GL_UNSIGNED_INT, nullptr);
 	}
 
@@ -343,6 +350,11 @@ namespace Rendering::HAL
 			EnumToValue<GLenum>(p_sourceFactor),
 			EnumToValue<GLenum>(p_destinationFactor)
 		);
+	}
+	template<>
+	void GLBackend::PolygonOffset(float factor, float uints)
+	{
+		glPolygonOffset(factor, uints);
 	}
 
 	template<>

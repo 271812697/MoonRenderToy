@@ -118,6 +118,10 @@ void Rendering::Context::Driver::Draw(
 void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState p_state)
 {
 	using namespace Rendering::Settings;
+	if (p_state.lineWidth != m_pipelineState.lineWidth) {
+		m_gfxBackend->SetRasterizationLinesWidth(p_state.lineWidth);
+		m_pipelineState.lineWidth = p_state.lineWidth;
+	}
 
 	if (p_state._bits != m_pipelineState._bits)
 	{
@@ -126,15 +130,25 @@ void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState
 
 		// Rasterization
 		if (i.rasterizationMode != c.rasterizationMode) m_gfxBackend->SetRasterizationMode(i.rasterizationMode);
-		if (i.lineWidthPow2 != c.lineWidthPow2) m_gfxBackend->SetRasterizationLinesWidth(Utils::Conversions::Pow2toFloat(i.lineWidthPow2));
-
+		//if (i.lineWidthPow2 != c.lineWidthPow2) m_gfxBackend->SetRasterizationLinesWidth(Utils::Conversions::Pow2toFloat(i.lineWidthPow2));
+		
 		if (i.colorWriting.mask != c.colorWriting.mask) m_gfxBackend->SetColorWriting(i.colorWriting.r, i.colorWriting.g, i.colorWriting.b, i.colorWriting.a);
 		if (i.depthWriting != c.depthWriting) m_gfxBackend->SetDepthWriting(i.depthWriting);
 
 		if (i.blending != c.blending) m_gfxBackend->SetCapability(ERenderingCapability::BLEND, i.blending);
 		if (i.culling != c.culling) m_gfxBackend->SetCapability(ERenderingCapability::CULL_FACE, i.culling);
 		if (i.dither != c.dither) m_gfxBackend->SetCapability(ERenderingCapability::DITHER, i.dither);
-		if (i.polygonOffsetFill != c.polygonOffsetFill) m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_FILL, i.polygonOffsetFill);
+		if (i.polygonOffsetFill != c.polygonOffsetFill) {
+			m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_FILL, i.polygonOffsetFill);
+		}
+		if (i.polygonOffsetLine != c.polygonOffsetLine) {
+			m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_LINE, i.polygonOffsetLine);
+			if (i.polygonOffsetLine) {
+				m_gfxBackend->PolygonOffset(1.0f, 1.0f);
+			}		
+		}
+
+		
 		if (i.sampleAlphaToCoverage != c.sampleAlphaToCoverage) m_gfxBackend->SetCapability(ERenderingCapability::SAMPLE_ALPHA_TO_COVERAGE, i.sampleAlphaToCoverage);
 		if (i.depthTest != c.depthTest) m_gfxBackend->SetCapability(ERenderingCapability::DEPTH_TEST, i.depthTest);
 		if (i.scissorTest != c.scissorTest) m_gfxBackend->SetCapability(ERenderingCapability::SCISSOR_TEST, i.scissorTest);
