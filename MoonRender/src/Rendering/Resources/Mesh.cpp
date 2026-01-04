@@ -124,37 +124,58 @@ Rendering::Settings::EPrimitiveMode Rendering::Resources::Mesh::GetPrimitiveMode
 
 void Rendering::Resources::Mesh::BuildBvh()
 {
-	if (mPrimitiveMode != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
-		return;
-	}
+
 	if (m_bvh) {
 		delete m_bvh;
 		m_bvh = nullptr;
 	}
 	
 	//currently only build for triangles
-	
-	int numTris = isIndex ? m_indicesCount / 3 : m_vertexCount / 3;
-	if (numTris > 0) {
-		m_bvh = new Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
-		//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
-		std::vector<Geometry::bbox> bounds(numTris);
+	if (mPrimitiveMode == ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
+		int numTris = isIndex ? m_indicesCount / 3 : m_vertexCount / 3;
+		if (numTris > 0) {
+			m_bvh = new Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+			//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
+			std::vector<Geometry::bbox> bounds(numTris);
 
-		for (int i = 0; i < numTris; ++i)
-		{
-			if (isIndex) {
-				bounds[i].grow(m_vertices[m_indices[3 * i]].position);
-				bounds[i].grow(m_vertices[m_indices[3 * i+1]].position);
-				bounds[i].grow(m_vertices[m_indices[3 * i+2]].position);
+			for (int i = 0; i < numTris; ++i)
+			{
+				if (isIndex) {
+					bounds[i].grow(m_vertices[m_indices[3 * i]].position);
+					bounds[i].grow(m_vertices[m_indices[3 * i+1]].position);
+					bounds[i].grow(m_vertices[m_indices[3 * i+2]].position);
+				}
+				else
+				{			
+					bounds[i].grow(m_vertices[3 * i].position);
+					bounds[i].grow(m_vertices[3 * i + 1].position);
+					bounds[i].grow(m_vertices[3 * i + 2].position);
+				}
 			}
-			else
-			{			
-				bounds[i].grow(m_vertices[3 * i].position);
-				bounds[i].grow(m_vertices[3 * i + 1].position);
-				bounds[i].grow(m_vertices[3 * i + 2].position);
-			}
+			m_bvh->Build(&bounds[0], numTris);
 		}
-		m_bvh->Build(&bounds[0], numTris);
+	}
+	else if (mPrimitiveMode == ::Rendering::Settings::EPrimitiveMode::LINES) {
+		int num = isIndex ? m_indicesCount / 2 : m_vertexCount / 2;
+		if (num > 0) {
+			m_bvh = new Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+			//为所有的线段构建包围盒，然后在对所有的包围盒构建bvh
+			std::vector<Geometry::bbox> bounds(num);
+
+			for (int i = 0; i < num; ++i)
+			{
+				if (isIndex) {
+					bounds[i].grow(m_vertices[m_indices[2 * i]].position);
+					bounds[i].grow(m_vertices[m_indices[2 * i + 1]].position);
+				}
+				else
+				{
+					bounds[i].grow(m_vertices[2 * i].position);
+					bounds[i].grow(m_vertices[2 * i + 1].position);
+				}
+			}
+			m_bvh->Build(&bounds[0], num);
+		}
 	}
 }
 

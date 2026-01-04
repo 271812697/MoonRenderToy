@@ -74,6 +74,13 @@ std::vector<Rendering::Resources::Mesh*>& Rendering::Resources::Model::GetMeshes
 	return m_meshes;
 }
 
+void Rendering::Resources::Model::AddMesh(Mesh* mesh)
+{
+	m_meshes.push_back(mesh);
+	ComputeBoundingSphere();
+	ComputeBoundingBox();
+}
+
  std::vector<std::string>& Rendering::Resources::Model::GetMaterialNames() 
 {
 	return m_materialNames;

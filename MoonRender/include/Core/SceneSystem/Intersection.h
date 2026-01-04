@@ -2,6 +2,7 @@
 #include <Maths/FVector2.h>
 #include <Maths/FVector3.h>
 namespace Core::SceneSystem{
+	//Ray hit
 	struct HitRes {
 		Maths::FVector3 hitPoint;
 		Maths::FVector2 hitUv;
@@ -9,10 +10,18 @@ namespace Core::SceneSystem{
 		int actorId = -1;
 		int triangleId = -1;
 	};
+	//Rect Pick
 	struct RectPickRes {
 		int actorId = -1;
 		int childId = -1;
 		int triId = -1;
+	};
+	// Point Pick
+	struct PointPickRes
+	{
+		int actorId = -1;
+		int subMeshId = -1;
+
 	};
 
 	// 定义2D点结构体，简化坐标操作

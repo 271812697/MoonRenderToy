@@ -258,6 +258,7 @@ namespace Core::SceneSystem
 		void UpdateTriangleInfo();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		bool PointPick(const Maths::FMatrix4& viewProj,int w,int h ,int x,int y,float tolerance,PointPickRes& out);
 		std::vector<RectPickRes> RectPick(const Maths::FMatrix4& viewProj, float su, float sv,float eu,float ev);
 		~BvhService();
 	private:
