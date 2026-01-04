@@ -13,6 +13,7 @@ namespace Rendering::Settings
 		DEPTH_TEST,					// Do depth comparisons and update the depth buffer. Note that even if the depth buffer exists and the depth mask is non-zero, the depth buffer is not updated if the depth test is disabled.
 		DITHER,						// Dither color components or indices before they are written to the color buffer.
 		POLYGON_OFFSET_FILL,		// An offset is added to depth values of a polygon's fragments produced by rasterization.
+		POLYGON_OFFSET_LINE,		// An offset is added to depth values of a line's fragments produced by rasterization.
 		SAMPLE_ALPHA_TO_COVERAGE,	// Compute a temporary coverage value where each bit is determined by the alpha value at the corresponding sample location. The temporary coverage value is then ANDed with the fragment coverage value.
 		SAMPLE_COVERAGE,			// The fragment's coverage is ANDed with the temporary coverage value. If GL_SAMPLE_COVERAGE_INVERT is set to GL_TRUE, invert the coverage value.
 		SCISSOR_TEST,				// Discard fragments that are outside the scissor rectangle.

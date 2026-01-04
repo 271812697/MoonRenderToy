@@ -384,6 +384,9 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 			auto model=modelRenderer->GetModel();
 			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 			if (model&&mat) {
+				if (model->GetMeshes()[0]->GetPrimitiveMode() != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
+					continue;
+				}
 				auto matrix = modelRenderer->owner.transform.GetWorldMatrix();	
 				for (auto& m: model->GetMeshes()) {
 					

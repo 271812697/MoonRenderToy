@@ -265,7 +265,7 @@ bool Rendering::Data::Frustum::IsMeshInFrustum(const Rendering::Resources::Mesh&
 	return BoundingSphereInFrustum(p_mesh.GetBoundingSphere(), p_transform);
 }
 
-std::vector<Rendering::Resources::Mesh*> Rendering::Data::Frustum::GetMeshesInFrustum(const Rendering::Resources::Model& p_model, const Rendering::Geometry::BoundingSphere& p_modelBoundingSphere, const Maths::FTransform& p_modelTransform, Rendering::Settings::ECullingOptions p_cullingOptions) const
+std::vector<Rendering::Resources::Mesh*> Rendering::Data::Frustum::GetMeshesInFrustum(Rendering::Resources::Model& p_model, const Rendering::Geometry::BoundingSphere& p_modelBoundingSphere, const Maths::FTransform& p_modelTransform, Rendering::Settings::ECullingOptions p_cullingOptions) const
 {
 	const bool frustumPerModel = Rendering::Settings::IsFlagSet(Settings::ECullingOptions::FRUSTUM_PER_MODEL, p_cullingOptions);
 

@@ -419,6 +419,7 @@ const Rendering::Data::StateMask Rendering::Data::Material::GenerateStateMask() 
 	stateMask.depthTest = m_depthTest;
 	stateMask.frontfaceCulling = m_frontfaceCulling;
 	stateMask.backfaceCulling = m_backfaceCulling;
+	stateMask.lineWidth = lineWitdh;
 	return stateMask;
 }
 
@@ -491,4 +492,9 @@ bool Rendering::Data::Material::SupportsProjectionMode(Rendering::Settings::EPro
 	case PERSPECTIVE: return SupportsPerspective();
 	}
 	return true;
+}
+
+void Rendering::Data::Material::SetLineWidth(float p_width)
+{
+	lineWitdh = p_width;
 }

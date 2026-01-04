@@ -6,6 +6,7 @@ Rendering::Data::PipelineState::PipelineState() :
 	culling(true),
 	dither(false),
 	polygonOffsetFill(false),
+	polygonOffsetLine(true),
 	sampleAlphaToCoverage(false),
 	depthTest(true),
 	scissorTest(false),

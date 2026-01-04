@@ -10,13 +10,15 @@ namespace Rendering::Resources
 	{
 		friend class Loaders::ModelLoader;
 	public:
-		const std::vector<Mesh*>& GetMeshes() const;
-		const std::vector<std::string>& GetMaterialNames() const;
+		std::vector<Mesh*>& GetMeshes() ;
+		void AddMesh(Mesh*mesh);
+		std::vector<std::string>& GetMaterialNames() ;
 		const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const;
 		const Rendering::Geometry::bbox& GetBoundingBox() ;
-	private:
+	
 		Model(const std::string& p_path);
 		~Model();
+	private:
 		void ComputeBoundingSphere();
 		void ComputeBoundingBox();
 

@@ -10,17 +10,16 @@ namespace
 {
 	const Rendering::Entities::Camera kDefaultCamera(Maths::FTransform());
 
-	constexpr auto kUnitQuadVertices = std::to_array<Rendering::Geometry::Vertex>({
+	std::vector<Rendering::Geometry::Vertex> kUnitQuadVertices = {
 		{ {-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} }, // Bottom-left
 		{ { 1.0f, -1.0f, 0.0f}, {1.0f, 0.0f} }, // Bottom-right
 		{ { 1.0f,  1.0f, 0.0f}, {1.0f, 1.0f} }, // Top-right
 		{ {-1.0f,  1.0f, 0.0f}, {0.0f, 1.0f} }  // Top-left
-		});
-
-	constexpr auto kUnitQuadIndices = std::to_array<uint32_t>({
+	};
+	std::vector<uint32_t> kUnitQuadIndices ={
 		0, 1, 2, // First triangle
 		0, 2, 3  // Second triangle
-		});
+		};
 
 	constexpr auto kWhitePixel = std::to_array<uint8_t>({ 255, 255, 255, 255 });
 	constexpr auto kBlackPixel = std::to_array<uint8_t, 6 * 4>({ 0 });
@@ -294,7 +293,8 @@ void Rendering::Core::ABaseRenderer::DrawEntity(
 	p_pso.blending = p_drawable.stateMask.blendable;
 	p_pso.culling = p_drawable.stateMask.frontfaceCulling || p_drawable.stateMask.backfaceCulling;
 	p_pso.depthTest = p_drawable.stateMask.depthTest;
-
+	p_pso.lineWidth = p_drawable.stateMask.lineWidth;
+	
 	if (p_pso.culling)
 	{
 		if (p_drawable.stateMask.backfaceCulling && p_drawable.stateMask.frontfaceCulling)

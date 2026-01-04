@@ -58,6 +58,7 @@ namespace Rendering::Data
 				bool culling : 1;
 				bool sampleAlphaToCoverage : 1;
 				bool polygonOffsetFill : 1;
+				bool polygonOffsetLine : 1;
 				bool multisample : 1;
 				bool depthTest : 1;
 				bool stencilTest : 1;
@@ -94,5 +95,6 @@ namespace Rendering::Data
 			// Same as above, don't access this directly!
 			uint8_t _bytes[16];
 		};
+		float lineWidth = 1.0f;
 	};
 }

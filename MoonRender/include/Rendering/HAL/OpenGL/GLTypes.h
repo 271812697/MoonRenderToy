@@ -142,6 +142,7 @@ struct Tools::Utils::MappingFor<Rendering::Settings::ERenderingCapability, GLenu
 		EnumValuePair<EnumType::DEPTH_TEST, GL_DEPTH_TEST>,
 		EnumValuePair<EnumType::DITHER, GL_DITHER>,
 		EnumValuePair<EnumType::POLYGON_OFFSET_FILL, GL_POLYGON_OFFSET_FILL>,
+		EnumValuePair<EnumType::POLYGON_OFFSET_LINE, GL_POLYGON_OFFSET_FILL>,
 		EnumValuePair<EnumType::SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_ALPHA_TO_COVERAGE>,
 		EnumValuePair<EnumType::SAMPLE_COVERAGE, GL_SAMPLE_COVERAGE>,
 		EnumValuePair<EnumType::SCISSOR_TEST, GL_SCISSOR_TEST>,

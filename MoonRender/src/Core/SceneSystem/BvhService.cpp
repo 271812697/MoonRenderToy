@@ -646,6 +646,12 @@ namespace Core::SceneSystem
 		return hit;
 	}
 
+	bool BvhService::PointPick(const Maths::FMatrix4& viewProj, int w, int h, int x, int y, float tolerance, PointPickRes& out)
+	{
+
+		return false;
+	}
+
 	std::vector<RectPickRes> BvhService::RectPick(const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev)
 	{
 		ZoneScoped;
