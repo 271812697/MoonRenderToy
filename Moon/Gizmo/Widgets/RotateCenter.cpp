@@ -5,6 +5,7 @@
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "Qtimgui/imgui/imgui.h"
 #include <Core/ECS/Components/CBatchMeshTriangle.h>
+#include <core/ECS/Components/CBatchMeshLine.h>
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -128,7 +129,22 @@ namespace MOON {
 		Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
 		::Core::SceneSystem::PointPickRes out;
 		if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
-			std::cout << "Point Pick Hit ActorID:" << out.actorId << "  ChildID:" << out.subMeshId << std::endl;
+			static int subLineId = -1;
+			int id = out.subMeshId;
+			//if (id != subLineId) 
+			{
+				subLineId = id;
+				auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
+				if (actor) {
+					if (actor->GetTag() == "GeomertyLine") {
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
+						if (colorBar) {
+							colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
+						}
+					}
+				}
+			}
+			
 		}
 
 	}

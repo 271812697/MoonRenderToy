@@ -54,7 +54,7 @@ namespace Core::ECS::Components
 			mInternal->colorChange = false;
 			auto mat = owner.GetComponent<CMaterialRenderer>()->GetMaterialAtIndex(0);
 			if (mat) {
-				const ::Rendering::Data::MaterialProperty prop = mat->GetProperty("domainColorTex").value();
+				const ::Rendering::Data::MaterialProperty prop = mat->GetProperty("lineColorTex").value();
 				::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
 				auto tex = std::get<::Rendering::HAL::TextureHandle*>(prop.value);
 
@@ -194,8 +194,8 @@ namespace Core::ECS::Components
 								else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
 									for (int j = meshBvhCur->startidx; j < meshBvhCur->startidx + meshBvhCur->numprims; j++) {
 										int segIndex = meshBvh->m_packed_indices[j];
-										::Rendering::Geometry::VertexBVH v0 = mesh->GetVertexBVH(segIndex * 2+ioffset);
-										::Rendering::Geometry::VertexBVH v1 = mesh->GetVertexBVH(segIndex * 2 + 1 + ioffset);
+										::Rendering::Geometry::VertexBVH v0 = vertex[indices[segIndex * 2 + ioffset]];// mesh->GetVertexBVH(segIndex * 2+ioffset);
+										::Rendering::Geometry::VertexBVH v1 = vertex[indices[segIndex * 2 + 1 + ioffset]];
 										Maths::FVector3 ndcV0 = viewPortMatrix.MulPoint(matrix.MulPoint(v0.position));
 										Maths::FVector3 ndcV1 = viewPortMatrix.MulPoint(matrix.MulPoint(v1.position));
 										float dis= ::Core::SceneSystem::pointToSegmentDistance({ x*1.0f,y*1.0f }, { ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y });
@@ -204,7 +204,7 @@ namespace Core::ECS::Components
 											isHit = true;
 											res = true;
 											out.actorId = actorId;
-											out.subMeshId=index ;
+											out.subMeshId= (int)v0.texCoords.x;
 											break;
 										}
 									}

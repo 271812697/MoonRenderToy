@@ -14,12 +14,16 @@ layout (location = 4) in vec3 geo_Bitangent;
 out VS_OUT
 {
     vec3 FragPos;
+    vec2 tex;
 
 } vs_out;
+flat out int lineId;
 
 void main()
 {
     vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos, 1.0));
+    vs_out.tex=geo_TexCoords;//int(round(geo_TexCoords.x));
+    lineId=int(round(geo_TexCoords.x));
     gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
 }
 
@@ -30,13 +34,15 @@ void main()
 
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 #include ":Shaders/Lighting/PBR.ovfxh"
+uniform samplerBuffer lineColorTex;
 
 
 in VS_OUT
 {
     vec3 FragPos;
-
+    vec2 tex;
 } fs_in;
+flat in int lineId;
 out vec4 FRAGMENT_COLOR;
 
 void main()
@@ -47,5 +53,16 @@ void main()
          discard;
     }
 #endif
-    FRAGMENT_COLOR = vec4(0,1,1, 1);
+    int lineIndex=int(round(fs_in.tex.x));
+    //vec3 color=vec3(1,1,1);
+    //if(lineIndex==0){
+
+       // color=vec3(0,1,1);
+    //}//
+    vec3 color=texelFetch(lineColorTex,lineIndex).rgb;
+    if(lineId==575){
+     color=vec3(1,1,0);
+    }
+    //vec3 color=texelFetch(lineColorTex,575).rgb;
+    FRAGMENT_COLOR = vec4(color, 1);
 }

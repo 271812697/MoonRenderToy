@@ -157,8 +157,10 @@ namespace MOON {
             std::vector<Core::ECS::Actor*>domainActors;
             std::vector<Rendering::Geometry::bbox>domainBoxs;
             std::vector<uint32_t>domainRange;
+            int domainIndex = -1;
             for (int i = 0; i < domains.size(); i++) {
                 if (domains[i].facets.size() > 0) {
+                    domainIndex++;
                     domainColor.push_back(colors[cnt]);
                     cnt = (cnt + 1) % 12;
                     positions.reserve(positions.size() + domains[i].points.size());
@@ -171,7 +173,7 @@ namespace MOON {
                         subBox.grow(positions.back());
                         //need to support in further
                         normals.emplace_back(Maths::FVector3{ 0,0,0 });
-                        uvs.emplace_back(Maths::FVector2{ i * 1.0f,0.0f });
+                        uvs.emplace_back(Maths::FVector2{ domainIndex * 1.0f,0.0f });
                     }
                     for (int k = 0; k < domains[i].facets.size(); k++) {
                         indices[indexOffset + 3 * k] = domains[i].facets[k].I1 + vertexOffset;
@@ -234,7 +236,7 @@ namespace MOON {
             std::vector<::Rendering::Geometry::Vertex> p_vertices;
             std::vector<uint32_t>lineIndex;
 			std::vector<uint32_t>lineSegmentOffsets;
-
+            std::vector<Maths::FVector4>lineColor;
 
             p_vertices.reserve(linePoints.size());
             for (int i = 0;i < linePoints.size();i++) {
@@ -244,6 +246,7 @@ namespace MOON {
                 v.position[2] = static_cast<float>(linePoints[i].z());
                 p_vertices.emplace_back(v);
             } 
+            lineColor.reserve(LineRanges.size());
             for (int i = 0;i < LineRanges.size();i++) {
 				auto& l = LineRanges[i];
                 for (int k = l.I1; k <= l.I2 - 1; k++) {
@@ -253,7 +256,9 @@ namespace MOON {
                 }
                 p_vertices[l.I2].texCoords[0] = i;
 				lineSegmentOffsets.push_back(lineIndex.size());
+                lineColor.emplace_back(0,1,1,1);
             }
+            //lineColor[575] = { 0,1,1,1 };
             auto lineMesh = new ::Rendering::Resources::Mesh(
                 p_vertices,
                 lineIndex,
@@ -275,9 +280,20 @@ namespace MOON {
             lineMat->SetCastShadows(false);
             lineMat->SetReceiveShadows(false);
             lineMat->SetLineWidth(2.0);
+          
+            desc.buffetLen = lineColor.size() * sizeof(Maths::FVector4);
+            desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+                .data = lineColor.data()
+            };
+
+            ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+            lineColorTex->Allocate(desc);
+            lineMat->SetProperty("lineColorTex", lineColorTex);
             lineRener.SetMaterialAtIndex(0, *lineMat);
+
             lineRener.UpdateMaterialList();
             auto& lineBacthMesh =lineActor.AddComponent<Core::ECS::Components::CBatchMeshLine>();
+            lineBacthMesh.SetColors(lineColor);
             lineBacthMesh.BuildBvh(lineSegmentOffsets);
         }
     }
