@@ -249,7 +249,7 @@ namespace Core::SceneSystem
 		int ProcessTLASNodes(const ::Rendering::Geometry::Bvh::Node* node);
 
 		void UpdateTLAS(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<MeshInstance>& instances);
-		void Process(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances);
+		void Process(const std::vector<::Rendering::Geometry::bbox>&boxs, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances);
 		void SaveAsObj(const std::string&path);
 		void Clear();
 		bool DirtyFlag();
@@ -258,7 +258,7 @@ namespace Core::SceneSystem
 		void UpdateTriangleInfo();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
-		bool PointPick(const Maths::FMatrix4& viewProj,int w,int h ,int x,int y,float tolerance,PointPickRes& out);
+		bool PointPick(const Maths::FMatrix4& viewProj,int x,int y,float tolerance,PointPickRes& out);
 		std::vector<RectPickRes> RectPick(const Maths::FMatrix4& viewProj, float su, float sv,float eu,float ev);
 		~BvhService();
 	private:
@@ -269,16 +269,18 @@ namespace Core::SceneSystem
 		friend class Scene;
 		RenderOptions renderOptions;
 		::Rendering::Geometry::Bvh* m_sceneBvh = nullptr;
+		::Rendering::Geometry::Bvh* m_sceneTriBvh = nullptr;
 		int topLevelIndex = 0;
 		int nodeTexWidth;
 		std::vector<Node> nodes;
 		int curNode = 0;
 		int curTriIndex = 0;
 		std::vector<int> bvhRootStartIndices;
-		std::vector<MeshInstance> meshInstances;
-		std::vector<::Rendering::Resources::Mesh*> meshes;
+		std::vector<MeshInstance> triMeshInstances;
+		std::vector<::Rendering::Resources::Mesh*> triMeshes;
 		const ::Rendering::Geometry::Bvh* topLevelBvh;
-
+		std::vector<MeshInstance> mSceneMeshInstances;
+		std::vector<::Rendering::Resources::Mesh*> mSceneMeshes;
 		// Scene Mesh Data 
 		std::vector<Indices> vertIndices;
 		std::vector<Maths::FVector4> verticesUVX; // Vertex + texture Coord (u/s)

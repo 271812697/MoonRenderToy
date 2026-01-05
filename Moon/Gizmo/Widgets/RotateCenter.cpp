@@ -4,7 +4,7 @@
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "Qtimgui/imgui/imgui.h"
-#include <Core/ECS/Components/CBatchMesh.h>
+#include <Core/ECS/Components/CBatchMeshTriangle.h>
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -90,7 +90,7 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
 						}
@@ -116,7 +116,7 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetHoverColor( eid , Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
 						}
@@ -124,5 +124,12 @@ namespace MOON {
 				}
 			}
 		}
+		auto [w, h] = m_sceneView->GetSafeSize();
+		Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
+		::Core::SceneSystem::PointPickRes out;
+		if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
+			std::cout << "Point Pick Hit ActorID:" << out.actorId << "  ChildID:" << out.subMeshId << std::endl;
+		}
+
 	}
 }

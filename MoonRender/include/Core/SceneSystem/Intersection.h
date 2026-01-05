@@ -83,4 +83,6 @@ namespace Core::SceneSystem{
 	bool isTriangleAABBIntersect(const Point2D& P0, const Point2D& P1, const Point2D& P2,
 		float rect_xmin, float rect_ymin,
 		float rect_xmax, float rect_ymax);
+
+	float pointToSegmentDistance(const Point2D& P, const Point2D& P0, const Point2D& P1);
 }

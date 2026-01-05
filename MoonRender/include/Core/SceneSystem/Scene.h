@@ -57,6 +57,7 @@ namespace Core::SceneSystem
 		
 		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		bool PointPick(const Maths::FMatrix4& viewPortMatrix, int x, int y, float tolerance, PointPickRes& out);
 		::Rendering::Geometry::Bvh* GetBvh();
 		BvhService* GetBvhService() { return bvhService; }
 	private:

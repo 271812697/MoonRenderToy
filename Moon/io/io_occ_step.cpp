@@ -4,7 +4,8 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
-#include "Core/ECS/Components/CBatchMesh.h"
+#include "Core/ECS/Components/CBatchMeshTriangle.h"
+#include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include "Gizmo/Gizmo.h"
 #include <STEPControl_Reader.hxx>
@@ -224,7 +225,7 @@ namespace MOON {
             ::Rendering::HAL::GLTexture* domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
             domainColorTex->Allocate(desc);
             tempMat->SetProperty("domainColorTex", domainColorTex);
-            auto& bacthMesh = actor.AddComponent<Core::ECS::Components::CBatchMesh>();
+            auto& bacthMesh = actor.AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.SetColors(domainColor);
             bacthMesh.BuildBvh(domainBoxs, domainRange);
 
@@ -232,19 +233,26 @@ namespace MOON {
             //build lines
             std::vector<::Rendering::Geometry::Vertex> p_vertices;
             std::vector<uint32_t>lineIndex;
-            for (auto& l : LineRanges) {
+			std::vector<uint32_t>lineSegmentOffsets;
+
+
+            p_vertices.reserve(linePoints.size());
+            for (int i = 0;i < linePoints.size();i++) {
+                ::Rendering::Geometry::Vertex v;
+                v.position[0] = static_cast<float>(linePoints[i].x());
+                v.position[1] = static_cast<float>(linePoints[i].y());
+                v.position[2] = static_cast<float>(linePoints[i].z());
+                p_vertices.emplace_back(v);
+            } 
+            for (int i = 0;i < LineRanges.size();i++) {
+				auto& l = LineRanges[i];
                 for (int k = l.I1; k <= l.I2 - 1; k++) {
+                    p_vertices[k].texCoords[0] = i;
                     lineIndex.push_back(k);
                     lineIndex.push_back(k + 1);
                 }
-            }
-            p_vertices.reserve(linePoints.size());
-            for (auto& p : linePoints) {
-                ::Rendering::Geometry::Vertex v;
-                v.position[0] = static_cast<float>(p.x());
-                v.position[1] = static_cast<float>(p.y());
-                v.position[2] = static_cast<float>(p.z());
-                p_vertices.emplace_back(v);
+                p_vertices[l.I2].texCoords[0] = i;
+				lineSegmentOffsets.push_back(lineIndex.size());
             }
             auto lineMesh = new ::Rendering::Resources::Mesh(
                 p_vertices,
@@ -269,6 +277,8 @@ namespace MOON {
             lineMat->SetLineWidth(2.0);
             lineRener.SetMaterialAtIndex(0, *lineMat);
             lineRener.UpdateMaterialList();
+            auto& lineBacthMesh =lineActor.AddComponent<Core::ECS::Components::CBatchMeshLine>();
+            lineBacthMesh.BuildBvh(lineSegmentOffsets);
         }
     }
 }
