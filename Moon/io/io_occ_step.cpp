@@ -250,11 +250,13 @@ namespace MOON {
             for (int i = 0;i < LineRanges.size();i++) {
 				auto& l = LineRanges[i];
                 for (int k = l.I1; k <= l.I2 - 1; k++) {
-                    p_vertices[k].texCoords[0] = i;
+                    p_vertices[k].texCoords[0] = i*1.0f;
+                    p_vertices[k].texCoords[1] = i * 1.0f;
                     lineIndex.push_back(k);
                     lineIndex.push_back(k + 1);
                 }
-                p_vertices[l.I2].texCoords[0] = i;
+                p_vertices[l.I2].texCoords[0] = i*1.0f;
+                p_vertices[l.I2].texCoords[1] = i * 1.0f;
 				lineSegmentOffsets.push_back(lineIndex.size());
                 lineColor.emplace_back(0,1,1,1);
             }

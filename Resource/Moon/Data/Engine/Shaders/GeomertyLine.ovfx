@@ -14,7 +14,7 @@ layout (location = 4) in vec3 geo_Bitangent;
 out VS_OUT
 {
     vec3 FragPos;
-    vec2 tex;
+    vec2 TexCoords;
 
 } vs_out;
 flat out int lineId;
@@ -22,7 +22,7 @@ flat out int lineId;
 void main()
 {
     vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos, 1.0));
-    vs_out.tex=geo_TexCoords;//int(round(geo_TexCoords.x));
+    vs_out.TexCoords=geo_TexCoords;
     lineId=int(round(geo_TexCoords.x));
     gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
 }
@@ -40,7 +40,7 @@ uniform samplerBuffer lineColorTex;
 in VS_OUT
 {
     vec3 FragPos;
-    vec2 tex;
+    vec2 TexCoords;
 } fs_in;
 flat in int lineId;
 out vec4 FRAGMENT_COLOR;
@@ -53,14 +53,15 @@ void main()
          discard;
     }
 #endif
-    int lineIndex=int(round(fs_in.tex.x));
+    
+    int lineIndex=int(round(fs_in.TexCoords.x));
     //vec3 color=vec3(1,1,1);
     //if(lineIndex==0){
 
        // color=vec3(0,1,1);
     //}//
     vec3 color=texelFetch(lineColorTex,lineIndex).rgb;
-    if(lineId==575){
+    if(lineId==1928){
      color=vec3(1,1,0);
     }
     //vec3 color=texelFetch(lineColorTex,575).rgb;

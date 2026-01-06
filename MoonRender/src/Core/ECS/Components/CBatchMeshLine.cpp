@@ -7,6 +7,7 @@
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/Geometry/split_bvh.h>
+
 namespace Core::ECS::Components
 {
 	class CBatchMeshLine::CBatchMeshLineInternal {
@@ -105,6 +106,23 @@ namespace Core::ECS::Components
 		mInternal->hoverIndex = index;
 		mInternal->hoverColor = color;
 		mInternal->colorChange = true;
+	}
+
+	std::vector<Maths::FVector3> CBatchMeshLine::getLineSeg(int index)
+	{
+		std::vector<Maths::FVector3>res;
+		auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
+		auto mesh = model->GetModel()->GetMeshes()[0];
+		auto& indices = mesh->GetIndices();
+		auto& vertex = mesh->GetVerticesBVH();
+		uint32_t i1=mInternal->subMeshRanges[index];
+		uint32_t i2 = mInternal->subMeshRanges[index+1];
+		for (int i = i1;i < i2;i += 2) {
+			res.push_back(vertex[indices[i]].position);
+			res.push_back(vertex[indices[i+1]].position);
+		}
+
+		return res;
 	}
 
 	void CBatchMeshLine::BuildBvh( const std::vector<uint32_t>& subMeshRanges)

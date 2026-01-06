@@ -15,6 +15,7 @@ namespace MOON {
 	float sy;
 	float ex;
 	float ey;
+	std::vector<Maths::FVector3> lineSeg;
 	RotateCenter::RotateCenter(const std::string& name) :GizmoWidget(name)
 	{
 		m_rightButtonPressObserver=this->Interactor->AddObserver(ExecuteCommand::RightButtonPressEvent, this, &RotateCenter::onMouseRightButtonPressed, 0.0f);
@@ -48,6 +49,9 @@ namespace MOON {
 			auto drawList=ImGui::GetForegroundDrawList();
 			drawList->AddRectFilled({sx,sy},{ex,ey},c1);
 			drawList->AddRect({ sx,sy }, { ex,ey }, c1,0,0,3.0);
+		}
+		for (int i = 0;i < lineSeg.size();i ++) {
+			renderer->drawPoint({ lineSeg[i].x,lineSeg[i].y ,lineSeg[i].z },10);
 		}
 
 	}
@@ -131,7 +135,7 @@ namespace MOON {
 		if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
 			static int subLineId = -1;
 			int id = out.subMeshId;
-			//if (id != subLineId) 
+			if (id != subLineId) 
 			{
 				subLineId = id;
 				auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
@@ -139,13 +143,12 @@ namespace MOON {
 					if (actor->GetTag() == "GeomertyLine") {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
 						if (colorBar) {
-							colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
+							//colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
+							lineSeg=colorBar->getLineSeg(subLineId);
 						}
 					}
 				}
 			}
-			
 		}
-
 	}
 }
