@@ -4,6 +4,8 @@ This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+![image-20260108201518310](README.assets/image-20260108201518310.png)
+
 ![image-20260102211418374](README.assets/image-20260102211418374.png)
 
 ![image-20251208205509317](README.assets/image-20251208205509317.png)
