@@ -21,7 +21,6 @@ namespace Core::SceneSystem{
 	{
 		int actorId = -1;
 		int subMeshId = -1;
-
 	};
 
 	// 定义2D点结构体，简化坐标操作

@@ -33,6 +33,24 @@ Rendering::Resources::Mesh::Mesh(
 	Upload(p_vertices, p_indices);
 	ComputeBoundingSphereAndBox(p_vertices);
 }
+Rendering::Resources::Mesh::Mesh(
+	const std::vector<Geometry::VertexBVH>& p_vertices,
+	const std::vector< uint32_t>& p_indices,
+	uint32_t p_materialIndex,
+	Settings::EPrimitiveMode primitiveMode
+) : mPrimitiveMode(primitiveMode),
+m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
+m_indicesCount(static_cast<uint32_t>(p_indices.size())),
+m_vertices(std::move(p_vertices)),
+m_indices(std::move(p_indices))
+{
+	isIndex = m_indicesCount > 0;
+
+
+	m_materialIndex.push_back(p_materialIndex);
+	Upload(p_vertices, p_indices);
+	ComputeBoundingSphereAndBox(p_vertices);
+}
 Rendering::Resources::Mesh::~Mesh()
 {
 	delete m_bvh;
@@ -130,7 +148,7 @@ void Rendering::Resources::Mesh::BuildBvh()
 		m_bvh = nullptr;
 	}
 	
-	//currently only build for triangles
+	
 	if (mPrimitiveMode == ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
 		int numTris = isIndex ? m_indicesCount / 3 : m_vertexCount / 3;
 		if (numTris > 0) {
@@ -211,7 +229,31 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_v
 		//("Empty vertex buffer!");
 	}
 }
+void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::VertexBVH>& p_vertices, const std::vector<uint32_t>& p_indices)
+{
+	if (m_vertexBuffer.Allocate(p_vertices.size() * sizeof(Geometry::VertexBVH)))
+	{
+		m_vertexBuffer.Upload(p_vertices.data());
 
+		if (m_indexBuffer.Allocate(p_indices.size() * sizeof(uint32_t)))
+		{
+			m_indexBuffer.Upload(p_indices.data());
+		}
+		else
+		{
+			("Empty index buffer!");
+		}
+		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+			{ Settings::EDataType::FLOAT, 3 }, // position
+			{ Settings::EDataType::FLOAT, 2 }, // texCoords
+			{ Settings::EDataType::FLOAT, 3 } // normal
+			}), m_vertexBuffer, m_indexBuffer);
+	}
+	else
+	{
+		//("Empty vertex buffer!");
+	}
+}
 void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< Geometry::Vertex>& p_vertices)
 {
 	m_boundingSphere.position = Maths::FVector3::Zero;
@@ -250,4 +292,42 @@ void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< 
 	}
 
 	
+}
+void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< Geometry::VertexBVH>& p_vertices)
+{
+	m_boundingSphere.position = Maths::FVector3::Zero;
+	m_boundingSphere.radius = 0.0f;
+
+
+	if (!p_vertices.empty())
+	{
+		float minX = std::numeric_limits<float>::max();
+		float minY = std::numeric_limits<float>::max();
+		float minZ = std::numeric_limits<float>::max();
+
+		float maxX = std::numeric_limits<float>::min();
+		float maxY = std::numeric_limits<float>::min();
+		float maxZ = std::numeric_limits<float>::min();
+
+		for (const auto& vertex : p_vertices)
+		{
+			minX = std::min(minX, vertex.position[0]);
+			minY = std::min(minY, vertex.position[1]);
+			minZ = std::min(minZ, vertex.position[2]);
+
+			maxX = std::max(maxX, vertex.position[0]);
+			maxY = std::max(maxY, vertex.position[1]);
+			maxZ = std::max(maxZ, vertex.position[2]);
+		}
+
+		m_boundingSphere.position = Maths::FVector3{ minX + maxX, minY + maxY, minZ + maxZ } / 2.0f;
+		m_boundingBox = Geometry::bbox(Maths::FVector3{ minX , minY , minZ }, Maths::FVector3{ maxX,  maxY, maxZ });
+		for (const auto& vertex : p_vertices)
+		{
+			m_boundingSphere.radius = std::max(m_boundingSphere.radius, Maths::FVector3::Distance(m_boundingSphere.position, vertex.position));
+		}
+		BuildBvh();
+	}
+
+
 }

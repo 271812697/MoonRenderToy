@@ -431,8 +431,9 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 		}
 	}
 	// Build BVH
-
-	bvhService->Process(bounds,sceneMeshes, meshInstances);
+	if (meshInstances.size()>0) {
+		bvhService->Process(bounds,sceneMeshes, meshInstances);	
+	}
 }
 
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitRes& outRes)
