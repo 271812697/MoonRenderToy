@@ -7,6 +7,7 @@
 #include "editor.h"
 #include "UI/TreeViewPanel/hierarchypanel.h"
 #include "UI/SettingPanel/SettingPanel.h"
+#include "UI/PropertyPanel/PropertyPanel.h"
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "UI/LogPanel/LogPanel.h"
@@ -45,8 +46,13 @@ namespace MOON {
 			settingPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
 			settingPanel->setWindowTitle(QApplication::translate("Settingpanel", "Setting", nullptr));
 			
+			auto propertyPanel=new PropertyPanel(self);
+			propertyPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
+			propertyPanel->setWindowTitle(QApplication::translate("Propertypanel", "Property", nullptr));
+
 			self->addDockWidget(Qt::LeftDockWidgetArea, hierarchypanel);
 			self->addDockWidget(Qt::LeftDockWidgetArea, settingPanel);
+			self->addDockWidget(Qt::RightDockWidgetArea,propertyPanel);
 			auto resourcePanelDock = new ResPanel(self);
 			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
 			auto logPanelDock = new LogPanel(self);
