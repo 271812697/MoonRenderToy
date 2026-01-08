@@ -21,7 +21,6 @@ namespace Core::SceneSystem{
 	{
 		int actorId = -1;
 		int subMeshId = -1;
-
 	};
 
 	// 定义2D点结构体，简化坐标操作
@@ -83,4 +82,6 @@ namespace Core::SceneSystem{
 	bool isTriangleAABBIntersect(const Point2D& P0, const Point2D& P1, const Point2D& P2,
 		float rect_xmin, float rect_ymin,
 		float rect_xmax, float rect_ymax);
+
+	float pointToSegmentDistance(const Point2D& P, const Point2D& P0, const Point2D& P1);
 }

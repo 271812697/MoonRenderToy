@@ -1,6 +1,6 @@
 ﻿#include <tinyxml2.h>
 #include <Core/ECS/Actor.h>
-#include <Core/ECS/Components/CBatchMesh.h>
+#include <Core/ECS/Components/CBatchMeshTriangle.h>
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/Global/ServiceLocator.h>
 #include <Core/ResourceManagement/MaterialManager.h>
@@ -9,20 +9,20 @@
 #include <Rendering/Geometry/split_bvh.h>
 namespace Core::ECS::Components
 {
-	class CBatchMesh::CBatchMeshInternal {
+	class CBatchMeshTriangle::CBatchMeshTriangleInternal {
 	public:
-		CBatchMeshInternal(CBatchMesh* self) :mSelf(self){
+		CBatchMeshTriangleInternal(CBatchMeshTriangle* self) :mSelf(self){
 
 		}
-		~CBatchMeshInternal() {
+		~CBatchMeshTriangleInternal() {
 			delete rootBvh;
 			for (int i = 0; i < subMeshBvhs.size(); i++) {
 				delete subMeshBvhs[i];
 			}
 		}
 	private:
-		friend class CBatchMesh;
-		CBatchMesh* mSelf = nullptr;
+		friend class CBatchMeshTriangle;
+		CBatchMeshTriangle* mSelf = nullptr;
 		bool colorChange = false;
 		int hoverIndex =-1;
 		std::vector<int> candidatesIndex;
@@ -34,21 +34,21 @@ namespace Core::ECS::Components
 		std::vector<::Rendering::Geometry::SplitBvh*>subMeshBvhs;
 		std::vector<uint32_t> subMeshRanges;
 	};
-	CBatchMesh::CBatchMesh(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CBatchMeshInternal(this))
+	CBatchMeshTriangle::CBatchMeshTriangle(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CBatchMeshTriangleInternal(this))
 	{
 	}
 
-	CBatchMesh::~CBatchMesh()
+	CBatchMeshTriangle::~CBatchMeshTriangle()
 	{
 		delete mInternal;
 	}
 
-	std::string CBatchMesh::GetName()
+	std::string CBatchMeshTriangle::GetName()
 	{
 		return "CBatchMesh";
 	}
 
-	void CBatchMesh::OnUpdate(float p_deltaTime)
+	void CBatchMeshTriangle::OnUpdate(float p_deltaTime)
 	{
 		if (mInternal->colorChange) {
 			mInternal->colorChange = false;
@@ -80,12 +80,12 @@ namespace Core::ECS::Components
 		}
 	}
 
-	void CBatchMesh::SetColors(const std::vector<Maths::FVector4>& colors)
+	void CBatchMeshTriangle::SetColors(const std::vector<Maths::FVector4>& colors)
 	{
 		mInternal->m_defaultColors = colors;
 	}
 
-	void CBatchMesh::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
+	void CBatchMeshTriangle::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
 	{
 		//mInternal->candidatesIndex.clear();;
 		mInternal->candidatesIndex = index;
@@ -100,14 +100,14 @@ namespace Core::ECS::Components
 		//}
 	}
 
-	void CBatchMesh::SetHoverColor(int index, const Maths::FVector4& color)
+	void CBatchMeshTriangle::SetHoverColor(int index, const Maths::FVector4& color)
 	{
 		mInternal->hoverIndex = index;
 		mInternal->hoverColor = color;
 		mInternal->colorChange = true;
 	}
 
-	void CBatchMesh::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
+	void CBatchMeshTriangle::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
 	{
 		mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
 		mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
@@ -143,7 +143,7 @@ namespace Core::ECS::Components
 			}
 		}
 	}
-	std::vector<Core::SceneSystem::RectPickRes> CBatchMesh::RectPick(const Maths::FMatrix4& modelMatrix,const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev) {
+	std::vector<Core::SceneSystem::RectPickRes> CBatchMeshTriangle::RectPick(const Maths::FMatrix4& modelMatrix,const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev) {
 		auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
 		int actorId = owner.GetID();
 		auto mesh = model->GetModel()->GetMeshes()[0];
@@ -211,11 +211,11 @@ namespace Core::ECS::Components
 		return res;
 	}
 
-	void CBatchMesh::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
+	void CBatchMeshTriangle::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 	{
 	}
 
-	void CBatchMesh::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
+	void CBatchMeshTriangle::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 	{
 	}
 }

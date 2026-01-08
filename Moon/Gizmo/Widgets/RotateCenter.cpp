@@ -4,7 +4,8 @@
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "Qtimgui/imgui/imgui.h"
-#include <Core/ECS/Components/CBatchMesh.h>
+#include <Core/ECS/Components/CBatchMeshTriangle.h>
+#include <core/ECS/Components/CBatchMeshLine.h>
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -14,6 +15,7 @@ namespace MOON {
 	float sy;
 	float ex;
 	float ey;
+	std::vector<Maths::FVector3> lineSeg;
 	RotateCenter::RotateCenter(const std::string& name) :GizmoWidget(name)
 	{
 		m_rightButtonPressObserver=this->Interactor->AddObserver(ExecuteCommand::RightButtonPressEvent, this, &RotateCenter::onMouseRightButtonPressed, 0.0f);
@@ -47,6 +49,9 @@ namespace MOON {
 			auto drawList=ImGui::GetForegroundDrawList();
 			drawList->AddRectFilled({sx,sy},{ex,ey},c1);
 			drawList->AddRect({ sx,sy }, { ex,ey }, c1,0,0,3.0);
+		}
+		for (int i = 0;i < lineSeg.size();i ++) {
+			renderer->drawPoint({ lineSeg[i].x,lineSeg[i].y ,lineSeg[i].z },10);
 		}
 
 	}
@@ -90,7 +95,7 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
 						}
@@ -116,9 +121,30 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
 				if (actor) {
 					if (actor->GetTag() == "Geomerty") {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMesh>();
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetHoverColor( eid , Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
+						}
+					}
+				}
+			}
+		}
+		auto [w, h] = m_sceneView->GetSafeSize();
+		Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
+		::Core::SceneSystem::PointPickRes out;
+		if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
+			static int subLineId = -1;
+			int id = out.subMeshId;
+			if (id != subLineId) 
+			{
+				subLineId = id;
+				auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
+				if (actor) {
+					if (actor->GetTag() == "GeomertyLine") {
+						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
+						if (colorBar) {
+							//colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
+							lineSeg=colorBar->getLineSeg(subLineId);
 						}
 					}
 				}

@@ -13,24 +13,14 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <vector>
-
-
-class gp_Lin;
-class gp_Pln;
 namespace MOON {
-
 	class  Tools
 	{
 	public:
-    /*!
-    * \brief getPolygon3D
-    * \param edge
-    * \param points
-    * \return true if a polygon exists or false otherwise
-    */
         static bool getPolygon3D(const TopoDS_Edge& edge, std::vector<gp_Pnt>& points);
-
         static bool getPolygonOnTriangulation(const TopoDS_Edge& edge, const TopoDS_Face& face, std::vector<gp_Pnt>& points);
-        static bool getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points, std::vector<Poly_Triangle>& facets);
+        static bool getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points, std::vector<gp_Vec>& normals,std::vector<Poly_Triangle>& facets);
+        static void getPointNormals(const TopoDS_Face& face, Handle(Poly_Triangulation) aPoly, TColgp_Array1OfDir& normals);
+        static void getPointNormals(const TopoDS_Face& face, Handle(Poly_Triangulation) aPoly, std::vector<gp_Vec>& normals);
     };
 }

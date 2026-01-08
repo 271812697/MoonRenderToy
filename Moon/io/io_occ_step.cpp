@@ -4,7 +4,8 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
-#include "Core/ECS/Components/CBatchMesh.h"
+#include "Core/ECS/Components/CBatchMeshTriangle.h"
+#include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include "Gizmo/Gizmo.h"
 #include <STEPControl_Reader.hxx>
@@ -77,6 +78,10 @@ namespace MOON {
                     for (int k = 0; k < domains[i].points.size(); k++) {
                         f << domains[i].points[k].x() << " " << domains[i].points[k].y() << " " << domains[i].points[k].z() << std::endl;
                     }
+					f << domains[i].normals.size() << std::endl;
+					for (int k = 0; k < domains[i].normals.size(); k++) {
+						f << domains[i].normals[k].x() << " " << domains[i].normals[k].y() << " " << domains[i].normals[k].z() << std::endl;
+					}
                     f << domains[i].facets.size() << std::endl;
                     for (int k = 0; k < domains[i].facets.size(); k++) {
                         f << domains[i].facets[k].I1 << " " << domains[i].facets[k].I2 << " " << domains[i].facets[k].I3 << " " << std::endl;
@@ -106,6 +111,13 @@ namespace MOON {
                     for (int k = 0; k < pointSize; k++) {
                         f >> x >> y >> z;
                         domains[i].points.emplace_back(x,y,z);
+                    }
+					int normalSize;
+					f >> normalSize;
+					domains[i].normals.reserve(normalSize);
+                    for (int k = 0; k < normalSize; k++) {
+						f >> x >> y >> z;
+						domains[i].normals.emplace_back(x, y, z);
                     }
                     int faceSize;
                     f >> faceSize;
@@ -144,9 +156,8 @@ namespace MOON {
                     { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
                      { 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
              };
-            std::vector<Maths::FVector3> positions;
-            std::vector<Maths::FVector3> normals;
-            std::vector<Maths::FVector2>uvs;
+            std::vector<::Rendering::Geometry::VertexBVH> faceVertices;
+          
             std::vector<unsigned int>indices;
 
             std::vector<Maths::FVector4>domainColor;
@@ -156,28 +167,31 @@ namespace MOON {
             std::vector<Core::ECS::Actor*>domainActors;
             std::vector<Rendering::Geometry::bbox>domainBoxs;
             std::vector<uint32_t>domainRange;
+            int domainIndex = -1;
             for (int i = 0; i < domains.size(); i++) {
                 if (domains[i].facets.size() > 0) {
+                    domainIndex++;
                     domainColor.push_back(colors[cnt]);
                     cnt = (cnt + 1) % 12;
-                    positions.reserve(positions.size() + domains[i].points.size());
-                    normals.reserve(normals.size() + domains[i].points.size());
-                    uvs.reserve(uvs.size() + domains[i].points.size());
+                    faceVertices.reserve(faceVertices.size()+ domains[i].points.size());
+                  
                     indices.resize(indexOffset + domains[i].facets.size() * 3);
                     Rendering::Geometry::bbox subBox;
                     for (int k = 0; k < domains[i].points.size(); k++) {
-                        positions.emplace_back(Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) });
-                        subBox.grow(positions.back());
-                        //need to support in further
-                        normals.emplace_back(Maths::FVector3{ 0,0,0 });
-                        uvs.emplace_back(Maths::FVector2{ i * 1.0f,0.0f });
+                        faceVertices.emplace_back(
+                            Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) },
+							Maths::FVector2{ domainIndex * 1.0f,0.0f },
+							Maths::FVector3{ static_cast<float>(domains[i].normals[k].x()),static_cast<float>(domains[i].normals[k].y()),static_cast<float>(domains[i].normals[k].z()) }
+                            );
+                       
+                        subBox.grow(faceVertices.back().position);
                     }
                     for (int k = 0; k < domains[i].facets.size(); k++) {
                         indices[indexOffset + 3 * k] = domains[i].facets[k].I1 + vertexOffset;
                         indices[indexOffset + 3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
                         indices[indexOffset + 3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
                     }
-                    vertexOffset = positions.size();
+                    vertexOffset = faceVertices.size();
                     indexOffset = indices.size();
                     auto& actor = scene->CreateActor(std::to_string(i));
                     std::string registryName = filePath + std::to_string(i);
@@ -187,7 +201,15 @@ namespace MOON {
                     domainRange.push_back(indexOffset);
                 }
             }
-            auto model = Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().LoadFromMemory(filePath, positions, normals, uvs, indices);
+
+            auto faceMesh = new ::Rendering::Resources::Mesh(
+                faceVertices,
+                indices,
+                0,
+                ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
+            auto model = new ::Rendering::Resources::Model(filePath + std::string("_faceModel"));
+            model->AddMesh(faceMesh);
+            Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(filePath + std::string("_faceModel"), model);
             // 创建并注册默认材质
             Core::Resources::Material* tempMat = new Core::Resources::Material();
             Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
@@ -224,28 +246,46 @@ namespace MOON {
             ::Rendering::HAL::GLTexture* domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
             domainColorTex->Allocate(desc);
             tempMat->SetProperty("domainColorTex", domainColorTex);
-            auto& bacthMesh = actor.AddComponent<Core::ECS::Components::CBatchMesh>();
+            auto& bacthMesh = actor.AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.SetColors(domainColor);
             bacthMesh.BuildBvh(domainBoxs, domainRange);
 
 
             //build lines
-            std::vector<::Rendering::Geometry::Vertex> p_vertices;
+            std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
             std::vector<uint32_t>lineIndex;
-            for (auto& l : LineRanges) {
+			std::vector<uint32_t>lineSegmentOffsets;
+            std::vector<Maths::FVector4>lineColor;
+
+            p_vertices.reserve(linePoints.size());
+            lineColor.reserve(LineRanges.size());
+            lineSegmentOffsets.reserve(LineRanges.size());
+            for (int i = 0;i < LineRanges.size();i++) {
+				auto& l = LineRanges[i];
                 for (int k = l.I1; k <= l.I2 - 1; k++) {
+                    ::Rendering::Geometry::VertexBVH v;
+                    v.position.x = static_cast<float>(linePoints[k].x());
+                    v.position.y = static_cast<float>(linePoints[k].y());
+                    v.position.z = static_cast<float>(linePoints[k].z()); 
+                    v.texCoords.x = i*1.0f;
+                    v.texCoords.y = i * 1.0f;
+                    p_vertices.emplace_back(v);
+                  
                     lineIndex.push_back(k);
                     lineIndex.push_back(k + 1);
                 }
-            }
-            p_vertices.reserve(linePoints.size());
-            for (auto& p : linePoints) {
-                ::Rendering::Geometry::Vertex v;
-                v.position[0] = static_cast<float>(p.x());
-                v.position[1] = static_cast<float>(p.y());
-                v.position[2] = static_cast<float>(p.z());
+                ::Rendering::Geometry::VertexBVH v;
+                v.position.x = static_cast<float>(linePoints[l.I2].x());
+                v.position.y = static_cast<float>(linePoints[l.I2].y());
+                v.position.z = static_cast<float>(linePoints[l.I2].z());
+                v.texCoords.x = i * 1.0f;
+                v.texCoords.y = i * 1.0f;
                 p_vertices.emplace_back(v);
+
+				lineSegmentOffsets.emplace_back(lineIndex.size());
+                lineColor.emplace_back(0,1,1,1);
             }
+            //lineColor[575] = { 0,1,1,1 };
             auto lineMesh = new ::Rendering::Resources::Mesh(
                 p_vertices,
                 lineIndex,
@@ -267,8 +307,21 @@ namespace MOON {
             lineMat->SetCastShadows(false);
             lineMat->SetReceiveShadows(false);
             lineMat->SetLineWidth(2.0);
+          
+            desc.buffetLen = lineColor.size() * sizeof(Maths::FVector4);
+            desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+                .data = lineColor.data()
+            };
+
+            ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+            lineColorTex->Allocate(desc);
+            lineMat->SetProperty("lineColorTex", lineColorTex);
             lineRener.SetMaterialAtIndex(0, *lineMat);
+
             lineRener.UpdateMaterialList();
+            auto& lineBacthMesh =lineActor.AddComponent<Core::ECS::Components::CBatchMeshLine>();
+            lineBacthMesh.SetColors(lineColor);
+            lineBacthMesh.BuildBvh(lineSegmentOffsets);
         }
     }
 }

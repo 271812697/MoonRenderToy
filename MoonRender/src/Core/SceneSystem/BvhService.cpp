@@ -7,7 +7,8 @@
 #include <Core/ECS/Components/CAmbientSphereLight.h>
 #include <Core/ECS/Components/CDirectionalLight.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
-#include <Core/ECS/Components/CBatchMesh.h>
+#include <Core/ECS/Components/CBatchMeshTriangle.h>
+#include <Core/ECS/Components/CBatchMeshLine.h>
 #include <Core/Global/ServiceLocator.h>
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ResourceManagement/ModelManager.h>
@@ -199,19 +200,19 @@ namespace Core::SceneSystem
 	}
 	void BvhService::ProcessBLAS() {
 			int nodeCnt = 0;
-			for (int i = 0; i < meshes.size(); i++)
-				nodeCnt += meshes[i]->GetBvh()->m_nodecnt;
+			for (int i = 0; i < triMeshes.size(); i++)
+				nodeCnt += triMeshes[i]->GetBvh()->m_nodecnt;
 			topLevelIndex = nodeCnt;
 			// reserve space for top level nodes
-			nodeCnt += 2 * meshInstances.size();
+			nodeCnt += 2 * triMeshInstances.size();
 			nodes.resize(nodeCnt);
 
 			int bvhRootIndex = 0;
 			curTriIndex = 0;
 
-			for (int i = 0; i < meshes.size(); i++)
+			for (int i = 0; i < triMeshes.size(); i++)
 			{
-				::Rendering::Resources::Mesh* mesh = meshes[i];
+				::Rendering::Resources::Mesh* mesh = triMeshes[i];
 				curNode = bvhRootIndex;
 
 				bvhRootStartIndices.push_back(bvhRootIndex);
@@ -263,8 +264,8 @@ namespace Core::SceneSystem
 		{
 			//叶子节点
 			int instanceIndex = topLevelBvh->m_packed_indices[node->startidx];
-			int meshIndex = meshInstances[instanceIndex].meshID;
-			int materialID = meshInstances[instanceIndex].materialID;
+			int meshIndex = triMeshInstances[instanceIndex].meshID;
+			int materialID = triMeshInstances[instanceIndex].materialID;
 
 			nodes[curNode].LRLeaf.x = bvhRootStartIndices[meshIndex];
 			nodes[curNode].LRLeaf.y = materialID;
@@ -282,17 +283,40 @@ namespace Core::SceneSystem
 	}
 	void BvhService::UpdateTLAS(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<MeshInstance>& instances) {
 		this->topLevelBvh = topLevelBvh;
-		meshInstances = instances;
+		triMeshInstances = instances;
 		curNode = topLevelIndex;
 		ProcessTLASNodes(topLevelBvh->m_root);
 	}
-	void BvhService::Process(const ::Rendering::Geometry::Bvh* topLevelBvh, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances) {
-		if (topLevelBvh->m_root ==nullptr) {
-			return;
+	void BvhService::Process(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<::Rendering::Resources::Mesh*>& sceneMeshes, const std::vector<MeshInstance>& instances) {
+		
+		m_sceneBvh->Build(boxs.data(),boxs.size());;
+		mSceneMeshes = sceneMeshes;
+		mSceneMeshInstances = instances;
+
+		triMeshes.clear();
+		triMeshInstances.clear();
+		std::vector<::Rendering::Geometry::bbox> triBoxs;
+		std::unordered_map<::Rendering::Resources::Mesh*, int>triMeshIndex;
+		for (int i = 0;i < sceneMeshes.size();i++) {
+			if (sceneMeshes[i]->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
+				triMeshIndex[sceneMeshes[i]] = triMeshes.size();
+				triMeshes.push_back(sceneMeshes[i]);
+			}
 		}
-		this->topLevelBvh = topLevelBvh;
-		meshes = sceneMeshes;
-		meshInstances = instances;
+		for (int i = 0;i < instances.size();i++) {
+			int meshId = instances[i].meshID;
+			auto& mesh = sceneMeshes[meshId];
+			if (mesh->GetPrimitiveMode() != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
+				continue;
+			}
+			auto triMeshInstance = instances[i];
+			triMeshInstance.meshID = triMeshIndex[mesh];
+			triMeshInstances.push_back(triMeshInstance);
+			triBoxs.push_back(boxs[i]);
+		}
+
+		m_sceneTriBvh->Build(triBoxs.data(),triBoxs.size());
+		this->topLevelBvh = m_sceneTriBvh;
 		ProcessBLAS();
 		ProcessTLAS();
 			
@@ -302,10 +326,10 @@ namespace Core::SceneSystem
 		normalsUVY.clear();
 		transforms.clear();
 		int verticesCnt = 0;
-		for (int i = 0;i < meshes.size();i++) {
-			int numIndices = meshes[i]->GetBvh()->GetNumIndices();
-			const int* triIndices = meshes[i]->GetBvh()->GetIndices();
-			auto& indexArr = meshes[i]->GetIndices();
+		for (int i = 0;i < triMeshes.size();i++) {
+			int numIndices = triMeshes[i]->GetBvh()->GetNumIndices();
+			const int* triIndices = triMeshes[i]->GetBvh()->GetIndices();
+			auto& indexArr = triMeshes[i]->GetIndices();
 			bool isIndexMesh = indexArr.size() > 0;
 			for (int j = 0; j < numIndices; j++)
 			{
@@ -324,7 +348,7 @@ namespace Core::SceneSystem
 					vertIndices.push_back(Indices{ v1, v2, v3 });
 				}
 			}
-			auto& vertexData=meshes[i]->GetVerticesBVH();
+			auto& vertexData= triMeshes[i]->GetVerticesBVH();
 			for (int k = 0;k < vertexData.size();k++) {
 				verticesUVX.push_back(Maths::FVector4(vertexData[k].position.x, vertexData[k].position.y, vertexData[k].position.z, vertexData[k].texCoords.x));
 				normalsUVY.push_back(Maths::FVector4(vertexData[k].normals.x, vertexData[k].normals.y, vertexData[k].normals.z, vertexData[k].texCoords.y));
@@ -332,9 +356,9 @@ namespace Core::SceneSystem
 			verticesCnt += vertexData.size();
 		}
 		// Copy transforms
-		transforms.resize(meshInstances.size());
-		for (int i = 0; i < meshInstances.size(); i++)
-			transforms[i] = Maths::FMatrix4::Transpose(meshInstances[i].transform);
+		transforms.resize(triMeshInstances.size());
+		for (int i = 0; i < triMeshInstances.size(); i++)
+			transforms[i] = Maths::FMatrix4::Transpose(triMeshInstances[i].transform);
 		// Copy Textures
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
@@ -362,10 +386,10 @@ namespace Core::SceneSystem
 	{
 		std::vector<Maths::FVector3>vertices;
 		std::vector<unsigned int>indices;
-		for (int i = 0; i <meshInstances.size(); i++) {
-			int meshId =meshInstances[i].meshID;
-			auto matrix = meshInstances[i].transform;
-			auto& mesh =meshes[meshId];
+		for (int i = 0; i < triMeshInstances.size(); i++) {
+			int meshId = triMeshInstances[i].meshID;
+			auto matrix = triMeshInstances[i].transform;
+			auto& mesh = triMeshes[meshId];
 			int numTrs = mesh->GetIndexCount() ? mesh->GetIndexCount() / 3 : mesh->GetVertexCount() / 3;
 			for (int triIndex = 0; triIndex < numTrs; triIndex++) {
 				Maths::FVector3 v0 = mesh->GetVertexPosition(triIndex * 3);
@@ -386,9 +410,13 @@ namespace Core::SceneSystem
 		if (m_sceneBvh) {
 			delete m_sceneBvh;
 		}
+		if (m_sceneTriBvh) {
+			delete m_sceneTriBvh;
+		}
 		m_sceneBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
-		meshInstances.clear();
-		meshes.clear();
+		m_sceneTriBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
+		triMeshInstances.clear();
+		triMeshes.clear();
 		nodes.clear();
 		bvhRootStartIndices.clear();
 		materials.clear();
@@ -429,17 +457,17 @@ namespace Core::SceneSystem
 		int triOffset = 0;
 		meshTriangleInfo.clear();
 		triangleInfo.clear();
-		std::vector<unsigned int>baseOffset(meshes.size(),0);
-		meshTriangleInfo.resize(meshes.size());
+		std::vector<unsigned int>baseOffset(triMeshes.size(),0);
+		meshTriangleInfo.resize(triMeshes.size());
 		for (int i = 0; i < meshTriangleInfo.size(); i++) {
 			meshTriangleInfo[i].start = -1;
 			meshTriangleInfo[i].num = -1;
 			baseOffset[i] = triOffset;
-			triOffset+= meshes[i]->GetBvh()->GetNumIndices();
+			triOffset+= triMeshes[i]->GetBvh()->GetNumIndices();
 		}
 		for (auto& it : triangleInfoMap) {
 			if (it.second.size() > 0) {
-				int mid = meshInstances[it.first].meshID;
+				int mid = triMeshInstances[it.first].meshID;
 				meshTriangleInfo[mid].start = triangleInfo.size();
 				meshTriangleInfo[mid].num = it.second.size();
 				meshTriangleInfo[mid].baseOffset = baseOffset[mid];
@@ -453,8 +481,8 @@ namespace Core::SceneSystem
 			for (auto& it : triangleInfoMap) {
 				if (it.second.size() > 0) {
 					auto instanceId = it.first;
-					auto mid = meshInstances[instanceId].meshID;
-					auto actorId = meshInstances[instanceId].actorID;
+					auto mid = triMeshInstances[instanceId].meshID;
+					auto actorId = triMeshInstances[instanceId].actorID;
 					auto actor = scene->FindActorByID(actorId);
 					if (actor->GetTag() == "Geomerty") {
 						auto matList = actor->GetComponent<Core::ECS::Components::CMaterialRenderer>();
@@ -514,8 +542,8 @@ namespace Core::SceneSystem
 		Maths::FVector3 hitNormal;
 		Maths::FVector3 bary;
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
-		if (m_sceneBvh != nullptr)
-			stack.push_back(m_sceneBvh->m_root);
+		if (m_sceneTriBvh != nullptr)
+			stack.push_back(m_sceneTriBvh->m_root);
 		while (!stack.empty()) {
 			auto cur = stack.back();stack.pop_back();
 			if (!cur)continue;
@@ -528,12 +556,12 @@ namespace Core::SceneSystem
 				}
 				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
 					for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
-						int index = m_sceneBvh->m_packed_indices[i];
-						int meshId = meshInstances[index].meshID;
-						auto matrix = meshInstances[index].transform;
+						int index = m_sceneTriBvh->m_packed_indices[i];
+						int meshId = triMeshInstances[index].meshID;
+						auto matrix = triMeshInstances[index].transform;
 						auto invMatrix = Maths::FMatrix4::Inverse(matrix);
 						auto localRay = ray.Transformed(invMatrix);
-						auto& mesh = meshes[meshId];
+						auto& mesh = triMeshes[meshId];
 						auto meshBvh = mesh->GetBvh();
 						std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
 						meshBvhStack.push_back(meshBvh->m_root);
@@ -565,7 +593,7 @@ namespace Core::SceneSystem
 												outRes.hitPoint = Maths::FMatrix4::MulPoint(matrix, outRes.hitPoint);
 												outRes.hitNormal = Maths::FMatrix4::MulDir(matrix, hitNormal);
 												outRes.triangleId = triIndex;
-												outRes.actorId = meshInstances[index].actorID;
+												outRes.actorId = triMeshInstances[index].actorID;
 												outRes.hitUv = v0.texCoords * bary[0] + v1.texCoords * bary[1] + v2.texCoords * bary[2];
 												
 												hit = true;
@@ -599,13 +627,13 @@ namespace Core::SceneSystem
 		Maths::FVector3 bary;
 		float tempDist = 1e6;
 
-		if (ray.HitDistance(m_sceneBvh->Bounds(), tempDist)) {
-			for (int i = 0;i < meshInstances.size();i++) {
-				int meshId = meshInstances[i].meshID;
-				auto matrix = meshInstances[i].transform;
+		if (ray.HitDistance(m_sceneTriBvh->Bounds(), tempDist)) {
+			for (int i = 0;i < triMeshInstances.size();i++) {
+				int meshId = triMeshInstances[i].meshID;
+				auto matrix = triMeshInstances[i].transform;
 				auto invMatrix = Maths::FMatrix4::Inverse(matrix);
 				auto localRay = ray.Transformed(invMatrix);
-				auto& mesh = meshes[meshId];
+				auto& mesh = triMeshes[meshId];
 				int numTrs=mesh->GetIndexCount()? mesh->GetIndexCount()/3:mesh->GetVertexCount()/3;
 				float meshTempDist = 1e6;
 				if (localRay.HitDistance(mesh->GetBvh()->Bounds(), meshTempDist))
@@ -628,7 +656,7 @@ namespace Core::SceneSystem
 								outRes.hitPoint = Maths::FMatrix4::MulPoint(matrix, outRes.hitPoint);
 								outRes.hitNormal = Maths::FMatrix4::MulDir(matrix, hitNormal);
 								outRes.triangleId = triIndex;
-								outRes.actorId = meshInstances[i].actorID;
+								outRes.actorId = triMeshInstances[i].actorID;
 								outRes.hitUv = mesh->GetVertexBVH(triIndex * 3).texCoords;
 								mid = meshId;
 								tid = triIndex;
@@ -646,10 +674,17 @@ namespace Core::SceneSystem
 		return hit;
 	}
 
-	bool BvhService::PointPick(const Maths::FMatrix4& viewProj, int w, int h, int x, int y, float tolerance, PointPickRes& out)
+	bool BvhService::PointPick(const Maths::FMatrix4& viewPortMatrix, int x, int y, float tolerance, PointPickRes& out)
 	{
-
-		return false;
+		ZoneScoped;
+		bool isHit = false;
+		for (int i = 0;i < mSceneMeshInstances.size();i++) {
+			if (mSceneMeshInstances[i].actor->GetTag() == "GeomertyLine") {
+				auto cbatchMesh = mSceneMeshInstances[i].actor->GetComponent<Core::ECS::Components::CBatchMeshLine>();
+				isHit |= cbatchMesh->PointPick(viewPortMatrix, x, y, tolerance, out);
+			}
+		}
+		return isHit;
 	}
 
 	std::vector<RectPickRes> BvhService::RectPick(const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev)
@@ -657,8 +692,8 @@ namespace Core::SceneSystem
 		ZoneScoped;
 		std::vector<RectPickRes> res;
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
-		if (m_sceneBvh != nullptr)
-			stack.push_back(m_sceneBvh->m_root);
+		if (m_sceneTriBvh != nullptr)
+			stack.push_back(m_sceneTriBvh->m_root);
 		while (!stack.empty()) {
 			auto cur = stack.back(); stack.pop_back();
 			if (!cur)continue;
@@ -672,18 +707,18 @@ namespace Core::SceneSystem
 				}
 				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
 					for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
-						int index = m_sceneBvh->m_packed_indices[i];
-						auto matrix = meshInstances[index].transform;
-						if (meshInstances[index].actor->GetTag() == "Geomerty") {
-							auto cbatchMesh=meshInstances[index].actor->GetComponent<Core::ECS::Components::CBatchMesh>();
+						int index = m_sceneTriBvh->m_packed_indices[i];
+						auto matrix = triMeshInstances[index].transform;
+						if (triMeshInstances[index].actor->GetTag() == "Geomerty") {
+							auto cbatchMesh= triMeshInstances[index].actor->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
 							const auto& pickRes=cbatchMesh->RectPick(matrix,viewProj,su,sv,eu,ev);
 							res.insert(res.end(),pickRes.begin(),pickRes.end());
 						}
 						else
 						{	
-							int meshId = meshInstances[index].meshID;
-							auto& mesh = meshes[meshId];
-							int actorId=meshInstances[index].actorID;
+							int meshId = triMeshInstances[index].meshID;
+							auto& mesh = triMeshes[meshId];
+							int actorId= triMeshInstances[index].actorID;
 							auto meshBvh = mesh->GetBvh();
 							std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
 							meshBvhStack.push_back(meshBvh->m_root);
@@ -728,5 +763,6 @@ namespace Core::SceneSystem
 	}
 	BvhService::~BvhService() {
 		delete m_sceneBvh;
+		delete m_sceneTriBvh;
 	}
 }

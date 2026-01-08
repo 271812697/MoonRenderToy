@@ -102,7 +102,8 @@ void main()
         gl_PrimitiveID = gl_PrimitiveIDIn;
         gs_out.FragPos=gs_in[i].FragPos;
         gs_out.TexCoords=gs_in[i].TexCoords;
-        gs_out.Normal=nor;
+        //gs_out.Normal=nor;
+        gs_out.Normal=gs_in[i].Normal;
         gs_out.TBN=gs_in[i].TBN;
         gl_Position = gl_in[i].gl_Position;
         EmitVertex();

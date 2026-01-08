@@ -23,6 +23,12 @@ namespace Rendering::Resources
 			uint32_t p_materialIndex = 0,
 			::Rendering::Settings::EPrimitiveMode primitiveMode = Settings::EPrimitiveMode::TRIANGLES
 		);
+		Mesh(
+			const std::vector<Geometry::VertexBVH>& p_vertices,
+			const std::vector<uint32_t>& p_indices,
+			uint32_t p_materialIndex = 0,
+			::Rendering::Settings::EPrimitiveMode primitiveMode = Settings::EPrimitiveMode::TRIANGLES
+		);
 		~Mesh();
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
@@ -45,6 +51,8 @@ namespace Rendering::Resources
 	private:
 		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);
+		void Upload(const std::vector<Geometry::VertexBVH>& p_vertices, const std::vector<uint32_t>& p_indices);
+		void ComputeBoundingSphereAndBox(const std::vector<Geometry::VertexBVH>& p_vertices);
 
 	private:
 		::Rendering::Settings::EPrimitiveMode mPrimitiveMode = ::Rendering::Settings::EPrimitiveMode::TRIANGLES;

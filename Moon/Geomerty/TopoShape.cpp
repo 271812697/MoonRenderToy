@@ -508,8 +508,9 @@ namespace MOON {
 		for (TopExp_Explorer xp(this->_Shape, TopAbs_FACE); xp.More(); xp.Next()) {
 			TopoDS_Face face = TopoDS::Face(xp.Current());
 			std::vector<gp_Pnt> points;
+			std::vector<gp_Vec> normals;
 			std::vector<Poly_Triangle> facets;
-			if (!Tools::getTriangulation(face, points, facets)) {
+			if (!Tools::getTriangulation(face, points,normals, facets)) {
 				// For a face that cannot be meshed append an empty domain.
 				// It's important for some algorithms (e.g. color mapping) that the numbers of
 				// faces and domains match
@@ -525,6 +526,11 @@ namespace MOON {
 					Standard_Real X, Y, Z;
 					it.Coord(X, Y, Z);
 					domain.points.emplace_back(X, Y, Z);
+				}
+				for (const auto& it : normals) {
+					Standard_Real X, Y, Z;
+					it.Coord(X, Y, Z);
+					domain.normals.emplace_back(X, Y, Z);
 				}
 				// copy the triangles
 				domain.facets.reserve(facets.size());

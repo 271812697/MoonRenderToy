@@ -2,6 +2,7 @@
 #include "treeViewpanel.h"
 #include "editor/UI/TreeViewPanel/EntityTreeModel.h"
 #include "editor/UI/TreeViewPanel/EntityTreeStyle.h"
+#include "editor/UI/PropertyPanel/PropertyWidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
 #include "renderer/Context.h"
@@ -88,6 +89,7 @@ namespace MOON {
 		if (textRect.contains(posInItem)) {
 			::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
 			if (actor) {
+				GetService(PropertyWidget).setSelectedActor(actor);
 				if (isEntityCheckAble(actor->GetName())) {
                    emit setSelectActor(actor);
 				}

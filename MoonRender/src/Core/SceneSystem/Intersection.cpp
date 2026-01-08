@@ -167,5 +167,33 @@ namespace Core::SceneSystem{
 			// 所有场景均不满足，返回不相交
 			return false;
 		}
+
+		float pointToSegmentDistance(const Point2D& P, const Point2D& P0, const Point2D& P1)
+		{
+			float vx = P1.x - P0.x;
+			float vy = P1.y - P0.y;
+			float wx = P.x - P0.x;
+			float wy = P.y - P0.y;
+
+			float dot = wx * vx + wy * vy;
+			if (dot <= 0.0) { // 投影在 P0 外侧
+				return sqrt(wx * wx + wy * wy);
+			}
+
+			float len2 = vx * vx + vy * vy; // 线段长度的平方
+			if (dot >= len2) { // 投影在 P1 外侧
+				float dx = P.x - P1.x;
+				float dy = P.y - P1.y;
+				return sqrt(dx * dx + dy * dy);
+			}
+
+			// 投影在线段上，计算垂直距离
+			float t = dot / len2;
+			float px = P0.x + t * vx;
+			float py = P0.y + t * vy;
+			float dx = P.x - px;
+			float dy = P.y - py;
+			return sqrt(dx * dx + dy * dy);
+		}
 	
 }

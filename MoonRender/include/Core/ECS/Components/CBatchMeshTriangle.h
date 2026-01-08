@@ -6,11 +6,11 @@
 namespace Core::ECS { class Actor; }
 namespace Core::ECS::Components
 {
-	class CBatchMesh : public AComponent
+	class CBatchMeshTriangle : public AComponent
 	{
 	public:
-		CBatchMesh(ECS::Actor& p_owner);
-		virtual ~CBatchMesh()override;
+		CBatchMeshTriangle(ECS::Actor& p_owner);
+		virtual ~CBatchMeshTriangle()override;
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		void SetColors(const std::vector<Maths::FVector4>& colors);
@@ -21,7 +21,7 @@ namespace Core::ECS::Components
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 	private:
-		class CBatchMeshInternal;
-		CBatchMeshInternal* mInternal = nullptr;
+		class CBatchMeshTriangleInternal;
+		CBatchMeshTriangleInternal* mInternal = nullptr;
 	};
 }

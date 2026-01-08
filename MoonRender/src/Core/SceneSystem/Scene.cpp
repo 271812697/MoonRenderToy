@@ -384,9 +384,8 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 			auto model=modelRenderer->GetModel();
 			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 			if (model&&mat) {
-				if (model->GetMeshes()[0]->GetPrimitiveMode() != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) {
-					continue;
-				}
+
+				bool isTriMesh = model->GetMeshes()[0]->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 				auto matrix = modelRenderer->owner.transform.GetWorldMatrix();	
 				for (auto& m: model->GetMeshes()) {
 					
@@ -396,19 +395,21 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 
 						//figure out  the matId
 						int materialId = -1;
-						auto meshMat=mat->GetMaterialAtIndex(m->GetMaterialIndex()[0]);
-						for (int j = 0;j < matrialLists.size();j++) {
-							if (matrialLists[j] == meshMat) {
-								materialId = j;
-								break;
+						if (isTriMesh) {
+							auto meshMat=mat->GetMaterialAtIndex(m->GetMaterialIndex()[0]);
+							for (int j = 0;j < matrialLists.size();j++) {
+								if (matrialLists[j] == meshMat) {
+									materialId = j;
+									break;
+								}
+							}
+							if (materialId == -1) {
+								materialId = static_cast<int>(matrialLists.size());
+								matrialLists.push_back(meshMat);
+								bvhService->AddMaterial(meshMat);
 							}
 						}
-						if (materialId == -1) {
-							materialId = static_cast<int>(matrialLists.size());
-							matrialLists.push_back(meshMat);
-							bvhService->AddMaterial(meshMat);
-						}
-						
+
 						//figure out the meshId in the sceneMeshes if not find,push back the mesh to sceneMeshes
 						int meshId = -1;
 						for (int i = 0;i < sceneMeshes.size();i++) {
@@ -430,8 +431,9 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 		}
 	}
 	// Build BVH
-	bvhService->m_sceneBvh->Build(bounds.data(), static_cast<int>(bounds.size()));
-	bvhService->Process(bvhService->m_sceneBvh,sceneMeshes, meshInstances);
+	if (meshInstances.size()>0) {
+		bvhService->Process(bounds,sceneMeshes, meshInstances);	
+	}
 }
 
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitRes& outRes)
@@ -443,6 +445,11 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitR
 bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& ray,  HitRes& outRes)
 {
 	return bvhService->RayIteratorHit(ray, outRes);
+}
+
+bool Core::SceneSystem::Scene::PointPick(const Maths::FMatrix4& viewPortMatrix, int x, int y, float tolerance, PointPickRes& out)
+{
+	return bvhService->PointPick(viewPortMatrix,x,y,tolerance,out);
 }
 
 ::Rendering::Geometry::Bvh* Core::SceneSystem::Scene::GetBvh()
