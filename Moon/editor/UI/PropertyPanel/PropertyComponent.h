@@ -13,8 +13,7 @@ namespace MOON {
 		virtual Component componentData() ;
 		virtual QVariant getPropertyValue(const QString& propertyName);
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value);
-
-	private:
+	protected:
 		Core::ECS::Components::AComponent * component=nullptr;
 	};
 }

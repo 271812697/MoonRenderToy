@@ -1,11 +1,46 @@
 ﻿#pragma once
 #include "core/ECS/Actor.h"
 #include "editor/UI/PropertyPanel/PropertyModel.h"
+#include "editor/UI/PropertyPanel/PropertyComponent.h"
+#include "Core/ECS/Components/CTransform.h"
+#include "QtWidgets/FVec3.h"
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QCheckBox>
+#include <QHBoxLayout>
+#include <QLabel>
 
 namespace MOON {
+    class TransformPC:public ActorPropertyComponent {
+    public:
+        TransformPC(Core::ECS::Components::CTransform* comp):ActorPropertyComponent(comp) {
+
+        }
+        virtual ~TransformPC() {
+        }
+        virtual Component componentData()override {
+            auto comp=dynamic_cast<Core::ECS::Components::CTransform*>(component);
+            Component res;
+            res.name = QString::fromStdString(comp->GetName());
+            ComponentProperty pos;
+            pos.name = QString("position");
+            pos.type = PropType::Vec3;
+            pos.value = QVariant::fromValue(comp->GetWorldPosition());
+            res.properties.append(pos);
+            return res;
+        }
+        virtual QVariant getPropertyValue(const QString& propertyName)override {
+            return QVariant();
+        }
+        virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+            auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
+            if (propertyName == "position") {
+                comp->SetWorldPosition(value.value<Maths::FVector3>());
+            }
+
+        }
+
+    };
 	PropertyTreeModel::PropertyTreeModel(QObject* parent) : QAbstractItemModel(parent)
 	{
 		m_rootNode = new NodeData{ ActorType, QVariant(), 0, nullptr };
@@ -53,12 +88,12 @@ namespace MOON {
         NodeData* node = static_cast<NodeData*>(parent.internalPointer());
         if (node) {
             if (node->type == ActorType|| node->type == ComponentType) {
-                return 1;
+                return 2;
             }
         }
         else
         {
-			return 1; // 根节点只有一列
+			return 2; // 根节点只有一列
         }
 
         return 2; // 两列：属性名、属性值
@@ -87,7 +122,25 @@ namespace MOON {
                 if (index.column() == 0)
                     return prop.name;
                 else if (index.column() == 1)
-                    return prop.value;
+                {
+                    // 第1列：属性值，根据类型格式化显示
+                    switch (prop.type) {
+                    case PropType::Int: return prop.value.toInt();
+                    case PropType::Bool: return prop.value.toBool() ? "true" : "false";
+                    case PropType::Vec3: {
+                        Maths::FVector3 vec = prop.value.value<Maths::FVector3>();
+                        // 格式化显示：保留2位小数，美观整洁
+                        if (role == Qt::DisplayRole) {
+                           
+                            return QString("X Y Z");
+                        }
+                        
+                        return QVariant::fromValue(vec);
+                    }
+                    default: return prop.value.toString();
+                    }
+                }
+                    
                 break;
             }
             }
@@ -111,7 +164,8 @@ namespace MOON {
             int compRow = node->parent->row;
             int propRow = node->row;
             //m_currentActor.components[compRow].properties[propRow].value = value;
-
+            auto com=m_comps[compRow];
+            com->setPropertyValue(prop.name, prop.value);
             emit dataChanged(index, index);
             return true;
         }
@@ -123,15 +177,15 @@ namespace MOON {
         if (!index.isValid())
             return Qt::NoItemFlags;
 
-        Qt::ItemFlags flags = QAbstractItemModel::flags(index);
+        Qt::ItemFlags baseFlags = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
         NodeData* node = static_cast<NodeData*>(index.internalPointer());
 
         // 只有属性值列可编辑
         if (node->type == PropertyType && index.column() == 1) {
-            flags |= Qt::ItemIsEditable;
+            baseFlags |= Qt::ItemIsEditable;
         }
 
-        return flags;
+        return baseFlags;
     }
     void PropertyTreeModel::setCurrentActor(Core::ECS::Actor* actor)
     {
@@ -152,6 +206,10 @@ namespace MOON {
         // 清空原有节点
         qDeleteAll(m_rootNode->children);
         m_rootNode->children.clear();
+        for (auto& c : m_comps) {
+            delete c;
+        }
+        m_comps.clear();
 
         // 1. 创建Actor节点（根节点的子节点）
         NodeData* actorNode = new NodeData{ ActorType, QVariant(), 0, m_rootNode };
@@ -160,8 +218,13 @@ namespace MOON {
         // 2. 为每个组件创建节点
         int i = 0;
         for (auto& ptr:m_currentActor->GetComponents()) {
-            Component comp;
-            comp.name=QString::fromStdString(ptr->GetName());
+            auto actorComp = ptr.get();
+            auto trans=dynamic_cast<Core::ECS::Components::CTransform*>(actorComp);
+
+            auto p=trans?new  TransformPC(trans) : new ActorPropertyComponent(ptr.get());
+            m_comps.push_back(p);
+            Component comp=p->componentData();
+            
             NodeData* compNode = new NodeData{ ComponentType, QVariant::fromValue(comp), i++, actorNode };
             actorNode->children.append(compNode);
             // 3. 为每个组件的属性创建节点
@@ -173,7 +236,7 @@ namespace MOON {
         }
     }
 
-    PropertyDelegate::PropertyDelegate(QObject* parent) : QItemDelegate(parent)
+    PropertyDelegate::PropertyDelegate(QObject* parent) :QStyledItemDelegate(parent)
     {
 
     }
@@ -182,23 +245,28 @@ namespace MOON {
     {
         PropertyTreeModel* model = qobject_cast<PropertyTreeModel*>(const_cast<QAbstractItemModel*>(index.model()));
         if (!model)
-            return QItemDelegate::createEditor(parent, option, index);
+            return QStyledItemDelegate::createEditor(parent, option, index);
 
         PropertyTreeModel::NodeData* node = model->nodeFromIndex(index);
         if (node->type != PropertyTreeModel::PropertyType)
-            return QItemDelegate::createEditor(parent, option, index);
+            return QStyledItemDelegate::createEditor(parent, option, index);
 
         // 根据属性类型创建不同编辑器
         ComponentProperty prop = node->data.value<ComponentProperty>();
         switch (prop.type) {
-        case QVariant::Int: {
+        case PropType::Int: {
             QSpinBox* spinBox = new QSpinBox(parent);
             spinBox->setRange(-9999, 9999);
             return spinBox;
         }
-        case QVariant::Bool: {
+        case PropType::Bool: {
             QCheckBox* checkBox = new QCheckBox(parent);
             return checkBox;
+        }
+        case PropType::Vec3: {
+            Fvec3* vec3Edit = new Fvec3(parent);
+            vec3Edit->setParent(parent, Qt::Widget);
+           return vec3Edit;
         }
         default: { // 字符串等其他类型
             QLineEdit* lineEdit = new QLineEdit(parent);
@@ -220,8 +288,13 @@ namespace MOON {
         else if (QLineEdit* lineEdit = qobject_cast<QLineEdit*>(editor)) {
             lineEdit->setText(value.toString());
         }
-        else {
-            QItemDelegate::setEditorData(editor, index);
+        else if (Fvec3* fvec3 = qobject_cast<Fvec3*>(editor)) {
+            Fvec3* vec3Edit = qobject_cast<Fvec3*>(editor);
+            if (vec3Edit) {
+               
+                Maths::FVector3 vec = value.value<Maths::FVector3>();
+                vec3Edit->setVec3Value(vec);
+            }
         }
     }
 
@@ -236,8 +309,8 @@ namespace MOON {
 		else if (QLineEdit* lineEdit = qobject_cast<QLineEdit*>(editor)) {
 			model->setData(index, lineEdit->text(), Qt::EditRole);
 		}
-		else {
-			QItemDelegate::setModelData(editor, model, index);
+		else if(Fvec3* fvec3=qobject_cast<Fvec3*>(editor)){
+            model->setData(index, QVariant::fromValue(fvec3->getVec3Value()), Qt::EditRole);
 		}
     }
 

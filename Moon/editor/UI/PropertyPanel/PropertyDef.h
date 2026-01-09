@@ -1,12 +1,20 @@
 ﻿#pragma once
+#include "Maths/FVector3.h"
 #include <QVariant>
 namespace MOON {
+    Q_DECLARE_METATYPE(Maths::FVector3);
+    enum PropType:uint8_t
+    {
+        Int,
+        Bool,
+        Vec3,
+    };
     // 组件属性结构体
     struct ComponentProperty
     {
         QString name;       // 属性名
         QVariant value;     // 属性值
-        QVariant::Type type;// 属性类型
+        PropType type;// 属性类型
     };
     // 关键：注册ComponentProperty为Qt元类型
     Q_DECLARE_METATYPE(ComponentProperty)

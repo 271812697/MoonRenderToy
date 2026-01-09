@@ -1,8 +1,10 @@
 ﻿#pragma once
-#include "editor/UI/PropertyPanel/PropertyDef.h"
+#include "editor/UI/PropertyPanel/PropertyComponent.h"
 #include <QWidget>
 #include <QAbstractItemModel>
 #include <QItemDelegate>
+#include <QStyledItemDelegate>
+#include <vector>
 namespace Core::ECS {
     class Actor;
 }
@@ -51,12 +53,13 @@ namespace MOON {
 
         NodeData* m_rootNode;        // 根节点
         Core::ECS::Actor* m_currentActor;        // 当前选中的Actor
+        std::vector<ActorPropertyComponent*>m_comps;
 
         // 构建节点树
         void buildNodeTree();
     };
     // 自定义委托（为不同属性提供不同编辑器）
-    class PropertyDelegate : public QItemDelegate
+    class PropertyDelegate : public QStyledItemDelegate
     {
         Q_OBJECT
     public:

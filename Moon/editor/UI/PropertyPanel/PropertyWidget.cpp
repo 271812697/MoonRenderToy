@@ -33,11 +33,13 @@ namespace MOON {
 		void setUp() {
 			// 初始化控件
 			m_treeView = new QTreeView(mSelf);
+			m_treeView->setRootIsDecorated(false);
 			m_propertyModel = new PropertyTreeModel(mSelf);
 			m_propertyDelegate = new PropertyDelegate(mSelf);
 
 			// 配置TreeView
 			m_treeView->setModel(m_propertyModel);
+			
 			m_treeView->setItemDelegate(m_propertyDelegate);
 			m_treeView->setColumnWidth(0, 200); // 设置第一列宽度
 			m_treeView->header()->setSectionResizeMode(QHeaderView::Stretch); // 第二列自适应
