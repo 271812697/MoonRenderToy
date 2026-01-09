@@ -1,6 +1,4 @@
-﻿
-
-#pragma once
+﻿#pragma once
 #include "Core/API/ISerializable.h"
 #include "Core/Helpers/GUIDrawer.h"
 
