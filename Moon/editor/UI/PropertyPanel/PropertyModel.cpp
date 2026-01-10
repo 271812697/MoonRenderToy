@@ -30,6 +30,9 @@ namespace MOON {
             return res;
         }
         virtual QVariant getPropertyValue(const QString& propertyName)override {
+            auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
+            if(propertyName =="position")
+            return QVariant::fromValue(comp->GetWorldPosition());
             return QVariant();
         }
         virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
@@ -37,7 +40,6 @@ namespace MOON {
             if (propertyName == "position") {
                 comp->SetWorldPosition(value.value<Maths::FVector3>());
             }
-
         }
 
     };
@@ -127,15 +129,18 @@ namespace MOON {
                     switch (prop.type) {
                     case PropType::Int: return prop.value.toInt();
                     case PropType::Bool: return prop.value.toBool() ? "true" : "false";
-                    case PropType::Vec3: {
-                        Maths::FVector3 vec = prop.value.value<Maths::FVector3>();
-                        // 格式化显示：保留2位小数，美观整洁
+                    case PropType::Vec3: {  
+ 
+                        // 更新原始Actor数据
+                        int compRow = node->parent->row;
+                        int propRow = node->row;
+                        auto com = m_comps[compRow];
+                        Maths::FVector3 vec = com->getPropertyValue(prop.name).value<Maths::FVector3>();
                         if (role == Qt::DisplayRole) {
-                           
-                            return QString("X Y Z");
+                            return QString("%1 %2 %3").arg(vec.x).arg(vec.y).arg(vec.z);
+
                         }
-                        
-                        return QVariant::fromValue(vec);
+                        return  QVariant::fromValue(vec);
                     }
                     default: return prop.value.toString();
                     }
@@ -313,5 +318,7 @@ namespace MOON {
             model->setData(index, QVariant::fromValue(fvec3->getVec3Value()), Qt::EditRole);
 		}
     }
+
+
 
 }

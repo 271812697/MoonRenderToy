@@ -39,9 +39,10 @@ namespace MOON {
 
 			// 配置TreeView
 			m_treeView->setModel(m_propertyModel);
-			
 			m_treeView->setItemDelegate(m_propertyDelegate);
-			m_treeView->setColumnWidth(0, 200); // 设置第一列宽度
+			
+			
+			m_treeView->setColumnWidth(0, 50); // 设置第一列宽度
 			m_treeView->header()->setSectionResizeMode(QHeaderView::Stretch); // 第二列自适应
 
 			// 布局
@@ -62,6 +63,8 @@ namespace MOON {
 					m_propertyModel->setCurrentActor(actor);
 					// 自动展开所有节点
 					m_treeView->expandAll();
+					m_treeView->setEditTriggers(QAbstractItemView::AllEditTriggers);
+					m_treeView->openPersistentEditor(m_treeView->rootIndex());
 				}
 			}
 		}

@@ -73,7 +73,7 @@ namespace MOON {
         // 提交编辑器数据
         void setModelData(QWidget* editor, QAbstractItemModel* model,
             const QModelIndex& index) const override;
-    };
+        };
 
 
 
