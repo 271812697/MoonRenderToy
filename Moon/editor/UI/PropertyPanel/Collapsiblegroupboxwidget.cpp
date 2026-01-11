@@ -1,4 +1,5 @@
 ﻿#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
+#include "Widgets/PropertyQtWidgets.h"
 #include <QToolButton>
 #include <QGridLayout>   // for QGridLayout
 #include <QHBoxLayout>   // for QHBoxLayout
@@ -24,8 +25,8 @@ namespace MOON {
 			// add default label to widget layout, this will also set the correct stretching and spacing
 			layout->addWidget(defaultLabel, 0, 0);
 			layout->addItem(new QSpacerItem(0, 1, QSizePolicy::Fixed), 0, 1);
-			layout->setColumnStretch(0, 1);
-			layout->setColumnStretch(1, 0);
+			layout->setColumnStretch(0, 0);
+			layout->setColumnStretch(1, 1);
 
 			return widget;
 		}
@@ -76,7 +77,7 @@ namespace MOON {
 		QWidget* propertyWidgetGroup_;
 		QGridLayout* propertyWidgetGroupLayout_;
 		std::vector<Property*> properties_;
-		std::vector<QWidget*> propertyWidgets_;
+		std::vector<PropertyQtWidget*> propertyWidgets_;
 	};
 	CollapsibleGroupBoxWidget::CollapsibleGroupBoxWidget(const QString& name,QWidget* parent):QWidget(parent),mInternal(new CollapsibleGroupBoxWidgetInternal(this))
 	{
@@ -110,7 +111,7 @@ namespace MOON {
 		if (auto propertyWidget =prop->createEditorWidget(this)) {
 			mInternal->propertyWidgets_.insert(widgetInsertPoint, propertyWidget);
 
-			insertPropertyWidget(propertyWidget, insertAtEnd);
+			insertPropertyWidget(prop->getPropertyName(), propertyWidget, insertAtEnd);
 			
 			//RenderContext::getPtr()->activateDefaultRenderContext();
 
@@ -128,9 +129,9 @@ namespace MOON {
 		mInternal->propertyWidgetGroupLayout_->setEnabled(true);
 		setUpdatesEnabled(true);
 	}
-	void CollapsibleGroupBoxWidget::insertPropertyWidget(QWidget* propertyWidget, bool insertAtEnd)
+	void CollapsibleGroupBoxWidget::insertPropertyWidget(const QString& label, PropertyQtWidget* propertyWidget, bool insertAtEnd)
 	{
-		auto addPropertyWidget = [&](QGridLayout* layout, int row, QWidget* widget) {
+		auto addPropertyWidget = [&](QGridLayout* layout, int row, PropertyQtWidget* widget) {
 			//if (auto collapsibleWidget = dynamic_cast<CollapsibleGroupBoxWidgetQt*>(widget)) {
 			//	collapsibleWidget->setNestedDepth(this->getNestedDepth() + 1);
 				// make the collapsible widget go all the way to the right border
@@ -139,7 +140,8 @@ namespace MOON {
 			//else {  // not a collapsible widget
 				//widget->setNestedDepth(this->getNestedDepth());
 				// property widget should only be added to the left column of the layout
-				layout->addWidget(widget, row, 0);
+			layout->addWidget(new QLabel(label,this ), row, 0);
+			layout->addWidget(widget, row, 1);
 			//}
 
 			//if (isChildRemovable()) {

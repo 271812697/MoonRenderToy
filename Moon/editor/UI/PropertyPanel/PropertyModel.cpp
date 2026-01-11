@@ -318,7 +318,4 @@ namespace MOON {
             model->setData(index, QVariant::fromValue(fvec3->getVec3Value()), Qt::EditRole);
 		}
     }
-
-
-
 }
