@@ -133,9 +133,11 @@ in GS_OUT
 } fs_in;
 
 // surface with edges
-//uniform float lineWidth;
-//uniform vec3 edgeColor;
-//uniform float edgeOpacity;
+#if defined(WITH_EDGE)
+uniform float lineWidth;
+uniform vec3 edgeColor;
+uniform float edgeOpacity;
+#endif
 
 
 
@@ -260,7 +262,7 @@ void main()
     edist[1] += fs_in.edgeEqn[1].z;
     edist[2] += fs_in.edgeEqn[2].z;
     float emix = clamp(0.5 + 0.5*1.0 - min( min( edist[0], edist[1]), edist[2]), 0.0, 1.0);
-    albedo.rgb = mix(albedo.rgb, vec3(0.0), emix);
+    albedo.rgb = mix(albedo.rgb, edgeColor, emix);
 #endif
    vec3 pbr = PBRLightingModel(
         albedo.rgb,

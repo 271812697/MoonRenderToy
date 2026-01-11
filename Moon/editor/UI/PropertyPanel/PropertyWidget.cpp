@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
+#include "core/ECS/Components/CMaterialRenderer.h"
+#include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/PropertyPanel/PropertyModel.h"
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
@@ -34,7 +36,7 @@ namespace MOON {
 		~FVec3Property() {
 
 		}
-		virtual QWidget* createEditorWidget(QWidget* parent = nullptr)override {
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
 			if (widget == nullptr) {
 				widget = new Fvec3(parent,this);
 				widget->setVec3Value(owner->getPropertyValue(mName).value<Maths::FVector3>());
@@ -59,6 +61,7 @@ namespace MOON {
 		TransFormPropertyComponent(Core::ECS::Components::CTransform* comp):ActorPropertyComponent(comp) {
 			mProperties.push_back(new FVec3Property("position", this));
 			mProperties.push_back(new FVec3Property("scale", this));
+			mProperties.push_back(new FVec3Property("rotation", this));
 		}
 		virtual ~TransFormPropertyComponent() {
 
@@ -69,6 +72,9 @@ namespace MOON {
 				return QVariant::fromValue(comp->GetWorldPosition());
 			if (propertyName == "scale")
 				return QVariant::fromValue(comp->GetWorldScale());
+			if (propertyName == "rotation") {
+				return QVariant::fromValue(comp->GetWorldRotation().EulerAngles());
+			}
 			return QVariant();
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
@@ -79,8 +85,60 @@ namespace MOON {
 			if (propertyName == "scale") {
 				comp->SetWorldScale(value.value<Maths::FVector3>());
 			}
+			if (propertyName == "rotation") {
+				auto euler=value.value<Maths::FVector3>();
+				comp->SetWorldRotation(Maths::FQuaternion(euler));
+			}
 		}
 	};
+	class MaterialPropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		MaterialPropertyComponent(Core::ECS::Components::CMaterialRenderer* comp) :ActorPropertyComponent(comp) {
+			mat = comp->GetMaterialAtIndex(0);
+			for (auto& mprop:mat->GetProperties()) {
+				if (std::holds_alternative<Maths::FVector3>(mprop.second.value)) {
+					//auto v = std::get<Maths::FVector3>(mprop.second.value);
+					mProperties.push_back(new FVec3Property(mprop.first.c_str(), this));
+				}
+			}
+		}
+		virtual ~MaterialPropertyComponent() {
+
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto ref = mat->GetProperty(propertyName.toStdString());
+			if (ref.has_value()) {
+				if (std::holds_alternative<Maths::FVector3>(ref.value().value)) {
+					auto v = std::get<Maths::FVector3>(ref.value().value);
+					return QVariant::fromValue(v);
+				}
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			
+			if (mat->HasProperty(propertyName.toStdString())) {
+				if (value.canConvert<Maths::FVector3>()) {
+					mat->SetProperty(propertyName.toStdString(),value.value<Maths::FVector3>());
+				}
+			}
+		}
+	private:
+		Core::Resources::Material* mat;
+	};
+	ActorPropertyComponent* transferActorPropertyComponent(Core::ECS::Components::AComponent* comp) {
+
+		if (auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(comp)) {
+			return new  TransFormPropertyComponent(trans);
+		}
+
+		if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
+			return new  MaterialPropertyComponent(trans);
+		}
+		return new ActorPropertyComponent(comp);
+	
+	}
 	class PropertyWidget::PropertyWidgetInternal {
 	public:
 		PropertyWidgetInternal(PropertyWidget* tree) :mSelf(tree) {
@@ -137,7 +195,7 @@ namespace MOON {
 					for (auto& ptr : m_selectedActor->GetComponents()) {
 						auto actorComp = ptr.get();
 						auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(actorComp);
-						auto p = trans ? new  TransFormPropertyComponent(trans) : new ActorPropertyComponent(ptr.get());
+						auto p = transferActorPropertyComponent(ptr.get());
 						auto collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
 						layout_->addWidget(collpase);
 						for (auto u:p->getProperties()) {

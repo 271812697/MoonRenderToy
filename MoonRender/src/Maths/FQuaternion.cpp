@@ -173,6 +173,11 @@ Maths::FQuaternion::FQuaternion(const FVector3 & p_euler)
 	w = cr * cp * cy + sr * sp * sy;
 }
 
+Maths::FVector3 Maths::FQuaternion::EulerAngles()const
+{
+	return EulerAngles(*this);
+}
+
 Maths::FQuaternion Maths::FQuaternion::LookAt(const FVector3& p_forward, const FVector3& p_up)
 {
 	auto vector = Maths::FVector3::Normalize(p_forward);
