@@ -45,7 +45,7 @@ namespace Core::ECS::Components
 
 	std::string CBatchMeshTriangle::GetName()
 	{
-		return "CBatchMesh";
+		return "CBatchMeshTriangle";
 	}
 
 	void CBatchMeshTriangle::OnUpdate(float p_deltaTime)

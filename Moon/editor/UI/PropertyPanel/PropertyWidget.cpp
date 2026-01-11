@@ -2,7 +2,10 @@
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
 #include "Core/Global/ServiceLocator.h"
-#include "QtWidgets/CollapsibleWidget.h"
+#include "editor/UI/PropertyPanel/PropertyModel.h"
+#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
+#include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/FVec3.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -10,7 +13,6 @@
 #include <QListWidget>
 #include <QHBoxLayout>
 #include <QHeaderView>
-
 #include <QColorDialog>
 #include <QFontDialog>
 #include <QMessageBox>
@@ -24,102 +26,144 @@
 #include <fstream>
 
 namespace MOON {
+	class FVec3Property :public Property {
+	public:
+		FVec3Property(const QString& n , ActorPropertyComponent* comp):Property(n,comp){
 
+		}
+		~FVec3Property() {
+
+		}
+		virtual QWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new Fvec3(parent,this);
+				widget->setVec3Value(owner->getPropertyValue(mName).value<Maths::FVector3>());
+			}
+			return widget;
+		}
+		virtual void setPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onPropertyValueChange()override {
+			setPropertyValue(QVariant::fromValue(widget->getVec3Value()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		Fvec3* widget = nullptr;
+	};
+	class TransFormPropertyComponent:public ActorPropertyComponent
+	{
+	public:
+		TransFormPropertyComponent(Core::ECS::Components::CTransform* comp):ActorPropertyComponent(comp) {
+			mProperties.push_back(new FVec3Property("position", this));
+			mProperties.push_back(new FVec3Property("scale", this));
+		}
+		virtual ~TransFormPropertyComponent() {
+
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
+			if (propertyName == "position")
+				return QVariant::fromValue(comp->GetWorldPosition());
+			if (propertyName == "scale")
+				return QVariant::fromValue(comp->GetWorldScale());
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
+			if (propertyName == "position") {
+				comp->SetWorldPosition(value.value<Maths::FVector3>());
+			}
+			if (propertyName == "scale") {
+				comp->SetWorldScale(value.value<Maths::FVector3>());
+			}
+		}
+	};
 	class PropertyWidget::PropertyWidgetInternal {
 	public:
 		PropertyWidgetInternal(PropertyWidget* tree) :mSelf(tree) {
 
 		}		
 		void setUp() {
-			// ---------------------- 核心优化：添加滚动区域 ----------------------
-			QVBoxLayout* mainLayout = new QVBoxLayout(mSelf);
-			mainLayout->setContentsMargins(5, 5, 5, 5);
-			mainLayout->setSpacing(5);
+			// 布局
+			layout_ = new QVBoxLayout(mSelf);
+			layout_->setContentsMargins(0, 0, 0, 0);
+			// 初始化控件
+			//m_treeView = new QTreeView(mSelf);
+			//m_treeView->setRootIsDecorated(false);
+			//m_propertyModel = new PropertyTreeModel(mSelf);
+			//m_propertyDelegate = new PropertyDelegate(mSelf);
+			////m_coll = new CollapsibleGroupBoxWidget(mSelf);
+			//
+			//// 配置TreeView
+			//m_treeView->setModel(m_propertyModel);
+			//m_treeView->setItemDelegate(m_propertyDelegate);
+			//
+			//
+			//m_treeView->setColumnWidth(0, 50); // 设置第一列宽度
+			//m_treeView->header()->setSectionResizeMode(QHeaderView::Stretch); // 第二列自适应
 
-			// 滚动区域：内容超出时显示滚动条，不会撑满面板
-			QScrollArea* scrollArea = new QScrollArea(mSelf);
-			scrollArea->setWidgetResizable(true); // 自适应内容大小
-			scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); // 关闭水平滚动
-			scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded); // 垂直滚动按需显示
-
-			// 滚动区域的内容容器（存放所有折叠面板）
-			QWidget* scrollContent = new QWidget(scrollArea);
-			m_rootLayout = new QVBoxLayout(scrollContent);
-			m_rootLayout->setSpacing(10);
-			m_rootLayout->setContentsMargins(10, 10, 10, 10);
-			m_rootLayout->addStretch(); // 底部添加拉伸，防止控件占满整个滚动区域
-
-			scrollArea->setWidget(scrollContent);
-			mainLayout->addWidget(scrollArea);
-
-			// 设置PropertyPanel的最小尺寸，保证UI稳定
-			mSelf->setMinimumSize(300, 400);
-			mSelf->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+			//layout_->addWidget(m_treeView);
+			//layout->addWidget(m_coll);
+			mSelf->setLayout(layout_);
 		}
 		~PropertyWidgetInternal() {
+			for (auto p : m_comps) {
+				delete p.second;
+			}
 		}
 		// 设置选中的Actor（核心入口）
 		void setSelectedActor(Core::ECS::Actor* actor) {
 			if (actor != m_selectedActor) {
-				// 清空旧面板
-				clearAllPanels();
-
 				// 记录当前选中的Actor
 				m_selectedActor = actor;
-
 				// 构建新面板
 				if (m_selectedActor) {
-					// 1. 构建Actor自身属性的折叠面板
-					buildActorPropertyPanel();
-					// 2. 构建所有组件的折叠面板
-					//buildComponentsPropertyPanels();
+					//m_propertyModel->setCurrentActor(actor);
+					// 自动展开所有节点
+					//m_treeView->expandAll();
+					//m_treeView->setEditTriggers(QAbstractItemView::AllEditTriggers);
+					//m_treeView->openPersistentEditor(m_treeView->rootIndex());
+					while (auto item = layout_->takeAt(0)) {
+						delete item;
+					}
+					for (auto p : m_comps) {
+						delete p.first;
+						delete p.second;
+					}
+					m_comps.clear();
+					for (auto& ptr : m_selectedActor->GetComponents()) {
+						auto actorComp = ptr.get();
+						auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(actorComp);
+						auto p = trans ? new  TransFormPropertyComponent(trans) : new ActorPropertyComponent(ptr.get());
+						auto collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
+						layout_->addWidget(collpase);
+						for (auto u:p->getProperties()) {
+							collpase->addProperty(u);
+						}
+						m_comps.push_back({ collpase ,p});
+					}
+					layout_->addStretch();
 				}
 			}
 		}
-		// 清空所有面板（Actor+组件）
-		void clearAllPanels() {
-			// 遍历删除所有子控件（折叠面板）
-			QLayoutItem* item;
-			while ((item = m_rootLayout->takeAt(0)) != nullptr) {
-				if (item->widget()) {
-					item->widget()->deleteLater();
-				}
-				delete item;
-			}
-			m_allGroupBoxes.clear(); // 清空折叠面板缓存
-		}
-
-		// 构建Actor自身属性的折叠面板
-		void buildActorPropertyPanel() {
-			// 1. 创建可折叠的GroupBox(
-			CollapsibleWidget* actorWidget = new CollapsibleWidget(QString("Actor base"), mSelf);
-			QFormLayout* formLayout = new QFormLayout();
-			actorWidget->contentLayout()->addLayout(formLayout);
-
-			// 3. 添加Actor属性控件
-			// 名称
-			
-			QLineEdit* nameEdit = new QLineEdit(QString::fromStdString(m_selectedActor->GetName()));
-			formLayout->addRow("name: ", nameEdit);
-			//connect(nameEdit, &QLineEdit::textChanged, this, &PropertyPanel::onActorNameEdited);
-			// 4. 添加到根布局
-			m_rootLayout->addWidget(actorWidget);
-			m_allGroupBoxes.append(actorWidget);
-		}
-
 	private:
 		friend class PropertyWidget;
 		PropertyWidget* mSelf = nullptr;
-		QVBoxLayout* m_rootLayout;                // 面板根布局
+		QVBoxLayout* layout_ = nullptr;
+		QTreeView* m_treeView;
+		
+		PropertyTreeModel* m_propertyModel;
+		PropertyDelegate* m_propertyDelegate;
 		Core::ECS::Actor* m_selectedActor=nullptr;          // 当前选中的Actor
-		QList<CollapsibleWidget*> m_allGroupBoxes;        // 所有折叠面板缓存
-
+		std::vector<std::pair<CollapsibleGroupBoxWidget*, ActorPropertyComponent*>>m_comps;
 	};
 	PropertyWidget::PropertyWidget(QWidget* parent):QWidget(parent),mInternal(new PropertyWidgetInternal(this))
 	{
 		RegService(PropertyWidget, *this);
 		mInternal->setUp();
-
 	}
 	void PropertyWidget::setSelectedActor(Core::ECS::Actor* actor) {
 		mInternal->setSelectedActor(actor);
@@ -128,6 +172,4 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
-
-
 }

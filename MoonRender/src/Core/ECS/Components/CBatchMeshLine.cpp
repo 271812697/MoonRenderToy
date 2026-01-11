@@ -46,7 +46,7 @@ namespace Core::ECS::Components
 
 	std::string CBatchMeshLine::GetName()
 	{
-		return "CBatchMesh";
+		return "CBatchMeshLine";
 	}
 
 	void CBatchMeshLine::OnUpdate(float p_deltaTime)

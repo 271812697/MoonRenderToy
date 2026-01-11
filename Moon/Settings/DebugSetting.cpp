@@ -2,7 +2,7 @@
 #include "dataDispatcher.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "core/callbackManager.h"
-#include "qtWidgets/checkbox.h"
+#include "Widgets/checkbox.h"
 #include <QSlider>
 namespace MOON {
 	static std::unordered_map<size_t,std::string >mHashCode;
