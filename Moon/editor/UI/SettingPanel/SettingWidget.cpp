@@ -2,7 +2,7 @@
 #include "SettingWidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Settings/DebugSetting.h"
-#include "QtWidgets/checkbox.h"
+#include "Widgets/checkbox.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>

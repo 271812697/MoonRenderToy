@@ -1,5 +1,7 @@
-﻿#include "QtWidgets/FVec3.h"
-Fvec3::Fvec3(QWidget* parent) : QWidget(parent)
+﻿#include "Widgets/FVec3.h"
+#include "editor/UI/PropertyPanel/Property.h"
+namespace MOON {
+Fvec3::Fvec3(QWidget* parent, Property* prop) : PropertyQtWidget(parent,prop)
 {
     m_spinX = new QDoubleSpinBox(this);
     m_spinY = new QDoubleSpinBox(this);
@@ -42,6 +44,19 @@ Fvec3::Fvec3(QWidget* parent) : QWidget(parent)
     hLayout->addWidget(m_spinZ);
 
     this->setLayout(hLayout);
+    //m_spinX;
+    //&QDoubleSpinBox::valueChanged(double);
+    // 正确写法，推荐！
+    QObject::connect(m_spinX, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+        this, &Fvec3::onValueChange);
+    QObject::connect(m_spinY, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+        this, &Fvec3::onValueChange);
+    QObject::connect(m_spinZ, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+        this, &Fvec3::onValueChange);
+}
+
+Fvec3::Fvec3(QWidget* parent):Fvec3::Fvec3(parent, nullptr)
+{
 }
 
 void Fvec3::setVec3Value(float x, float y, float z)
@@ -60,4 +75,11 @@ void Fvec3::setVec3Value(const Maths::FVector3& vec)
 Maths::FVector3 Fvec3::getVec3Value() const
 {
     return Maths::FVector3(m_spinX->value(), m_spinY->value(), m_spinZ->value()); // float值直接构造QVector3D，完美适配
+}
+void Fvec3::onValueChange(double val) {
+    //mProps->setPropertyValue(QVariant::fromValue(getVec3Value()));
+    mProps->onPropertyValueChange();
+}
+
+
 }

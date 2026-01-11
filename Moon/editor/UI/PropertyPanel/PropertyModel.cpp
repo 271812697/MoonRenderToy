@@ -3,7 +3,7 @@
 #include "editor/UI/PropertyPanel/PropertyModel.h"
 #include "editor/UI/PropertyPanel/PropertyComponent.h"
 #include "Core/ECS/Components/CTransform.h"
-#include "QtWidgets/FVec3.h"
+#include "Widgets/FVec3.h"
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QCheckBox>
