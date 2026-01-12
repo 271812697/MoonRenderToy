@@ -2,6 +2,7 @@
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
 #include "core/ECS/Components/CMaterialRenderer.h"
+#include "Core/ECS/Components/CPostProcessStack.h"
 #include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/PropertyPanel/PropertyModel.h"
@@ -44,11 +45,11 @@ namespace MOON {
 			}
 			return widget;
 		}
-		virtual void setPropertyValue(const QVariant& value)override {
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
 			owner->setPropertyValue(mName, value);
 		}
 		virtual void onWidgetValueChange()override {
-			setPropertyValue(QVariant::fromValue(widget->getVec3Value()));
+			setOwnerPropertyValue(QVariant::fromValue(widget->getVec3Value()));
 		}
 		virtual void updateWidgetValue(const QVariant& value)override {
 			widget->setVec3Value(value.value<Maths::FVector3>());
@@ -75,17 +76,85 @@ namespace MOON {
 			}
 			return widget;
 		}
-		virtual void setPropertyValue(const QVariant& value)override {
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
 			owner->setPropertyValue(mName, value);
 		}
 		virtual void onWidgetValueChange()override {
-			setPropertyValue(QVariant::fromValue(widget->getValue()));
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
 		}
 		virtual void updateWidgetValue(const QVariant& value)override {
 			//widget->setVec3Value(value.value<Maths::FVector3>());
 		}
 	private:
 		FloatSliderWidgetQt* widget = nullptr;
+	};
+	class SliderIntProperty :public Property {
+	public:
+		SliderIntProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~SliderIntProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new IntSliderWidgetQt(parent);
+				widget->setProp(this);
+				widget->setValue(owner->getPropertyValue(mName).toInt());
+				widget->setMinValue(-10);
+				widget->setMaxValue(10);
+				widget->setIncrement(1);
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		IntSliderWidgetQt* widget = nullptr;
+	};
+	class PostProcessStackPropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		PostProcessStackPropertyComponent(Core::ECS::Components::CPostProcessStack* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new SliderFloatProperty("Bloom Intensity", this));
+			mProperties.push_back(new SliderIntProperty("Bloom Pass Count", this));
+		}
+		virtual ~PostProcessStackPropertyComponent() {
+
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
+			auto bloomSetting=comp->GetBloomSettings();
+			if (propertyName == "Bloom Intensity")
+				return QVariant::fromValue(bloomSetting.intensity);
+			else if (propertyName == "Bloom Pass Count")
+				return QVariant::fromValue(bloomSetting.passes);
+			else if (propertyName == "rotation") {
+				
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
+			auto bloomSetting = comp->GetBloomSettings();
+			if (propertyName == "Bloom Intensity") {
+				bloomSetting.intensity = value.value<float>();
+				
+			}
+			else if (propertyName == "Bloom Pass Count") {
+				bloomSetting.passes= value.value<int>();
+			}
+			else if (propertyName == "rotation") {
+			}
+			comp->SetBloomSettings(bloomSetting);
+		}
 	};
 	class TransFormPropertyComponent:public ActorPropertyComponent
 	{
@@ -175,9 +244,11 @@ namespace MOON {
 		if (auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(comp)) {
 			return new  TransFormPropertyComponent(trans);
 		}
-
 		else if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
 			return new  MaterialPropertyComponent(trans);
+		}
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(comp)) {
+			return new  PostProcessStackPropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);
 	
@@ -237,7 +308,6 @@ namespace MOON {
 					m_comps.clear();
 					for (auto& ptr : m_selectedActor->GetComponents()) {
 						auto actorComp = ptr.get();
-						auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(actorComp);
 						auto p = transferActorPropertyComponent(ptr.get());
 						auto collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
 						layout_->addWidget(collpase);
