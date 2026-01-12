@@ -76,9 +76,9 @@ Maths::FVector3 Fvec3::getVec3Value() const
 {
     return Maths::FVector3(m_spinX->value(), m_spinY->value(), m_spinZ->value()); // float值直接构造QVector3D，完美适配
 }
+
 void Fvec3::onValueChange(double val) {
-    //mProps->setPropertyValue(QVariant::fromValue(getVec3Value()));
-    mProps->onPropertyValueChange();
+    OnValueChanged();
 }
 
 

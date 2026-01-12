@@ -7,6 +7,7 @@
 #include "editor/UI/PropertyPanel/PropertyModel.h"
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/sliderwidget.h"
 #include "Widgets/FVec3.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
@@ -46,7 +47,7 @@ namespace MOON {
 		virtual void setPropertyValue(const QVariant& value)override {
 			owner->setPropertyValue(mName, value);
 		}
-		virtual void onPropertyValueChange()override {
+		virtual void onWidgetValueChange()override {
 			setPropertyValue(QVariant::fromValue(widget->getVec3Value()));
 		}
 		virtual void updateWidgetValue(const QVariant& value)override {
@@ -54,6 +55,37 @@ namespace MOON {
 		}
 	private:
 		Fvec3* widget = nullptr;
+	};
+	class SliderFloatProperty :public Property {
+	public:
+		SliderFloatProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~SliderFloatProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new FloatSliderWidgetQt(parent);
+				widget->setProp(this);
+				widget->setValue(owner->getPropertyValue(mName).toFloat());
+				widget->setMinValue(-10.0f);
+				widget->setMaxValue(10.0f);
+				widget->setIncrement(0.05f);
+			}
+			return widget;
+		}
+		virtual void setPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		FloatSliderWidgetQt* widget = nullptr;
 	};
 	class TransFormPropertyComponent:public ActorPropertyComponent
 	{
@@ -70,9 +102,9 @@ namespace MOON {
 			auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
 			if (propertyName == "position")
 				return QVariant::fromValue(comp->GetWorldPosition());
-			if (propertyName == "scale")
+			else if (propertyName == "scale")
 				return QVariant::fromValue(comp->GetWorldScale());
-			if (propertyName == "rotation") {
+			else if (propertyName == "rotation") {
 				return QVariant::fromValue(comp->GetWorldRotation().EulerAngles());
 			}
 			return QVariant();
@@ -82,10 +114,10 @@ namespace MOON {
 			if (propertyName == "position") {
 				comp->SetWorldPosition(value.value<Maths::FVector3>());
 			}
-			if (propertyName == "scale") {
+			else if (propertyName == "scale") {
 				comp->SetWorldScale(value.value<Maths::FVector3>());
 			}
-			if (propertyName == "rotation") {
+			else if (propertyName == "rotation") {
 				auto euler=value.value<Maths::FVector3>();
 				comp->SetWorldRotation(Maths::FQuaternion(euler));
 			}
@@ -101,6 +133,10 @@ namespace MOON {
 					//auto v = std::get<Maths::FVector3>(mprop.second.value);
 					mProperties.push_back(new FVec3Property(mprop.first.c_str(), this));
 				}
+				else if (std::holds_alternative<float>(mprop.second.value)) {
+					//auto v = std::get<Maths::FVector3>(mprop.second.value);
+					mProperties.push_back(new SliderFloatProperty(mprop.first.c_str(), this));
+				}
 			}
 		}
 		virtual ~MaterialPropertyComponent() {
@@ -113,6 +149,10 @@ namespace MOON {
 					auto v = std::get<Maths::FVector3>(ref.value().value);
 					return QVariant::fromValue(v);
 				}
+				else if (std::holds_alternative<float>(ref.value().value)) {
+					auto v = std::get<float>(ref.value().value);
+					return QVariant::fromValue(v);
+				}
 			}
 			return QVariant();
 		}
@@ -121,6 +161,9 @@ namespace MOON {
 			if (mat->HasProperty(propertyName.toStdString())) {
 				if (value.canConvert<Maths::FVector3>()) {
 					mat->SetProperty(propertyName.toStdString(),value.value<Maths::FVector3>());
+				}
+				else if (value.canConvert<float>()) {
+					mat->SetProperty(propertyName.toStdString(), value.value<float>());
 				}
 			}
 		}
@@ -133,7 +176,7 @@ namespace MOON {
 			return new  TransFormPropertyComponent(trans);
 		}
 
-		if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
 			return new  MaterialPropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);

@@ -12,7 +12,7 @@ namespace MOON {
 		virtual PropertyQtWidget* createEditorWidget(QWidget*parent=nullptr)=0;
 		virtual void setPropertyValue(const QVariant& value)=0;
 		virtual void updateWidgetValue(const QVariant& value) = 0;
-		virtual void onPropertyValueChange()=0;
+		virtual void onWidgetValueChange()=0;
 		QString getPropertyName();
 	protected:
 		ActorPropertyComponent* owner = nullptr;
