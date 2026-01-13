@@ -9,6 +9,7 @@
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "editor/UI/PropertyPanel/Property.h"
 #include "Widgets/sliderwidget.h"
+#include "Widgets/SlideChekBox.h"
 #include "Widgets/FVec3.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
@@ -30,6 +31,7 @@
 #include <fstream>
 
 namespace MOON {
+	namespace {
 	class FVec3Property :public Property {
 	public:
 		FVec3Property(const QString& n , ActorPropertyComponent* comp):Property(n,comp){
@@ -56,6 +58,33 @@ namespace MOON {
 		}
 	private:
 		Fvec3* widget = nullptr;
+	};
+	class BoolProperty :public Property {
+	public:
+		BoolProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~BoolProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new SliderCheckBox(parent, this);
+				widget->setValue(owner->getPropertyValue(mName).value<bool>());
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		SliderCheckBox* widget = nullptr;
 	};
 	class SliderFloatProperty :public Property {
 	public:
@@ -119,12 +148,16 @@ namespace MOON {
 	private:
 		IntSliderWidgetQt* widget = nullptr;
 	};
+	}
+
 	class PostProcessStackPropertyComponent :public ActorPropertyComponent
 	{
 	public:
 		PostProcessStackPropertyComponent(Core::ECS::Components::CPostProcessStack* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new  BoolProperty("Bloom Enable",this));
 			mProperties.push_back(new SliderFloatProperty("Bloom Intensity", this));
 			mProperties.push_back(new SliderIntProperty("Bloom Pass Count", this));
+			
 		}
 		virtual ~PostProcessStackPropertyComponent() {
 
@@ -136,8 +169,8 @@ namespace MOON {
 				return QVariant::fromValue(bloomSetting.intensity);
 			else if (propertyName == "Bloom Pass Count")
 				return QVariant::fromValue(bloomSetting.passes);
-			else if (propertyName == "rotation") {
-				
+			else if (propertyName == "Bloom Enable") {
+				return QVariant::fromValue(bloomSetting.enabled);
 			}
 			return QVariant();
 		}
@@ -151,7 +184,8 @@ namespace MOON {
 			else if (propertyName == "Bloom Pass Count") {
 				bloomSetting.passes= value.value<int>();
 			}
-			else if (propertyName == "rotation") {
+			else if (propertyName == "Bloom Enable") {
+				bloomSetting.enabled = value.value<bool>();
 			}
 			comp->SetBloomSettings(bloomSetting);
 		}

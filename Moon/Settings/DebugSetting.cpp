@@ -290,7 +290,9 @@ namespace MOON {
 	{
 		std::string type = getType();
 		if (type == "bool") {
-			return new NodeBoolWidget(this,parent);
+			auto check=new NodeBoolWidget(this, parent);
+			check->setChecked(!this->getData<bool>());
+			return check;
 		}
 		else if (type=="int") {
 
