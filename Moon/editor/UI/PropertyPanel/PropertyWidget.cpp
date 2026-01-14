@@ -11,6 +11,7 @@
 #include "Widgets/sliderwidget.h"
 #include "Widgets/SlideChekBox.h"
 #include "Widgets/FVec3.h"
+#include "Widgets/ComboBox.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -84,6 +85,32 @@ namespace MOON {
 		}
 	private:
 		SliderCheckBox* widget = nullptr;
+	};
+	class EnumProperty :public Property {
+	public:
+		EnumProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~EnumProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new ComboBox(parent, this);
+				widget->addComboList(owner->getPropertyValue(mName).value<QList<QString>>());
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getCurrentIndex()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+		}
+	private:
+		ComboBox* widget = nullptr;
 	};
 	class SliderFloatProperty :public Property {
 	public:
@@ -160,6 +187,7 @@ namespace MOON {
 			mProperties.push_back(new BoolProperty("Tonemap Enable", this));
 			mProperties.push_back(new SliderFloatProperty("Tonemap exposure", this));
 			mProperties.push_back(new BoolProperty("Tonemap gamma", this));
+			mProperties.push_back(new EnumProperty("Tonemap mode",this));
 			mProperties.push_back(new BoolProperty("Exposure Enable", this));
 		}
 		virtual ~PostProcessStackPropertyComponent() {
@@ -193,6 +221,10 @@ namespace MOON {
 			else if (propertyName == "Exposure Enable") {
 				return QVariant::fromValue(exposureSetting.enabled);
 			}
+			else if (propertyName == "Tonemap mode") {
+				QList<QString>list = {"NEUTRAL","REINHARD","REINHARD_JODIE","UNCHARTED2","UNCHARTED2_FILMIC","ACES"};
+				return QVariant::fromValue(list);
+			}
 			return QVariant();
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
@@ -221,6 +253,10 @@ namespace MOON {
 			}
 			else if (propertyName == "Tonemap Enable") {
 				tonemappingSetting.enabled = value.value<bool>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName == "Tonemap mode") {
+				tonemappingSetting.mode = static_cast<Core::Rendering::PostProcess::ETonemappingMode>(value.value<int>());
 				comp->SetTonemappingSettings(tonemappingSetting);
 			}
 			else if (propertyName== "Tonemap exposure") {
