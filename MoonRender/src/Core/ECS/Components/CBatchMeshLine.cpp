@@ -116,12 +116,11 @@ namespace Core::ECS::Components
 		auto& indices = mesh->GetIndices();
 		auto& vertex = mesh->GetVerticesBVH();
 		uint32_t i1=mInternal->subMeshRanges[index];
-		uint32_t i2 = mInternal->subMeshRanges[index+1];
+		uint32_t i2 =(index+1)< mInternal->subMeshRanges.size()? mInternal->subMeshRanges[index+1]: indices.size()-1;
 		for (int i = i1;i < i2;i += 2) {
 			res.push_back(vertex[indices[i]].position);
 			res.push_back(vertex[indices[i+1]].position);
 		}
-
 		return res;
 	}
 

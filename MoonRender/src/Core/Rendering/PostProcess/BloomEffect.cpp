@@ -86,7 +86,7 @@ bool Core::Rendering::PostProcess::BloomEffect::IsApplicable(const EffectSetting
 
 	return
 		AEffect::IsApplicable(p_settings) &&
-		bloomSettings.intensity > 0.0f;
+		bloomSettings.intensity > 0.0f&& bloomSettings.passes>0;
 }
 
 void Core::Rendering::PostProcess::BloomEffect::Draw(

@@ -57,6 +57,7 @@ out GS_OUT{
     mat3 TBN;
 #if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
+    float screenLengthOutput;
 #endif
 } gs_out;
 
@@ -64,6 +65,11 @@ layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 
 //uniform samplerBuffer edgeTexture;
+// surface with edges
+#if defined(WITH_EDGE)
+uniform float lineWidth=1.0f;
+
+#endif
 
 void main() 
 {
@@ -87,11 +93,27 @@ void main()
         float d = dot(pos[i], tmp);
         gs_out.edgeEqn[i] = vec4(tmp.x, tmp.y, 0.0, -d);
     }
+    vec2 offsets[3];
+
+    offsets[0] = gs_out.edgeEqn[2].xy + gs_out.edgeEqn[0].xy;
+    offsets[0] = -0.5*normalize(offsets[0])*lineWidth;
+    offsets[0] /= vec2(ubo_ScreenWidth,ubo_ScreenHeight);
+
+    offsets[1] = gs_out.edgeEqn[0].xy + gs_out.edgeEqn[1].xy;
+    offsets[1] = -0.5*normalize(offsets[1])*lineWidth;
+    offsets[1] /= vec2(ubo_ScreenWidth,ubo_ScreenHeight);
+
+    offsets[2] = gs_out.edgeEqn[1].xy + gs_out.edgeEqn[2].xy;
+    offsets[2] = -0.5*normalize(offsets[2])*lineWidth;
+    offsets[2] /= vec2(ubo_ScreenWidth,ubo_ScreenHeight);
+
     
     //float edgeValues = 255.0*texelFetch(edgeTexture, gl_PrimitiveIDIn + PrimitiveIDOffset).r;
     //if (edgeValues < 4.0) edgeEqn[2].z = lineWidth;
     //if (mod(edgeValues, 4.0) < 2.0) edgeEqn[1].z = lineWidth;
     //if (mod(edgeValues, 2.0) < 1.0) edgeEqn[0].z = lineWidth;
+
+
 #endif
  
 
@@ -100,12 +122,21 @@ void main()
     for (int i = 0; i < 3; i++)
     {
         gl_PrimitiveID = gl_PrimitiveIDIn;
+#if defined(WITH_EDGE)
+        gs_out.screenLengthOutput = length(pos[i + 1] - pos[i]);
+#endif 
         gs_out.FragPos=gs_in[i].FragPos;
         gs_out.TexCoords=gs_in[i].TexCoords;
         //gs_out.Normal=nor;
         gs_out.Normal=gs_in[i].Normal;
         gs_out.TBN=gs_in[i].TBN;
         gl_Position = gl_in[i].gl_Position;
+#if defined(WITH_EDGE)
+        gl_Position.xy = gl_Position.xy + offsets[i]*gl_Position.w;
+#else
+        gl_Position.xy = gl_Position.xy ;
+#endif 
+
         EmitVertex();
     }
     EndPrimitive();
@@ -129,14 +160,15 @@ in GS_OUT
     mat3 TBN;
 #if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
+    float screenLengthOutput;
 #endif
 } fs_in;
 
 // surface with edges
 #if defined(WITH_EDGE)
-uniform float lineWidth;
+uniform float lineWidth=1.0f;
 uniform vec3 edgeColor;
-uniform float edgeOpacity;
+uniform float edgeOpacity=1.0f;
 #endif
 
 
@@ -261,8 +293,14 @@ void main()
     edist[0] += fs_in.edgeEqn[0].z;
     edist[1] += fs_in.edgeEqn[1].z;
     edist[2] += fs_in.edgeEqn[2].z;
-    float emix = clamp(0.5 + 0.5*1.0 - min( min( edist[0], edist[1]), edist[2]), 0.0, 1.0);
-    albedo.rgb = mix(albedo.rgb, edgeColor, emix);
+    float emix0 = clamp(0.5 + 0.5 * lineWidth - edist[0], 0.0, 1.0);
+    float emix1 = clamp(0.5 + 0.5 * lineWidth - edist[1], 0.0, 1.0);
+    float emix2 = clamp(0.5 + 0.5 * lineWidth - edist[2], 0.0, 1.0);
+    float emix = emix1;
+    emix = mix(emix, max(emix, emix0), step(fs_in.edgeEqn[0].z, 0.01));
+    emix = mix(emix, max(emix, emix2), step(fs_in.edgeEqn[2].z, 0.01));
+    float opacityFactor = clamp(fs_in.screenLengthOutput / 50., 0.15, 1.0);
+    albedo.rgb = mix(albedo.rgb, edgeColor, emix*opacityFactor*edgeOpacity);
 #endif
    vec3 pbr = PBRLightingModel(
         albedo.rgb,

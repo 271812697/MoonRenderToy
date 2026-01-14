@@ -2,12 +2,16 @@
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
 #include "core/ECS/Components/CMaterialRenderer.h"
+#include "Core/ECS/Components/CPostProcessStack.h"
 #include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/PropertyPanel/PropertyModel.h"
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/sliderwidget.h"
+#include "Widgets/SlideChekBox.h"
 #include "Widgets/FVec3.h"
+#include "Widgets/ComboBox.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -28,6 +32,7 @@
 #include <fstream>
 
 namespace MOON {
+	namespace {
 	class FVec3Property :public Property {
 	public:
 		FVec3Property(const QString& n , ActorPropertyComponent* comp):Property(n,comp){
@@ -43,17 +48,231 @@ namespace MOON {
 			}
 			return widget;
 		}
-		virtual void setPropertyValue(const QVariant& value)override {
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
 			owner->setPropertyValue(mName, value);
 		}
-		virtual void onPropertyValueChange()override {
-			setPropertyValue(QVariant::fromValue(widget->getVec3Value()));
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getVec3Value()));
 		}
 		virtual void updateWidgetValue(const QVariant& value)override {
 			widget->setVec3Value(value.value<Maths::FVector3>());
 		}
 	private:
 		Fvec3* widget = nullptr;
+	};
+	class BoolProperty :public Property {
+	public:
+		BoolProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~BoolProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new SliderCheckBox(parent, this);
+				widget->setValue(owner->getPropertyValue(mName).value<bool>());
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+		}
+	private:
+		SliderCheckBox* widget = nullptr;
+	};
+	class EnumProperty :public Property {
+	public:
+		EnumProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~EnumProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new ComboBox(parent, this);
+				widget->addComboList(owner->getPropertyValue(mName).value<QList<QString>>());
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getCurrentIndex()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+		}
+	private:
+		ComboBox* widget = nullptr;
+	};
+	class SliderFloatProperty :public Property {
+	public:
+		SliderFloatProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~SliderFloatProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new FloatSliderWidgetQt(parent);
+				widget->setProp(this);
+				widget->setValue(owner->getPropertyValue(mName).toFloat());
+				widget->setMinValue(-10.0f);
+				widget->setMaxValue(10.0f);
+				widget->setIncrement(0.05f);
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		FloatSliderWidgetQt* widget = nullptr;
+	};
+	class SliderIntProperty :public Property {
+	public:
+		SliderIntProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~SliderIntProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new IntSliderWidgetQt(parent);
+				widget->setProp(this);
+				widget->setValue(owner->getPropertyValue(mName).toInt());
+				widget->setMinValue(-10);
+				widget->setMaxValue(10);
+				widget->setIncrement(1);
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		IntSliderWidgetQt* widget = nullptr;
+	};
+	}
+
+	class PostProcessStackPropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		PostProcessStackPropertyComponent(Core::ECS::Components::CPostProcessStack* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new BoolProperty("Bloom Enable",this));
+			mProperties.push_back(new SliderFloatProperty("Bloom Intensity", this));
+			mProperties.push_back(new SliderIntProperty("Bloom Pass Count", this));
+			mProperties.push_back(new BoolProperty("FXAA Enable", this));
+			mProperties.push_back(new BoolProperty("Tonemap Enable", this));
+			mProperties.push_back(new SliderFloatProperty("Tonemap exposure", this));
+			mProperties.push_back(new BoolProperty("Tonemap gamma", this));
+			mProperties.push_back(new EnumProperty("Tonemap mode",this));
+			mProperties.push_back(new BoolProperty("Exposure Enable", this));
+		}
+		virtual ~PostProcessStackPropertyComponent() {
+
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
+			auto bloomSetting=comp->GetBloomSettings();
+			auto fxaaSetting = comp->GetFXAASettings();
+			auto tonemappingSetting = comp->GetTonemappingSettings();
+			auto exposureSetting = comp->GetAutoExposureSettings();
+			if (propertyName == "Bloom Intensity")
+				return QVariant::fromValue(bloomSetting.intensity);
+			else if (propertyName == "Bloom Pass Count")
+				return QVariant::fromValue(bloomSetting.passes);
+			else if (propertyName == "Bloom Enable") {
+				return QVariant::fromValue(bloomSetting.enabled);
+			}
+			else if (propertyName == "FXAA Enable") {
+				return QVariant::fromValue(fxaaSetting.enabled);
+			}
+			else if (propertyName == "Tonemap Enable") {
+				return QVariant::fromValue(tonemappingSetting.enabled);
+			}
+			else if (propertyName == "Tonemap exposure") {
+				return QVariant::fromValue(tonemappingSetting.exposure);
+			}
+			else if (propertyName == "Tonemap gamma") {
+				return QVariant::fromValue(tonemappingSetting.gammaCorrection);
+			}
+			else if (propertyName == "Exposure Enable") {
+				return QVariant::fromValue(exposureSetting.enabled);
+			}
+			else if (propertyName == "Tonemap mode") {
+				QList<QString>list = {"NEUTRAL","REINHARD","REINHARD_JODIE","UNCHARTED2","UNCHARTED2_FILMIC","ACES"};
+				return QVariant::fromValue(list);
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
+			auto bloomSetting = comp->GetBloomSettings();
+			auto fxaaSetting = comp->GetFXAASettings();
+			auto tonemappingSetting = comp->GetTonemappingSettings();
+			auto exposureSetting = comp->GetAutoExposureSettings();
+
+			if (propertyName == "Bloom Intensity") {
+				bloomSetting.intensity = value.value<float>();
+				comp->SetBloomSettings(bloomSetting);
+			}
+			else if (propertyName == "Bloom Pass Count") {
+				bloomSetting.passes= value.value<int>();
+				comp->SetBloomSettings(bloomSetting);
+			}
+			else if (propertyName == "Bloom Enable") {
+				bloomSetting.enabled = value.value<bool>();
+				comp->SetBloomSettings(bloomSetting);
+			}
+			else if (propertyName == "FXAA Enable")
+			{
+				fxaaSetting.enabled = value.value<bool>();
+				comp->SetFXAASettings(fxaaSetting);
+			}
+			else if (propertyName == "Tonemap Enable") {
+				tonemappingSetting.enabled = value.value<bool>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName == "Tonemap mode") {
+				tonemappingSetting.mode = static_cast<Core::Rendering::PostProcess::ETonemappingMode>(value.value<int>());
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName== "Tonemap exposure") {
+				tonemappingSetting.exposure = value.value<float>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if ("Tonemap gamma") {
+				tonemappingSetting.gammaCorrection = value.value<bool>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName == "Exposure Enable") {
+				exposureSetting.enabled = value.value<bool>();
+				comp->SetAutoExposureSettings(exposureSetting);
+			}
+			
+		}
 	};
 	class TransFormPropertyComponent:public ActorPropertyComponent
 	{
@@ -70,9 +289,9 @@ namespace MOON {
 			auto comp = dynamic_cast<Core::ECS::Components::CTransform*>(component);
 			if (propertyName == "position")
 				return QVariant::fromValue(comp->GetWorldPosition());
-			if (propertyName == "scale")
+			else if (propertyName == "scale")
 				return QVariant::fromValue(comp->GetWorldScale());
-			if (propertyName == "rotation") {
+			else if (propertyName == "rotation") {
 				return QVariant::fromValue(comp->GetWorldRotation().EulerAngles());
 			}
 			return QVariant();
@@ -82,10 +301,10 @@ namespace MOON {
 			if (propertyName == "position") {
 				comp->SetWorldPosition(value.value<Maths::FVector3>());
 			}
-			if (propertyName == "scale") {
+			else if (propertyName == "scale") {
 				comp->SetWorldScale(value.value<Maths::FVector3>());
 			}
-			if (propertyName == "rotation") {
+			else if (propertyName == "rotation") {
 				auto euler=value.value<Maths::FVector3>();
 				comp->SetWorldRotation(Maths::FQuaternion(euler));
 			}
@@ -101,6 +320,10 @@ namespace MOON {
 					//auto v = std::get<Maths::FVector3>(mprop.second.value);
 					mProperties.push_back(new FVec3Property(mprop.first.c_str(), this));
 				}
+				else if (std::holds_alternative<float>(mprop.second.value)) {
+					//auto v = std::get<Maths::FVector3>(mprop.second.value);
+					mProperties.push_back(new SliderFloatProperty(mprop.first.c_str(), this));
+				}
 			}
 		}
 		virtual ~MaterialPropertyComponent() {
@@ -113,6 +336,10 @@ namespace MOON {
 					auto v = std::get<Maths::FVector3>(ref.value().value);
 					return QVariant::fromValue(v);
 				}
+				else if (std::holds_alternative<float>(ref.value().value)) {
+					auto v = std::get<float>(ref.value().value);
+					return QVariant::fromValue(v);
+				}
 			}
 			return QVariant();
 		}
@@ -121,6 +348,9 @@ namespace MOON {
 			if (mat->HasProperty(propertyName.toStdString())) {
 				if (value.canConvert<Maths::FVector3>()) {
 					mat->SetProperty(propertyName.toStdString(),value.value<Maths::FVector3>());
+				}
+				else if (value.canConvert<float>()) {
+					mat->SetProperty(propertyName.toStdString(), value.value<float>());
 				}
 			}
 		}
@@ -132,9 +362,11 @@ namespace MOON {
 		if (auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(comp)) {
 			return new  TransFormPropertyComponent(trans);
 		}
-
-		if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CMaterialRenderer*>(comp)) {
 			return new  MaterialPropertyComponent(trans);
+		}
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(comp)) {
+			return new  PostProcessStackPropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);
 	
@@ -194,7 +426,6 @@ namespace MOON {
 					m_comps.clear();
 					for (auto& ptr : m_selectedActor->GetComponents()) {
 						auto actorComp = ptr.get();
-						auto trans = dynamic_cast<Core::ECS::Components::CTransform*>(actorComp);
 						auto p = transferActorPropertyComponent(ptr.get());
 						auto collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
 						layout_->addWidget(collpase);

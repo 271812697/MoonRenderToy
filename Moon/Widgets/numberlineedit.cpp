@@ -1,0 +1,292 @@
+﻿#include "Widgets/numberlineedit.h"
+#include "Widgets/utils.h"
+#include <algorithm>      // for max, min
+#include <array>          // for array
+#include <cmath>          // for floor, log10, abs
+#include <cstdlib>        // for size_t, abs
+#include <iterator>       // for reverse_iterator
+#include <unordered_map>  // for unordered_map, __hash_map_iterator, operator==
+#include <utility>        // for pair
+
+#include <QAbstractSpinBox>     // for QAbstractSpinBox, QAbstractSpinBox::NoButtons
+#include <QChar>                // for operator==, QChar
+#include <QDoubleValidator>     // for QDoubleValidator
+#include <QEvent>               // for QEvent, QEvent::LocaleChange, QEvent::Style...
+#include <QFont>                // for qHash
+#include <QFontMetrics>         // for QFontMetrics
+#include <QLineEdit>            // for QLineEdit
+#include <QLocale>              // for QLocale, QLocale::NumberOptions, QLocale::O...
+#include <QRect>                // for QRect
+#include <QSignalBlocker>       // for QSignalBlocker
+#include <QStyle>               // for QStyle, QStyle::CT_SpinBox
+#include <QStyleOptionSpinBox>  // for QStyleOptionSpinBox
+#include <QTimerEvent>          // for QTimerEvent
+#include <Qt>                   // for StrongFocus
+
+class QFocusEvent;
+class QResizeEvent;
+class QWheelEvent;
+class QWidget;
+namespace MOON {
+    class NumberLineEditPrivate {
+    public:
+        NumberLineEditPrivate();
+
+        void clear();
+
+        int getPrecision(int availableWidth, size_t fontHash, const QFontMetrics& fm);
+
+        QString formatAsScientific(double value, int availableWidth, size_t fontHash,
+            const QFontMetrics& fm);
+        QString formatAsScientific(double value, int precision);
+        QString formatAsNonscientific(double v) const;
+        QString formatAsInt(double value) const;
+
+        void updateLocale();
+
+        QLocale getLocale() const;
+
+    private:
+        QLocale locale_;
+        // hash map with qHash(QFont) as a key and the value mapping the available width of a QLineEdit
+        // to the number of digits fitting inside the widget
+        std::unordered_map<size_t, std::array<int, 513>> widthToDigits_;
+    };
+
+    NumberLineEditPrivate::NumberLineEditPrivate() { updateLocale(); }
+
+    void NumberLineEditPrivate::clear() { widthToDigits_.clear(); }
+
+    int NumberLineEditPrivate::getPrecision(int availableWidth, size_t fontHash,
+        const QFontMetrics& fm) {
+        availableWidth = std::min(std::max(availableWidth, 0), 512);
+        auto it = widthToDigits_.find(fontHash);
+        if (it == widthToDigits_.end()) {
+            it = widthToDigits_
+                .insert({ fontHash,
+                         []() {
+                             std::array<int, 513> ret;
+                             ret.fill(-1);
+                             return ret;
+                         }() })
+                .first;
+        }
+        else {
+            const int digits = it->second[availableWidth];
+            if (digits > -1) {
+                return digits;
+            }
+        }
+        const double refValue = -8.88888888888888888888;
+
+        int precision = 16;
+        QString str = locale_.toString(refValue, 'g', precision);
+        while ((precision > 0) && (fm.boundingRect(str).width() > availableWidth)) {
+            str = locale_.toString(refValue, 'g', --precision);
+        }
+        it->second[availableWidth] = precision;
+        return precision;
+    }
+
+    QString NumberLineEditPrivate::formatAsScientific(double value, int availableWidth, size_t fontHash,
+        const QFontMetrics& fm) {
+        return formatAsScientific(value, getPrecision(availableWidth, fontHash, fm));
+    }
+
+    QString NumberLineEditPrivate::formatAsScientific(double value, int precision) {
+        return locale_.toString(value, 'g', precision);
+    }
+
+    QString NumberLineEditPrivate::formatAsNonscientific(double value) const {
+        // default representation has 8 decimals after the decimal point, e.g. a value of
+        // 0.123456789 yields "0.12345679". Each order of magnitude reduces the number of decimals by
+        // one, i.e. 100.12345678 will be represented as "100.123457". Numbers smaller than 1e-6 are
+        // shown in scientific representation.
+        const int visibleDigits = 8;
+        const double scientificRepThreshold = 1e-6;
+
+        if (std::abs(value) < scientificRepThreshold) {
+            return locale_.toString(value, 'g', visibleDigits + 1);
+        }
+        else {
+            const int int_digits =
+                static_cast<int>(std::floor(std::log10(std::max(std::abs(value), 1.0)))) + 1;
+            QString str = locale_.toString(value, 'f', std::max(visibleDigits + 1 - int_digits, 1));
+            if (str.contains(locale_.decimalPoint())) {
+                // remove trailing zeros
+                while (*str.rbegin() == '0') {
+                    str.chop(1);
+                }
+                if (*str.rbegin() == locale_.decimalPoint()) {
+                    str.chop(1);
+                }
+            }
+            return str;
+        }
+    }
+
+    QString NumberLineEditPrivate::formatAsInt(double value) const {
+        return locale_.toString(static_cast<long long int>(value));
+    }
+
+    void NumberLineEditPrivate::updateLocale() {
+        locale_ = QLocale::system();
+        locale_.setNumberOptions(locale_.numberOptions().setFlag(QLocale::OmitGroupSeparator, true));
+    }
+
+    QLocale NumberLineEditPrivate::getLocale() const { return locale_; }
+
+    std::unique_ptr<NumberLineEditPrivate> NumberLineEdit::nlePrivate_(new NumberLineEditPrivate);
+
+    NumberLineEdit::NumberLineEdit(QWidget* parent) : NumberLineEdit(false, parent) {}
+
+    NumberLineEdit::NumberLineEdit(bool intMode, QWidget* parent)
+        : QDoubleSpinBox(parent), integerMode_(intMode), minimumWidth_{emToPx(this, 4) } {
+        validator_ = new QDoubleValidator(this);
+        validator_->setNotation(QDoubleValidator::ScientificNotation);
+        lineEdit()->setValidator(validator_);
+        // need a high precision in QDoubleSpinBox since min and max values are rounded using the
+        // number of decimals
+        QDoubleSpinBox::setDecimals(20);
+        setFocusPolicy(Qt::StrongFocus);
+    }
+
+    NumberLineEdit::~NumberLineEdit() = default;
+
+    QSize NumberLineEdit::sizeHint() const {
+        if (cachedMinimumSizeHint_.isEmpty()) {
+            cachedMinimumSizeHint_ = calcMinimumSize();
+        }
+        return cachedMinimumSizeHint_;
+    }
+
+    QSize NumberLineEdit::minimumSizeHint() const {
+        if (cachedMinimumSizeHint_.isEmpty()) {
+            cachedMinimumSizeHint_ = calcMinimumSize();
+        }
+        return cachedMinimumSizeHint_;
+    }
+
+    QSize NumberLineEdit::calcMinimumSize() const {
+        ensurePolished();
+        QSize hint(minimumWidth_, lineEdit()->minimumSizeHint().height());
+        QStyleOptionSpinBox opt;
+        initStyleOption(&opt);
+
+        QSize sizeContents = style()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
+        // For some odd reason, sizeFromContents always includes the spinbox buttons
+        if (opt.buttonSymbols == QAbstractSpinBox::NoButtons) {
+            sizeContents.setWidth(sizeContents.width() - static_cast<int>(sizeContents.height() / 1.2));
+        }
+        return sizeContents;
+    }
+
+    bool NumberLineEdit::isValid() const { return !invalid_; }
+
+    void NumberLineEdit::setInvalid(bool invalid) {
+        invalid_ = invalid;
+        setValue(value());
+    }
+
+    QString NumberLineEdit::textFromValue(double value) const {
+        if (invalid_) {
+            return "-";
+        }
+
+        auto formatNumber = [&](double v) {
+            if (integerMode_) {
+                return nlePrivate_->formatAsInt(v);
+            }
+            else {
+                return nlePrivate_->formatAsNonscientific(v);
+            }
+            };
+
+        if (abbreviated_) {
+            ensurePolished();
+            const int availableWidth = lineEdit()->geometry().width() - 4;
+            QFontMetrics fm = lineEdit()->fontMetrics();
+
+            auto str = formatNumber(value);
+            if (fm.boundingRect(str).width() < availableWidth) {
+                return str;
+            }
+
+            str = nlePrivate_->formatAsScientific(value, availableWidth, qHash(lineEdit()->font()), fm);
+            if (fm.boundingRect(str).width() > availableWidth) {
+                str = nlePrivate_->formatAsScientific(value, 1);
+            }
+            return str;
+        }
+        return formatNumber(value);
+    }
+
+    double NumberLineEdit::valueFromText(const QString& str) const {
+        bool ok = false;
+        double value = nlePrivate_->getLocale().toDouble(str, &ok);
+        return ok ? value : QDoubleSpinBox::value();
+    }
+
+    QValidator::State NumberLineEdit::validate(QString& text, int& pos) const {
+        return validator_->validate(text, pos);
+    }
+
+    void NumberLineEdit::setDecimals(int decimals) {
+        visibleDecimals_ = decimals;
+        QDoubleSpinBox::setDecimals(decimals);
+    }
+
+    void NumberLineEdit::setMinimum(double min) { QDoubleSpinBox::setMinimum(min); }
+
+    void NumberLineEdit::setMaximum(double max) { QDoubleSpinBox::setMaximum(max); }
+
+    void NumberLineEdit::setRange(double min, double max) { QDoubleSpinBox::setRange(min, max); }
+
+    void NumberLineEdit::setIncrement(double inc) {
+        QDoubleSpinBox::setSingleStep(inc);
+        QDoubleSpinBox::setButtonSymbols(inc == 0.0 ? QAbstractSpinBox::NoButtons
+            : QAbstractSpinBox::UpDownArrows);
+    }
+
+    void NumberLineEdit::timerEvent(QTimerEvent* event) { event->accept(); }
+
+    void NumberLineEdit::focusInEvent(QFocusEvent* e) {
+        abbreviated_ = false;
+        {
+            QSignalBlocker block(lineEdit());
+            lineEdit()->setText(textFromValue(value()));
+        }
+        QDoubleSpinBox::focusInEvent(e);
+    }
+
+    void NumberLineEdit::focusOutEvent(QFocusEvent* e) {
+        abbreviated_ = true;
+        QDoubleSpinBox::focusOutEvent(e);
+    }
+
+    void NumberLineEdit::resizeEvent(QResizeEvent* e) {
+        QDoubleSpinBox::resizeEvent(e);
+        setSpecialValueText(specialValueText());
+    }
+
+    void NumberLineEdit::changeEvent(QEvent* e) {
+        if (e->type() == QEvent::LocaleChange) {
+            nlePrivate_->updateLocale();
+        }
+        else if (e->type() == QEvent::StyleChange) {
+            cachedMinimumSizeHint_ = QSize();
+            updateGeometry();
+        }
+        QDoubleSpinBox::changeEvent(e);
+    }
+
+    void NumberLineEdit::wheelEvent(QWheelEvent* e) {
+        if (hasFocus() && !invalid_) QDoubleSpinBox::wheelEvent(e);
+    }
+
+    void NumberLineEdit::stepBy(int step) {
+        QDoubleSpinBox::stepBy(step);
+        emit editingFinished();
+    }
+
+}

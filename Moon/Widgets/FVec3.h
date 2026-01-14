@@ -18,6 +18,7 @@ public:
     float x() const;
     float y() const;
     float z() const;
+   
 public Q_SLOTS:
     void onValueChange(double val);
 private:
