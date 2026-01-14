@@ -20,7 +20,7 @@ namespace MOON {
 	}
 	void SliderCheckBox::setValue(bool val)
 	{
-		m_checkBox->setChecked(val);
+		m_checkBox->setCheckValue(val);
 	}
 	void SliderCheckBox::toggle(bool val)
 	{

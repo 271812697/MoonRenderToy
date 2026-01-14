@@ -10,7 +10,8 @@ namespace MOON {
 	public:
 		NodeBoolWidget(NodeBase* node ,QWidget* parent = nullptr, const QString& text = "") :SlidingCheckBox(parent,text),mNode(node){
 			connect(this, &SlidingCheckBox::clicked, [this](bool value) {
-				mNode->setData<bool>(value);
+			
+				mNode->setData<bool>(this->checkValue());
 			});
 		}
 	private:
@@ -254,7 +255,7 @@ namespace MOON {
 		add("View", "debugElements", false);
 		add("View", "BvhRayHit", true);
 		add("View", new DragFloat(0.5, 0.5, 10.0, "zoom speed"));
-		add("PathTracing", "PathTrace", false);
+		add("PathTracing", "PathTrace", true);
 		add("PathTracing", "reBuildBvh", false);
 		add("PathTracing", "Denoise", true);
 		
@@ -291,7 +292,7 @@ namespace MOON {
 		std::string type = getType();
 		if (type == "bool") {
 			auto check=new NodeBoolWidget(this, parent);
-			check->setChecked(!this->getData<bool>());
+			check->setCheckValue(this->getData<bool>());
 			return check;
 		}
 		else if (type=="int") {

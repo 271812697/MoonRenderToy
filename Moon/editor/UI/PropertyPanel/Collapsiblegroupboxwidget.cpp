@@ -43,12 +43,24 @@ namespace MOON {
 			btnCollapse_->setChecked(false);
 			btnCollapse_->setObjectName("collapseButton");
 			btnCollapse_->setFocusPolicy(Qt::StrongFocus);
-			
+			btnCollapse_->setStyleSheet(R"(
+        QToolButton {
+            border: none;                  /* 移除所有边框 */
+            background-color: transparent; /* 背景透明（可选） */
+            padding: 5px;                  /* 内边距，避免文字贴边 */
+        }
+        /* 可选：移除焦点时的虚线边框 */
+        QToolButton:focus {
+            outline: none;
+        }
+    )");
+			btnCollapse_->setIcon(QIcon(":/widgets/icons/arrow_right.svg"));
 			label_ = new QLabel("set", mSelf);
 			updateFocusPolicy();
 			QHBoxLayout* heading = new QHBoxLayout();
 			heading->setContentsMargins(0, 0, 0, 0);
 			heading->addWidget(btnCollapse_);
+			heading->setSpacing(5);
 			heading->addWidget(label_);
 			QVBoxLayout* layout = new QVBoxLayout();
 			
@@ -65,6 +77,8 @@ namespace MOON {
 			mSelf->setUpdatesEnabled(false);
 			propertyWidgetGroup_->setVisible(!collapse);
 			btnCollapse_->setChecked(collapse);
+			btnCollapse_->setIcon(
+				collapse ? QIcon(":/widgets/icons/arrow_right.svg") : QIcon(":/widgets/icons/arrow_down.svg"));
 			mSelf->setUpdatesEnabled(true);
 		}
 	private:
@@ -83,6 +97,7 @@ namespace MOON {
 	{
 		mInternal->label_->setText(name);
 		connect(mInternal->btnCollapse_, &QToolButton::toggled, this, &CollapsibleGroupBoxWidget::setCollapsed);
+		mInternal->setCollapsed(true);
 	}
 	CollapsibleGroupBoxWidget::~CollapsibleGroupBoxWidget()
 	{

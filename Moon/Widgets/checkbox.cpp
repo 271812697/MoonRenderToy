@@ -17,25 +17,24 @@ SlidingCheckBox::SlidingCheckBox(QWidget* parent, const QString& text)
 {
     setText(text);
     setCheckable(true);
-    m_bgColor = m_uncheckedColor;
-
+    m_bgColor = m_checkedColor;
+    
     // 创建动画对象
     m_anim = new QPropertyAnimation(this, "circleX", this);
     m_anim->setDuration(300); // 动画持续时间
     m_anim->setEasingCurve(QEasingCurve::InOutCubic); // 缓动曲线
-    int startX = checked ? (m_circleRadius + 1) : (m_rectWidth - m_circleRadius - 1);
-    int endX = checked ? (m_rectWidth - m_circleRadius - 1) : (m_circleRadius + 1);
-    m_anim->setStartValue(startX);
-    m_anim->setEndValue(endX);
-    m_anim->start();   
-
     // 背景颜色动画
     colorAnim = new QPropertyAnimation(this, "bgColor", this);
     colorAnim->setDuration(500);
     colorAnim->setEasingCurve(QEasingCurve::InOutCubic);
-    colorAnim->setStartValue(checked ? m_uncheckedColor : m_checkedColor);
-    colorAnim->setEndValue(checked ? m_checkedColor : m_uncheckedColor);
-    colorAnim->start();
+}
+
+void SlidingCheckBox::setCheckValue(bool value)
+{
+    checked = value;
+    setChecked(checked);
+	m_bgColor = checked ? m_checkedColor : m_uncheckedColor;
+    m_circleX = checked ? (m_rectWidth - m_circleRadius - 1) : (m_circleRadius + 1);
 }
 
 void SlidingCheckBox::paintEvent(QPaintEvent* event)
@@ -101,8 +100,6 @@ void SlidingCheckBox::onStateChanged()
     m_anim->start();
 
     // 启动颜色动画
-
-
     colorAnim->setStartValue(checked ? m_uncheckedColor : m_checkedColor);
     colorAnim->setEndValue(checked ? m_checkedColor : m_uncheckedColor);
     colorAnim->start();

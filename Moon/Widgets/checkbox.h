@@ -23,6 +23,8 @@ public:
 
     QColor bgColor() const { return m_bgColor; }
     void setBgColor(const QColor& color) { m_bgColor = color; update(); }
+	bool checkValue() const { return checked; }
+    void setCheckValue(bool value);
 
   
 protected:

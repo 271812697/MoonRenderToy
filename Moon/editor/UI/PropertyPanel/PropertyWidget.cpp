@@ -81,7 +81,6 @@ namespace MOON {
 			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
 		}
 		virtual void updateWidgetValue(const QVariant& value)override {
-			//widget->setVec3Value(value.value<Maths::FVector3>());
 		}
 	private:
 		SliderCheckBox* widget = nullptr;
@@ -154,10 +153,14 @@ namespace MOON {
 	{
 	public:
 		PostProcessStackPropertyComponent(Core::ECS::Components::CPostProcessStack* comp) :ActorPropertyComponent(comp) {
-			mProperties.push_back(new  BoolProperty("Bloom Enable",this));
+			mProperties.push_back(new BoolProperty("Bloom Enable",this));
 			mProperties.push_back(new SliderFloatProperty("Bloom Intensity", this));
 			mProperties.push_back(new SliderIntProperty("Bloom Pass Count", this));
-			
+			mProperties.push_back(new BoolProperty("FXAA Enable", this));
+			mProperties.push_back(new BoolProperty("Tonemap Enable", this));
+			mProperties.push_back(new SliderFloatProperty("Tonemap exposure", this));
+			mProperties.push_back(new BoolProperty("Tonemap gamma", this));
+			mProperties.push_back(new BoolProperty("Exposure Enable", this));
 		}
 		virtual ~PostProcessStackPropertyComponent() {
 
@@ -165,6 +168,9 @@ namespace MOON {
 		virtual QVariant getPropertyValue(const QString& propertyName)override {
 			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
 			auto bloomSetting=comp->GetBloomSettings();
+			auto fxaaSetting = comp->GetFXAASettings();
+			auto tonemappingSetting = comp->GetTonemappingSettings();
+			auto exposureSetting = comp->GetAutoExposureSettings();
 			if (propertyName == "Bloom Intensity")
 				return QVariant::fromValue(bloomSetting.intensity);
 			else if (propertyName == "Bloom Pass Count")
@@ -172,22 +178,64 @@ namespace MOON {
 			else if (propertyName == "Bloom Enable") {
 				return QVariant::fromValue(bloomSetting.enabled);
 			}
+			else if (propertyName == "FXAA Enable") {
+				return QVariant::fromValue(fxaaSetting.enabled);
+			}
+			else if (propertyName == "Tonemap Enable") {
+				return QVariant::fromValue(tonemappingSetting.enabled);
+			}
+			else if (propertyName == "Tonemap exposure") {
+				return QVariant::fromValue(tonemappingSetting.exposure);
+			}
+			else if (propertyName == "Tonemap gamma") {
+				return QVariant::fromValue(tonemappingSetting.gammaCorrection);
+			}
+			else if (propertyName == "Exposure Enable") {
+				return QVariant::fromValue(exposureSetting.enabled);
+			}
 			return QVariant();
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
 			auto comp = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(component);
 			auto bloomSetting = comp->GetBloomSettings();
+			auto fxaaSetting = comp->GetFXAASettings();
+			auto tonemappingSetting = comp->GetTonemappingSettings();
+			auto exposureSetting = comp->GetAutoExposureSettings();
+
 			if (propertyName == "Bloom Intensity") {
 				bloomSetting.intensity = value.value<float>();
-				
+				comp->SetBloomSettings(bloomSetting);
 			}
 			else if (propertyName == "Bloom Pass Count") {
 				bloomSetting.passes= value.value<int>();
+				comp->SetBloomSettings(bloomSetting);
 			}
 			else if (propertyName == "Bloom Enable") {
 				bloomSetting.enabled = value.value<bool>();
+				comp->SetBloomSettings(bloomSetting);
 			}
-			comp->SetBloomSettings(bloomSetting);
+			else if (propertyName == "FXAA Enable")
+			{
+				fxaaSetting.enabled = value.value<bool>();
+				comp->SetFXAASettings(fxaaSetting);
+			}
+			else if (propertyName == "Tonemap Enable") {
+				tonemappingSetting.enabled = value.value<bool>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName== "Tonemap exposure") {
+				tonemappingSetting.exposure = value.value<float>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if ("Tonemap gamma") {
+				tonemappingSetting.gammaCorrection = value.value<bool>();
+				comp->SetTonemappingSettings(tonemappingSetting);
+			}
+			else if (propertyName == "Exposure Enable") {
+				exposureSetting.enabled = value.value<bool>();
+				comp->SetAutoExposureSettings(exposureSetting);
+			}
+			
 		}
 	};
 	class TransFormPropertyComponent:public ActorPropertyComponent

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 由 Microsoft Visio, SVG Export 生成 arrow_down.svg 页-1 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="1.42093in" height="0.811653in"
+		viewBox="0 0 102.307 58.439" xml:space="preserve" color-interpolation-filters="sRGB" class="st2">
+	<v:documentProperties v:langID="2052" v:metric="true" v:viewMarkup="false"/>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {stroke:#bfbfbf;stroke-linecap:round;stroke-linejoin:round;stroke-width:15}
+		.st2 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<g v:mID="0" v:index="1" v:groupContext="foregroundPage">
+		<title>页-1</title>
+		<v:pageProperties v:drawingScale="0.0393701" v:pageScale="0.0393701" v:drawingUnits="24" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<g id="group4-1" transform="translate(65.939,7.5) rotate(90)" v:mID="4" v:groupContext="group">
+			<title>工作表.4</title>
+			<g id="shape1-2" v:mID="1" v:groupContext="shape" transform="translate(41.3226,-70.1907) rotate(45)">
+				<title>工作表.1</title>
+				<path d="M0 58.44 L61.43 58.44" class="st1"/>
+			</g>
+			<g id="shape2-5" v:mID="2" v:groupContext="shape" transform="translate(84.9642,55.6901) rotate(134.718)">
+				<title>工作表.2</title>
+				<path d="M0 58.44 L61.74 58.44" class="st1"/>
+			</g>
+		</g>
+	</g>
+</svg>
