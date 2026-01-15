@@ -3,6 +3,7 @@
 #include "core/ECS/Actor.h"
 #include "core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CPostProcessStack.h"
+#include "Core/ECS/Components/CPointLight.h"
 #include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/PropertyPanel/PropertyModel.h"
@@ -12,6 +13,7 @@
 #include "Widgets/SlideChekBox.h"
 #include "Widgets/FVec3.h"
 #include "Widgets/ComboBox.h"
+#include "Widgets/ColorPicker.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -174,6 +176,34 @@ namespace MOON {
 	private:
 		IntSliderWidgetQt* widget = nullptr;
 	};
+
+	class ColorPickerProperty :public Property {
+	public:
+		ColorPickerProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
+
+		}
+		~ColorPickerProperty() {
+
+		}
+		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
+			if (widget == nullptr) {
+				widget = new ColorPicker(parent,this);
+				widget->setCurrentColor(owner->getPropertyValue(mName).value<QColor>());
+			}
+			return widget;
+		}
+		virtual void setOwnerPropertyValue(const QVariant& value)override {
+			owner->setPropertyValue(mName, value);
+		}
+		virtual void onWidgetValueChange()override {
+			setOwnerPropertyValue(QVariant::fromValue(widget->currentColor()));
+		}
+		virtual void updateWidgetValue(const QVariant& value)override {
+			//widget->setVec3Value(value.value<Maths::FVector3>());
+		}
+	private:
+		ColorPicker* widget = nullptr;
+	};
 	}
 
 	class PostProcessStackPropertyComponent :public ActorPropertyComponent
@@ -310,6 +340,36 @@ namespace MOON {
 			}
 		}
 	};
+	class PointLightPropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		PointLightPropertyComponent(Core::ECS::Components::CPointLight* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new SliderFloatProperty("intensity", this));
+			mProperties.push_back(new ColorPickerProperty("color", this));
+		}
+		virtual ~PointLightPropertyComponent() {
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPointLight*>(component);
+			if (propertyName== "intensity") {
+				return QVariant::fromValue(comp->GetIntensity());
+			}else if (propertyName == "color") {
+				auto color=comp->GetColor();
+				return QVariant::fromValue(QColor(color.x * 255, color.y * 255, color.z * 255));
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CPointLight*>(component);
+			if (propertyName == "intensity") {
+				comp->SetIntensity(value.value<float>());
+			}
+			else if (propertyName == "color") {
+				auto color=value.value<QColor>();
+				comp->SetColor({color.red()/255.0f,color.green() / 255.0f,color.blue() / 255.0f });
+			}
+		}
+	};
 	class MaterialPropertyComponent :public ActorPropertyComponent
 	{
 	public:
@@ -367,6 +427,10 @@ namespace MOON {
 		}
 		else if (auto trans = dynamic_cast<Core::ECS::Components::CPostProcessStack*>(comp)) {
 			return new  PostProcessStackPropertyComponent(trans);
+		}
+		else if (auto trans=dynamic_cast<Core::ECS::Components::CPointLight*>(comp))
+		{
+			return new PointLightPropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);
 	
