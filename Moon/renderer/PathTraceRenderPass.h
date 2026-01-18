@@ -22,6 +22,7 @@ namespace Editor::Rendering
 		~PathTraceRenderPass();
 	    
 		void DestoryResource();
+		void UpdateGPUMaterial();
 		void UpdateGPUDataBuffers();
 		void UpdateTriangleInfoBuffer();
 		void UpdateFBOs();
@@ -84,5 +85,6 @@ namespace Editor::Rendering
 		bool initialized;
 		bool refreshFlag = true;
 		bool needUpdateShader = false;
+		
 	};
 }

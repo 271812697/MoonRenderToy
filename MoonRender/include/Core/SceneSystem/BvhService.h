@@ -4,6 +4,7 @@
 #include <Rendering/HAL/Texture.h>
 #include <Core/ECS/Actor.h>
 #include <Core/SceneSystem/Intersection.h>
+#include <Rendering/Geometry/ray.h>
 namespace Rendering::Resources {
 	class Mesh;
 }
@@ -264,6 +265,7 @@ namespace Core::SceneSystem
 	private:
 		Scene* scene;
 	public:
+		bool isMaterialDirty = false;
 		bool isDirty = false;
 		bool isTriangleDirty = false;
 		friend class Scene;

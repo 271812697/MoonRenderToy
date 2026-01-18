@@ -1,5 +1,5 @@
 ﻿#include "Widgets/FVec3.h"
-#include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/Property.h"
 namespace MOON {
 Fvec3::Fvec3(QWidget* parent, Property* prop) : PropertyQtWidget(parent,prop)
 {

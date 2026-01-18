@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <QWidget>
-#include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/Property.h"
 namespace MOON {
 	class CollapsibleGroupBoxWidget:public QWidget {
 		Q_OBJECT

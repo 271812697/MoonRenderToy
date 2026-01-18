@@ -433,6 +433,7 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 	// Build BVH
 	if (meshInstances.size()>0) {
 		bvhService->Process(bounds,sceneMeshes, meshInstances);	
+		
 	}
 }
 

@@ -4,16 +4,18 @@
 #include "core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CPostProcessStack.h"
 #include "Core/ECS/Components/CPointLight.h"
+#include "core/ECS/Components/CDirectionalLight.h"
 #include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
-#include "editor/UI/PropertyPanel/PropertyModel.h"
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
-#include "editor/UI/PropertyPanel/Property.h"
-#include "Widgets/sliderwidget.h"
-#include "Widgets/SlideChekBox.h"
-#include "Widgets/FVec3.h"
-#include "Widgets/ComboBox.h"
-#include "Widgets/ColorPicker.h"
+#include "Widgets/PropertyComponent.h"
+#include "Widgets/Property.h"
+#include "Widgets/BoolProperty.h"
+#include "Widgets/FVec3Property.h"
+#include "Widgets/EnumProperty.h"
+#include "Widgets/SliderFloatProperty.h"
+#include "Widgets/SliderIntProperty.h"
+#include "Widgets/ColorPickerProperty.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -34,178 +36,6 @@
 #include <fstream>
 
 namespace MOON {
-	namespace {
-	class FVec3Property :public Property {
-	public:
-		FVec3Property(const QString& n , ActorPropertyComponent* comp):Property(n,comp){
-
-		}
-		~FVec3Property() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new Fvec3(parent,this);
-				widget->setVec3Value(owner->getPropertyValue(mName).value<Maths::FVector3>());
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->getVec3Value()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-			widget->setVec3Value(value.value<Maths::FVector3>());
-		}
-	private:
-		Fvec3* widget = nullptr;
-	};
-	class BoolProperty :public Property {
-	public:
-		BoolProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
-
-		}
-		~BoolProperty() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new SliderCheckBox(parent, this);
-				widget->setValue(owner->getPropertyValue(mName).value<bool>());
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-		}
-	private:
-		SliderCheckBox* widget = nullptr;
-	};
-	class EnumProperty :public Property {
-	public:
-		EnumProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
-
-		}
-		~EnumProperty() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new ComboBox(parent, this);
-				widget->addComboList(owner->getPropertyValue(mName).value<QList<QString>>());
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->getCurrentIndex()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-		}
-	private:
-		ComboBox* widget = nullptr;
-	};
-	class SliderFloatProperty :public Property {
-	public:
-		SliderFloatProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
-
-		}
-		~SliderFloatProperty() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new FloatSliderWidgetQt(parent);
-				widget->setProp(this);
-				widget->setValue(owner->getPropertyValue(mName).toFloat());
-				widget->setMinValue(-10.0f);
-				widget->setMaxValue(10.0f);
-				widget->setIncrement(0.05f);
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-			//widget->setVec3Value(value.value<Maths::FVector3>());
-		}
-	private:
-		FloatSliderWidgetQt* widget = nullptr;
-	};
-	class SliderIntProperty :public Property {
-	public:
-		SliderIntProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
-
-		}
-		~SliderIntProperty() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new IntSliderWidgetQt(parent);
-				widget->setProp(this);
-				widget->setValue(owner->getPropertyValue(mName).toInt());
-				widget->setMinValue(-10);
-				widget->setMaxValue(10);
-				widget->setIncrement(1);
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->getValue()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-			//widget->setVec3Value(value.value<Maths::FVector3>());
-		}
-	private:
-		IntSliderWidgetQt* widget = nullptr;
-	};
-
-	class ColorPickerProperty :public Property {
-	public:
-		ColorPickerProperty(const QString& n, ActorPropertyComponent* comp) :Property(n, comp) {
-
-		}
-		~ColorPickerProperty() {
-
-		}
-		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override {
-			if (widget == nullptr) {
-				widget = new ColorPicker(parent,this);
-				widget->setCurrentColor(owner->getPropertyValue(mName).value<QColor>());
-			}
-			return widget;
-		}
-		virtual void setOwnerPropertyValue(const QVariant& value)override {
-			owner->setPropertyValue(mName, value);
-		}
-		virtual void onWidgetValueChange()override {
-			setOwnerPropertyValue(QVariant::fromValue(widget->currentColor()));
-		}
-		virtual void updateWidgetValue(const QVariant& value)override {
-			//widget->setVec3Value(value.value<Maths::FVector3>());
-		}
-	private:
-		ColorPicker* widget = nullptr;
-	};
-	}
-
 	class PostProcessStackPropertyComponent :public ActorPropertyComponent
 	{
 	public:
@@ -370,6 +200,37 @@ namespace MOON {
 			}
 		}
 	};
+	class DirectionLightPropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		DirectionLightPropertyComponent(Core::ECS::Components::CDirectionalLight* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new SliderFloatProperty("intensity", this));
+			mProperties.push_back(new ColorPickerProperty("color", this));
+		}
+		virtual ~DirectionLightPropertyComponent() {
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CDirectionalLight*>(component);
+			if (propertyName == "intensity") {
+				return QVariant::fromValue(comp->GetIntensity());
+			}
+			else if (propertyName == "color") {
+				auto color = comp->GetColor();
+				return QVariant::fromValue(QColor(color.x * 255, color.y * 255, color.z * 255));
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CDirectionalLight*>(component);
+			if (propertyName == "intensity") {
+				comp->SetIntensity(value.value<float>());
+			}
+			else if (propertyName == "color") {
+				auto color = value.value<QColor>();
+				comp->SetColor({ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f });
+			}
+		}
+	};
 	class MaterialPropertyComponent :public ActorPropertyComponent
 	{
 	public:
@@ -432,6 +293,10 @@ namespace MOON {
 		{
 			return new PointLightPropertyComponent(trans);
 		}
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CDirectionalLight*>(comp))
+		{
+			return new DirectionLightPropertyComponent(trans);
+		}
 		return new ActorPropertyComponent(comp);
 	
 	}
@@ -444,23 +309,7 @@ namespace MOON {
 			// 布局
 			layout_ = new QVBoxLayout(mSelf);
 			layout_->setContentsMargins(0, 0, 0, 0);
-			// 初始化控件
-			//m_treeView = new QTreeView(mSelf);
-			//m_treeView->setRootIsDecorated(false);
-			//m_propertyModel = new PropertyTreeModel(mSelf);
-			//m_propertyDelegate = new PropertyDelegate(mSelf);
-			////m_coll = new CollapsibleGroupBoxWidget(mSelf);
-			//
-			//// 配置TreeView
-			//m_treeView->setModel(m_propertyModel);
-			//m_treeView->setItemDelegate(m_propertyDelegate);
-			//
-			//
-			//m_treeView->setColumnWidth(0, 50); // 设置第一列宽度
-			//m_treeView->header()->setSectionResizeMode(QHeaderView::Stretch); // 第二列自适应
 
-			//layout_->addWidget(m_treeView);
-			//layout->addWidget(m_coll);
 			mSelf->setLayout(layout_);
 		}
 		~PropertyWidgetInternal() {
@@ -508,8 +357,6 @@ namespace MOON {
 		QVBoxLayout* layout_ = nullptr;
 		QTreeView* m_treeView;
 		
-		PropertyTreeModel* m_propertyModel;
-		PropertyDelegate* m_propertyDelegate;
 		Core::ECS::Actor* m_selectedActor=nullptr;          // 当前选中的Actor
 		std::vector<std::pair<CollapsibleGroupBoxWidget*, ActorPropertyComponent*>>m_comps;
 	};

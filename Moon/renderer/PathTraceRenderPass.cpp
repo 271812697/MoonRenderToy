@@ -1,4 +1,5 @@
 ﻿#include <tracy/Tracy.hpp>
+#include <editor/UI/SettingPanel/RenderSettingWidget.h>
 #include <Core/ECS/Components/CPostProcessStack.h>
 #include "renderer/PathTraceRenderPass.h"
 #include <Core/Global/ServiceLocator.h>
@@ -369,6 +370,35 @@ void main()
 		delete[] denoiserInputFramePtr;
 		delete[] frameOutputPtr;
 	}
+	void PathTraceRenderPass::UpdateGPUMaterial()
+	{
+		auto& view = GetService(Editor::Panels::SceneView);;
+		auto bvhService = view.GetScene()->GetBvhService();
+		::Rendering::Settings::TextureDesc desc;
+		desc.isTextureBuffer = true;
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32F;
+		desc.buffetLen = bvhService->nodes.size() * sizeof(::Core::SceneSystem::BvhService::Node);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.data = bvhService->nodes.data()
+		};
+		//Material Texture
+		desc.isTextureBuffer = false;
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+		desc.width = bvhService->materials.size() * (sizeof(::Core::SceneSystem::Material) / sizeof(Maths::FVector4));
+		desc.height = 1;
+		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
+		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
+		desc.buffetLen = bvhService->materials.size() * sizeof(::Core::SceneSystem::Material);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.format = ::Rendering::Settings::EFormat::RGBA,
+			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
+			.data = bvhService->materials.data()
+		};
+		if (materialsTex == nullptr) {
+			materialsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
+		}
+		materialsTex->Allocate(desc);
+	}
 	void PathTraceRenderPass::UpdateGPUDataBuffers() {
 		auto& view = GetService(Editor::Panels::SceneView);;
 		auto bvhService = view.GetScene()->GetBvhService();
@@ -422,23 +452,7 @@ void main()
 		}
 		normalsTex->Allocate(desc);
 
-		//Material Texture
-		desc.isTextureBuffer = false;
-		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
-		desc.width = bvhService->materials.size() * (sizeof(::Core::SceneSystem::Material) / sizeof(Maths::FVector4));
-		desc.height = 1;
-		desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
-		desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST;
-		desc.buffetLen = bvhService->materials.size() * sizeof(::Core::SceneSystem::Material);
-		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-			.format = ::Rendering::Settings::EFormat::RGBA,
-			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
-			.data = bvhService->materials.data()
-		};
-		if (materialsTex== nullptr) {
-			materialsTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_2D);
-		}
-		materialsTex->Allocate(desc);
+		UpdateGPUMaterial();
 
 		// Transform Texture
 		desc.isTextureBuffer = false;
@@ -778,6 +792,7 @@ void main()
 			bvhService->isDirty = false;
 			refreshFlag = true;
 			UpdateGPUDataBuffers();
+			GetService(MOON::RenderSettingWidget).Refresh();
 		}
 		if (needUpdateShader) {
 			needUpdateShader = false;
@@ -797,14 +812,20 @@ void main()
 	void PathTraceRenderPass::Update() {
 		auto& view = GetService(Editor::Panels::SceneView);
 		auto camera=view.GetCamera();
-		if (camera->IsCameraViewMatrixChange()) {
+		auto bvhService = view.GetScene()->GetBvhService();
+		if (camera->IsCameraViewMatrixChange()||bvhService->isMaterialDirty) {
 			refreshFlag = true;
 		}
-		auto bvhService = view.GetScene()->GetBvhService();
+		
 		if (!refreshFlag && bvhService->renderOptions.maxSpp != -1 && sampleCounter >= bvhService->renderOptions.maxSpp)
 			return;
 		
 		//更新场景
+		if (bvhService->isMaterialDirty) {
+			UpdateGPUMaterial();
+			bvhService->isMaterialDirty = false;
+			
+		}
 		//if (scene->instancesModified)
 		//{
 		//	// Transform
