@@ -4,6 +4,7 @@
 #include "Settings/DebugSetting.h"
 #include "Widgets/checkbox.h"
 #include "editor/UI/SettingPanel/RenderSettingWidget.h"
+#include "Widgets/utils.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -102,7 +103,10 @@ namespace MOON {
 			m_navTree->addTopLevelItem(item);
 			QScrollArea* scrollArea = new QScrollArea();
 			scrollArea->setWidgetResizable(true);
-			scrollArea->setStyleSheet("QScrollArea { background-color: #f5f5f5; }");
+			scrollArea->setMinimumWidth(emToPx(m_contentStack, 30));
+			scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+			scrollArea->setFrameShape(QFrame::NoFrame);
+			scrollArea->setContentsMargins(0, 0, 0, 0);
 			scrollArea->setWidget(new RenderSettingWidget(mSelf));
 			m_contentStack->addWidget(scrollArea);
 			// 添加到主布局

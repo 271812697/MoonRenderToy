@@ -634,27 +634,27 @@ void main()
 			pathtraceDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 			tonemapDefines += "#define OPT_TRANSPARENT_BACKGROUND\n";
 		}
-		//for (int i = 0; i < bvhService->materials.size(); i++)
-		//{
-		//	if ((int)bvhService->materials[i].alphaMode != ::Core::SceneSystem::AlphaMode::Opaque)
-		//	{
-		//		pathtraceDefines += "#define OPT_ALPHA_TEST\n";
-		//		bvhService->renderOptions.optAlphaTest = true;
-		//		break;
-		//	}
-		//}
+		for (int i = 0; i < bvhService->materials.size(); i++)
+		{
+			if ((int)bvhService->materials[i].alphaMode != ::Core::SceneSystem::AlphaMode::Opaque)
+			{
+				pathtraceDefines += "#define OPT_ALPHA_TEST\n";
+				bvhService->renderOptions.optAlphaTest = true;
+				break;
+			}
+		}
 		if (bvhService->renderOptions.enableRoughnessMollification)
 			pathtraceDefines += "#define OPT_ROUGHNESS_MOLLIFICATION\n";
 
-		//for (int i = 0; i < bvhService->materials.size(); i++)
-		//{
-		//	if ((int)bvhService->materials[i].mediumType != ::Core::SceneSystem::MediumType::None)
-		//	{
-		//		pathtraceDefines += "#define OPT_MEDIUM\n";
-		//		bvhService->renderOptions.optMedium = true;
-		//		break;
-		//	}
-		//}
+		for (int i = 0; i < bvhService->materials.size(); i++)
+		{
+			if ((int)bvhService->materials[i].mediumType != ::Core::SceneSystem::MediumType::None)
+			{
+				pathtraceDefines += "#define OPT_MEDIUM\n";
+				bvhService->renderOptions.optMedium = true;
+				break;
+			}
+		}
 
 		if (bvhService->renderOptions.enableVolumeMIS)
 			pathtraceDefines += "#define OPT_VOL_MIS\n";
@@ -823,6 +823,7 @@ void main()
 		//更新场景
 		if (bvhService->isMaterialDirty) {
 			UpdateGPUMaterial();
+			UpdateShaders();
 			bvhService->isMaterialDirty = false;
 			
 		}

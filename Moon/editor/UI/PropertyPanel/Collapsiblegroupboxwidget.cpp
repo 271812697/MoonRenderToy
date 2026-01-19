@@ -35,7 +35,7 @@ namespace MOON {
 			mSelf->setFocusProxy(btnCollapse_);
 		}
 		CollapsibleGroupBoxWidgetInternal(CollapsibleGroupBoxWidget* self) :mSelf(self),
-			defaultLabel_{ new QLabel("No properties available") },
+			defaultLabel_{ new QLabel("Properties") },
 			propertyWidgetGroup_ { createPropertyLayoutWidget(defaultLabel_).release() }
 		, propertyWidgetGroupLayout_{ static_cast<QGridLayout*>(propertyWidgetGroup_->layout()) } {
 			btnCollapse_=new QToolButton(mSelf);
