@@ -76,7 +76,6 @@ bool Rendering::HAL::GLFramebuffer::Validate()
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-	
 		return m_context.valid = false;
 	}
 
