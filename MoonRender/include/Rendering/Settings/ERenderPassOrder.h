@@ -12,6 +12,7 @@ namespace Rendering::Settings
 
 		static constexpr PassType First				= 00000U;
 		static constexpr PassType Shadows			= 10000U;
+		static constexpr PassType SkyBox			= 10001U;
 		static constexpr PassType Reflections		= 15000U;
 		static constexpr PassType Opaque			= 20000U;
 		static constexpr PassType Transparent		= 30000U;

@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "editor/UI/PropertyPanel/PropertyComponent.h"
-#include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/PropertyComponent.h"
+#include "Widgets/Property.h"
 #include "core/ECS/Components/AComponent.h"
 namespace MOON {
 	PropertyComponent::PropertyComponent()
@@ -16,11 +16,7 @@ namespace MOON {
 	{
 		return mProperties;
 	}
-	Component PropertyComponent::componentData() {
-		Component res;
-		//res.name = QString::fromStdString(component->GetName());
-		return res;
-	}
+
 	QVariant PropertyComponent::getPropertyValue(const QString& propertyName) {
 		return QVariant();
 	}

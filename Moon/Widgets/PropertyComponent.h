@@ -1,5 +1,7 @@
 ﻿#pragma once
-#include "editor/UI/PropertyPanel/PropertyDef.h"
+#include<vector>
+#include <QString>
+#include <QVariant>
 namespace Core::ECS::Components
 {
 	class AComponent;
@@ -12,7 +14,7 @@ namespace MOON {
 		PropertyComponent();
 		virtual ~PropertyComponent();
 		std::vector<Property*>getProperties();
-		virtual Component componentData();
+		
 		virtual QVariant getPropertyValue(const QString& propertyName);
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value);
 		void updateWidgetValue();

@@ -8,6 +8,7 @@
 #include <Core/Rendering/PostProcessRenderPass.h>
 #include <Core/Rendering/ReflectionRenderFeature.h>
 #include <Core/Rendering/ReflectionRenderPass.h>
+#include <Core/Rendering/SkyBoxRenderPass .h>
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/Rendering/ShadowRenderFeature.h>
 #include <Core/Rendering/ShadowRenderPass.h>
@@ -173,6 +174,7 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 
 	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
+	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
 	
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);

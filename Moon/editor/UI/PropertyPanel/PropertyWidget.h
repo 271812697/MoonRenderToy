@@ -4,6 +4,7 @@ namespace Core::ECS {
 	class Actor;
 }
 namespace MOON {
+
 	class PropertyWidget : public QWidget
 	{
 	public:

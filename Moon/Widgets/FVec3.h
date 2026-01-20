@@ -6,6 +6,7 @@
 #include <QDoubleSpinBox>
 #include <QVector3D>
 namespace MOON {
+Q_DECLARE_METATYPE(Maths::FVector3);
 class Fvec3 : public PropertyQtWidget
 {
     Q_OBJECT
