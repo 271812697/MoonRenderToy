@@ -3,6 +3,7 @@
 #include <unordered_map>
 #define GetService(Type)  ::Core::Global::ServiceLocator::Get<Type>()
 #define RegService(Type,T) ::Core::Global::ServiceLocator::Provide<Type>(T)
+#define GetShaderService GetService(::Core::ResourceManagement::ShaderManager)
 namespace Core::Global
 {
 	/**

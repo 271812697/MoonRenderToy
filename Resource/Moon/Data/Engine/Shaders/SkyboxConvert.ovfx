@@ -1,4 +1,5 @@
 
+#feature SKY_Convert
 
 #shader vertex
 #version 450 core
@@ -17,7 +18,12 @@ out VS_OUT
 void main()
 {
     vs_out.dir = geo_Pos;
-    gl_Position = ubo_Projection *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
+#if defined(SKY_Convert)
+   gl_Position = ubo_Projection *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
+#else
+   gl_Position = ubo_Projection *ubo_View  * vec4( geo_Pos, 1.0);
+#endif
+ 
 }
 
 #shader fragment
@@ -30,8 +36,12 @@ in VS_OUT
 {
     vec3 dir;
 } fs_in;
-
+#if defined(SKY_Convert)
 uniform sampler2D u_SkyBoxTexture;
+#else
+uniform samplerCube SkyboxCube;
+#endif
+ 
 
 
 
@@ -43,7 +53,16 @@ void main()
 {
 
     vec3 d=normalize(fs_in.dir);
+#if defined(SKY_Convert)  
+    
     float theta = acos(clamp(d.y, -1.0, 1.0));
 	vec2 uv = vec2((PI + atan(d.z, d.x)) * INV_TWO_PI, 1.0-theta * INV_PI);
     FRAGMENT_COLOR = texture(u_SkyBoxTexture, uv) ;
+#else
+    //FRAGMENT_COLOR =vec4(texture(SkyboxCube, normalize(vec3(1,1,1))).rgb,1.0f);
+    //textureLod(environmentMap, N, environmentMaxLOD).rgb;
+    vec3 color=textureLod(SkyboxCube,d,0).rgb;
+    FRAGMENT_COLOR =vec4(color,1.0f);
+#endif
+   
 }

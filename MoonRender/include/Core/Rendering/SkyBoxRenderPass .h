@@ -11,8 +11,10 @@ namespace Core::Rendering
 
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+		
 	private:
 		::Core::Resources::Material m_skyboxMaterial;
+		::Core::Resources::Material m_skyboxIrrandianceMaterial;
 		::Rendering::HAL::Framebuffer skyBoxBuffer;
 		::Rendering::HAL::Framebuffer irradianceBuffer;
 		::Rendering::HAL::Framebuffer prefilterBuffer;

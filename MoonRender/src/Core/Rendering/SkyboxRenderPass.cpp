@@ -30,6 +30,9 @@ Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::Composite
 	::Rendering::Core::ARenderPass(p_renderer)
 {
 	m_skyboxMaterial.SetShader(::Core::Global::ServiceLocator::Get<Core::ResourceManagement::ShaderManager>()[":Shaders\\SkyboxConvert.ovfx"]);
+	m_skyboxMaterial.SetBackfaceCulling(false);
+	m_skyboxIrrandianceMaterial.SetShader(GetShaderService[":Shaders\\SkyboxIrrandiance.ovfx"]);
+	m_skyboxIrrandianceMaterial.SetBackfaceCulling(false);
 }
 
 void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
@@ -145,33 +148,91 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 				// Validation
 				prefilterBuffer.Validate();
 			}
+
+			//convert 
+			{
+				auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
+				auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+				m_skyboxMaterial.AddFeature("SKY_Convert");
+
+				::Rendering::Entities::Camera skyCamera;
+				skyCamera.SetPosition({ 0.0f, 0.0f, 0.0f });
+				skyCamera.SetFov(90.0f);
+				const auto [width, height] = skyBoxBuffer.GetSize();
+				skyBoxBuffer.Bind();
+				m_renderer.SetViewport(0, 0, width, height);
+				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+				{
+					skyCamera.SetRotation(Maths::FQuaternion{ kFaceRotations[faceIndex] });
+					skyCamera.CacheMatrices(width, height);
+					engineBufferRenderFeature.SetCamera(skyCamera);
+					skyBoxBuffer.SetTargetDrawBuffer(faceIndex);
+					m_renderer.Clear(true, true, true);
+					// Draw skybox
+					::Rendering::Entities::Drawable skyboxDrawable;
+					skyboxDrawable.mesh = m_renderer.m_unitCube;
+					skyboxDrawable.material = m_skyboxMaterial;
+					auto stateMask = m_skyboxMaterial.GenerateStateMask();
+					skyboxDrawable.stateMask = stateMask;
+					skyboxDrawable.material.value().SetProperty("u_SkyBoxTexture", skyTexture);
+					m_renderer.DrawEntity(p_pso, skyboxDrawable);
+				}
+				skyBoxBuffer.Unbind();
+				m_renderer.SetViewport(0, 0, frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+			}
+			//convolution
+			{
+				auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
+				auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+			
+
+				::Rendering::Entities::Camera skyCamera;
+				skyCamera.SetPosition({ 0.0f, 0.0f, 0.0f });
+				skyCamera.SetFov(90.0f);
+				const auto [width, height] = irradianceBuffer.GetSize();
+				irradianceBuffer.Bind();
+				m_renderer.SetViewport(0, 0, width, height);
+				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+				{
+					skyCamera.SetRotation(Maths::FQuaternion{ kFaceRotations[faceIndex] });
+					skyCamera.CacheMatrices(width, height);
+					engineBufferRenderFeature.SetCamera(skyCamera);
+					irradianceBuffer.SetTargetDrawBuffer(faceIndex);
+					m_renderer.Clear(true, true, true);
+					// Draw skybox
+					::Rendering::Entities::Drawable skyboxDrawable;
+					skyboxDrawable.mesh = m_renderer.m_unitCube;
+					skyboxDrawable.material = m_skyboxIrrandianceMaterial;
+					auto stateMask = m_skyboxIrrandianceMaterial.GenerateStateMask();
+					skyboxDrawable.stateMask = stateMask;
+					skyboxDrawable.material.value().SetProperty("SkyboxCube", skyBoxCube.get());
+					m_renderer.DrawEntity(p_pso, skyboxDrawable);
+				}
+				irradianceBuffer.Unbind();
+				m_renderer.SetViewport(0, 0, frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+			}
 	}
 
 
 	{
+		//visible skybox
 		auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
-		
-		::Rendering::Entities::Camera skyCamera;
-		skyCamera.SetPosition({ 0.0f, 0.0f, 0.0f });
-		skyCamera.SetFov(90.0f);
-		const auto [width, height] = skyBoxBuffer.GetSize();
-		skyBoxBuffer.Bind();
-		m_renderer.SetViewport(0, 0, width, height);
-		for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+		auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+		m_skyboxMaterial.RemoveFeature("SKY_Convert");
+		engineBufferRenderFeature.SetCamera(frameDescriptor.camera.value());
+
+		if (auto output = frameDescriptor.outputMsaaBuffer)
 		{
-			skyCamera.SetRotation(Maths::FQuaternion{ kFaceRotations[faceIndex] });
-			skyCamera.CacheMatrices(width, height);
-			engineBufferRenderFeature.SetCamera(skyCamera);	
-			skyBoxBuffer.SetTargetDrawBuffer(faceIndex);
-			m_renderer.Clear(true, true, true);
-			// Draw skybox
-			::Rendering::Entities::Drawable skyboxDrawable;
-			skyboxDrawable.mesh = m_renderer.m_unitCube;
-			skyboxDrawable.material = m_skyboxMaterial;
-			skyboxDrawable.material.value().SetProperty("u_SkyBoxTexture", skyTexture);
-			m_renderer.DrawEntity(p_pso,skyboxDrawable );
+			output.value().Bind();
 		}
-		skyBoxBuffer.Unbind();
+		// Draw skybox
+		::Rendering::Entities::Drawable skyboxDrawable;
+		skyboxDrawable.mesh = m_renderer.m_unitCube;
+		skyboxDrawable.material = m_skyboxMaterial;
+		auto stateMask = m_skyboxMaterial.GenerateStateMask();
+		skyboxDrawable.stateMask = stateMask;
+		skyboxDrawable.material.value().SetProperty("SkyboxCube", irradianceCube.get());
+		m_renderer.DrawEntity(p_pso, skyboxDrawable);
 	}
 }
 
