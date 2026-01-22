@@ -7,8 +7,10 @@
 #include <Core/Rendering/ReflectionRenderPass.h>
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/ResourceManagement/ShaderManager.h>
+#include <Core/ResourceManagement/TextureManager.h>
 #include <Rendering/HAL/Renderbuffer.h>
 #include <Rendering/HAL/Profiling.h>
+#include <Rendering/Resources/Loaders/TextureLoader.h>
 
 namespace
 {
@@ -27,6 +29,7 @@ namespace
 Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::CompositeRenderer& p_renderer) :
 	::Rendering::Core::ARenderPass(p_renderer)
 {
+	m_skyboxMaterial.SetShader(::Core::Global::ServiceLocator::Get<Core::ResourceManagement::ShaderManager>()[":Shaders\\SkyboxConvert.ovfx"]);
 }
 
 void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
@@ -35,78 +38,140 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 	TracyGpuZone("SkyboxRenderPass");
 	using namespace Core::Rendering;
 	if (!irradianceCube.get()) {
-		irradianceCube= std::make_shared<::Rendering::HAL::Texture>(
+		skyTexture=GetService(Core::ResourceManagement::TextureManager).GetResource(":Textures/PureSky.hdr");
+		
+		skyBoxCube = std::make_shared<::Rendering::HAL::Texture>(
 			::Rendering::Settings::ETextureType::TEXTURE_CUBE,
-			"irradianceCube"
+			"skyBoxCube"
 		);
-		irradianceCube->Allocate(
+		skyBoxCube->Allocate(
 			::Rendering::Settings::TextureDesc{
 				.width = resolution,
 				.height = resolution,
 				.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
-				.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
-				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
-				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
-				.useMipMaps = true
+					.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+					.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+					.useMipMaps = true
 			}
-		);
-		prefilterCube = std::make_shared<::Rendering::HAL::Texture>(
-			::Rendering::Settings::ETextureType::TEXTURE_CUBE,
-			"prefilterCube"
-		);
-		prefilterCube->Allocate(
-			::Rendering::Settings::TextureDesc{
-				.width = resolution,
-				.height = resolution,
-				.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
-				.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
-				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
-				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
-				.useMipMaps = true
-			}
-		);
-		{
-			for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
-			{
-				irradianceBuffer.Attach<::Rendering::HAL::Texture>(
-					irradianceCube,
-					::Rendering::Settings::EFramebufferAttachment::COLOR,
-					faceIndex, // Each color attachment is a face of the cubemap
-					faceIndex // Each face of the cubemap is accessed by its layer index
-				);
-			}
+			);
+			irradianceCube = std::make_shared<::Rendering::HAL::Texture>(
+				::Rendering::Settings::ETextureType::TEXTURE_CUBE,
+				"irradianceCube"
+			);
 
-			// Depth buffer
-			const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
-			const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
-			renderbuffer->Allocate(resolution, resolution, internalFormat);
-			irradianceBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
-			// Validation
-			irradianceBuffer.Validate();
-		}
-		{
-			for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+			irradianceCube->Allocate(
+				::Rendering::Settings::TextureDesc{
+					.width = resolution,
+					.height = resolution,
+					.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
+					.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+					.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+					.useMipMaps = true
+				}
+			);
+			prefilterCube = std::make_shared<::Rendering::HAL::Texture>(
+				::Rendering::Settings::ETextureType::TEXTURE_CUBE,
+				"prefilterCube"
+			);
+			prefilterCube->Allocate(
+				::Rendering::Settings::TextureDesc{
+					.width = resolution,
+					.height = resolution,
+					.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
+					.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+					.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+					.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+					.useMipMaps = true
+				}
+			);
 			{
-				prefilterBuffer.Attach<::Rendering::HAL::Texture>(
-					prefilterCube,
-					::Rendering::Settings::EFramebufferAttachment::COLOR,
-					faceIndex, // Each color attachment is a face of the cubemap
-					faceIndex // Each face of the cubemap is accessed by its layer index
-				);
+				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+				{
+					skyBoxBuffer.Attach<::Rendering::HAL::Texture>(
+						skyBoxCube,
+						::Rendering::Settings::EFramebufferAttachment::COLOR,
+						faceIndex, // Each color attachment is a face of the cubemap
+						faceIndex // Each face of the cubemap is accessed by its layer index
+					);
+				}
+				// Depth buffer
+				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
+				const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
+				renderbuffer->Allocate(resolution, resolution, internalFormat);
+				skyBoxBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+				// Validation
+				skyBoxBuffer.Validate();
 			}
+			{
+				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+				{
+					irradianceBuffer.Attach<::Rendering::HAL::Texture>(
+						irradianceCube,
+						::Rendering::Settings::EFramebufferAttachment::COLOR,
+						faceIndex, // Each color attachment is a face of the cubemap
+						faceIndex // Each face of the cubemap is accessed by its layer index
+					);
+				}
 
-			// Depth buffer
-			const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
-			const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
-			renderbuffer->Allocate(resolution, resolution, internalFormat);
-			prefilterBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
-			// Validation
-			prefilterBuffer.Validate();
-		}
+				// Depth buffer
+				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
+				const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
+				renderbuffer->Allocate(resolution, resolution, internalFormat);
+				irradianceBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+				// Validation
+				irradianceBuffer.Validate();
+			}
+			{
+				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+				{
+					prefilterBuffer.Attach<::Rendering::HAL::Texture>(
+						prefilterCube,
+						::Rendering::Settings::EFramebufferAttachment::COLOR,
+						faceIndex, // Each color attachment is a face of the cubemap
+						faceIndex // Each face of the cubemap is accessed by its layer index
+					);
+				}
+
+				// Depth buffer
+				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
+				const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
+				renderbuffer->Allocate(resolution, resolution, internalFormat);
+				prefilterBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+				// Validation
+				prefilterBuffer.Validate();
+			}
 	}
 
 
+	{
+		auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
+		
+		::Rendering::Entities::Camera skyCamera;
+		skyCamera.SetPosition({ 0.0f, 0.0f, 0.0f });
+		skyCamera.SetFov(90.0f);
+		const auto [width, height] = skyBoxBuffer.GetSize();
+		skyBoxBuffer.Bind();
+		m_renderer.SetViewport(0, 0, width, height);
+		for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+		{
+			skyCamera.SetRotation(Maths::FQuaternion{ kFaceRotations[faceIndex] });
+			skyCamera.CacheMatrices(width, height);
+			engineBufferRenderFeature.SetCamera(skyCamera);	
+			skyBoxBuffer.SetTargetDrawBuffer(faceIndex);
+			m_renderer.Clear(true, true, true);
+			// Draw skybox
+			::Rendering::Entities::Drawable skyboxDrawable;
+			skyboxDrawable.mesh = m_renderer.m_unitCube;
+			skyboxDrawable.material = m_skyboxMaterial;
+			skyboxDrawable.material.value().SetProperty("u_SkyBoxTexture", skyTexture);
+			m_renderer.DrawEntity(p_pso,skyboxDrawable );
+		}
+		skyBoxBuffer.Unbind();
+	}
 }
 
