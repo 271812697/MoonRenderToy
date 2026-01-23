@@ -9,10 +9,11 @@ Tools::Eventing::Event<::Rendering::HAL::GLTexture&> Rendering::HAL::GLTexture::
 
 namespace
 {
-	constexpr uint32_t CalculateMipMapLevels(uint32_t p_width, uint32_t p_height)
+	uint32_t CalculateMipMapLevels(uint32_t p_width, uint32_t p_height)
 	{
 		uint32_t maxDim = p_width > p_height ? p_width : p_height;
-		return maxDim ? 32u - __lzcnt(maxDim) : 1u;
+		uint32_t t = __lzcnt(maxDim);
+		return maxDim ? 32u -t : 1u;
 	}
 
 	constexpr bool IsValidMipMapFilter(Rendering::Settings::ETextureFilteringMode p_mode)

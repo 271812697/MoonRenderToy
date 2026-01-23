@@ -48,7 +48,14 @@ namespace Rendering::HAL
 			uint32_t p_index = 0,
 			std::optional<uint32_t> p_layer = std::nullopt
 		);
-
+		template<class T>
+			requires IsSupportedAttachmentType<T>
+		void AttachLevel(std::shared_ptr<T> p_toAttach,
+			Settings::EFramebufferAttachment p_attachment,
+			uint32_t p_index = 0,
+			uint32_t p_level=0,
+			std::optional<uint32_t> p_layer = std::nullopt
+		);
 		template<class T>
 			requires IsSupportedAttachmentType<T>
 		Tools::Utils::OptRef<T> GetAttachment(

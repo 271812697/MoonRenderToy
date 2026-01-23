@@ -15,6 +15,7 @@ namespace Core::Rendering
 	private:
 		::Core::Resources::Material m_skyboxMaterial;
 		::Core::Resources::Material m_skyboxIrrandianceMaterial;
+		::Core::Resources::Material m_skyboxPrefilterMaterial;
 		::Rendering::HAL::Framebuffer skyBoxBuffer;
 		::Rendering::HAL::Framebuffer irradianceBuffer;
 		::Rendering::HAL::Framebuffer prefilterBuffer;

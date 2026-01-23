@@ -44,6 +44,31 @@ void Rendering::HAL::GLFramebuffer::Attach(
 
 	m_context.attachments[attachmentIndex] = p_toAttach;
 }
+template<>
+template<>
+void Rendering::HAL::GLFramebuffer::AttachLevel(
+	std::shared_ptr<GLTexture> p_toAttach,
+	Settings::EFramebufferAttachment p_attachment,
+	uint32_t p_index,
+	uint32_t p_level ,
+	std::optional<uint32_t> p_layer
+)
+{
+
+	const auto attachmentIndex = EnumToValue<GLenum>(p_attachment) + static_cast<GLenum>(p_index);
+
+	if (p_layer.has_value())
+	{
+		glNamedFramebufferTextureLayer(m_context.id, attachmentIndex, p_toAttach->GetID(), p_level, p_layer.value());
+	}
+	else
+	{
+
+		glNamedFramebufferTexture(m_context.id, attachmentIndex, p_toAttach->GetID(),p_level);
+	}
+
+	m_context.attachments[attachmentIndex] = p_toAttach;
+}
 
 template<>
 Rendering::HAL::GLFramebuffer::TFramebuffer(std::string_view p_debugName) :
