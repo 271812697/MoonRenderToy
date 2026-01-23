@@ -111,6 +111,7 @@ namespace Rendering::Core
 		);
 	public:
 		Rendering::Resources::Mesh m_unitQuad;
+		Rendering::Resources::Mesh m_unitCube;
 	protected:
 		
 
