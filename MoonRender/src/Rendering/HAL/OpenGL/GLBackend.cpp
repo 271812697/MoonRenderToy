@@ -82,16 +82,16 @@ namespace
 
 	int GetInt(uint32_t p_parameter)
 	{
-		GLint result;
-		glGetIntegerv(p_parameter, &result);
-		return static_cast<int>(result);
+		GLint result[4];
+		glGetIntegerv(p_parameter, result);
+		return static_cast<int>(result[0]);
 	}
 
 	int GetInt(uint32_t p_parameter, uint32_t p_index)
 	{
-		GLint result;
-		glGetIntegeri_v(p_parameter, p_index, &result);
-		return static_cast<int>(result);
+		GLint result[4];
+		glGetIntegeri_v(p_parameter, p_index, result);
+		return static_cast<int>(result[0]);
 	}
 
 	float GetFloat(uint32_t p_parameter)
@@ -159,7 +159,7 @@ namespace
 		Rendering::Data::PipelineState pso;
 
 		// Rasterization
-		//pso.rasterizationMode = static_cast<ERasterizationMode>(GetInt(GL_POLYGON_MODE));
+		pso.rasterizationMode = static_cast<ERasterizationMode>(GetInt(GL_POLYGON_MODE));
 		pso.lineWidthPow2 = Rendering::Utils::Conversions::FloatToPow2(GetFloat(GL_LINE_WIDTH));
 
 		// Color write mask

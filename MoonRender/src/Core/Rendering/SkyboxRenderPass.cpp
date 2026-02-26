@@ -8,6 +8,7 @@
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/ResourceManagement/ShaderManager.h>
 #include <Core/ResourceManagement/TextureManager.h>
+#include <Core/Rendering/FramebufferUtil.h>
 #include <Rendering/HAL/Renderbuffer.h>
 #include <Rendering/HAL/Profiling.h>
 #include <Rendering/Resources/Loaders/TextureLoader.h>
@@ -35,6 +36,7 @@ Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::Composite
 	m_skyboxIrrandianceMaterial.SetBackfaceCulling(false);
 	m_skyboxPrefilterMaterial.SetShader(GetShaderService[":Shaders\\SkyboxPrefilter.ovfx"]);
 	m_skyboxPrefilterMaterial.SetBackfaceCulling(false);
+	m_brdfMaterial.SetShader(GetShaderService[":Shaders\\BrdfLut.ovfx"]);
 }
 
 void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
@@ -43,6 +45,22 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 	TracyGpuZone("SkyboxRenderPass");
 	using namespace Core::Rendering;
 	if (!irradianceCube.get()) {
+		auto fBColorDesc = ::Rendering::Settings::TextureDesc{
+		.width = resolution, 
+		.height = resolution,
+		.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+		.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+		.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+		.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
+		.internalFormat = ::Rendering::Settings::EInternalFormat::RG32F,
+		.useMipMaps = false,
+		.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.format = ::Rendering::Settings::EFormat::RG,
+			.type = ::Rendering::Settings::EPixelDataType::FLOAT
+		}
+		};
+		::Core::Rendering::FramebufferUtil::SetupFramebuffer(brdfBuffer, fBColorDesc, false, false, false);
+
 		skyTexture=GetService(Core::ResourceManagement::TextureManager).GetResource(":Textures/PureSky.hdr");
 		
 		skyBoxCube = std::make_shared<::Rendering::HAL::Texture>(
@@ -264,6 +282,26 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 			prefilterBuffer.Unbind();
 			m_renderer.SetViewport(0, 0, frameDescriptor.renderWidth, frameDescriptor.renderHeight);
 		}
+		//brdf lut
+		{
+			auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+
+			::Rendering::Entities::Drawable blit;
+			blit.mesh = m_renderer.m_unitQuad;
+			blit.material = m_brdfMaterial;
+			blit.stateMask.depthWriting = false;
+			blit.stateMask.colorWriting = true;
+			blit.stateMask.blendable = false;
+			blit.stateMask.frontfaceCulling = false;
+			blit.stateMask.backfaceCulling = false;
+			blit.stateMask.depthTest = false;
+			const auto [width, height] = brdfBuffer.GetSize();
+			brdfBuffer.Bind();
+			m_renderer.SetViewport(0, 0, width, height);
+			m_renderer.DrawEntity(p_pso, blit);
+			brdfBuffer.Unbind();
+			m_renderer.SetViewport(0, 0, frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+		}
 	}
 
 
@@ -287,5 +325,6 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 		skyboxDrawable.material.value().SetProperty("SkyboxCube", prefilterCube.get());
 		m_renderer.DrawEntity(p_pso, skyboxDrawable);
 	}
+
 }
 

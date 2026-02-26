@@ -16,9 +16,11 @@ namespace Core::Rendering
 		::Core::Resources::Material m_skyboxMaterial;
 		::Core::Resources::Material m_skyboxIrrandianceMaterial;
 		::Core::Resources::Material m_skyboxPrefilterMaterial;
+		::Core::Resources::Material m_brdfMaterial;
 		::Rendering::HAL::Framebuffer skyBoxBuffer;
 		::Rendering::HAL::Framebuffer irradianceBuffer;
 		::Rendering::HAL::Framebuffer prefilterBuffer;
+		::Rendering::HAL::Framebuffer brdfBuffer;
 		::Rendering::Resources::Texture*skyTexture=nullptr;
 		std::shared_ptr<::Rendering::HAL::Texture> skyBoxCube;
 		std::shared_ptr<::Rendering::HAL::Texture> irradianceCube;

@@ -1,5 +1,5 @@
 ﻿#include "Widgets/PropertyQtWidgets.h"
-#include "editor/UI/PropertyPanel/Property.h"
+#include "Widgets/Property.h"
 namespace MOON {
 	PropertyQtWidget::PropertyQtWidget(QWidget* parent, Property* prop):QWidget(parent),mProps(prop)
 	{
