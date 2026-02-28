@@ -47,13 +47,13 @@ namespace Editor::Core
 		void ApplyProjectSettings();
 
 	public:
-		const std::string projectPath;
-		const std::string projectName;
-		const std::string projectFilePath;
-		const std::string engineAssetsPath;
-		const std::string projectAssetsPath;
-		const std::string projectScriptsPath;
-		const std::string editorAssetsPath;
+		std::string projectPath;
+		std::string projectName;
+		std::string projectFilePath;
+		std::string engineAssetsPath;
+		std::string projectAssetsPath;
+		std::string projectScriptsPath;
+		std::string editorAssetsPath;
 
 		std::unique_ptr<::Rendering::Context::Driver> driver;
 

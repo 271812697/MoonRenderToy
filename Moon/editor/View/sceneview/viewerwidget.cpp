@@ -34,7 +34,7 @@ namespace MOON {
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
 			
 		
-			mScenePath = PROJECT_ENGINE_PATH"/pathrace/scenes/teapot1.scene";// QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
+			//mScenePath = PROJECT_ENGINE_PATH"/pathrace/scenes/teapot1.scene";// QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");

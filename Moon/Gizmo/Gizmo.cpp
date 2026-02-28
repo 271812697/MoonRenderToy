@@ -16,6 +16,7 @@
 #include <Rendering/Resources/Loaders/ShaderLoader.h>
 #include <Maths/FMatrix4.h>
 #include <iostream>
+#include <Tools/Utils/PathParser.h>
 namespace MOON
 {
 
@@ -134,7 +135,8 @@ namespace MOON
 	void Gizmo::prepareGl()
 	{
 		//shader leak
-		std::string shaderPath = std::string(PROJECT_ENGINE_PATH) + std::string("/Shaders/");
+		std::string shaderPath =Tools::Utils::PathParser::GetExeDirectory()+"/Moon/Data/Engine/Shaders/";
+		
 		mLineMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoLine.ovfx"));
 		mPointMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoPoint.ovfx"));
 		mTriangleMaterial = new Rendering::Data::Material(Rendering::Resources::Loaders::ShaderLoader::Create(shaderPath + "/GizmoTriangle.ovfx"));

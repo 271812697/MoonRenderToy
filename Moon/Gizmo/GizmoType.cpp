@@ -7,6 +7,7 @@
 #include "Rendering/Resources/Model.h"
 #include "renderer/Context.h"
 #include <glad/glad.h>
+#include <Tools/Utils/PathParser.h>
 namespace MOON {
 	void Cell::clear() {
 		vertex.clear();
@@ -319,7 +320,8 @@ namespace MOON {
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
 			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));			
 			viewCube.initGpuBuffer();
-			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+			std::string texturePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/Textures/XYZ.png";
+			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);
 		}
 		return viewCube;
 	}
@@ -348,7 +350,8 @@ namespace MOON {
 			viewAxis.model(1, 3) = -halflen;
 			viewAxis.model(2, 3) = -halflen;
 			viewAxis.initGpuBuffer();
-			viewAxis.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+			std::string texturePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/Textures/XYZ.png";
+			viewAxis.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);
 		}
 		return viewAxis;
 	}
@@ -415,7 +418,8 @@ namespace MOON {
 			poly.model = Eigen::Matrix4f::Identity();
 		
 			poly.initGpuBuffer();
-			poly.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(PROJECT_ENGINE_PATH"/Textures/XYZ.png", true);
+			std::string texturePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/Textures/XYZ.png";
+			poly.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);
 		}
 		return poly;
 	}

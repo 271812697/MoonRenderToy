@@ -3,6 +3,7 @@
 #include "QPreviewHelper.h"
 #include "QResListView.h"
 #include "Core/Global/ServiceLocator.h"
+#include <Tools/Utils/PathParser.h>
 #include <QMenuBar>
 #include <QDesktopServices>
 #include <qurl.h>
@@ -220,18 +221,19 @@ namespace MOON {
 	void ResPanel::onOpenProject()
 	{
 		internal->m_dirModel->clear();
-
+		std::string editorPath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Editor";
+		std::string enginePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine";
 		QDirectoryModel::RootPathArray rootPathes =
 		{
-			{"Res://", PROJECT_EDITOR_PATH, true},
-			{"User://", PATH_TRACE_SCENE_PATH, true},
-			{"Engine://", PROJECT_ENGINE_PATH, false},
+			{"Res://", Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Editor", true},
+			//{"User://", PATH_TRACE_SCENE_PATH, true},
+			{"Engine://", enginePath, false},
 		};
 
 		internal->m_dirModel->setRootPath(rootPathes, "none", internal->ui->m_resDirView, NULL);
 		internal->m_dirModel->Refresh();
 
-		onSelectDir(PROJECT_EDITOR_PATH);
+		onSelectDir(editorPath.c_str());
 
 		resizeEvent(nullptr);
 	}
@@ -240,10 +242,10 @@ namespace MOON {
 	}
 	void ResPanel::onSelectDir(const char* dir) {
 		internal->m_currentDir = dir;
-
+		std::string editorPath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Editor";
 		internal->m_previewHelper->clear();
 
-		bool isIncludePreDir = dir == PROJECT_EDITOR_PATH ? false : true;
+		bool isIncludePreDir = dir == editorPath ? false : true;
 		internal->m_previewHelper->setPath(dir, nullptr, isIncludePreDir);
 	}
 	void ResPanel::onSelectFile(const char* pathName)
