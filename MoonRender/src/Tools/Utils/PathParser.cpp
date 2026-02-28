@@ -1,5 +1,8 @@
 ﻿#include <algorithm>
+#include <filesystem>
+#include <windows.h>
 #include <Tools/Utils/PathParser.h>
+
 
 std::string Tools::Utils::PathParser::MakeWindowsStyle(const std::string & p_path)
 {
@@ -96,4 +99,28 @@ Tools::Utils::PathParser::EFileType Tools::Utils::PathParser::GetFileType(const 
 {
 
 	return EFileType::UNKNOWN;
+}
+
+std::string Tools::Utils::PathParser::GetExeDirectory()
+{
+	std::string exe_path;
+	// Windows平台：获取exe路径
+	wchar_t buffer[MAX_PATH] = { 0 };
+	DWORD len = GetModuleFileNameW(NULL, buffer, MAX_PATH);
+	if (len > 0 && len < MAX_PATH)
+	{
+		// 宽字符转UTF-8
+		int mb_len = WideCharToMultiByte(CP_UTF8, 0, buffer, len, NULL, 0, NULL, NULL);
+		if (mb_len > 0)
+		{
+			exe_path.resize(mb_len);
+			WideCharToMultiByte(CP_UTF8, 0, buffer, len, &exe_path[0], mb_len, NULL, NULL);
+		}
+	}
+	// 核心：仅提取目录部分，丢弃exe文件名
+	if (!exe_path.empty())
+	{
+		return std::filesystem::path(exe_path).parent_path().string();
+	}
+	return "";
 }

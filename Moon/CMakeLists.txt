@@ -17,6 +17,8 @@ set_target_properties(${TARGET_NAME}
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+#get_target_property(TARGET_EXE_DIR ${TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
+set(TARGET_EXE_DIR "$<TARGET_FILE_DIR:${TARGET_NAME}>")
 # Link dependencies    
 
 target_link_libraries(${TARGET_NAME} PUBLIC
@@ -53,24 +55,37 @@ target_link_directories(${TARGET_NAME}
 )
 message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
 target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES})
-file(COPY ${LibDIR}/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${LibDIR}/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-set(PATH_TRACE_SCENE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\pathtrace\\scenes\\")
-file(TO_CMAKE_PATH "${PATH_TRACE_SCENE_PATH}" PATH_TRACE_SCENE_PATH_CMAKE)
-set(PATH_TRACE_HDR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\pathtrace\\scenes\\HDR\\")
-file(TO_CMAKE_PATH "${PATH_TRACE_HDR_PATH}" PATH_TRACE_HDR_PATH_CMAKE)
-set(PATH_TRACE_SHADER_PATH "${CMAKE_SOURCE_DIR}\\Moon\\pathtrace\\shaders\\")
-file(TO_CMAKE_PATH "${PATH_TRACE_SHADER_PATH}" PATH_TRACE_SHADER_PATH_CMAKE)
-target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_SCENE_PATH="${PATH_TRACE_SCENE_PATH_CMAKE}")
-target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_HDR_PATH="${PATH_TRACE_HDR_PATH_CMAKE}")
-target_compile_definitions(${TARGET_NAME} PRIVATE PATH_TRACE_SHADER_PATH="${PATH_TRACE_SHADER_PATH_CMAKE}")
-set(PROJECT_ENGINE_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Engine\\")
-file(TO_CMAKE_PATH "${PROJECT_ENGINE_PATH}" PROJECT_ENGINE_PATH_CMAKE)
-target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_ENGINE_PATH="${PROJECT_ENGINE_PATH_CMAKE}")
-set(PROJECT_EDITOR_PATH "${CMAKE_SOURCE_DIR}\\Resource\\Moon\\Data\\Editor\\")
-file(TO_CMAKE_PATH "${PROJECT_EDITOR_PATH}" PROJECT_EDITOR_PATH_CMAKE)
-target_compile_definitions(${TARGET_NAME} PRIVATE PROJECT_EDITOR_PATH="${PROJECT_EDITOR_PATH_CMAKE}")
+add_custom_command(
+    TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+    POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/oidn/lib/OpenImageDenoise.dll" "${TARGET_EXE_DIR}"
+    COMMENT "Copying OpenImageDenoise.dll"
+)
+add_custom_command(
+    TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+    POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/oidn/lib/tbb.dll" "${TARGET_EXE_DIR}"
+    COMMENT "Copying tbb.dll"
+)
+file(GLOB_RECURSE RESOURCE_FILES "${ResDIR}/*")
+if(RESOURCE_FILES)  
+    foreach(FILE ${RESOURCE_FILES})
+        file(RELATIVE_PATH REL_FILE_PATH ${ResDIR} ${FILE})
+        get_filename_component(FILE_DIR ${REL_FILE_PATH} DIRECTORY)
+        set(TARGET_DIR "${TARGET_EXE_DIR}/${FILE_DIR}")
+        
+        add_custom_command(
+            TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+            POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${TARGET_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FILE}" "${TARGET_DIR}"
+            COMMENT "Copying resource file: ${REL_FILE_PATH}"
+        )
+    endforeach()
+endif()
+
+
 set(QtPluginsDir "${QT_DIR}/../../../plugins")
 file(GLOB QtPluginIconEnginesDLLs  "${QtPluginsDir}/iconengines/qsvgicon*.dll")
 file(GLOB QtPluginImageFormatsDLLs "${QtPluginsDir}/imageformats/qsvg*.dll")

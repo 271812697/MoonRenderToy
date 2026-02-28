@@ -1,11 +1,11 @@
-#include "ImGuiRenderer.h"
+﻿#include "ImGuiRenderer.h"
 
 #include <QDateTime>
 #include <QGuiApplication>
 #include <QMouseEvent>
 #include <QClipboard>
 #include <QCursor>
-
+#include <Tools/Utils/PathParser.h>
 #ifdef ANDROID
 #define GL_VERTEX_ARRAY_BINDING           0x85B5 // Missing in android as of May 2020
 #define USE_GLSL_ES
@@ -232,7 +232,8 @@ namespace QtImGui {
 		int width, height;
 
 		std::string path = "/Fonts/Ruda-Bold.ttf";
-		path = PROJECT_ENGINE_PATH + path;
+		
+		path = Tools::Utils::PathParser::GetExeDirectory()+  "/Moon/Data/Engine/" + path;
 		io.FontDefault = io.Fonts->AddFontFromFileTTF(path.c_str(), 25);
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 

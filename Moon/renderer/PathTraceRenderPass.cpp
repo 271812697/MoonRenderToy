@@ -20,6 +20,7 @@
 #include "OpenImageDenoise/oidn.hpp"
 #include <stb_Image/stb_image.h>
 #include <fstream>
+#include <Tools/Utils/PathParser.h>
 namespace Editor::Rendering {
 	// 加载shader的源码
 	std::string loadShaderSource(std::string path)
@@ -141,8 +142,8 @@ namespace Editor::Rendering {
 		::Rendering::HAL::Framebuffer{"BloomSamplingBuffer1"} }
 	{
 		envMap = new EnvironmentMap();
-		
-		envMap->LoadMap(PROJECT_ENGINE_PATH"/Textures/PureSky.hdr");
+		std::string enginePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine";
+		envMap->LoadMap(enginePath+"/Textures/PureSky.hdr");
 		pixelRatio = 0.25f;
 
 		auto fBColorDesc = ::Rendering::Settings::TextureDesc{
@@ -577,11 +578,11 @@ void main()
 		triangleInfoTex->Allocate(desc);
 	}
 	void PathTraceRenderPass::UpdateShaders() {
-
-		static std::string pathTraceShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/PathTrace.ovfx");
-		static std::string pathTraceShaderLowResSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/PathTraceLowRes.ovfx");
-		static std::string outputShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/Output.ovfx");
-		static std::string tonemapShaderSrcObj = loadShaderSource(PROJECT_ENGINE_PATH"/Shaders/PathTrace/ToneMap.ovfx");
+		std::string enginePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine";
+		static std::string pathTraceShaderSrcObj = loadShaderSource(enginePath+"/Shaders/PathTrace/PathTrace.ovfx");
+		static std::string pathTraceShaderLowResSrcObj = loadShaderSource(enginePath+"/Shaders/PathTrace/PathTraceLowRes.ovfx");
+		static std::string outputShaderSrcObj = loadShaderSource(enginePath+"/Shaders/PathTrace/Output.ovfx");
+		static std::string tonemapShaderSrcObj = loadShaderSource(enginePath+"/Shaders/PathTrace/ToneMap.ovfx");
 
 		static std::unordered_map<std::string, std::unique_ptr<::Rendering::Resources::Shader>>pathTraceShaderMap;
 		static std::unordered_map<std::string, std::unique_ptr<::Rendering::Resources::Shader>>pathTraceShaderLowResMap;

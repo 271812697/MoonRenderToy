@@ -4,7 +4,7 @@
 #include <Rendering/Entities/Light.h>
 #include <Tools/Utils/SystemCalls.h>
 #include <assert.h>
-
+#include <Tools/Utils/PathParser.h>
 using namespace Core::Global;
 using namespace ::Core::ResourceManagement;
 
@@ -13,14 +13,15 @@ Editor::Core::Context::Context(const std::string& p_projectPath, const std::stri
 	projectPath(p_projectPath),
 	projectName(p_projectName),
 	projectFilePath(p_projectPath + p_projectName + ".ovproject"),
-	engineAssetsPath(std::string(PROJECT_ENGINE_PATH) + std::string("\\")),
+	
 	projectAssetsPath(p_projectPath + "Assets\\"),
 	projectScriptsPath(p_projectPath + "Scripts\\"),
-	editorAssetsPath(PROJECT_EDITOR_PATH + std::string("\\")),
+	
 	sceneManager(projectAssetsPath),
 	projectSettings(projectFilePath)
 {
-
+	engineAssetsPath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/";
+	editorAssetsPath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Editor/";
 	ModelManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 	TextureManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
 	ShaderManager::ProvideAssetPaths(projectAssetsPath, engineAssetsPath);
