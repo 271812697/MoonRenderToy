@@ -17,6 +17,7 @@ set_target_properties(${TARGET_NAME}
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+#get_target_property(TARGET_EXE_DIR ${TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
 set(TARGET_EXE_DIR "$<TARGET_FILE_DIR:${TARGET_NAME}>")
 # Link dependencies    
 
@@ -54,8 +55,19 @@ target_link_directories(${TARGET_NAME}
 )
 message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
 target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES})
-file(COPY ${LibDIR}/oidn/lib/OpenImageDenoise.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${LibDIR}/oidn/lib/tbb.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+add_custom_command(
+    TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+    POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/oidn/lib/OpenImageDenoise.dll" "${TARGET_EXE_DIR}"
+    COMMENT "Copying OpenImageDenoise.dll"
+)
+add_custom_command(
+    TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+    POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/oidn/lib/tbb.dll" "${TARGET_EXE_DIR}"
+    COMMENT "Copying tbb.dll"
+)
 file(GLOB_RECURSE RESOURCE_FILES "${ResDIR}/*")
 if(RESOURCE_FILES)  
     foreach(FILE ${RESOURCE_FILES})
@@ -65,7 +77,7 @@ if(RESOURCE_FILES)
         
         add_custom_command(
             TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
-            PRE_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+            POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
             COMMAND ${CMAKE_COMMAND} -E make_directory "${TARGET_DIR}"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FILE}" "${TARGET_DIR}"
             COMMENT "Copying resource file: ${REL_FILE_PATH}"
