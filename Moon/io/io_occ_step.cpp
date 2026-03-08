@@ -3,6 +3,8 @@
 #include "Core/SceneSystem/Scene.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
+#include "renderer/AView.h"
+#include "editor/View/sceneview/viewerwidget.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
@@ -32,7 +34,7 @@ namespace MOON {
     // 读取 STEP 模型并返回其形状
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
-
+            
             std::vector<Domain> domains;
             std::vector<Vector3d>linePoints;
             std::vector<Line>LineRanges;
@@ -210,6 +212,7 @@ namespace MOON {
             auto model = new ::Rendering::Resources::Model(filePath + std::string("_faceModel"));
             model->AddMesh(faceMesh);
             Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(filePath + std::string("_faceModel"), model);
+            auto& viewer= GetService(MOON::ViewerWidget);
             // 创建并注册默认材质
             Core::Resources::Material* tempMat = new Core::Resources::Material();
             Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(filePath, tempMat);
@@ -225,6 +228,8 @@ namespace MOON {
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
             tempMat->AddFeature("WITH_EDGE");
+            tempMat->SetProperty("_SkyboxCube",viewer.getView()->GetRenderer().GetSkyBoxCube());
+            
             // 在场景中创建 Actor 并绑定模型/材质
             auto& actor = scene->CreateActor("RootFace", "Geomerty");
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);

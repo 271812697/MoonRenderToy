@@ -1,7 +1,7 @@
 ﻿#include <functional>
 #include <ranges>
 #include <tracy/Tracy.hpp>
-
+#include <Core/Rendering/SkyBoxRenderPass .h>
 #include <Rendering/Core/CompositeRenderer.h>
 #include <Rendering/HAL/Profiling.h>
 
@@ -9,7 +9,18 @@ Rendering::Core::CompositeRenderer::CompositeRenderer(Context::Driver& p_driver)
 	: ABaseRenderer(p_driver)
 {
 }
-
+::Rendering::HAL::Texture* Rendering::Core::CompositeRenderer::GetSkyBoxCube() {
+	return GetPass<::Core::Rendering::SkyboxRenderPass>("SkyboxRenderPass").GetSkyBoxCube();;
+}
+::Rendering::HAL::Texture* Rendering::Core::CompositeRenderer::GetIrradianceCube() {
+	return GetPass<::Core::Rendering::SkyboxRenderPass>("SkyboxRenderPass").GetIrradianceCube();;
+}
+::Rendering::HAL::Texture* Rendering::Core::CompositeRenderer::GetPrefilterCube() {
+	return GetPass<::Core::Rendering::SkyboxRenderPass>("SkyboxRenderPass").GetPrefilterCube();;
+}
+::Rendering::HAL::Texture* Rendering::Core::CompositeRenderer::GetBrdfTexture() {
+	return GetPass<::Core::Rendering::SkyboxRenderPass>("SkyboxRenderPass").GetBrdfTexture();;
+}
 void Rendering::Core::CompositeRenderer::BeginFrame(const Data::FrameDescriptor& p_frameDescriptor)
 {
 	ZoneScoped;

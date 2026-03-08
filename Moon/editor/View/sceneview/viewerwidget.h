@@ -4,6 +4,9 @@
 namespace Core::ECS {
 	class Actor;
 }
+namespace Editor::Panels {
+	class AView;
+}
 namespace MOON {
 	
 	class ViewerWidget : public QOpenGLWidget, QOpenGLFunctions_4_5_Core
@@ -24,7 +27,7 @@ namespace MOON {
 		void wheelEvent(QWheelEvent* event) override;
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
-
+		::Editor::Panels::AView* getView();
 	public slots:
 		void onActorSelected(Core::ECS::Actor* actor);
 		void onSceneChange(const QString& path);

@@ -2,12 +2,17 @@
 #include <Rendering/Core/ARenderPass.h>
 #include <Rendering/HAL/Framebuffer.h>
 #include <Core/Rendering/PostProcess/AEffect.h>
+#include <Core/Resources/Material.h>
 namespace Core::Rendering
 {
 	class SkyboxRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
 		SkyboxRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		::Rendering::HAL::Texture* GetSkyBoxCube();
+		::Rendering::HAL::Texture* GetIrradianceCube();
+		::Rendering::HAL::Texture* GetPrefilterCube();
+		::Rendering::HAL::Texture* GetBrdfTexture();
 
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
