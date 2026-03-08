@@ -433,14 +433,12 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 	// Build BVH
 	if (meshInstances.size()>0) {
 		bvhService->Process(bounds,sceneMeshes, meshInstances);	
-		
 	}
 }
 
 bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitRes& outRes)
 {
 	return bvhService->RayHit(ray, outRes);
-	
 }
 
 bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& ray,  HitRes& outRes)

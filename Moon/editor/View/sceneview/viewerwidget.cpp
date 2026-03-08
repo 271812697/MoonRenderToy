@@ -1,13 +1,11 @@
 ﻿#include <QMouseEvent>
 #include "viewerwidget.h"
 #include "glloader.h"
-#define __glad_h_
+#define  __glad_h_
 #include "core/callbackManager.h"
 #include "renderer/Context.h"
 #include "renderer/SceneView.h"
-
 #include "Core/Global/ServiceLocator.h"
-
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
@@ -32,9 +30,7 @@ namespace MOON {
 			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
-			
-		
-			//mScenePath = PROJECT_ENGINE_PATH"/pathrace/scenes/teapot1.scene";// QString::fromStdString(PathTraceRender::instance().GetSceneFilePath());
+
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");
@@ -141,7 +137,6 @@ namespace MOON {
 	bool ViewerWidget::event(QEvent* evt)
 	{
 		mInternal->event(evt);
-		
 		return QOpenGLWidget::event(evt);
 	}
 
@@ -161,8 +156,6 @@ namespace MOON {
 
 	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
 	{
-		//LOG_INFO("%d %d", event->pos().x(), event->pos().y());
-
 	}
 
 	void ViewerWidget::mouseReleaseEvent(QMouseEvent* event)
@@ -177,6 +170,11 @@ namespace MOON {
 	}
 	void ViewerWidget::keyReleaseEvent(QKeyEvent* event)
 	{
+	}
+
+	::Editor::Panels::AView* ViewerWidget::getView()
+	{
+		return mInternal->mSceneView;
 	}
 
 	void ViewerWidget::onSceneChange(const QString& path)
