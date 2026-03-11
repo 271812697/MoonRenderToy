@@ -229,7 +229,9 @@ namespace MOON {
             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
             tempMat->AddFeature("WITH_EDGE");
             tempMat->SetProperty("_SkyboxCube",viewer.getView()->GetRenderer().GetSkyBoxCube());
-            
+            tempMat->SetProperty("_IrradianceCube", viewer.getView()->GetRenderer().GetIrradianceCube());
+            tempMat->SetProperty("_PrefilterCube", viewer.getView()->GetRenderer().GetPrefilterCube());
+            tempMat->SetProperty("_BRDFLut", viewer.getView()->GetRenderer().GetBrdfTexture());
             // 在场景中创建 Actor 并绑定模型/材质
             auto& actor = scene->CreateActor("RootFace", "Geomerty");
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
