@@ -113,8 +113,8 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 
 				irradianceCube->Allocate(
 					::Rendering::Settings::TextureDesc{
-						.width = resolution,
-						.height = resolution,
+						.width = 32,
+						.height = 32,
 						.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR_MIPMAP_LINEAR,
 						.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
 						.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_EDGE,
