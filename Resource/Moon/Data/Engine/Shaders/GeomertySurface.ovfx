@@ -1265,7 +1265,7 @@ void main()
     evaluateIBL(inputs,pixel,iblColor);
     const vec3 emissive = texture(u_EmissiveMap, texCoords).rgb * u_EmissiveColor * u_EmissiveIntensity;
     pbr += emissive+iblColor;
-    //pbr = iblColor;
+    pbr *=skyColor;
 
     FRAGMENT_COLOR = vec4(pbr, albedo.a);
 
