@@ -228,7 +228,7 @@ namespace MOON {
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
             tempMat->AddFeature("WITH_EDGE");
-            tempMat->TrySetProperty("_SkyboxCube",viewer.getView()->GetRenderer().GetSkyBoxCube());
+        
             tempMat->TrySetProperty("_IrradianceCube", viewer.getView()->GetRenderer().GetIrradianceCube());
             tempMat->TrySetProperty("_PrefilterCube", viewer.getView()->GetRenderer().GetPrefilterCube());
             tempMat->TrySetProperty("_BRDFLut", viewer.getView()->GetRenderer().GetBrdfTexture());

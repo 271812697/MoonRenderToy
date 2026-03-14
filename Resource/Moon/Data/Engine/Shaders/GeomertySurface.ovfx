@@ -213,9 +213,7 @@ uniform int trifoLen=0;
 
 uniform sampler2D _ShadowMap;
 uniform mat4 _LightSpaceMatrix;
-uniform samplerCube _EnvironmentMap;
 
-uniform samplerCube _SkyboxCube;
 uniform samplerCube _IrradianceCube;
 uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
@@ -1226,7 +1224,7 @@ void main()
     float opacityFactor = clamp(fs_in.screenLengthOutput / 50., 0.15, 1.0);
     albedo.rgb = mix(albedo.rgb, edgeColor, emix*opacityFactor*edgeOpacity);
 #endif
-   vec3 pbr = PBRLightingModel(
+   vec3 pbr = PBRLighting(
         albedo.rgb,
         metallic,
         roughness,
@@ -1236,7 +1234,6 @@ void main()
         fs_in.FragPos,
         _ShadowMap,
         _LightSpaceMatrix,
-        _EnvironmentMap,
         u_Transmission,
         u_RefractionIndex
     );
@@ -1247,8 +1244,7 @@ void main()
     pbr = mix(pbr, pbr / (pbr + vec3(1.0)), u_BuiltInToneMapping);
     pbr = mix(pbr, pow(pbr, vec3(1.0 / 2.2)), u_BuiltInGammaCorrection);
 
-    vec3 sampleVec=reflect(-VD,normal);
-    vec3 skyColor=textureLod(_SkyboxCube, sampleVec,0).rgb;
+
     MaterialInputs inputs;
     initMaterial(inputs);
     materialf(inputs);
@@ -1264,8 +1260,7 @@ void main()
     vec3 iblColor=vec3(0,0,0);
     evaluateIBL(inputs,pixel,iblColor);
     const vec3 emissive = texture(u_EmissiveMap, texCoords).rgb * u_EmissiveColor * u_EmissiveIntensity;
-    pbr += emissive+iblColor;
-    pbr *=skyColor;
+    pbr += emissive+pow(iblColor, vec3(2.2));
 
     FRAGMENT_COLOR = vec4(pbr, albedo.a);
 
