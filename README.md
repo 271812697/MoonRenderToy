@@ -1,22 +1,46 @@
-# Moon Render Toy
+# Moon Render
 
 This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+![path](README.assets/path.png)
+
+![image-20251208205509317](README.assets/image-20251208205509317.png)
+
+![image-20260102211418374](README.assets/image-20260102211418374.png)
+
+![image-20260108201518310](README.assets/image-20260108201518310.png)
+
+![image-20250511193104742](README.assets/image-20250511193104742.png)
+
+## ![image-20250516220043064](README.assets/image-20250516220043064.png)
+
+![image-20250517125549395](README.assets/image-20250517125549395.png)
+
+![image-20250527215334557](README.assets/image-20250527215334557.png)
+
+![image-20250608134539723](README.assets/image-20250608134539723.png)
+
+![image-20250929212947417](README.assets/image-20250929212947417.png)
 
 
-## PathTrace
 
+## Features
 
-## To Do
+- [x] animation effects to camera perspective adjustment
 
-### PathTrace
+- [x] pathtracing and PBR
 
-Here are a lot of things to do:
+- [x] Render options panel
 
-- [x] Added animation effects to camera perspective adjustment
-- [ ] Render options panel
-- [ ] Materials panel
+- [x] Materials panel
+
 - [x] Visibility Control and Selection Interactions
+
+- [x] postprocess effects
+
+- [ ] and plans to do
+
+  
 
