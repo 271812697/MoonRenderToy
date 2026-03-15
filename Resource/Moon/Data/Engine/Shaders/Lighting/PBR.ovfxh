@@ -171,3 +171,86 @@ vec3 PBRLightingModel(
     
     return ambient + Lo;
 }
+vec3 PBRLighting(
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    float ao,
+    vec3 normal,
+    vec3 viewDir,
+    vec3 fragPos,
+    sampler2D shadowMap,
+    mat4 lightSpaceMatrix,
+    float transmission,
+    float refractionIndex
+)
+{
+    // Sanitize inputs
+    metallic = clamp(metallic, 0.0, 1.0);
+    roughness = clamp(roughness, 0.04, 1.0);
+    ao = clamp(ao, 0.0, 1.0);
+    normal = normalize(normal);
+
+    // Gamma correction of the albedo color (assuming the albedo is in sRGB space)
+    albedo = pow(albedo, vec3(2.2));
+
+    const vec3 N = normalize(normal);
+    const vec3 V = viewDir;
+    const float NdotV = max(dot(N, V), 0.0);
+    const vec3 F0 = mix(vec3(0.04), albedo, metallic); 
+
+    // Prepare accumulation variables
+    vec3 Lo = vec3(0.0);
+    vec3 ambient = vec3(0.0);
+
+    for (int i = 0; i < ssbo_Lights.length(); ++i) 
+    {
+        const Light light = ExtractLight(ssbo_Lights[i]);
+
+        switch(light.type)
+        {
+            case 0: // Point Light
+            {
+                const PointLight pointLight = ExtractPointLight(light);
+                const LightContribution contrib = CalculatePointLightContribution(pointLight, fragPos);
+                Lo += CalculateBRDF(contrib, V, N, albedo, metallic, roughness, F0);
+                break;
+            }
+            
+            case 1: // Directional Light
+            {
+                const DirectionalLight dirLight = ExtractDirectionalLight(light);
+                const LightContribution contrib = CalculateDirectionalLightContribution(dirLight, fragPos, N, shadowMap, lightSpaceMatrix);
+                Lo += CalculateBRDF(contrib, V, N, albedo, metallic, roughness, F0);
+                break;
+            }
+            
+            case 2: // Spot Light
+            {
+                const SpotLight spotLight = ExtractSpotLight(light);
+                const LightContribution contrib = CalculateSpotLightContribution(spotLight, fragPos);
+                Lo += CalculateBRDF(contrib, V, N, albedo, metallic, roughness, F0);
+                break;
+            }
+            
+            case 3: // Ambient Box Light
+            {
+                const AmbientBoxLight boxLight = ExtractAmbientBoxLight(light);
+                ambient += CalculateAmbientBoxLightContribution(boxLight, fragPos);
+                break;
+            }
+            
+            case 4: // Ambient Sphere Light
+            {
+                const AmbientSphereLight sphereLight = ExtractAmbientSphereLight(light);
+                ambient += CalculateAmbientSphereLightContribution(sphereLight, fragPos);
+                break;
+            }
+        }
+    }
+
+
+    ambient *= ao;
+    
+    return ambient + Lo;
+}

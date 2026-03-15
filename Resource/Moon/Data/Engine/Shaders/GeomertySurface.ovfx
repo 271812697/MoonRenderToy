@@ -213,9 +213,7 @@ uniform int trifoLen=0;
 
 uniform sampler2D _ShadowMap;
 uniform mat4 _LightSpaceMatrix;
-uniform samplerCube _EnvironmentMap;
 
-uniform samplerCube _SkyboxCube;
 uniform samplerCube _IrradianceCube;
 uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
@@ -927,7 +925,7 @@ void getSubsurfacePixelParams(const MaterialInputs material, inout PixelParams p
 
 void getEnergyCompensationPixelParams(inout PixelParams pixel) {
     // Pre-filtered DFG term used for image-based lighting
-    pixel.dfg = textureLod(_BRDFLut, vec2(pixel.perceptualRoughness, pixel.shading_NoV), 0.0).rgb;
+    pixel.dfg = texture(_BRDFLut, vec2(pixel.perceptualRoughness, pixel.shading_NoV)).rgb;
 #if !defined(SHADING_MODEL_CLOTH)
     // Energy compensation for multiple scattering in a microfacet model
     // See "Multiple-Scattering Microfacet BSDFs with the Smith Model"
@@ -1226,7 +1224,7 @@ void main()
     float opacityFactor = clamp(fs_in.screenLengthOutput / 50., 0.15, 1.0);
     albedo.rgb = mix(albedo.rgb, edgeColor, emix*opacityFactor*edgeOpacity);
 #endif
-   vec3 pbr = PBRLightingModel(
+   vec3 pbr = PBRLighting(
         albedo.rgb,
         metallic,
         roughness,
@@ -1236,7 +1234,6 @@ void main()
         fs_in.FragPos,
         _ShadowMap,
         _LightSpaceMatrix,
-        _EnvironmentMap,
         u_Transmission,
         u_RefractionIndex
     );
@@ -1247,12 +1244,11 @@ void main()
     pbr = mix(pbr, pbr / (pbr + vec3(1.0)), u_BuiltInToneMapping);
     pbr = mix(pbr, pow(pbr, vec3(1.0 / 2.2)), u_BuiltInGammaCorrection);
 
-    vec3 sampleVec=reflect(-VD,normal);
-    vec3 skyColor=textureLod(_SkyboxCube, sampleVec,0).rgb;
+
     MaterialInputs inputs;
     initMaterial(inputs);
     materialf(inputs);
-    inputs.baseColor.rgb=albedo.rgb;
+    inputs.baseColor.rgb=albedo.rgb;//pow(albedo.rgb, vec3(2.2));
     inputs.normal=normal;
     
     inputs.metallic = metallic;
@@ -1265,7 +1261,6 @@ void main()
     evaluateIBL(inputs,pixel,iblColor);
     const vec3 emissive = texture(u_EmissiveMap, texCoords).rgb * u_EmissiveColor * u_EmissiveIntensity;
     pbr += emissive+iblColor;
-    //pbr = iblColor;
 
     FRAGMENT_COLOR = vec4(pbr, albedo.a);
 
