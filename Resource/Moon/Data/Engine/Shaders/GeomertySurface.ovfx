@@ -1248,11 +1248,10 @@ void main()
     MaterialInputs inputs;
     initMaterial(inputs);
     materialf(inputs);
-    inputs.baseColor.rgb=albedo.rgb;//pow(albedo.rgb, vec3(2.2));
+    inputs.baseColor.rgb=pow(albedo.rgb, vec3(2.2));
     inputs.normal=normal;
-    
-    inputs.metallic = metallic;
-    inputs.roughness =roughness;
+    inputs.metallic =saturate(metallic);
+    inputs.roughness =saturate(roughness);
     PixelParams pixel;
     getPixelParams(inputs, pixel);
     pixel.shading_NoV=dot(VD,normal);
