@@ -950,7 +950,7 @@ void getAnisotropyPixelParams(const MaterialInputs material, inout PixelParams p
     pixel.anisotropicB = normalize(cross(getWorldGeometricNormalVector(), pixel.anisotropicT));
 #endif
 }
-void getPixelParams(const MaterialInputs material, out PixelParams pixel) {
+void getPixelParams(const MaterialInputs material, inout PixelParams pixel) {
     getSpecularPixelParams(material, pixel);
     getCommonPixelParams(material, pixel);
     getSheenPixelParams(material, pixel);
@@ -1252,10 +1252,11 @@ void main()
     inputs.normal=normal;
     inputs.metallic =saturate(metallic);
     inputs.roughness =saturate(roughness);
-    PixelParams pixel;
-    getPixelParams(inputs, pixel);
+    PixelParams pixel;  
     pixel.shading_NoV=dot(VD,normal);
     pixel.shading_reflected=reflect(-VD, normal);;
+    getPixelParams(inputs, pixel);
+
     vec3 iblColor=vec3(0,0,0);
     evaluateIBL(inputs,pixel,iblColor);
     const vec3 emissive = texture(u_EmissiveMap, texCoords).rgb * u_EmissiveColor * u_EmissiveIntensity;
