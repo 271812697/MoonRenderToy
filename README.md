@@ -16,6 +16,8 @@ This is a renderer written based on Qt+Opengl
 
 ![image-20260102211418374](README.assets/image-20260102211418374.png)
 
+![image-20260316220501762](README.assets/image-20260316220501762.png)
+
 ![image-20260108201518310](README.assets/image-20260108201518310.png)
 
 ![image-20250511193104742](README.assets/image-20250511193104742.png)
