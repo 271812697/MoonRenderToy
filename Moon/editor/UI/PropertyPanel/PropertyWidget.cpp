@@ -12,6 +12,7 @@
 #include "Widgets/Property.h"
 #include "Widgets/BoolProperty.h"
 #include "Widgets/FVec3Property.h"
+#include "Widgets/FVec4Property.h"
 #include "Widgets/EnumProperty.h"
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/SliderIntProperty.h"
@@ -245,6 +246,9 @@ namespace MOON {
 					//auto v = std::get<Maths::FVector3>(mprop.second.value);
 					mProperties.push_back(new SliderFloatProperty(mprop.first.c_str(), this));
 				}
+				else if (std::holds_alternative<Maths::FVector4>(mprop.second.value)) {
+					mProperties.push_back(new FVec4Property(mprop.first.c_str(), this));
+				}
 			}
 		}
 		virtual ~MaterialPropertyComponent() {
@@ -255,6 +259,9 @@ namespace MOON {
 			if (ref.has_value()) {
 				if (std::holds_alternative<Maths::FVector3>(ref.value().value)) {
 					auto v = std::get<Maths::FVector3>(ref.value().value);
+					return QVariant::fromValue(v);
+				}else if (std::holds_alternative<Maths::FVector4>(ref.value().value)) {
+					auto v = std::get<Maths::FVector4>(ref.value().value);
 					return QVariant::fromValue(v);
 				}
 				else if (std::holds_alternative<float>(ref.value().value)) {
@@ -269,6 +276,8 @@ namespace MOON {
 			if (mat->HasProperty(propertyName.toStdString())) {
 				if (value.canConvert<Maths::FVector3>()) {
 					mat->SetProperty(propertyName.toStdString(),value.value<Maths::FVector3>());
+				}else if (value.canConvert<Maths::FVector4>()) {
+					mat->SetProperty(propertyName.toStdString(), value.value<Maths::FVector4>());
 				}
 				else if (value.canConvert<float>()) {
 					mat->SetProperty(propertyName.toStdString(), value.value<float>());
@@ -298,7 +307,6 @@ namespace MOON {
 			return new DirectionLightPropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);
-	
 	}
 	class PropertyWidget::PropertyWidgetInternal {
 	public:
@@ -338,7 +346,7 @@ namespace MOON {
 					}
 					m_comps.clear();
 					for (auto& ptr : m_selectedActor->GetComponents()) {
-						auto actorComp = ptr.get();
+					
 						auto p = transferActorPropertyComponent(ptr.get());
 						auto collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
 						layout_->addWidget(collpase);

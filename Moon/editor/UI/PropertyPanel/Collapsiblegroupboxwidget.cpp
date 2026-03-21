@@ -90,7 +90,7 @@ namespace MOON {
 		QLabel* label_;
 		QWidget* propertyWidgetGroup_;
 		QGridLayout* propertyWidgetGroupLayout_;
-		std::vector<Property*> properties_;
+		std::vector<WidgetProperty*> properties_;
 		std::vector<PropertyQtWidget*> propertyWidgets_;
 	};
 	CollapsibleGroupBoxWidget::CollapsibleGroupBoxWidget(const QString& name,QWidget* parent):QWidget(parent),mInternal(new CollapsibleGroupBoxWidgetInternal(this))
@@ -103,11 +103,11 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
-	void CollapsibleGroupBoxWidget::addProperty(Property* tmpProperty)
+	void CollapsibleGroupBoxWidget::addProperty(WidgetProperty* tmpProperty)
 	{
 		insertProperty(tmpProperty, mInternal->properties_.size());
 	}
-	void CollapsibleGroupBoxWidget::insertProperty(Property* prop, size_t index)
+	void CollapsibleGroupBoxWidget::insertProperty(WidgetProperty* prop, size_t index)
 	{
 		setUpdatesEnabled(false);
 		mInternal->propertyWidgetGroupLayout_->setEnabled(false);

@@ -1,12 +1,11 @@
 ﻿#pragma once
 #include "Widgets/Property.h"
-#include "Widgets/SlideChekBox.h"
+#include "Widgets/FVec4.h"
 namespace MOON {
-	class BoolProperty :public WidgetProperty {
+	class FVec4Property :public WidgetProperty {
 	public:
-		BoolProperty(const QString& n, PropertyComponent* comp);
-		~BoolProperty();
+		FVec4Property(const QString& n, PropertyComponent* comp);
+		~FVec4Property();
 		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override;
 	};
-
 }

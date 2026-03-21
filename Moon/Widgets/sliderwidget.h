@@ -102,7 +102,8 @@ namespace MOON {
         virtual void setMinValue(T minValue) override;
         virtual void setMaxValue(T maxValue) override;
         virtual void setIncrement(T increment) override;
-      
+        virtual QVariant widgetValue()override;
+        virtual void setWidgetValue(const QVariant& value) override;
 
     protected:
         // Define the transforms
@@ -271,6 +272,18 @@ namespace MOON {
             increment_ = increment;
             applyIncrement();
         }
+    }
+
+    template<typename T>
+    QVariant SliderWidgetQt<T>::widgetValue()
+    {
+        return QVariant(getValue());
+    }
+
+    template<typename T>
+    void SliderWidgetQt<T>::setWidgetValue(const QVariant& value)
+    {
+        setValue(value.value<T>());
     }
  
 }

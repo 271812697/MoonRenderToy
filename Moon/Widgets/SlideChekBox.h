@@ -6,9 +6,11 @@ namespace MOON {
     {
         Q_OBJECT
     public:
-        SliderCheckBox(QWidget* parent, Property* prop);
+        SliderCheckBox(QWidget* parent, WidgetProperty* prop);
         bool getValue()const;
         void setValue(bool val);
+        virtual QVariant widgetValue() override;
+        virtual void setWidgetValue(const QVariant& value) override;
     public Q_SLOTS:
         void toggle(bool);
 

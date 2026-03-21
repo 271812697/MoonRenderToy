@@ -430,6 +430,5 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 			}, drawableCopy);
 		}
 	}
-
 	return output;
 }

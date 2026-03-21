@@ -12,7 +12,7 @@ namespace MOON {
 			delete prop;
 		}
 	}
-	std::vector<Property*> PropertyComponent::getProperties()
+	std::vector<WidgetProperty*> PropertyComponent::getProperties()
 	{
 		return mProperties;
 	}

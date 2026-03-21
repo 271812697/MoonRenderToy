@@ -6,7 +6,7 @@
 #include <QRegExpValidator>
 #include <QPalette>
 namespace MOON {
-    ColorPicker::ColorPicker(QWidget* parent, Property* prop)
+    ColorPicker::ColorPicker(QWidget* parent, WidgetProperty* prop)
         :PropertyQtWidget(parent, prop)
         , m_selectedColor(Qt::white) // 默认白色
     {
@@ -42,6 +42,14 @@ namespace MOON {
     QColor ColorPicker::currentColor() const
     {
         return m_selectedColor;
+    }
+    QVariant ColorPicker::widgetValue() {
+        return currentColor();
+    }
+
+    void ColorPicker::setWidgetValue(const QVariant& value)
+    {
+        setCurrentColor(value.value<QColor>());
     }
 
     void ColorPicker::setCurrentColor(const QColor& color)

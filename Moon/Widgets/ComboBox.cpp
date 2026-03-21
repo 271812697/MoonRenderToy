@@ -1,7 +1,7 @@
 ﻿#include "Widgets/ComboBox.h"
 #include<QHBoxLayout>
 namespace MOON {
-	ComboBox::ComboBox(QWidget* parent, Property* prop):PropertyQtWidget(parent,prop)
+	ComboBox::ComboBox(QWidget* parent, WidgetProperty* prop):PropertyQtWidget(parent,prop)
 	{
 		myCbox = new QComboBox(this);
 		QHBoxLayout* hLayout = new QHBoxLayout();
@@ -22,6 +22,13 @@ namespace MOON {
 	int ComboBox::getCurrentIndex()
 	{
 		return myCbox->currentIndex();
+	}
+	QVariant ComboBox::widgetValue() {
+		return getCurrentIndex();
+	}
+	void ComboBox::setWidgetValue(const QVariant& value)
+	{
+		myCbox->setCurrentIndex(value.toInt());
 	}
 	void ComboBox::onProvinceSelect(const QString& selectText) {
 	

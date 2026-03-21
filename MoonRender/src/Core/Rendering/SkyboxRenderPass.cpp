@@ -30,7 +30,7 @@ namespace
 Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::CompositeRenderer& p_renderer) :
 	::Rendering::Core::ARenderPass(p_renderer)
 {
-	m_skyboxMaterial.SetShader(::Core::Global::ServiceLocator::Get<Core::ResourceManagement::ShaderManager>()[":Shaders\\SkyboxConvert.ovfx"]);
+	m_skyboxMaterial.SetShader(GetShaderService[":Shaders\\SkyboxConvert.ovfx"]);
 	m_skyboxMaterial.SetBackfaceCulling(false);
 	m_skyboxIrrandianceMaterial.SetShader(GetShaderService[":Shaders\\SkyboxIrrandiance.ovfx"]);
 	m_skyboxIrrandianceMaterial.SetBackfaceCulling(false);
@@ -360,7 +360,6 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 		skyboxDrawable.material.value().SetProperty("SkyboxCube", prefilterCube.get());
 		m_renderer.DrawEntity(p_pso, skyboxDrawable);			
 		*/
-	
 	}
 }
 
