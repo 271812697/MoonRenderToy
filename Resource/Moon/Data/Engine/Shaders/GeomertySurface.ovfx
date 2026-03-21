@@ -1263,6 +1263,6 @@ void main()
     pbr += emissive+iblColor;
     //pbr=iblColor;
 
-    FRAGMENT_COLOR = vec4(pbr, albedo.a);
+    FRAGMENT_COLOR = vec4(pbr,albedo.a);
 
 }

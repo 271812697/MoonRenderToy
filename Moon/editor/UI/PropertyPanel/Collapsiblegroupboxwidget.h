@@ -7,8 +7,8 @@ namespace MOON {
 	public:
 		CollapsibleGroupBoxWidget(const QString& name,QWidget* parent);
 		~CollapsibleGroupBoxWidget();
-		void addProperty(Property* tmpProperty);
-		void insertProperty(Property* prop, size_t index);
+		void addProperty(WidgetProperty* tmpProperty);
+		void insertProperty(WidgetProperty* prop, size_t index);
 		void insertPropertyWidget(const QString& label, PropertyQtWidget* propertyWidget, bool insertAtEnd);
 		virtual QSize sizeHint() const override;
 		virtual QSize minimumSizeHint() const override;

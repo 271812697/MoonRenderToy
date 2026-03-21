@@ -6,9 +6,11 @@ namespace MOON {
     {
         Q_OBJECT
     public:
-        ComboBox(QWidget* parent, Property* prop);
+        ComboBox(QWidget* parent, WidgetProperty* prop);
         void addComboList(const QList<QString>&list);
         int getCurrentIndex();
+        virtual QVariant widgetValue()override;
+        virtual void setWidgetValue(const QVariant& value) override;
     private slots:
         void onProvinceSelect(const QString& selectText);
     private:

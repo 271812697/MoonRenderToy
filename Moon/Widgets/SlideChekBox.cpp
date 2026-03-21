@@ -2,7 +2,7 @@
 #include <QCheckBox>
 #include<QHBoxLayout>
 namespace MOON {
-	SliderCheckBox::SliderCheckBox(QWidget* parent, Property* prop):PropertyQtWidget(parent,prop)
+	SliderCheckBox::SliderCheckBox(QWidget* parent, WidgetProperty* prop):PropertyQtWidget(parent,prop)
 	{
 		m_checkBox = new SlidingCheckBox(this);
         QHBoxLayout* hLayout = new QHBoxLayout();
@@ -21,6 +21,14 @@ namespace MOON {
 	void SliderCheckBox::setValue(bool val)
 	{
 		m_checkBox->setCheckValue(val);
+	}
+	QVariant SliderCheckBox::widgetValue()
+	{
+		return getValue();;
+	}
+	void SliderCheckBox::setWidgetValue(const QVariant& value)
+	{
+		setValue(value.toBool());
 	}
 	void SliderCheckBox::toggle(bool val)
 	{

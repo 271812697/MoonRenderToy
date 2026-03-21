@@ -219,9 +219,11 @@ namespace MOON {
             tempMat->SetBackfaceCulling(false);
             tempMat->SetCastShadows(false);
             tempMat->SetReceiveShadows(false);
+            tempMat->SetBlendable(true);
+            tempMat->SetDepthWriting(false);
             tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
             tempMat->SetProperty("u_Albedo", colors[0]);
-            tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
+            tempMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
             tempMat->SetProperty("u_Roughness", 0.3f);
             tempMat->SetProperty("u_Metallic", 0.1f);
             // Emission
@@ -238,6 +240,7 @@ namespace MOON {
             auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
             materilaRener.SetMaterialAtIndex(0, *tempMat);
             materilaRener.UpdateMaterialList();
+            
             for (auto* acptr : domainActors) {
                 acptr->SetParent(actor);
             }

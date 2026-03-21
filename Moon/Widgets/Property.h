@@ -5,17 +5,18 @@ class QWidget;
 namespace MOON {
 	class PropertyQtWidget;
 	class PropertyComponent;
-	class Property {
+	class WidgetProperty {
 	public:
-		Property(const QString& n, PropertyComponent* comp);
-		virtual ~Property();
+		WidgetProperty(const QString& n, PropertyComponent* comp);
+		virtual ~WidgetProperty();
 		virtual PropertyQtWidget* createEditorWidget(QWidget*parent=nullptr)=0;
-		virtual void setOwnerPropertyValue(const QVariant& value)=0;
-		virtual void updateWidgetValue(const QVariant& value) = 0;
-		virtual void onWidgetValueChange()=0;
+		void updateWidgetValue(const QVariant& value);
+		void setOwnerPropertyValue(const QVariant& value);
+		void onWidgetValueChange();
 		QString getPropertyName();
 	protected:
 		PropertyComponent* owner = nullptr;
+		PropertyQtWidget* mWidget = nullptr;
 		QString mName;
 	};
 }

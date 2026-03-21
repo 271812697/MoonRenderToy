@@ -13,13 +13,14 @@ namespace MOON {
         Q_OBJECT
 
     public:
-        explicit ColorPicker(QWidget* parent, Property* prop);
+        explicit ColorPicker(QWidget* parent, WidgetProperty* prop);
 
         // 获取当前选中的颜色
         QColor currentColor() const;
         // 设置初始颜色
         void setCurrentColor(const QColor& color);
-
+        virtual QVariant widgetValue()override;
+        virtual void setWidgetValue(const QVariant& value) override;
     private slots:
         // 打开颜色选择对话框
         void openColorDialog();

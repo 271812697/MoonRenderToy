@@ -7,20 +7,20 @@ namespace Core::ECS::Components
 	class AComponent;
 }
 namespace MOON {
-	class Property;
+	class WidgetProperty;
 	class PropertyComponent
 	{
 	public:
 		PropertyComponent();
 		virtual ~PropertyComponent();
-		std::vector<Property*>getProperties();
+		std::vector<WidgetProperty*>getProperties();
 		
 		virtual QVariant getPropertyValue(const QString& propertyName);
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value);
 		void updateWidgetValue();
 		virtual QString getComponentName();
 	protected:
-		std::vector<Property*>mProperties;
+		std::vector<WidgetProperty*>mProperties;
 	};
 	class ActorPropertyComponent :public PropertyComponent
 	{
