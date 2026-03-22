@@ -219,8 +219,8 @@ namespace MOON {
             tempMat->SetBackfaceCulling(false);
             tempMat->SetCastShadows(false);
             tempMat->SetReceiveShadows(false);
-            tempMat->SetBlendable(true);
-            tempMat->SetDepthWriting(false);
+            //tempMat->SetBlendable(true);
+            //tempMat->SetDepthWriting(false);
             tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
             tempMat->SetProperty("u_Albedo", colors[0]);
             tempMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
