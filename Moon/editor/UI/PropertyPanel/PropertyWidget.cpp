@@ -247,7 +247,17 @@ namespace MOON {
 					mProperties.push_back(new SliderFloatProperty(mprop.first.c_str(), this));
 				}
 				else if (std::holds_alternative<Maths::FVector4>(mprop.second.value)) {
-					mProperties.push_back(new FVec4Property(mprop.first.c_str(), this));
+					std::string mainLower = mprop.first;
+					std::transform(mainLower.begin(), mainLower.end(), mainLower.begin(),
+						[](unsigned char c) { return std::tolower(c); });
+					if (mainLower.find("u_albedo") != std::string::npos) {
+						mProperties.push_back(new ColorPickerProperty(mprop.first.c_str(), this));
+					}
+					else
+					{
+						mProperties.push_back(new FVec4Property(mprop.first.c_str(), this));
+					}
+					
 				}
 			}
 		}
@@ -255,14 +265,25 @@ namespace MOON {
 
 		}
 		virtual QVariant getPropertyValue(const QString& propertyName)override {
-			auto ref = mat->GetProperty(propertyName.toStdString());
+			std::string propName = propertyName.toStdString();
+			auto ref = mat->GetProperty(propName);
 			if (ref.has_value()) {
 				if (std::holds_alternative<Maths::FVector3>(ref.value().value)) {
 					auto v = std::get<Maths::FVector3>(ref.value().value);
 					return QVariant::fromValue(v);
 				}else if (std::holds_alternative<Maths::FVector4>(ref.value().value)) {
 					auto v = std::get<Maths::FVector4>(ref.value().value);
+
+					std::string mainLower = propName;
+					std::transform(mainLower.begin(), mainLower.end(), mainLower.begin(),
+						[](unsigned char c) { return std::tolower(c); });
+					if (mainLower.find("u_albedo") != std::string::npos) {
+						return QVariant::fromValue(QColor(v.x * 255, v.y* 255, v.z * 255,v.w*255));
+						
+					}
 					return QVariant::fromValue(v);
+					
+					
 				}
 				else if (std::holds_alternative<float>(ref.value().value)) {
 					auto v = std::get<float>(ref.value().value);
@@ -272,15 +293,32 @@ namespace MOON {
 			return QVariant();
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
-			
-			if (mat->HasProperty(propertyName.toStdString())) {
+			std::string propName = propertyName.toStdString();
+			if (mat->HasProperty(propName)) {
 				if (value.canConvert<Maths::FVector3>()) {
-					mat->SetProperty(propertyName.toStdString(),value.value<Maths::FVector3>());
+					mat->SetProperty(propName,value.value<Maths::FVector3>());
 				}else if (value.canConvert<Maths::FVector4>()) {
-					mat->SetProperty(propertyName.toStdString(), value.value<Maths::FVector4>());
+					mat->SetProperty(propName, value.value<Maths::FVector4>());
+				}
+				else if (value.canConvert<QColor>()) {
+					auto color = value.value<QColor>();
+					float alpha = color.alpha();
+					if (alpha < 255) {
+						mat->SetBlendable(true);
+						mat->SetDepthWriting(false);
+					}
+					else
+					{
+
+						mat->SetBlendable(false);
+						mat->SetDepthWriting(true);
+					}
+
+					mat->SetProperty(propName, Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f });
+				
 				}
 				else if (value.canConvert<float>()) {
-					mat->SetProperty(propertyName.toStdString(), value.value<float>());
+					mat->SetProperty(propName, value.value<float>());
 				}
 			}
 		}
