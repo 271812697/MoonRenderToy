@@ -13,7 +13,6 @@ void Rendering::Core::ARenderPass::ResizeRenderer(int width, int height)
 
 void Rendering::Core::ARenderPass::SetEnabled(bool p_enabled)
 {
-	//OVASSERT(!m_renderer.IsDrawing(), "Cannot toggle a render feature while rendering is in progress.");
 	m_enabled = p_enabled;
 }
 

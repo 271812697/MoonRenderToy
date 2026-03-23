@@ -3,6 +3,7 @@
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/Global/ServiceLocator.h>
+#include <Core/Rendering/FramebufferUtil.h>
 #include <Core/Rendering/EngineBufferRenderFeature.h>
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Core/Rendering/PostProcessRenderPass.h>
@@ -17,6 +18,7 @@
 #include <Rendering/Features/LightingRenderFeature.h>
 #include <Rendering/HAL/Profiling.h>
 #include <Rendering/Resources/Loaders/ShaderLoader.h>
+#include <Rendering/HAL/Texture.h>
 
 namespace
 {
@@ -78,9 +80,109 @@ namespace
 	public:
 		TransparentRenderPass(Rendering::Core::CompositeRenderer& p_renderer, bool p_stencilWrite = false) :
 			SceneRenderPass(p_renderer, p_stencilWrite) {
+			mLayerFbo.resize(8);
+			::Rendering::Settings::TextureDesc desc;
+			desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+			desc.width = 1;
+			desc.height = 1;
+			desc.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
+			desc.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR;
+		
+			desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+				.format = ::Rendering::Settings::EFormat::RGBA,
+				.type = ::Rendering::Settings::EPixelDataType::FLOAT,
+				.arrayLayers= static_cast<int>(mLayerFbo.size())
+			    
+			};
+			mLayerColor = std::make_shared<::Rendering::HAL::Texture>(
+				::Rendering::Settings::ETextureType::TEXTURE_2DARRAY, "layercolor");
+			mLayerColor->Allocate(desc);
+			
+
+			::Core::Rendering::FramebufferUtil::SetupFramebuffer(mBlendFbo, 1,1,false);
+			::Rendering::Settings::TextureDesc colorDesc{
+				.width = 1,
+				.height = 1,
+				.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+				.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+				.useMipMaps = false,
+				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+					.format = ::Rendering::Settings::EFormat::RGBA,
+					.type = ::Rendering::Settings::EPixelDataType::FLOAT
+				}
+			};
+			::Rendering::Settings::TextureDesc depthDesc{
+				.width = 1,
+				.height = 1,
+				.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+				.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT,
+				.useMipMaps = false,
+				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+					.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,
+					.type = ::Rendering::Settings::EPixelDataType::FLOAT
+				}
+			};
+			for (int i = 0; i < mLayerFbo.size(); i++) {
+				auto renderTexture = std::make_shared<::Rendering::HAL::Texture>(
+					 ::Rendering::Settings::ETextureType::TEXTURE_2D,"peelcolor");
+				renderTexture->Allocate(colorDesc);
+				auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
+					::Rendering::Settings::ETextureType::TEXTURE_2D,"peeldepth");
+				depthTexture->Allocate(depthDesc);
+				depthTexture->SetBorderColor(Maths::FVector4::One);
+				mLayerFbo[i].Attach<::Rendering::HAL::Texture>(renderTexture, ::Rendering::Settings::EFramebufferAttachment::COLOR);
+				mLayerFbo[i].Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+				if (!mLayerFbo[i].Validate()) {
+					std::cout << "invalidate buffer" << std::endl;
+				}
+			}
+
+			std::string v = R"(
+#version 450 core
+
+layout(location = 0) in vec2 geo_Pos;
+layout(location = 1) in vec2 geo_TexCoords;
+
+out vec2 TexCoords;
+
+void main()
+{
+    TexCoords = geo_TexCoords;
+    gl_Position = vec4(geo_Pos, 0.0, 1.0);
+}
+)";
+			std::string f = R"(
+#version 450 core
+
+in vec2 TexCoords;
+out vec4 FRAGMENT_COLOR;
+
+uniform sampler2D colorLayer;
+
+void main()
+{
+     FRAGMENT_COLOR = texture(colorLayer, TexCoords);
+}
+
+)";
+			mBlendColorShader = ::Rendering::Resources::Loaders::ShaderLoader::CreateFromSource(v, f);
+			mBlendColorMat.SetShader(mBlendColorShader);
 		}
 
 	protected:
+		virtual void ResizeRenderer(int width, int height) override {
+			mLayerColor->Resize(width,height);
+			mBlendFbo.Resize(width,height);
+			for (int i = 0; i < mLayerFbo.size(); i++) {
+				mLayerFbo[i].Resize(width,height);
+			}
+		}
 		virtual void Draw(Rendering::Data::PipelineState p_pso) override
 		{
 			ZoneScoped;
@@ -88,13 +190,69 @@ namespace
 
 			PrepareStencilBuffer(p_pso);
 
+			//peel 0 layers
+			mLayerFbo[0].Bind();
+			m_renderer.Clear(true,true,false,Maths::FVector4(0,0,0,1));
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 
-			for (const auto& drawable : drawables.transparents | std::views::values)
+			for ( auto drawable : drawables.transparents | std::views::values)
 			{
+				drawable.pass = "";
 				m_renderer.DrawEntity(p_pso, drawable);
 			}
+			mLayerFbo[0].Unbind();
+			//peel the others layers
+			
+			for (int layer = 1; layer < mLayerFbo.size(); layer++) {
+			
+				int currFbo = layer ;
+				int prevFbo = (layer - 1) ;
+
+				// 绑定当前 FBO
+				mLayerFbo[currFbo].Bind();
+
+				m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1));
+				const auto& depth=mLayerFbo[prevFbo].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH,0);
+				for (const auto& drawable : drawables.transparents | std::views::values)
+				{
+					drawable.material->TrySetProperty("DepthPeelTex",&depth.value());
+					m_renderer.DrawEntity(p_pso, drawable);
+				}
+				mLayerFbo[currFbo].Unbind();
+			}
+			mBlendFbo.Bind();
+			mBlendFbo.Clear(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+			for (int i = mLayerFbo.size() - 1; i >= 0; i--) {
+				const auto& color = mLayerFbo[i].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+				mBlendColorMat.SetProperty("colorLayer",&color.value());
+
+
+				Rendering::Entities::Drawable blit;
+				
+				blit.mesh = m_renderer.m_unitQuad;
+				blit.material = mBlendColorMat;
+				blit.stateMask.depthWriting = false;
+				blit.stateMask.colorWriting = true;
+				blit.stateMask.blendable = true;
+				blit.stateMask.frontfaceCulling = false;
+				blit.stateMask.backfaceCulling = false;
+				blit.stateMask.depthTest = false;
+				auto pso = m_renderer.CreatePipelineState();
+				m_renderer.DrawEntity(pso,blit);
+		
+			}
+			mBlendFbo.Unbind();
+			auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+			mssaaframebuffer.Bind();
+			m_renderer.Present(mBlendFbo);
+
 		}
+	private:
+		::Rendering::Resources::Shader* mBlendColorShader;
+		::Rendering::Data::Material mBlendColorMat;
+		std::vector<::Rendering::HAL::Framebuffer>mLayerFbo ;
+		::Rendering::HAL::Framebuffer mBlendFbo;
+		std::shared_ptr<::Rendering::HAL::Texture>mLayerColor;
 	};
 
 	class UIRenderPass : public SceneRenderPass
@@ -404,6 +562,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		auto drawableCopy = drawable;
 		drawableCopy.material = targetMaterial;
 		drawableCopy.stateMask = targetMaterial->GenerateStateMask();
+		
 
 		// Categorize drawable based on their type.
 		// This is also where sorting happens, using
@@ -417,6 +576,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		}
 		else if (drawableCopy.material->IsBlendable())
 		{
+			drawableCopy.pass = "Transparents";
 			output.transparents.emplace(decltype(decltype(output.transparents)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
 					.distance = distanceToCamera
