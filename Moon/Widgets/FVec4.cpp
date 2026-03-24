@@ -42,13 +42,15 @@ Fvec4::Fvec4(QWidget* parent, WidgetProperty* prop) : PropertyQtWidget(parent,pr
     m_spinW->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     // ========== 布局优化 ==========
-    QHBoxLayout* hLayout = new QHBoxLayout(this);
+   
+    QGridLayout* hLayout = new QGridLayout(this);
+   
     hLayout->setContentsMargins(1, 0, 1, 0); // 极小内边距，贴合单元格
     hLayout->setSpacing(3);                  // 控件间距适中
-    hLayout->addWidget(m_spinX);
-    hLayout->addWidget(m_spinY);
-    hLayout->addWidget(m_spinZ);
-    hLayout->addWidget(m_spinW);
+    hLayout->addWidget(m_spinX,0,0);
+    hLayout->addWidget(m_spinY,0,1);
+    hLayout->addWidget(m_spinZ,1,0);
+    hLayout->addWidget(m_spinW,1,1);
 
     this->setLayout(hLayout);
     //m_spinX;

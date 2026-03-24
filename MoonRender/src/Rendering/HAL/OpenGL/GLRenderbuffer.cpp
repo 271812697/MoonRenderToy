@@ -40,7 +40,6 @@ void Rendering::HAL::GLRenderbuffer::Allocate(uint16_t p_width, uint16_t p_heigh
 	m_context.height = p_height;
 	m_context.format = p_format;
 	if (isMultisample) {
-
 		glNamedRenderbufferStorageMultisample(m_context.id,4, EnumToValue<GLenum>(m_context.format), m_context.width, m_context.height);
 	}
 	else {

@@ -18,6 +18,7 @@ namespace Rendering::Core
 		void SetEnabled(bool p_enabled);
 		bool IsEnabled() const;
 	protected:
+
 		virtual void OnBeginFrame(const Data::FrameDescriptor& p_frameDescriptor);
 		virtual void OnEndFrame();
 		virtual void Draw(Rendering::Data::PipelineState p_pso) = 0;

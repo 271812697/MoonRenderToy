@@ -273,9 +273,15 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Framebuffer& p_src,
 void Rendering::Core::ABaseRenderer::Present(Rendering::HAL::Texture& p_src, Rendering::Data::Material& mat)
 {
 	ZoneScoped;
-	
-	
 	mat.SetProperty("_InputTexture", &p_src);
+	Present(mat);
+}
+void Rendering::Core::ABaseRenderer::Present(Rendering::Data::Material& mat)
+{
+	ZoneScoped;
+
+
+	
 	Rendering::Entities::Drawable blit;
 	blit.mesh = m_unitQuad;
 	blit.material = mat;
