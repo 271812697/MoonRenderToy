@@ -117,10 +117,10 @@ namespace
 			::Rendering::Settings::TextureDesc depthDesc{
 				.width = 1,
 				.height = 1,
-				.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
-				.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
-				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
-				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
+				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
 				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT,
 				.useMipMaps = false,
 				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
@@ -192,12 +192,19 @@ void main()
 
 			//peel 0 layers
 			mLayerFbo[0].Bind();
-			m_renderer.Clear(true,true,false,Maths::FVector4(0,0,0,1));
+			mLayerFbo[0].Clear(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
+			//m_renderer.Clear(true,true,false,Maths::FVector4(0,0,0,1));
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 
 			for ( auto drawable : drawables.transparents | std::views::values)
 			{
-				drawable.pass = "";
+				drawable.pass = "";				
+				drawable.stateMask.depthWriting = true;
+				drawable.stateMask.colorWriting = true;
+				drawable.stateMask.blendable = false;
+				drawable.stateMask.frontfaceCulling = false;
+				drawable.stateMask.backfaceCulling = false;
+				drawable.stateMask.depthTest = true;
 				m_renderer.DrawEntity(p_pso, drawable);
 			}
 			mLayerFbo[0].Unbind();
@@ -211,10 +218,16 @@ void main()
 				// 绑定当前 FBO
 				mLayerFbo[currFbo].Bind();
 
-				m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1));
+				m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 0));
 				const auto& depth=mLayerFbo[prevFbo].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH,0);
-				for (const auto& drawable : drawables.transparents | std::views::values)
+				for ( auto drawable : drawables.transparents | std::views::values)
 				{
+					drawable.stateMask.depthWriting = true;
+					drawable.stateMask.colorWriting = true;
+					drawable.stateMask.blendable = false;
+					drawable.stateMask.frontfaceCulling = false;
+					drawable.stateMask.backfaceCulling = false;
+					drawable.stateMask.depthTest = true;
 					drawable.material->TrySetProperty("DepthPeelTex",&depth.value());
 					m_renderer.DrawEntity(p_pso, drawable);
 				}
@@ -244,7 +257,9 @@ void main()
 			mBlendFbo.Unbind();
 			auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 			mssaaframebuffer.Bind();
-			m_renderer.Present(mBlendFbo);
+			const auto& depth = mLayerFbo[0].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
+			m_renderer.Present(depth.value());
+
 
 		}
 	private:

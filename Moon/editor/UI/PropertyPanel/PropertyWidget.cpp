@@ -305,7 +305,7 @@ namespace MOON {
 					float alpha = color.alpha();
 					if (alpha < 255) {
 						mat->SetBlendable(true);
-						mat->SetDepthWriting(false);
+						mat->SetDepthWriting(true);
 					}
 					else
 					{
