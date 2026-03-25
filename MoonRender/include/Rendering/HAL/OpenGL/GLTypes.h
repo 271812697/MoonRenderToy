@@ -326,11 +326,12 @@ struct Tools::Utils::MappingFor<Rendering::Settings::EInternalFormat, GLenum>
 	using EnumType = Rendering::Settings::EInternalFormat;
 	using type = std::tuple <
 		EnumValuePair<EnumType::DEPTH_COMPONENT, GL_DEPTH_COMPONENT>,
+		EnumValuePair<EnumType::DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32>,
 		EnumValuePair<EnumType::DEPTH_STENCIL, GL_DEPTH_STENCIL>,
 		EnumValuePair<EnumType::RED, GL_RED>,
 		EnumValuePair<EnumType::RG, GL_RG>,
 		EnumValuePair<EnumType::RGB, GL_RGB>,
-		EnumValuePair<EnumType::RGBA, GL_RGBA>, 
+		EnumValuePair<EnumType::RGBA, GL_RGBA>,
 		EnumValuePair<EnumType::R8, GL_R8>,
 		EnumValuePair<EnumType::R8_SNORM, GL_R8_SNORM>,
 		EnumValuePair<EnumType::R16, GL_R16>,

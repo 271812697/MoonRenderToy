@@ -9,6 +9,7 @@ namespace Rendering::Settings
 	{
 		// Base Internal Formats
 		DEPTH_COMPONENT,
+		DEPTH_COMPONENT32,
 		DEPTH_STENCIL,
 		RED,
 		RG,

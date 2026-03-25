@@ -213,6 +213,7 @@ uniform int trifoLen=0;
 #endif
 #if defined(Transparents)
 uniform sampler2D DepthPeelTex;
+uniform sampler2D OpaqueDepthTex;
 #endif
 
 uniform sampler2D _ShadowMap;
@@ -1149,7 +1150,12 @@ out vec4 FRAGMENT_COLOR;
 
 void main()
 {
-
+#if defined(Transparents)
+  ivec2 coords=ivec2(gl_FragCoord.xy);
+  float prevDepth = texelFetch(DepthPeelTex, coords,0).r;
+  float opaqueDepth=texelFetch(OpaqueDepthTex, coords,0).r;
+  if(gl_FragCoord.z <= prevDepth || gl_FragCoord.z>=opaqueDepth) discard;
+#endif
 #if defined(CLIP_PLANE)
     float offsetw=dot(ubo_plane.xyz,fs_in.FragPos)+ubo_plane.w;
     if(offsetw>0){
@@ -1267,10 +1273,7 @@ void main()
     const vec3 emissive = texture(u_EmissiveMap, texCoords).rgb * u_EmissiveColor * u_EmissiveIntensity;
     pbr += emissive+iblColor;
     //pbr=iblColor;
-#if defined(Transparents)
-  float prevDepth = texture(DepthPeelTex, gl_FragCoord.xy / vec2(textureSize(DepthPeelTex, 0))).r;
-  if(gl_FragDepth <= prevDepth) discard;
-#endif
+
     FRAGMENT_COLOR = vec4(pbr,albedo.a);
 
 }

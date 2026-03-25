@@ -10,6 +10,10 @@ namespace Core::Rendering::FramebufferUtil
 		::Rendering::HAL::Framebuffer& dst_framebuffer, 
 		int dst
 	);
+	void CopyFramebufferDepth(
+		::Rendering::HAL::Framebuffer& src_framebuffer,
+		::Rendering::HAL::Framebuffer& dst_framebuffer
+	);
 	void SetupFramebuffer(
 		::Rendering::HAL::Framebuffer& p_framebuffer,
 		const ::Rendering::Settings::TextureDesc& p_textureDesc,

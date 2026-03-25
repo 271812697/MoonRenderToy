@@ -38,8 +38,11 @@ void Rendering::HAL::GLFramebuffer::Attach(
 	}
 	else
 	{
-		
+		//Bind();
+		//glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentIndex, GL_TEXTURE_2D, p_toAttach->GetID(), kMipMapLevel);
+		//Unbind();
 		glNamedFramebufferTexture(m_context.id, attachmentIndex, p_toAttach->GetID(), kMipMapLevel);
+		
 	}
 
 	m_context.attachments[attachmentIndex] = p_toAttach;
