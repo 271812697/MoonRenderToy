@@ -1150,8 +1150,9 @@ out vec4 FRAGMENT_COLOR;
 void main()
 {
 #if defined(Transparents)
-  float prevDepth = texture(DepthPeelTex, gl_FragCoord.xy / vec2(textureSize(DepthPeelTex, 0))).r;
-  if(gl_FragDepth <= prevDepth) discard;
+  ivec2 coords=ivec2(gl_FragCoord.xy);
+  float prevDepth = texelFetch(DepthPeelTex, coords,0).r;
+  if(gl_FragCoord.z <= prevDepth) discard;
 #endif
 #if defined(CLIP_PLANE)
     float offsetw=dot(ubo_plane.xyz,fs_in.FragPos)+ubo_plane.w;

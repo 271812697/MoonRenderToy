@@ -309,13 +309,10 @@ namespace MOON {
 					}
 					else
 					{
-
 						mat->SetBlendable(false);
 						mat->SetDepthWriting(true);
 					}
-
 					mat->SetProperty(propName, Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f });
-				
 				}
 				else if (value.canConvert<float>()) {
 					mat->SetProperty(propName, value.value<float>());

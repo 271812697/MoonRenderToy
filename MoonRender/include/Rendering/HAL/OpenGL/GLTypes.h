@@ -142,7 +142,7 @@ struct Tools::Utils::MappingFor<Rendering::Settings::ERenderingCapability, GLenu
 		EnumValuePair<EnumType::DEPTH_TEST, GL_DEPTH_TEST>,
 		EnumValuePair<EnumType::DITHER, GL_DITHER>,
 		EnumValuePair<EnumType::POLYGON_OFFSET_FILL, GL_POLYGON_OFFSET_FILL>,
-		EnumValuePair<EnumType::POLYGON_OFFSET_LINE, GL_POLYGON_OFFSET_FILL>,
+		EnumValuePair<EnumType::POLYGON_OFFSET_LINE, GL_POLYGON_OFFSET_LINE>,
 		EnumValuePair<EnumType::SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_ALPHA_TO_COVERAGE>,
 		EnumValuePair<EnumType::SAMPLE_COVERAGE, GL_SAMPLE_COVERAGE>,
 		EnumValuePair<EnumType::SCISSOR_TEST, GL_SCISSOR_TEST>,
@@ -326,6 +326,7 @@ struct Tools::Utils::MappingFor<Rendering::Settings::EInternalFormat, GLenum>
 	using EnumType = Rendering::Settings::EInternalFormat;
 	using type = std::tuple <
 		EnumValuePair<EnumType::DEPTH_COMPONENT, GL_DEPTH_COMPONENT>,
+		EnumValuePair<EnumType::DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32>,
 		EnumValuePair<EnumType::DEPTH_STENCIL, GL_DEPTH_STENCIL>,
 		EnumValuePair<EnumType::RED, GL_RED>,
 		EnumValuePair<EnumType::RG, GL_RG>,

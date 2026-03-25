@@ -99,7 +99,7 @@ namespace
 			mLayerColor->Allocate(desc);
 			
 
-			::Core::Rendering::FramebufferUtil::SetupFramebuffer(mBlendFbo, 1,1,false);
+			::Core::Rendering::FramebufferUtil::SetupFramebuffer(mBlendFbo, 1,1,true);
 			::Rendering::Settings::TextureDesc colorDesc{
 				.width = 1,
 				.height = 1,
@@ -121,7 +121,7 @@ namespace
 				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
 				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32,
 				.useMipMaps = false,
 				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 					.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,
@@ -142,6 +142,7 @@ namespace
 					std::cout << "invalidate buffer" << std::endl;
 				}
 			}
+	
 
 			std::string v = R"(
 #version 450 core
@@ -167,7 +168,7 @@ uniform sampler2D colorLayer;
 
 void main()
 {
-     FRAGMENT_COLOR = texture(colorLayer, TexCoords);
+	FRAGMENT_COLOR = texture(colorLayer, TexCoords);
 }
 
 )";
@@ -187,13 +188,15 @@ void main()
 		{
 			ZoneScoped;
 			TracyGpuZone("TransparentRenderPass");
+			auto& msaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+			Core::Rendering::FramebufferUtil::CopyFramebufferColor(msaaframebuffer, 0, mBlendFbo, 0);
 
 			PrepareStencilBuffer(p_pso);
 
+
 			//peel 0 layers
 			mLayerFbo[0].Bind();
-			mLayerFbo[0].Clear(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
-			//m_renderer.Clear(true,true,false,Maths::FVector4(0,0,0,1));
+			m_renderer.Clear(true,true,false,Maths::FVector4(1,1,1,0));
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 
 			for ( auto drawable : drawables.transparents | std::views::values)
@@ -208,8 +211,8 @@ void main()
 				m_renderer.DrawEntity(p_pso, drawable);
 			}
 			mLayerFbo[0].Unbind();
+
 			//peel the others layers
-			
 			for (int layer = 1; layer < mLayerFbo.size(); layer++) {
 			
 				int currFbo = layer ;
@@ -217,7 +220,6 @@ void main()
 
 				// 绑定当前 FBO
 				mLayerFbo[currFbo].Bind();
-
 				m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 0));
 				const auto& depth=mLayerFbo[prevFbo].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH,0);
 				for ( auto drawable : drawables.transparents | std::views::values)
@@ -234,14 +236,10 @@ void main()
 				mLayerFbo[currFbo].Unbind();
 			}
 			mBlendFbo.Bind();
-			mBlendFbo.Clear(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 			for (int i = mLayerFbo.size() - 1; i >= 0; i--) {
 				const auto& color = mLayerFbo[i].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 				mBlendColorMat.SetProperty("colorLayer",&color.value());
-
-
 				Rendering::Entities::Drawable blit;
-				
 				blit.mesh = m_renderer.m_unitQuad;
 				blit.material = mBlendColorMat;
 				blit.stateMask.depthWriting = false;
@@ -250,17 +248,13 @@ void main()
 				blit.stateMask.frontfaceCulling = false;
 				blit.stateMask.backfaceCulling = false;
 				blit.stateMask.depthTest = false;
-				auto pso = m_renderer.CreatePipelineState();
-				m_renderer.DrawEntity(pso,blit);
-		
+				m_renderer.DrawEntity(p_pso,blit);
 			}
 			mBlendFbo.Unbind();
 			auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 			mssaaframebuffer.Bind();
-			const auto& depth = mLayerFbo[0].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
-			m_renderer.Present(depth.value());
-
-
+			const auto& content = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+			m_renderer.Present(content.value());
 		}
 	private:
 		::Rendering::Resources::Shader* mBlendColorShader;
