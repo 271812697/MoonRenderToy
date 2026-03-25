@@ -4,6 +4,10 @@ This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+### pbr and pathtrace
+
+------
+
 ![image-20260315105534305](README.assets/image-20260315105534305.png)
 
 ![image-20260315105623450](README.assets/image-20260315105623450.png)
@@ -12,27 +16,35 @@ This is a renderer written based on Qt+Opengl
 
 ![path](README.assets/path.png)
 
-![image-20251208205509317](README.assets/image-20251208205509317.png)
-
 ![image-20260102211418374](README.assets/image-20260102211418374.png)
 
 ![image-20260316220501762](README.assets/image-20260316220501762.png)
 
 ![image-20260108201518310](README.assets/image-20260108201518310.png)
 
-![image-20250511193104742](README.assets/image-20250511193104742.png)
 
-## ![image-20250516220043064](README.assets/image-20250516220043064.png)
-
-![image-20250517125549395](README.assets/image-20250517125549395.png)
-
-![image-20250527215334557](README.assets/image-20250527215334557.png)
-
-![image-20250608134539723](README.assets/image-20250608134539723.png)
 
 ![image-20250929212947417](README.assets/image-20250929212947417.png)
 
+### transparent
 
+------
+
+depth peel
+
+![image-20260325225058918](README.assets/image-20260325225058918.png)
+
+### clip
+
+![image-20260325225532674](README.assets/image-20260325225532674.png)
+
+### select and highlight
+
+------
+
+![image-20260325225722346](README.assets/image-20260325225722346.png)
+
+![image-20260325225804474](README.assets/image-20260325225804474.png)
 
 ## Features
 
@@ -51,4 +63,3 @@ This is a renderer written based on Qt+Opengl
 - [ ] and plans to do
 
   
-
