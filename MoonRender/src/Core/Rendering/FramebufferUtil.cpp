@@ -8,13 +8,19 @@
 namespace Core::Rendering::FramebufferUtil
 {
 	void CopyFramebufferColor(::Rendering::HAL::Framebuffer& src_framebuffer,int src, ::Rendering::HAL::Framebuffer& dst_framebuffer,int dst) {
-		auto s = src_framebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,src);
-		auto d = dst_framebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,dst);
 		auto[sw,sh]=src_framebuffer.GetSize();
 		auto [dw, dh] = dst_framebuffer.GetSize();
 		glNamedFramebufferReadBuffer(src_framebuffer.GetID(), GL_COLOR_ATTACHMENT0 + src);
 		glNamedFramebufferDrawBuffer(dst_framebuffer.GetID(), GL_COLOR_ATTACHMENT0 + dst);
 		glBlitNamedFramebuffer(src_framebuffer.GetID(), dst_framebuffer.GetID(), 0, 0, sw, sh, 0, 0, dw, dh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
+	void CopyFramebufferDepth(
+		::Rendering::HAL::Framebuffer& src_framebuffer,
+		::Rendering::HAL::Framebuffer& dst_framebuffer
+	) {
+		auto [sw, sh] = src_framebuffer.GetSize();
+		auto [dw, dh] = dst_framebuffer.GetSize();
+		glBlitNamedFramebuffer(src_framebuffer.GetID(), dst_framebuffer.GetID(), 0, 0, sw, sh, 0, 0, dw, dh, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
 	void SetupFramebuffer(
 		::Rendering::HAL::Framebuffer& p_framebuffer,
