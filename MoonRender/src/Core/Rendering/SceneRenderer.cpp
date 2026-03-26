@@ -196,94 +196,96 @@ void main()
 		{
 			ZoneScoped;
 			TracyGpuZone("TransparentRenderPass");
-			auto& msaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
-			Core::Rendering::FramebufferUtil::CopyFramebufferColor(msaaframebuffer, 0, mBlendFbo, 0);
-			Core::Rendering::FramebufferUtil::CopyFramebufferDepth(msaaframebuffer, mBlendFbo); 
-			
-			//peel 0 layers, use the depth buffer copied from opaque pass to peel the first layer of transparent
-			//we can have better method to optimize the copy like that
-			//we prepare a empty(value of depth is 0) depth texture,then we can unify the shader and (step1 and step2) for peeling all layers,
-			//but for now we just want to get it working
-			Core::Rendering::FramebufferUtil::CopyFramebufferDepth(mBlendFbo, mLayerFbo[0]);
-			PrepareStencilBuffer(p_pso);
-
-
-			/*
-			1.the first step: peel the first layer of transparent and write the depth to layerfbo0, then we can use this depth to peel the second layer and so on
-			*/
-			mLayerFbo[0].Bind();
-			m_renderer.Clear(true,false,false,Maths::FVector4(0,0,0,0));
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
-
-			for ( auto drawable : drawables.transparents | std::views::values)
-			{
-				drawable.pass = "";				
-				drawable.stateMask.depthWriting = true;
-				drawable.stateMask.colorWriting = true;
-				drawable.stateMask.blendable = false;
-				drawable.stateMask.frontfaceCulling = false;
-				drawable.stateMask.backfaceCulling = false;
-				drawable.stateMask.depthTest = true;
-				m_renderer.DrawEntity(p_pso, drawable);
-			}
-			mLayerFbo[0].Unbind();
-			/*
-			* 2.the second step: peel the second layer and the others, 
-			we use the depth texture of previous layer to peel the next layer, 
-			and we also need the depth texture of opaque layer to do culling,
-			so we need to bind both of them to shader, 
-			then we can peel all the layers in one pass,
-			but for now we just do it one by one
-			*/
-			//peel the others layers
-			for (int layer = 1; layer < mLayerFbo.size(); layer++) {
+			if (drawables.transparents.size()>0) {
+				auto& msaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+				Core::Rendering::FramebufferUtil::CopyFramebufferColor(msaaframebuffer, 0, mBlendFbo, 0);
+				Core::Rendering::FramebufferUtil::CopyFramebufferDepth(msaaframebuffer, mBlendFbo); 
 			
-				int currFbo = layer ;
-				int prevFbo = (layer - 1) ;
+				//peel 0 layers, use the depth buffer copied from opaque pass to peel the first layer of transparent
+				//we can have better method to optimize the copy like that
+				//we prepare a empty(value of depth is 0) depth texture,then we can unify the shader and (step1 and step2) for peeling all layers,
+				//but for now we just want to get it working
+				Core::Rendering::FramebufferUtil::CopyFramebufferDepth(mBlendFbo, mLayerFbo[0]);
+				PrepareStencilBuffer(p_pso);
 
-				// 绑定当前 FBO
-				mLayerFbo[currFbo].Bind();
-				m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 0));
-				const auto& depth=mLayerFbo[prevFbo].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH,0);
-				const auto& opaquedepth = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
+
+				/*
+				1.the first step: peel the first layer of transparent and write the depth to layerfbo0, then we can use this depth to peel the second layer and so on
+				*/
+				mLayerFbo[0].Bind();
+				m_renderer.Clear(true,false,false,Maths::FVector4(0,0,0,0));
+
 				for ( auto drawable : drawables.transparents | std::views::values)
 				{
+					drawable.pass = "";				
 					drawable.stateMask.depthWriting = true;
 					drawable.stateMask.colorWriting = true;
 					drawable.stateMask.blendable = false;
 					drawable.stateMask.frontfaceCulling = false;
 					drawable.stateMask.backfaceCulling = false;
 					drawable.stateMask.depthTest = true;
-					drawable.material->TrySetProperty("DepthPeelTex",&depth.value());
-					drawable.material->TrySetProperty("OpaqueDepthTex", &opaquedepth.value());
 					m_renderer.DrawEntity(p_pso, drawable);
 				}
-				mLayerFbo[currFbo].Unbind();
+				mLayerFbo[0].Unbind();
+				/*
+				* 2.the second step: peel the second layer and the others, 
+				we use the depth texture of previous layer to peel the next layer, 
+				and we also need the depth texture of opaque layer to do culling,
+				so we need to bind both of them to shader, 
+				then we can peel all the layers in one pass,
+				but for now we just do it one by one
+				*/
+				//peel the others layers
+				for (int layer = 1; layer < mLayerFbo.size(); layer++) {
+			
+					int currFbo = layer ;
+					int prevFbo = (layer - 1) ;
+
+					// 绑定当前 FBO
+					mLayerFbo[currFbo].Bind();
+					m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 0));
+					const auto& depth=mLayerFbo[prevFbo].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH,0);
+					const auto& opaquedepth = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::DEPTH, 0);
+					for ( auto drawable : drawables.transparents | std::views::values)
+					{
+						drawable.stateMask.depthWriting = true;
+						drawable.stateMask.colorWriting = true;
+						drawable.stateMask.blendable = false;
+						drawable.stateMask.frontfaceCulling = false;
+						drawable.stateMask.backfaceCulling = false;
+						drawable.stateMask.depthTest = true;
+						drawable.material->TrySetProperty("DepthPeelTex",&depth.value());
+						drawable.material->TrySetProperty("OpaqueDepthTex", &opaquedepth.value());
+						m_renderer.DrawEntity(p_pso, drawable);
+					}
+					mLayerFbo[currFbo].Unbind();
+				}
+				/*
+				 * 3.the third step: blend the peeled layers back to front,
+				 * we can also do it in one pass by binding all the peeled color textures to shader, but for now we just do it one by one
+				 */
+				mBlendFbo.Bind();
+				for (int i = mLayerFbo.size() - 1; i >= 0; i--) {
+					const auto& color = mLayerFbo[i].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+					mBlendColorMat.SetProperty("colorLayer",&color.value());
+					Rendering::Entities::Drawable blit;
+					blit.mesh = m_renderer.m_unitQuad;
+					blit.material = mBlendColorMat;
+					blit.stateMask.depthWriting = false;
+					blit.stateMask.colorWriting = true;
+					blit.stateMask.blendable = true;
+					blit.stateMask.frontfaceCulling = false;
+					blit.stateMask.backfaceCulling = false;
+					blit.stateMask.depthTest = false;
+					m_renderer.DrawEntity(p_pso,blit);
+				}
+				mBlendFbo.Unbind();
+				auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+				mssaaframebuffer.Bind();
+				const auto& content = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+				m_renderer.Present(content.value());
 			}
-			/*
-			 * 3.the third step: blend the peeled layers back to front,
-			 * we can also do it in one pass by binding all the peeled color textures to shader, but for now we just do it one by one
-			 */
-			mBlendFbo.Bind();
-			for (int i = mLayerFbo.size() - 1; i >= 0; i--) {
-				const auto& color = mLayerFbo[i].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-				mBlendColorMat.SetProperty("colorLayer",&color.value());
-				Rendering::Entities::Drawable blit;
-				blit.mesh = m_renderer.m_unitQuad;
-				blit.material = mBlendColorMat;
-				blit.stateMask.depthWriting = false;
-				blit.stateMask.colorWriting = true;
-				blit.stateMask.blendable = true;
-				blit.stateMask.frontfaceCulling = false;
-				blit.stateMask.backfaceCulling = false;
-				blit.stateMask.depthTest = false;
-				m_renderer.DrawEntity(p_pso,blit);
-			}
-			mBlendFbo.Unbind();
-			auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
-			mssaaframebuffer.Bind();
-			const auto& content = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-			m_renderer.Present(content.value());
 		}
 	private:
 		::Rendering::Resources::Shader* mBlendColorShader;

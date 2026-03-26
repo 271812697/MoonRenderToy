@@ -11,7 +11,6 @@ namespace MOON {
 		if (mWidget == nullptr) {
 			mWidget = new SliderCheckBox(parent, this);
 			updateWidgetValue(owner->getPropertyValue(mName));
-			
 		}
 		return mWidget;
 	}

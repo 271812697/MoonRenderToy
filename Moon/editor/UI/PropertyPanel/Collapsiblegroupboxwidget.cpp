@@ -7,8 +7,7 @@
 namespace MOON {
 	class CollapsibleGroupBoxWidget::CollapsibleGroupBoxWidgetInternal {
 	public:
-		std::unique_ptr<QWidget> createPropertyLayoutWidget(
-			QLabel* defaultLabel) {
+		std::unique_ptr<QWidget> createPropertyLayoutWidget() {
 			auto widget = std::make_unique<QWidget>();
 			widget->setObjectName("CompositeContents");
 
@@ -23,7 +22,7 @@ namespace MOON {
 			widget->setLayout(layout);
 
 			// add default label to widget layout, this will also set the correct stretching and spacing
-			layout->addWidget(defaultLabel, 0, 0);
+			//layout->addWidget(defaultLabel, 0, 0);
 			layout->addItem(new QSpacerItem(0, 1, QSizePolicy::Fixed), 0, 1);
 			layout->setColumnStretch(0, 0);
 			layout->setColumnStretch(1, 1);
@@ -35,8 +34,8 @@ namespace MOON {
 			mSelf->setFocusProxy(btnCollapse_);
 		}
 		CollapsibleGroupBoxWidgetInternal(CollapsibleGroupBoxWidget* self) :mSelf(self),
-			defaultLabel_{ new QLabel("Properties") },
-			propertyWidgetGroup_ { createPropertyLayoutWidget(defaultLabel_).release() }
+			
+			propertyWidgetGroup_ { createPropertyLayoutWidget().release() }
 		, propertyWidgetGroupLayout_{ static_cast<QGridLayout*>(propertyWidgetGroup_->layout()) } {
 			btnCollapse_=new QToolButton(mSelf);
 			btnCollapse_->setCheckable(true);
