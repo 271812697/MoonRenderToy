@@ -2,7 +2,6 @@
 #include "core/SceneSystem/BvhService.h"
 #include "editor/UI/SettingPanel/RenderSettingWidget.h"
 #include "Core/Global/ServiceLocator.h"
-
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "renderer/SceneView.h"
 #include "Widgets/PropertyComponent.h"
@@ -33,6 +32,8 @@
 #include <fstream>
 
 namespace MOON {
+
+
 	class PathTraceMatComponent :public PropertyComponent
 	{
 	public:
@@ -185,7 +186,6 @@ namespace MOON {
 		}
 	protected:
 		Core::SceneSystem::Material* material = nullptr;
-		//Core::ECS::Components::AComponent* component = nullptr;
 	};
 	class RenderSettingWidget::RenderSettingWidgetInternal {
 	public:
@@ -199,16 +199,18 @@ namespace MOON {
 			mSelf->setLayout(layout_);
 		}
 		void Refresh() {
-			auto& view = GetService(Editor::Panels::SceneView);
-			auto bvhService = view.GetScene()->GetBvhService();
 			while (auto item = layout_->takeAt(0)) {
 				delete item;
 			}
 			for (auto p : m_comps) {
 				delete p.first;
 				delete p.second;
-			}
+			}	
+			auto& view = GetService(Editor::Panels::SceneView);
+			auto bvhService = view.GetScene()->GetBvhService();
+		
 			m_comps.clear();
+			
 			for (int i = 0; i < bvhService->materials.size(); i++) {
 				auto p = new PathTraceMatComponent(&bvhService->materials[i]);
 				auto collpase = new CollapsibleGroupBoxWidget("mat", mSelf);

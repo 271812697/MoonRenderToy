@@ -222,10 +222,10 @@ namespace MOON {
             //tempMat->SetBlendable(true);
             //tempMat->SetDepthWriting(false);
             tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
-            tempMat->SetProperty("u_Albedo", colors[0]);
+            tempMat->SetProperty("u_Albedo", Maths::FVector4(1,1,1,1));
             tempMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
-            tempMat->SetProperty("u_Roughness", 0.3f);
-            tempMat->SetProperty("u_Metallic", 0.1f);
+            tempMat->SetProperty("u_Roughness", 0.25f);
+            tempMat->SetProperty("u_Metallic", 0.75f);
             // Emission
             tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
             tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });

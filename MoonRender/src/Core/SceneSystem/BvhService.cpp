@@ -561,6 +561,7 @@ namespace Core::SceneSystem
 					for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
 						int index = m_sceneTriBvh->m_packed_indices[i];
 						int meshId = triMeshInstances[index].meshID;
+						
 						auto matrix = triMeshInstances[index].transform;
 						auto invMatrix = Maths::FMatrix4::Inverse(matrix);
 						auto localRay = ray.Transformed(invMatrix);

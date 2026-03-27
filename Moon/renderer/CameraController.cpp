@@ -281,10 +281,17 @@ void Editor::Core::CameraController::HandleCameraZoom()
 	const auto verticalScroll = m_view.getInutState().GetMouseScroll().second;
 	auto& input = m_view.getInutState();
 	auto [x, y] = input.GetMousePosition();
-
 	if (m_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::PERSPECTIVE)
 	{
-		m_camera.PersertiveZoom(verticalScroll);
+		auto bvh=m_view.GetScene()->GetBvh();;
+		if (bvh) {
+			bvh->m_bounds.extents().Length();
+			m_camera.PersertiveZoom(verticalScroll * 0.1f * bvh->m_bounds.extents().Length());
+		}
+		else
+		{
+			m_camera.PersertiveZoom(verticalScroll);
+		}
 	}
 	else
 	{
@@ -294,13 +301,7 @@ void Editor::Core::CameraController::HandleCameraZoom()
 
 void Editor::Core::CameraController::HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse)
 {
-	//auto mouseOffset = p_mouseOffset * m_mouseSensitivity;
 
-	//m_ypr.y -= mouseOffset.x;
-	//m_ypr.x += -mouseOffset.y;
-	//m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
-
-	//m_camera.SetRotation(Maths::FQuaternion(m_ypr));
 }
 
 void Editor::Core::CameraController::HandleCameraFPSKeyboard(float p_deltaTime)

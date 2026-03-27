@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Widgets/Property.h"
-#include "Widgets/sliderwidget.h"
 namespace MOON {
 	class SliderFloatProperty :public WidgetProperty {
 	public:

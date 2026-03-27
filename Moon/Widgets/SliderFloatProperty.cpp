@@ -1,5 +1,6 @@
 ﻿#include "Widgets/SliderFloatProperty.h"
 #include "Widgets/PropertyComponent.h"
+#include "Widgets/sliderwidget.h"
 namespace MOON {
 	SliderFloatProperty::SliderFloatProperty(const QString& n, PropertyComponent* comp) :WidgetProperty(n, comp) {
 

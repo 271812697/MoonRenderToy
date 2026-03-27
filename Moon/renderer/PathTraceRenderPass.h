@@ -65,8 +65,6 @@ namespace Editor::Rendering
 		::Rendering::HAL::Framebuffer pathTraceFBOLowRes;
 		::Rendering::HAL::Framebuffer accumFBO;
 		::Rendering::HAL::Framebuffer outputFBO[2];
-
-
 		Maths::FVector2 renderSize;
 		Maths::FVector2 windowSize;
 		Maths::FVector2 tile;
@@ -85,6 +83,5 @@ namespace Editor::Rendering
 		bool initialized;
 		bool refreshFlag = true;
 		bool needUpdateShader = false;
-		
 	};
 }
