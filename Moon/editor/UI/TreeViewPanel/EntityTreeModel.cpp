@@ -24,7 +24,14 @@ namespace MOON {
 			self->invisibleRootItem()->appendColumn(arrays);
 			mIconMaps["eyeOpen"] = QIcon(":/entityTree/icons/pqEyeball.svg");
 			mIconMaps["eyeClose"] = QIcon(":/entityTree/icons/pqEyeballClosed.svg");
-
+			
+			mIconMaps["Geomerty"] = QIcon(":/widgets/icons/Geomerty.png");
+			mIconMaps["PointLight"] = QIcon(":/widgets/icons/PointLight.png");
+			mIconMaps["DirectionalLight"] = QIcon(":/widgets/icons/DirectionalLight.png");
+			mIconMaps["SkyBox"] = QIcon(":/widgets/icons/awesomeface.png");
+			mIconMaps["PostProcessStack"] = QIcon(":/widgets/icons/awesomeface.png");
+			mIconMaps[""]= QIcon(":/widgets/icons/Model.png");
+			
 		}
 	private:
 		friend EntityTreeModel;
@@ -64,8 +71,13 @@ namespace MOON {
 					QStandardItem* parent = root.back(); root.pop_back();
 					QStandardItem* temp = new QStandardItem;
 					auto name = cur->GetName();
+					auto tag = cur->GetTag();
 					temp->setText(QString::fromStdString(name));
-					
+
+					if (mInternl->mIconMaps.find(tag) != mInternl->mIconMaps.end()) {
+						temp->setIcon(mInternl->mIconMaps[tag]);
+					}
+
 					//temp->setIcon(mInternl->mIconMaps["eyeOpen"]);
 					temp->setCheckable(true);
 					temp->setCheckState(Qt::Checked);

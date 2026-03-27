@@ -40,6 +40,7 @@ namespace MOON {
 			});
 		auto ambient = scene->FindActorByName("Ambient Light");
 		auto& ac1 = scene->CreateActor("PointLight1");
+		ac1.SetTag("PointLight");
 		auto& pointLight1 = ac1.AddComponent<Core::ECS::Components::CPointLight>();
 		float kI = 0.50;
 		float kB = kI / 1.5;
@@ -55,6 +56,7 @@ namespace MOON {
 		//ac1.transform.SetLocalPosition(GetSpherePosition(50, 10, 999));
 
 		auto& ac2 = scene->CreateActor("PointLight2");
+		ac2.SetTag("PointLight");
 		auto& pointLight2 = ac2.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight2.SetIntensity(kB);
 		pointLight2.SetConstant(1.0);
@@ -66,6 +68,7 @@ namespace MOON {
 		//ac2.transform.SetLocalPosition(GetSpherePosition(-75, 10, 999));
 
 		auto& ac3 = scene->CreateActor("PointLight3");
+		ac3.SetTag("PointLight");
 		auto& pointLight3 = ac3.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight3.SetIntensity(kC);
 		pointLight3.SetConstant(1.0);
@@ -77,6 +80,7 @@ namespace MOON {
 		//ac3.transform.SetLocalPosition(GetSpherePosition(0, 110, 999));
 
 		auto& ac4 = scene->CreateActor("PointLight4");
+		ac4.SetTag("PointLight");
 		auto& pointLight4 = ac4.AddComponent<Core::ECS::Components::CPointLight>();
 
 		pointLight4.SetIntensity(kC);
@@ -89,6 +93,7 @@ namespace MOON {
 		//ac4.transform.SetLocalPosition(GetSpherePosition(0, -110, 999));
 
 		auto& ac5 = scene->CreateActor("HeadLight");
+		ac5.SetTag("PointLight");
 		auto& pointLight5 = ac5.AddComponent<Core::ECS::Components::CPointLight>();
 		pointLight5.SetIntensity(kB);
 		pointLight5.SetConstant(1.0);

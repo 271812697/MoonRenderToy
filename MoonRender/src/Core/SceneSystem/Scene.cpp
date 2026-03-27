@@ -39,6 +39,7 @@ void Core::SceneSystem::Scene::AddDefaultCamera()
 void Core::SceneSystem::Scene::AddDefaultLights()
 {
 	auto& directionalLight = CreateActor("Directional Light");
+	directionalLight.SetTag("DirectionalLight");
 	directionalLight.AddComponent<ECS::Components::CDirectionalLight>().SetIntensity(1.0f);
 	directionalLight.transform.SetLocalPosition({ 0.0f, 10.0f, 0.0f });
 	directionalLight.transform.SetLocalRotation(Maths::FQuaternion({ 120.0f, -40.0f, 0.0f }));
@@ -54,12 +55,14 @@ void Core::SceneSystem::Scene::AddDefaultReflections()
 void Core::SceneSystem::Scene::AddDefaultPostProcessStack()
 {
 	auto& postProcessStack = CreateActor("Post Process Stack");
+	postProcessStack.SetTag("PostProcessStack");
 	postProcessStack.AddComponent<ECS::Components::CPostProcessStack>();
 }
 
 void Core::SceneSystem::Scene::AddDefaultSkysphere()
 {
 	auto& skysphere = CreateActor("Skysphere");
+	skysphere.SetTag("SkyBox");
 	auto& materialRenderer = skysphere.AddComponent<ECS::Components::CMaterialRenderer>();
 	auto& modelRenderer = skysphere.AddComponent<ECS::Components::CModelRenderer>();
 	modelRenderer.SetFrustumBehaviour(ECS::Components::CModelRenderer::EFrustumBehaviour::DISABLED);

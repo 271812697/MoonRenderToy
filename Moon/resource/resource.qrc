@@ -29,6 +29,10 @@
     </qresource>
     <qresource prefix="/widgets">
         <file>icons/awesomeface.png</file>
+		<file>icons/Geomerty.png</file>
+		<file>icons/PointLight.png</file>
+		<file>icons/DirectionalLight.png</file>
+		<file>icons/Model.png</file>
         <file>icons/pqOpen.svg</file>
         <file>icons/pqGroupFiles.svg</file>
         <file>icons/pqReset.svg</file>
