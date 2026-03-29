@@ -1,4 +1,5 @@
-﻿#include <Standard_Version.hxx>
+﻿#include "core/log.h"
+#include <Standard_Version.hxx>
 #include "Geomerty/TopoShape.h"
 #include "Geomerty/Tools.h"
 #include "Geomerty/BRepMesh.h"
@@ -20,6 +21,7 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <STEPControl_Reader.hxx>
 #include <map>
 namespace MOON {
 	namespace {
@@ -662,6 +664,20 @@ namespace MOON {
 	{
 		tds.Location(TopLoc_Location());
 		return move(tds, loc);
+	}
+	void TopoShape::importStep(const char* FileName)
+	{
+
+		STEPControl_Reader aReader;
+		if (aReader.ReadFile(FileName) != IFSelect_RetDone) {
+			CORE_ERROR("Error in reading STEP");
+		}
+
+		// Root transfers
+		aReader.TransferRoots();
+		// one shape that contains all subshapes
+		this->_Shape = aReader.OneShape();
+
 	}
 	void TopoShape::getLinesFromSubShape(const TopoDS_Shape& shape, std::vector<Vector3d>& vertices, std::vector<Line>& lines) const
 	{

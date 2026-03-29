@@ -56,7 +56,6 @@ namespace MOON {
 		if (lineSeg.size() > 0) {
 			renderer->drawLineList(lineSeg,3.0f, Eigen::Vector4<uint8_t>(255,255,255,255));
 		}
-
 	}
 	void RotateCenter::onMouseRightButtonPressed()
 	{
