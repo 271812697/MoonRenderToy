@@ -4069,7 +4069,7 @@ namespace MOON
 		{
 			auto& viewCube = ViewCube();
 			float size = 3.0f;
-			int viewPortSize = 175;
+			int viewPortSize = 125;
 			int viewPortX = cameraParam.viewportWidth - viewPortSize;
 			int viewPortY = cameraParam.viewportHeight-viewPortSize;
 
@@ -4112,6 +4112,9 @@ namespace MOON
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			viewAxis.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
+			{
+
+			}
 		}
 	}
 	void Gizmo::drawMesh()
