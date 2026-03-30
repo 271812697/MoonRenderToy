@@ -61,6 +61,7 @@ namespace MOON {
         static gp_Trsf convert(const Maths::FMatrix4& mtrx);
         static TopoDS_Shape& move(TopoDS_Shape& tds, const TopLoc_Location& loc);
         static TopoDS_Shape& locate(TopoDS_Shape& tds, const TopLoc_Location& loc);
+        void importStep(const char* FileName);
     private:
         /** Get lines from sub-shape */
         void getLinesFromSubShape(const TopoDS_Shape& shape,

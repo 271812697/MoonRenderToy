@@ -10,9 +10,7 @@
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include "Gizmo/Gizmo.h"
-#include <STEPControl_Reader.hxx>
 #include <TopoDS_Shape.hxx>
-#include <TCollection_AsciiString.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS.hxx>
@@ -46,30 +44,8 @@ namespace MOON {
             std::string fileExt = p_directory.path().extension().string();
             std::string cachePath = path + "/" + name + ".bstp";
             if (!std::filesystem::exists(cachePath)) {
-                // 1. 创建 STEP 读取器
-                STEPControl_Reader reader;
-                // 2. 读取 STEP 文件
-                TCollection_AsciiString fileName(filePath);
-                IFSelect_ReturnStatus status = reader.ReadFile(fileName.ToCString());
-                // 检查读取是否成功
-                if (status != IFSelect_RetDone) {
-                    std::cerr << "无法读取 STEP 文件: " << filePath << std::endl;
-                    return; // 返回空形状
-                }
-                // 3. 转换所有根实体（将 STEP 数据转换为 OCC 内部形状）
-                int numRoots = reader.NbRootsForTransfer();
-                std::cout << "找到 " << numRoots << " 个根实体" << std::endl;
-                reader.TransferRoots(); // 转换所有根实体
-                // 4. 获取转换后的形状（若有多个根实体，可循环获取）
-                TopoDS_Shape shape;
-                if (reader.NbShapes() > 0) {
-                    shape = reader.Shape(1); // 获取第一个形状（索引从 1 开始）
-                    std::cout << "成功读取 STEP 模型" << std::endl;
-                }
-                else {
-                    std::cerr << "STEP 文件中未找到有效形状" << std::endl;
-                }
-                TopoShape topo(shape);
+                TopoShape topo;
+                topo.importStep(filePath);
                 topo.getDomainfaces(domains,1.0);
                 topo.getLines(linePoints, LineRanges, 1.0);
                
