@@ -38,9 +38,7 @@ void Rendering::HAL::GLFramebuffer::Attach(
 	}
 	else
 	{
-		//Bind();
-		//glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentIndex, GL_TEXTURE_2D, p_toAttach->GetID(), kMipMapLevel);
-		//Unbind();
+
 		glNamedFramebufferTexture(m_context.id, attachmentIndex, p_toAttach->GetID(), kMipMapLevel);
 		
 	}
@@ -176,6 +174,24 @@ void Rendering::HAL::GLFramebuffer::Resize(uint16_t p_width, uint16_t p_height)
 			(*pval)->Resize(p_width, p_height);
 		}
 	}
+}
+
+template<>
+void Rendering::HAL::GLFramebuffer::SetDrawBuffers(const std::vector<uint32_t>& indices)
+{
+	;
+	size_t n_index = indices.size();
+	GLenum* buffers = new GLenum[n_index];
+
+	for (GLenum i = 0; i < n_index; i++) {
+		// the `layout(location = i) out` variable will write to this attachment
+		GLuint index = indices[i];
+		
+		*(buffers + i) = GL_COLOR_ATTACHMENT0 + index;
+	}
+
+	glNamedFramebufferDrawBuffers(m_context.id, n_index, buffers);
+	delete[] buffers;
 }
 
 template<>

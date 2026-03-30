@@ -13,6 +13,7 @@
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/Rendering/ShadowRenderFeature.h>
 #include <Core/Rendering/ShadowRenderPass.h>
+#include <Core/Rendering/GbufferPass.h>
 #include <Core/ResourceManagement/ShaderManager.h>
 #include <Rendering/Data/Frustum.h>
 #include <Rendering/Features/LightingRenderFeature.h>
@@ -373,6 +374,7 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
+	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque+1);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
 	
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);
