@@ -5,8 +5,46 @@
 #include <Core/Rendering/EngineBufferRenderFeature.h>
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
-
+#include "core/component/CTopoShape.h"
+#include "Geomerty/TopoShape.h"
+#include <TopoDS_Wire.hxx>
+#include <BRepAdaptor_CompCurve.hxx>
+#include <GCPnts_UniformAbscissa.hxx>
+#include <gp_Pnt.hxx>
 namespace MOON {
+	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.01)
+	{
+		std::vector<Eigen::Vector3f> points;
+		BRepAdaptor_CompCurve curve(wire, Standard_True);
+		//if (!curve.IsValid())
+			//return points;
+
+		GCPnts_UniformAbscissa discretor(curve, deflection);
+		if (!discretor.IsDone())
+			return points;
+
+		Standard_Integer nbPoints = discretor.NbPoints();
+		if (nbPoints < 2)
+			return points;
+
+		// 先取第一个点
+		gp_Pnt p_prev;
+		curve.D0(discretor.Parameter(1), p_prev);
+
+		for (Standard_Integer i = 2; i <= nbPoints; ++i)
+		{
+			gp_Pnt p_curr;
+			curve.D0(discretor.Parameter(i), p_curr);
+
+			// 每一段线：存 起点 + 终点
+			points.push_back({ (float)p_prev.X(), (float)p_prev.Y(), (float)p_prev.Z() });
+			points.push_back({ (float)p_curr.X(), (float)p_curr.Y(), (float)p_curr.Z() });
+
+			p_prev = p_curr;
+		}
+
+		return points;
+	}
 	class ClipPlane::ClipPlaneInternal {
 	public:
 		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
@@ -57,6 +95,7 @@ namespace MOON {
 		float extent = 1.0f;
 		ExecuteCommandPair clickObserver;
 		ExecuteCommandPair moveObserver;
+		std::vector<Eigen::Vector3f>slicelines;
 	};
 
 	ClipPlane::ClipPlane(const std::string& name) :GizmoWidget(name)
@@ -246,6 +285,8 @@ namespace MOON {
 		{
 			renderer->drawLine(edges[2 * i], edges[2 * i + 1], 4, {255,255,255,255});
 		}
+		renderer->drawLineList(m_internal->slicelines,4, { 255,255,0,255 });
+
 
 		Eigen::Vector3f up = abs(normal.y()) > 0.99 ? Eigen::Vector3f(1, 0, 0) : Eigen::Vector3f(0, 1, 0);
 		Eigen::Vector3f xaxis = normal.cross(up).normalized();
@@ -273,6 +314,24 @@ namespace MOON {
 				m_internal->zAxis.z(),
 				-m_internal->zAxis.dot(m_internal->center)
 				);
+
+			auto selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+			if (selectActor) {
+			
+				const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+				if (topoComp) {
+					auto& topoShape= topoComp->GetTopoShape();
+					double offset = m_internal->zAxis.dot(m_internal->center);
+					auto wires=topoShape.slice(m_internal->zAxis,offset);
+					m_internal->slicelines.clear();
+					for (auto& w : wires) {
+						auto tempLine=DiscretizeWire(w);
+						m_internal->slicelines.insert(m_internal->slicelines.end(),
+							tempLine.begin(),tempLine.end()
+							);
+					}
+				}
+			}
 		}
 	}
 

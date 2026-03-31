@@ -1,5 +1,48 @@
 ﻿#include <Standard_Version.hxx>
 #include "Geomerty/Tools.h"
+# include <cassert>
+# include <BRep_Tool.hxx>
+# include <BRepAdaptor_Curve.hxx>
+# include <BRepAdaptor_Surface.hxx>
+# include <BRepBuilderAPI_MakeEdge.hxx>
+# include <BRepBuilderAPI_MakeFace.hxx>
+# include <BRepIntCurveSurface_Inter.hxx>
+# include <BRepLProp_SLProps.hxx>
+# include <BRepMesh_IncrementalMesh.hxx>
+# include <CSLib.hxx>
+# include <Geom_BSplineSurface.hxx>
+# include <Geom_Line.hxx>
+# include <Geom_Plane.hxx>
+# include <Geom_Point.hxx>
+# include <GeomAPI_IntSS.hxx>
+# include <GeomAPI_ProjectPointOnSurf.hxx>
+# include <GeomAdaptor_Curve.hxx>
+# include <GeomLib.hxx>
+# include <GeomLProp_SLProps.hxx>
+# include <GeomPlate_BuildPlateSurface.hxx>
+# include <GeomPlate_CurveConstraint.hxx>
+# include <GeomPlate_MakeApprox.hxx>
+# include <GeomPlate_PlateG0Criterion.hxx>
+# include <GeomPlate_PointConstraint.hxx>
+# include <gp_Lin.hxx>
+# include <gp_Pln.hxx>
+# include <gp_Quaternion.hxx>
+# include <Poly_Connect.hxx>
+# include <Poly_Triangulation.hxx>
+# include <Precision.hxx>
+# include <Standard_Mutex.hxx>
+# include <Standard_TypeMismatch.hxx>
+# include <Standard_Version.hxx>
+# include <TColStd_ListIteratorOfListOfTransient.hxx>
+# include <TColStd_ListOfTransient.hxx>
+# include <TColgp_SequenceOfXY.hxx>
+# include <TColgp_SequenceOfXYZ.hxx>
+# include <TopoDS.hxx>
+# if OCC_VERSION_HEX < 0x070600
+# include <Adaptor3d_HCurveOnSurface.hxx>
+# include <GeomAdaptor_HCurve.hxx>
+# endif
+
 #include <BRep_Tool.hxx>
 #include <gp_Vec3f.hxx>
 #include <Poly_Connect.hxx>
@@ -7,7 +50,44 @@
 #include <Precision.hxx>
 #include <GeomLib.hxx>
 namespace MOON {
-	bool Tools::getPolygon3D(const TopoDS_Edge& edge, std::vector<gp_Pnt>& points)
+    // helper function to use in getNormal, here we pass the local properties
+// of the surface given by the #LProp_SLProps objects
+    template <typename T>
+    void getNormalBySLProp(T& prop, double u, double v, Standard_Real lastU, Standard_Real lastV,
+        const Standard_Real tol, gp_Dir& dir, Standard_Boolean& done)
+    {
+        if (prop.D1U().Magnitude() > tol &&
+            prop.D1V().Magnitude() > tol &&
+            prop.IsNormalDefined()) {
+            dir = prop.Normal();
+            done = Standard_True;
+        }
+        // use an alternative method in case of a null normal
+        else {
+            CSLib_NormalStatus stat;
+            CSLib::Normal(prop.D1U(), prop.D1V(), prop.D2U(), prop.D2V(), prop.DUV(),
+                tol, done, stat, dir);
+            // at the right boundary, the normal is flipped with respect to the
+            // normal on surrounding points.
+            if (stat == CSLib_D1NuIsNull) {
+                if (Abs(lastV - v) < tol)
+                    dir.Reverse();
+            }
+            else if (stat == CSLib_D1NvIsNull || stat == CSLib_D1NuIsParallelD1Nv) {
+                if (Abs(lastU - u) < tol)
+                    dir.Reverse();
+            }
+        }
+    }
+    void Tools::getNormal(const Handle(Geom_Surface)& surf, double u, double v, const Standard_Real tol, gp_Dir& dir, Standard_Boolean& done)
+    {
+        GeomLProp_SLProps prop(surf, u, v, 1, tol);
+        Standard_Real u1, u2, v1, v2;
+        surf->Bounds(u1, u2, v1, v2);
+
+        getNormalBySLProp<GeomLProp_SLProps>(prop, u, v, u2, v2, tol, dir, done);
+    }
+    bool Tools::getPolygon3D(const TopoDS_Edge& edge, std::vector<gp_Pnt>& points)
 	{
         TopLoc_Location loc;
         Handle(Poly_Polygon3D) hPoly = BRep_Tool::Polygon3D(edge, loc);
@@ -304,5 +384,52 @@ namespace MOON {
         for (int i = dirs.Lower(); i <= dirs.Upper(); ++i) {
             normals.emplace_back(dirs(i).XYZ());
         }
+    }
+    bool intersect(const gp_Pln& pln1, const gp_Pln& pln2, gp_Lin& lin)
+    {
+        bool found = false;
+        Handle(Geom_Plane) gp1 = new Geom_Plane(pln1);
+        Handle(Geom_Plane) gp2 = new Geom_Plane(pln2);
+
+        GeomAPI_IntSS intSS(gp1, gp2, Precision::Confusion());
+        if (intSS.IsDone()) {
+            int numSol = intSS.NbLines();
+            if (numSol > 0) {
+                Handle(Geom_Curve) curve = intSS.Line(1);
+                lin = Handle(Geom_Line)::DownCast(curve)->Lin();
+                found = true;
+            }
+        }
+
+        return found;
+    }
+    void closestPointsOnLines(const gp_Lin& lin1, const gp_Lin& lin2, gp_Pnt& p1, gp_Pnt& p2)
+    {
+        // they might be the same point
+        gp_Vec v1(lin1.Direction());
+        gp_Vec v2(lin2.Direction());
+        gp_Vec v3(lin2.Location(), lin1.Location());
+
+        double a = v1 * v1;
+        double b = v1 * v2;
+        double c = v2 * v2;
+        double d = v1 * v3;
+        double e = v2 * v3;
+        double D = a * c - b * b;
+        double s, t;
+
+        // D = (v1 x v2) * (v1 x v2)
+        if (D < Precision::Angular()) {
+            // the lines are considered parallel
+            s = 0.0;
+            t = (b > c ? d / b : e / c);
+        }
+        else {
+            s = (b * e - c * d) / D;
+            t = (a * e - b * d) / D;
+        }
+
+        p1 = lin1.Location().XYZ() + s * v1.XYZ();
+        p2 = lin2.Location().XYZ() + t * v2.XYZ();
     }
 }
