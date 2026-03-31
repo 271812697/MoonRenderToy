@@ -76,6 +76,7 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 	ZoneScoped;
 	TracyGpuZone("SkyboxRenderPass");
 	using namespace Core::Rendering;
+	return;
 
 	gbuffer.Bind();
 	m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1.0));

@@ -59,6 +59,8 @@ message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
 target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES} 
 libboost_thread-vc143-mt-x64-1_85
 libboost_chrono-vc143-mt-x64-1_85
+libboost_thread-vc143-mt-x64-1_87
+libboost_chrono-vc143-mt-x64-1_87
 )
 
 add_custom_command(

@@ -108,6 +108,7 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
+		mPreflag = mCurflag;
 		bool ret = false;
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,48);
@@ -304,7 +305,26 @@ namespace MOON {
 				cirleDetectRadius = (outFace - planeOrigin).norm();
 			}
 		}
-		
+		mCurflag = ret;
+		if (mPreflag&&!mCurflag) {
+				auto selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+				if (selectActor) {
+			
+					const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+					if (topoComp) {
+						auto& topoShape= topoComp->GetTopoShape();
+						double offset = m_internal->zAxis.dot(m_internal->center);
+						auto wires=topoShape.slice(m_internal->zAxis,offset);
+						m_internal->slicelines.clear();
+						for (auto& w : wires) {
+							auto tempLine=DiscretizeWire(w);
+							m_internal->slicelines.insert(m_internal->slicelines.end(),
+								tempLine.begin(),tempLine.end()
+								);
+						}
+					}
+				}		
+		}
 		if (ret) {
 			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
 			
@@ -314,24 +334,6 @@ namespace MOON {
 				m_internal->zAxis.z(),
 				-m_internal->zAxis.dot(m_internal->center)
 				);
-
-			auto selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
-			if (selectActor) {
-			
-				const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-				if (topoComp) {
-					auto& topoShape= topoComp->GetTopoShape();
-					double offset = m_internal->zAxis.dot(m_internal->center);
-					auto wires=topoShape.slice(m_internal->zAxis,offset);
-					m_internal->slicelines.clear();
-					for (auto& w : wires) {
-						auto tempLine=DiscretizeWire(w);
-						m_internal->slicelines.insert(m_internal->slicelines.end(),
-							tempLine.begin(),tempLine.end()
-							);
-					}
-				}
-			}
 		}
 	}
 
