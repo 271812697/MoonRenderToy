@@ -42,6 +42,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${ThirdPartyDir}
     ${Mayo_IncludeDirectories}
     ${LibDIR}/oidn/include
+    ${BOOST_INCLUDE_DIR}
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
@@ -52,9 +53,15 @@ set(OIDN_LIBRARIES "OpenImageDenoise")
 # Link dependencies    
 target_link_directories(${TARGET_NAME}
     PRIVATE "${CMAKE_SOURCE_DIR}/lib/oidn/lib"
+    "${CMAKE_SOURCE_DIR}/lib"
 )
 message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
-target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES})
+target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES} 
+libboost_thread-vc143-mt-x64-1_85
+libboost_chrono-vc143-mt-x64-1_85
+libboost_thread-vc143-mt-x64-1_87
+libboost_chrono-vc143-mt-x64-1_87
+)
 
 add_custom_command(
     TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main

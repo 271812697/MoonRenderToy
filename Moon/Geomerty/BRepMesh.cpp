@@ -2,6 +2,7 @@
 #include "Geomerty/Tools.h"
 #include <set>
 #include <Precision.hxx>
+using namespace Part;
 namespace MOON{
     template<class T>
     struct iotaGen

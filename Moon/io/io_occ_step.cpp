@@ -8,6 +8,7 @@
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
+#include "core/component/CTopoShape.h"
 #include "Core/ResourceManagement/ModelManager.h"
 #include "Gizmo/Gizmo.h"
 #include <TopoDS_Shape.hxx>
@@ -43,8 +44,12 @@ namespace MOON {
             name = name.substr(0, name.rfind("."));
             std::string fileExt = p_directory.path().extension().string();
             std::string cachePath = path + "/" + name + ".bstp";
-            if (!std::filesystem::exists(cachePath)) {
-                TopoShape topo;
+            //if (!std::filesystem::exists(cachePath))
+            if (true)
+            {
+                auto& topoActor=scene->CreateActor("TopoShape", "TopoShape");
+                auto& topoComp=topoActor.AddComponent<Core::ECS::Components::CTopoShape>();
+                TopoShape& topo= topoComp.GetTopoShape();
                 topo.importStep(filePath);
                 topo.getDomainfaces(domains,1.0);
                 topo.getLines(linePoints, LineRanges, 1.0);
@@ -211,7 +216,9 @@ namespace MOON {
             tempMat->TrySetProperty("_PrefilterCube", viewer.getView()->GetRenderer().GetPrefilterCube());
             tempMat->TrySetProperty("_BRDFLut", viewer.getView()->GetRenderer().GetBrdfTexture());
             // 在场景中创建 Actor 并绑定模型/材质
+            auto topoActor=scene->FindActorByName("TopoShape");
             auto& actor = scene->CreateActor("RootFace", "Geomerty");
+            actor.SetParent(*topoActor);
             actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
             auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
             materilaRener.SetMaterialAtIndex(0, *tempMat);
@@ -283,6 +290,7 @@ namespace MOON {
             lineModel->AddMesh(lineMesh);
 
             auto& lineActor = scene->CreateActor("RootLine", "GeomertyLine");
+            lineActor.SetParent(*topoActor);
             lineActor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(lineModel);
             auto& lineRener = lineActor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 

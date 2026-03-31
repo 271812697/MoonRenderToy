@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Geomerty/GeoData.h"
+using namespace Part;
 namespace MOON {
 
 class  BRepMesh

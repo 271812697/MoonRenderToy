@@ -95,13 +95,15 @@ namespace MOON {
 			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("ClipPlane", value);
 			
 			if (view.IsSelectActor()) {
-				auto matList = view.GetSelectedActor().GetComponent<Core::ECS::Components::CMaterialRenderer>();
+				auto& selectActor=view.GetSelectedActor();
+				auto matList = selectActor.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 				if (matList) {
 					auto mat = matList->GetMaterialAtIndex(0);
 					if (mat && mat->SupportsFeature("CLIP_PLANE")) {
 						mat->EnableFeature("CLIP_PLANE", value);
 					}
 				}
+			
 			}
 		}
 	};
