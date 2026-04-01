@@ -143,14 +143,18 @@ void Rendering::Data::Material::Bind(
 	for (auto& [name, prop] : m_properties)
 	{
 		const auto uniformData = program.GetUniformInfo(name);
-
+		auto& value = prop.value;
 		// Skip this property if the current program isn't using its associated uniform
 		if (!uniformData)
 		{
+			if (std::holds_alternative<Maths::FVector3>(prop.value)) {
+				program.SetUniform<FVector3>(name, std::get<FVector3>(value));
+			}
+			
 			continue;
 		}
 
-		auto& value = prop.value;
+		
 		auto uniformType = uniformData->type;
 
 		// Iterating over the properties to set them in the shader.

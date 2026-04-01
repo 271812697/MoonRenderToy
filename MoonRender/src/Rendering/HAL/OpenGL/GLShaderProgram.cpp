@@ -137,6 +137,9 @@ void Rendering::HAL::GLShaderProgram::SetUniform<type>(const std::string& p_name
 	{ \
 		func(m_context.uniformsLocationCache.at(p_name), __VA_ARGS__); \
 	} \
+    else{\
+        func(glGetUniformLocation(m_context.id, p_name.c_str()), __VA_ARGS__);\
+	}\
 }
 
 DECLARE_SET_UNIFORM_FUNCTION(int, glUniform1i, value);
