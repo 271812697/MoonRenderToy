@@ -12,61 +12,141 @@
 #include <Rendering/HAL/Renderbuffer.h>
 #include <Rendering/HAL/Profiling.h>
 #include <Rendering/Resources/Loaders/TextureLoader.h>
+#include <random>
 
+static std::vector<Maths::FVector3> ssaoKernel;
+static std::vector<Maths::FVector3> ssaoNoise;
+static float ourLerp(float a, float b, float f)
+{
+	return a + f * (b - a);
+}
 
 Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& p_renderer) :
 	::Rendering::Core::ARenderPass(p_renderer)
 {
 	gbufferMaterial.SetShader(GetShaderService[":Shaders\\gbuffer.ovfx"]);
 	gbufferMaterial.SetBackfaceCulling(false);
+	ssaoMaterial.SetShader(GetShaderService[":Shaders\\ssao.ovfx"]);
+	ssaoMaterial.SetBackfaceCulling(false);
 
-	::Rendering::Settings::TextureDesc colorDesc{
+	{
+		::Rendering::Settings::TextureDesc colorDesc{
+				.width = 1,
+				.height = 1,
+				.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+				.useMipMaps = false,
+				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+					.format = ::Rendering::Settings::EFormat::RGBA,
+					.type = ::Rendering::Settings::EPixelDataType::FLOAT
+				}
+		};
+		::Rendering::Settings::TextureDesc depthDesc{
 			.width = 1,
 			.height = 1,
 			.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 			.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
-			.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
-			.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
-			.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+			.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
+			.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
+			.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32,
 			.useMipMaps = false,
 			.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-				.format = ::Rendering::Settings::EFormat::RGBA,
+				.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,
 				.type = ::Rendering::Settings::EPixelDataType::FLOAT
 			}
-	};
-	::Rendering::Settings::TextureDesc depthDesc{
+		};
+
+		gbufferData.position = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "position");
+		gbufferData.position->Allocate(colorDesc);
+		gbufferData.normal = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "normal");
+		gbufferData.normal->Allocate(colorDesc);
+		auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "depth");
+		depthTexture->Allocate(depthDesc);
+		depthTexture->SetBorderColor(Maths::FVector4::One);
+		gbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.position, ::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+		gbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.normal, ::Rendering::Settings::EFramebufferAttachment::COLOR,1);
+		gbuffer.Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+		//gbuffer.SetTargetDrawBuffer(0);
+		gbuffer.SetDrawBuffers({0,1});
+		if (!gbuffer.Validate()) {
+			std::cout << "invalidate buffer" << std::endl;
+		}
+	}
+
+	{
+		::Rendering::Settings::TextureDesc colorDesc{
 		.width = 1,
 		.height = 1,
 		.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 		.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
-		.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
-		.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
-		.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32,
+		.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+		.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+		.internalFormat = ::Rendering::Settings::EInternalFormat::R32F,
 		.useMipMaps = false,
 		.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-			.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,
+			.format = ::Rendering::Settings::EFormat::RED,
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT
 		}
-	};
+		};		
+		std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+		std::default_random_engine generator;
+		for (unsigned int i = 0; i < 64; ++i)
+		{
+			Maths::FVector3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+			sample = sample.Normalize();
+			sample *= randomFloats(generator);
+			float scale = float(i) / 64.0f;
 
-	gbufferData.position = std::make_shared<::Rendering::HAL::Texture>(
-		::Rendering::Settings::ETextureType::TEXTURE_2D, "position");
-	gbufferData.position->Allocate(colorDesc);
-	gbufferData.normal = std::make_shared<::Rendering::HAL::Texture>(
-		::Rendering::Settings::ETextureType::TEXTURE_2D, "normal");
-	gbufferData.normal->Allocate(colorDesc);
-	auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
-		::Rendering::Settings::ETextureType::TEXTURE_2D, "depth");
-	depthTexture->Allocate(depthDesc);
-	depthTexture->SetBorderColor(Maths::FVector4::One);
-	gbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.position, ::Rendering::Settings::EFramebufferAttachment::COLOR,0);
-	gbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.normal, ::Rendering::Settings::EFramebufferAttachment::COLOR,1);
-	gbuffer.Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
-	//gbuffer.SetTargetDrawBuffer(0);
-	gbuffer.SetDrawBuffers({0,1});
-	if (!gbuffer.Validate()) {
-		std::cout << "invalidate buffer" << std::endl;
+			// scale samples s.t. they're more aligned to center of kernel
+			scale = ourLerp(0.1f, 1.0f, scale * scale);
+			sample *= scale;
+			ssaoKernel.push_back(sample);
+		}
+
+		// generate noise texture
+
+		
+		for (unsigned int i = 0; i < 16; i++)
+		{
+			Maths::FVector3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f); // rotate around z-axis (in tangent space)
+			ssaoNoise.push_back(noise);
+		}
+		::Rendering::Settings::TextureDesc noiseDesc{
+		.width = 4,
+		.height = 4,
+		.minFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+		.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
+		.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
+		.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
+		.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32F,
+		.useMipMaps = false,
+		.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.format = ::Rendering::Settings::EFormat::RGB,
+			.type = ::Rendering::Settings::EPixelDataType::FLOAT,
+			.data= ssaoNoise.data()
+		}
+		};
+
+
+		noiseTexture= std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "noiseTexture");
+		noiseTexture->Allocate(noiseDesc);
+
+		gbufferData.occlusion = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "occlusion");
+		gbufferData.occlusion->Allocate(colorDesc);
+		ssaobuffer.Attach<::Rendering::HAL::Texture>(gbufferData.occlusion, ::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+		if (!ssaobuffer.Validate()) {
+			std::cout << "invalidate buffer" << std::endl;
+		}
 	}
+
 
 }
 
@@ -76,16 +156,41 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 	ZoneScoped;
 	TracyGpuZone("SkyboxRenderPass");
 	using namespace Core::Rendering;
-	return;
-
-	gbuffer.Bind();
-	m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1.0));
-
-	const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
-
-	for (auto drawable : drawables.opaques | std::views::values)
+	
 	{
+		gbuffer.Bind();
+		m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1.0));
 
+		const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
+
+		for (auto drawable : drawables.opaques | std::views::values)
+		{
+
+			drawable.pass = "";
+			drawable.stateMask.depthWriting = true;
+			drawable.stateMask.colorWriting = true;
+			drawable.stateMask.blendable = false;
+			drawable.stateMask.frontfaceCulling = false;
+			drawable.stateMask.backfaceCulling = false;
+			drawable.stateMask.depthTest = true;
+			drawable.material = gbufferMaterial;
+			m_renderer.DrawEntity(p_pso, drawable);
+		}
+		gbuffer.Unbind();
+	}
+
+	
+	{
+		auto proj=m_renderer.GetFrameDescriptor().camera.value().GetViewProjectionMatrix();
+		ssaoMaterial.SetProperty("gPosition",gbufferData.position.get());
+		ssaoMaterial.SetProperty("gNormal", gbufferData.normal.get());
+		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
+		ssaoMaterial.SetProperty("projection",proj);
+		for (unsigned int i = 0; i < 64; ++i)
+			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+		ssaobuffer.Bind();
+		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
+		::Rendering::Entities::Drawable drawable;
 		drawable.pass = "";
 		drawable.stateMask.depthWriting = true;
 		drawable.stateMask.colorWriting = true;
@@ -93,18 +198,23 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		drawable.stateMask.frontfaceCulling = false;
 		drawable.stateMask.backfaceCulling = false;
 		drawable.stateMask.depthTest = true;
-		drawable.material = gbufferMaterial;
+		drawable.material = ssaoMaterial;
+		
+		drawable.mesh = m_renderer.m_unitQuad;
 		m_renderer.DrawEntity(p_pso, drawable);
+		ssaobuffer.Unbind();
 	}
-	gbuffer.Unbind();
+
+
 	auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 	mssaaframebuffer.Bind();
-	const auto& content = gbuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	const auto& content = ssaobuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 	m_renderer.Present(content.value());
 }
 
 void Core::Rendering::GbufferPass::ResizeRenderer(int width, int height)
 {
 	gbuffer.Resize(width, height);
+	ssaobuffer.Resize(width,height);
 }
 

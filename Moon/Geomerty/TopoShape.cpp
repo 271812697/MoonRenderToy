@@ -2997,8 +2997,13 @@ namespace MOON {
 
 	TopoDS_Compound TopoShape::slices(const Maths::FVector3&dir, const std::vector<double>&d) const
 	{
+		return slices(Eigen::Vector3f(dir.x,dir.y,dir.z),d);
+	}
+
+	TopoDS_Compound TopoShape::slices(const Eigen::Vector3f&dir, const std::vector<double>&d) const
+	{
 		std::vector< std::list<TopoDS_Wire> > wire_list;
-		CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
+		CrossSection cs(dir.x(), dir.y(), dir.z(), this->_Shape);
 		for (double jt : d) {
 			wire_list.push_back(cs.slice(jt));
 		}

@@ -36,6 +36,8 @@ depth peel
 
 ### clip
 
+![image-20260401213204139](README.assets/image-20260401213204139.png)
+
 ![image-20260325225532674](README.assets/image-20260325225532674.png)
 
 ### select and highlight

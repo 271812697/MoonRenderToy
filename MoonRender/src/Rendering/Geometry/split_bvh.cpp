@@ -242,6 +242,9 @@ namespace Rendering::Geometry
 			float rootminc = rootmin[axis];
 			// Range for histogram
 			auto centroid_rng = centroid_extents[axis];
+			if (abs(centroid_rng) < 1e-6) {
+				continue;
+			}
 			auto invcentroid_rng = 1.f / centroid_rng;
 
 			// If the box is degenerate in that dimension skip it

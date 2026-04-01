@@ -429,7 +429,7 @@ void Core::Rendering::SceneRenderer::Resize(int width, int height)
 {
 	for (const auto& pass : m_passes | std::views::values)
 	{
-		//if (pass.second->IsEnabled())
+		if (pass.second->IsEnabled())
 		{
 			pass.second->ResizeRenderer(width,height);;
 		}
