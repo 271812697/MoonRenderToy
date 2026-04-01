@@ -435,7 +435,7 @@ namespace MOON {
         std::list<TopoDS_Wire> slice(const Eigen::Vector3f&, double) const;
         std::list<TopoDS_Wire> slice(const Maths::FVector3&, double) const;
         TopoDS_Compound slices(const Maths::FVector3&, const std::vector<double>&) const;
-     
+        TopoDS_Compound slices(const Eigen::Vector3f&, const std::vector<double>&) const;
         TopoDS_Shape generalFuse(const std::vector<TopoDS_Shape>& sOthers,
             Standard_Real tolerance,
             std::vector<TopTools_ListOfShape>* mapInOut = nullptr) const;

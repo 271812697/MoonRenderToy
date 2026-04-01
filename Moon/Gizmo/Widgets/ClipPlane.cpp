@@ -11,7 +11,38 @@
 #include <BRepAdaptor_CompCurve.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
 #include <gp_Pnt.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Compound.hxx>
+#include <BRep_Builder.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <Poly_Triangulation.hxx>
+#include <TopoDS.hxx>
+#include <TopExp_Explorer.hxx>
+#include <BRepLib_FindSurface.hxx>
 namespace MOON {
+	// 1. 从Wire列表构建截面面（无Compound，无编译错误）
+	TopoDS_Face BuildSectionFace(const std::list<TopoDS_Wire>& wireList)
+	{
+		if (wireList.empty())
+			return TopoDS_Face();
+
+		// 取第一个wire创建基础面（平面切片专用）
+		const TopoDS_Wire& firstWire = wireList.front();
+		BRepBuilderAPI_MakeFace faceMaker(firstWire);
+
+		if (!faceMaker.IsDone())
+			return TopoDS_Face();
+
+		// 添加其余wire（内孔/子轮廓）
+		for (auto it = std::next(wireList.begin()); it != wireList.end(); ++it)
+		{
+			faceMaker.Add(*it);
+		}
+
+		return faceMaker.Face();
+	}
+
 	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.01)
 	{
 		std::vector<Eigen::Vector3f> points;
@@ -44,6 +75,47 @@ namespace MOON {
 		}
 
 		return points;
+	}
+	std::vector<Eigen::Vector3f> DiscretizeSectionFace(const std::list<TopoDS_Wire>& wires, double deflection = 0.1) {
+	
+		std::vector<Eigen::Vector3f> vertices;
+
+		TopoDS_Face face = BuildSectionFace(wires);
+
+		// 4. 对截面面进行三角网格化
+		BRepMesh_IncrementalMesh mesh(face, deflection, Standard_True);
+		if (!mesh.IsDone()) return vertices;
+
+		// 5. 提取所有三角面顶点（三点一组 = 一个面）
+		TopExp_Explorer explorer(face, TopAbs_FACE);
+		for (; explorer.More(); explorer.Next())
+		{
+			TopoDS_Face f = TopoDS::Face(explorer.Current());
+			TopLoc_Location loc;
+			Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(f,loc);
+			if (triangulation.IsNull()) continue;
+
+			// 遍历所有三角形
+			Standard_Integer nbTriangles = triangulation->NbTriangles();
+			for (Standard_Integer i = 1; i <= nbTriangles; ++i)
+			{
+				const Poly_Triangle& tri = triangulation->Triangle(i);
+				Standard_Integer n1 = tri(1);
+				Standard_Integer n2 = tri(2);
+				Standard_Integer n3 = tri(3);
+
+				gp_Pnt p1 = triangulation->Node(n1);
+				gp_Pnt p2 = triangulation->Node(n2);
+				gp_Pnt p3 = triangulation->Node(n3);
+
+				// 加入顶点：三点一组
+				vertices.push_back({ (float)p1.X(), (float)p1.Y(), (float)p1.Z() });
+				vertices.push_back({ (float)p2.X(), (float)p2.Y(), (float)p2.Z() });
+				vertices.push_back({ (float)p3.X(), (float)p3.Y(), (float)p3.Z() });
+			}
+		}
+
+		return vertices;
 	}
 	class ClipPlane::ClipPlaneInternal {
 	public:
@@ -96,6 +168,7 @@ namespace MOON {
 		ExecuteCommandPair clickObserver;
 		ExecuteCommandPair moveObserver;
 		std::vector<Eigen::Vector3f>slicelines;
+		std::vector<Eigen::Vector3f>sectionFace;
 	};
 
 	ClipPlane::ClipPlane(const std::string& name) :GizmoWidget(name)
@@ -287,8 +360,11 @@ namespace MOON {
 			renderer->drawLine(edges[2 * i], edges[2 * i + 1], 4, {255,255,255,255});
 		}
 		renderer->drawLineList(m_internal->slicelines,4, { 255,255,0,255 });
-
-
+		renderer->pushAlpha(0.6);
+		renderer->pushEnableSorting(true);
+		renderer->drawTriangleList(m_internal->sectionFace,4,{ 255,255,215,255 });
+		renderer->popAlpha();
+		renderer->popEnableSorting();
 		Eigen::Vector3f up = abs(normal.y()) > 0.99 ? Eigen::Vector3f(1, 0, 0) : Eigen::Vector3f(0, 1, 0);
 		Eigen::Vector3f xaxis = normal.cross(up).normalized();
 		Eigen::Vector3f zaxis = xaxis.cross(normal).normalized();
@@ -315,6 +391,8 @@ namespace MOON {
 						auto& topoShape= topoComp->GetTopoShape();
 						double offset = m_internal->zAxis.dot(m_internal->center);
 						auto wires=topoShape.slice(m_internal->zAxis,offset);
+						m_internal->sectionFace=DiscretizeSectionFace(wires);
+						
 						m_internal->slicelines.clear();
 						for (auto& w : wires) {
 							auto tempLine=DiscretizeWire(w);
