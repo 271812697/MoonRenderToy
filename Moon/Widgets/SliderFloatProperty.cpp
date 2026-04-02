@@ -27,7 +27,7 @@ namespace MOON {
 			widget->setValue(owner->getPropertyValue(mName).toFloat());
 			widget->setMinValue(minA);
 			widget->setMaxValue(maxB);
-			widget->setIncrement(0.05f);
+			widget->setIncrement(0.02f);
 			
 		}
 		return mWidget;

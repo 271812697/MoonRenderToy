@@ -26,6 +26,10 @@ This is a renderer written based on Qt+Opengl
 
 ![image-20250929212947417](README.assets/image-20250929212947417.png)
 
+### ssao
+
+![image-20260402203337507](README.assets/image-20260402203337507.png)
+
 ### transparent
 
 ------
@@ -64,6 +68,4 @@ depth peel
 
 - [ ] and plans to do
 
-  89
-  
   

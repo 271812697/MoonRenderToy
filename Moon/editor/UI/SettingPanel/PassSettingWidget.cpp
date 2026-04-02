@@ -68,7 +68,7 @@ namespace MOON {
 	{
 	public:
 		GbufferPassComponent(::Core::Rendering::GbufferPass* p) :RenderPassComponent(p) {
-			mProperties.push_back(new SliderFloatProperty("SSAO Radius", this, 0.1f, 10.0f));
+			mProperties.push_back(new SliderFloatProperty("SSAO Radius", this, 0.0f, 10.0f));
 			mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
 		}
 		virtual QVariant getPropertyValue(const QString& propertyName)override {

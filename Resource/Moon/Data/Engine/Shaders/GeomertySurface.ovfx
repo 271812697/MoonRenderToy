@@ -1270,6 +1270,7 @@ void main()
     ndcpos.xyz=ndcpos.xyz/ndcpos.w;
     ndcpos.xy=(ndcpos.xy+1.0)/2.0;
     pixel.ao=texture(occlusionTex, ndcpos.xy).r;
+    pbr*=pixel.ao;
     getPixelParams(inputs, pixel);
 
     vec3 iblColor=vec3(0,0,0);
