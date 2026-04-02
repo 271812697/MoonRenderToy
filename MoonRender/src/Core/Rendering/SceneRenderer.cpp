@@ -17,6 +17,7 @@
 #include <Core/ResourceManagement/ShaderManager.h>
 #include <Rendering/Data/Frustum.h>
 #include <Rendering/Features/LightingRenderFeature.h>
+#include "Core/Rendering/SsaoRenderFeature.h"
 #include <Rendering/HAL/Profiling.h>
 #include <Rendering/Resources/Loaders/ShaderLoader.h>
 #include <Rendering/HAL/Texture.h>
@@ -209,8 +210,6 @@ void main()
 				//but for now we just want to get it working
 				Core::Rendering::FramebufferUtil::CopyFramebufferDepth(mBlendFbo, mLayerFbo[0]);
 				PrepareStencilBuffer(p_pso);
-
-
 				/*
 				1.the first step: peel the first layer of transparent and write the depth to layerfbo0, then we can use this depth to peel the second layer and so on
 				*/
@@ -365,6 +364,8 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddFeature<ReflectionRenderFeature, WHITELIST_ONLY>()
 		.Include<OpaqueRenderPass>()
 		.Include<TransparentRenderPass>();
+	AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
+		.Include<OpaqueRenderPass>();
 
 	AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
 		.Include<OpaqueRenderPass>()

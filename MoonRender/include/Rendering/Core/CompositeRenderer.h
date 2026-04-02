@@ -48,6 +48,9 @@ namespace Rendering::Core
 
 		template<Types::RenderPassType T>
 		T& GetPass(const std::string& p_name) const;
+		std::multimap<uint32_t, std::pair<std::string, std::unique_ptr<Core::ARenderPass>>>& GetPasses() {
+			return m_passes;
+		}
 		::Rendering::HAL::Texture* GetSkyBoxCube();
 		::Rendering::HAL::Texture* GetIrradianceCube();
 		::Rendering::HAL::Texture* GetPrefilterCube();

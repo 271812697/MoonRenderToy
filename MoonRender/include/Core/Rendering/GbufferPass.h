@@ -9,22 +9,36 @@ namespace Core::Rendering
 		std::shared_ptr<::Rendering::HAL::Texture> normal;
 		std::shared_ptr<::Rendering::HAL::Texture> albedo;
 		std::shared_ptr<::Rendering::HAL::Texture> occlusion;
+		std::shared_ptr<::Rendering::HAL::Texture> occlusionBlur;
+	};
+	struct SSAOParam
+	{
+		float radius = 2.05;
+		float bias = 0.025;
+	};
+	struct GbufferParam {
+		SSAOParam ssaoParam;
 	};
 	class GbufferPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
 		GbufferPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		GbufferTextureData& GetGbufferData() { return gbufferData; }
+		GbufferParam& getGbufferParam() { return gbufferParam; }
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 		virtual void ResizeRenderer(int width, int height) override;
-	private:
+	
 
 	private:
 		std::shared_ptr<::Rendering::HAL::Texture> noiseTexture;
 		::Core::Resources::Material gbufferMaterial;
 		::Core::Resources::Material ssaoMaterial;
+		::Core::Resources::Material ssaoblurMaterial;
 		GbufferTextureData gbufferData;
 		::Rendering::HAL::Framebuffer gbuffer;
 		::Rendering::HAL::Framebuffer ssaobuffer;
+		::Rendering::HAL::Framebuffer ssaoblurbuffer;
+		GbufferParam gbufferParam;
 	};
 }

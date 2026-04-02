@@ -9,6 +9,7 @@
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "editor/UI/SettingPanel/PassSettingWidget.h"
 #include "Gizmo/Gizmo.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "core/log.h"
@@ -34,7 +35,7 @@ namespace MOON {
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");
-			
+			GetService(RenderPassSettingWidget).Refresh();
 			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
 			Gizmo::instance().init();

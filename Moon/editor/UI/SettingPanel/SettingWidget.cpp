@@ -5,6 +5,7 @@
 #include "Widgets/checkbox.h"
 #include "editor/UI/SettingPanel/RenderSettingWidget.h"
 #include "editor/UI/SettingPanel/DebugSettingWidget.h"
+#include "editor/UI/SettingPanel/PassSettingWidget.h"
 #include "Widgets/utils.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
@@ -77,7 +78,19 @@ namespace MOON {
 				scrollArea->setWidget(new DebugSettingWidget(mSelf));
 				m_contentStack->addWidget(scrollArea);
 			}
-
+			//3.RenderPassSetting
+			{
+				QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << QString::fromStdString("RenderPassSetting"));
+				m_navTree->addTopLevelItem(item);
+				QScrollArea* scrollArea = new QScrollArea();
+				scrollArea->setWidgetResizable(true);
+				scrollArea->setMinimumWidth(emToPx(m_contentStack, 30));
+				scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+				scrollArea->setFrameShape(QFrame::NoFrame);
+				scrollArea->setContentsMargins(0, 0, 0, 0);
+				scrollArea->setWidget(new RenderPassSettingWidget(mSelf));
+				m_contentStack->addWidget(scrollArea);
+			}
 
 			// 添加到主布局
 			mainLayout->addWidget(m_navTree);
