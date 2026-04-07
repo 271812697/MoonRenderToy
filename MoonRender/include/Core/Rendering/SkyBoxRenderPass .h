@@ -14,8 +14,9 @@ namespace Core::Rendering
 	struct SkyBoxSetting
 	{
 		SkyMode mode = SkyMode::SkyBox;
-		Maths::FVector4 topColor{ 1.0f,0.0f,0.0f,1.0f };
-		Maths::FVector4 bottomColor{ 0.0f,1.0f,1.0f,1.0f };
+		Maths::FVector4 topColor{ 0.411f,0.411f,0.411f,1.0f };
+		Maths::FVector4 bottomColor{ 1.0f,1.0f,1.0f,1.0f };
+		Maths::FVector4 clearColor{1,1,1,1};
 	};
 	class SkyboxRenderPass : public ::Rendering::Core::ARenderPass
 	{
@@ -25,7 +26,7 @@ namespace Core::Rendering
 		::Rendering::HAL::Texture* GetIrradianceCube();
 		::Rendering::HAL::Texture* GetPrefilterCube();
 		::Rendering::HAL::Texture* GetBrdfTexture();
-		void updateSkyTexture() { needUpdateSkyTexture = true; }
+		void updateSkyTexture(const std::string& path); 
 		SkyBoxSetting& GetSetting() { return mSetting; }
 
 	protected:
@@ -38,6 +39,7 @@ namespace Core::Rendering
 		::Core::Resources::Material m_skyboxIrrandianceMaterial;
 		::Core::Resources::Material m_skyboxPrefilterMaterial;
 		::Core::Resources::Material m_brdfMaterial;
+		::Core::Resources::Material m_clearMaterial;
 		::Rendering::HAL::Framebuffer skyBoxBuffer;
 		::Rendering::HAL::Framebuffer irradianceBuffer;
 		::Rendering::HAL::Framebuffer prefilterBuffer;
@@ -47,6 +49,7 @@ namespace Core::Rendering
 		std::shared_ptr<::Rendering::HAL::Texture> irradianceCube;
 		std::shared_ptr<::Rendering::HAL::Texture> prefilterCube;
 		SkyBoxSetting mSetting;
+		std::string mPath = ":Textures/PureSky.hdr";
 		bool needUpdateSkyTexture = true;
 	};
 }

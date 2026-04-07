@@ -37,6 +37,7 @@ Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::Composite
 	m_skyboxPrefilterMaterial.SetShader(GetShaderService[":Shaders\\SkyboxPrefilter.ovfx"]);
 	m_skyboxPrefilterMaterial.SetBackfaceCulling(false);
 	m_brdfMaterial.SetShader(GetShaderService[":Shaders\\BrdfLut.ovfx"]);
+	m_clearMaterial.SetShader(GetShaderService[":Shaders\\ClearBackground.ovfx"]);
 }
 
 ::Rendering::HAL::Texture* Core::Rendering::SkyboxRenderPass::GetSkyBoxCube()
@@ -67,20 +68,20 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 	if (needUpdateSkyTexture) {
 		needUpdateSkyTexture = false;
 		computeSkyTexture();
+	}	
+	auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
+	auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+	if (auto output = frameDescriptor.outputMsaaBuffer)
+	{
+		output.value().Bind();
 	}
 	//draw skybox
+	if(mSetting.mode==SkyMode::SkyBox)
 	{
-		
 		//visible skybox
-		auto& engineBufferRenderFeature = m_renderer.GetFeature<Core::Rendering::EngineBufferRenderFeature>();
-		auto& frameDescriptor = m_renderer.GetFrameDescriptor();
 		m_skyboxMaterial.RemoveFeature("SKY_Convert");
 		engineBufferRenderFeature.SetCamera(frameDescriptor.camera.value());
 
-		if (auto output = frameDescriptor.outputMsaaBuffer)
-		{
-			output.value().Bind();
-		}
 		// Draw skybox
 		::Rendering::Entities::Drawable skyboxDrawable;
 		skyboxDrawable.mesh = m_renderer.m_unitCube;
@@ -92,8 +93,20 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 		skyboxDrawable.stateMask.backfaceCulling = false;
 		skyboxDrawable.stateMask.depthTest = false;
 		skyboxDrawable.material.value().SetProperty("SkyboxCube", prefilterCube.get());
-		m_renderer.DrawEntity(p_pso, skyboxDrawable);			
-		
+		m_renderer.DrawEntity(p_pso, skyboxDrawable);	
+	}
+	else if (mSetting.mode == SkyMode::PureColor) {
+		m_clearMaterial.SetFeatures({ "PureColor" });
+		m_clearMaterial.SetProperty("uClearColor",mSetting.clearColor);
+		m_renderer.Present(m_clearMaterial);
+	}
+	else if(mSetting.mode == SkyMode::Gradient)
+	{
+		m_clearMaterial.SetFeatures({  });
+		m_clearMaterial.SetProperty("uClearColor", mSetting.clearColor);
+		m_clearMaterial.SetProperty("uTopColor", mSetting.topColor);
+		m_clearMaterial.SetProperty("uBottomColor", mSetting.bottomColor);
+		m_renderer.Present(m_clearMaterial);
 	}
 }
 
@@ -101,9 +114,10 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 {
 	using namespace Core::Rendering;
 	auto p_pso =m_renderer.CreatePipelineState();
-	skyTexture = GetService(Core::ResourceManagement::TextureManager).GetResource(":Textures/PureSky.hdr");
+	skyTexture = GetService(Core::ResourceManagement::TextureManager).GetResource(mPath);
 	
-	if (!irradianceCube.get()) {
+	//if (!irradianceCube.get())
+	{
 		//set up framebuffer
 		{
 			//initialize framebuffer
@@ -378,3 +392,8 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 	}
 }
 
+void Core::Rendering::SkyboxRenderPass::updateSkyTexture(const std::string& path)
+{
+	needUpdateSkyTexture = true;
+	mPath = path;
+}

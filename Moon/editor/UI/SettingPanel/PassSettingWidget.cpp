@@ -105,6 +105,7 @@ namespace MOON {
 			mProperties.push_back(new EnumProperty("BackGround mode", this));
 			mProperties.push_back(new ColorPickerProperty("Top Color", this));
 			mProperties.push_back(new ColorPickerProperty("Bottom Color", this));
+			mProperties.push_back(new ColorPickerProperty("Clear Color", this));
 			mProperties.push_back(new TextureProperty("SkyBox Texture", this));
 			//mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
 		}
@@ -123,9 +124,15 @@ namespace MOON {
 				return QVariant::fromValue(QColor(v.x * 255, v.y * 255, v.z * 255, v.w * 255));
 			}
 			else if (propertyName == "Bottom Color") {
-			
 				auto v = skypass->GetSetting().bottomColor;
 				return QVariant::fromValue(QColor(v.x * 255, v.y * 255, v.z * 255, v.w * 255));
+			}
+			else if (propertyName == "Clear Color") {
+				auto v = skypass->GetSetting().clearColor;
+				return QVariant::fromValue(QColor(v.x * 255, v.y * 255, v.z * 255, v.w * 255));
+			}
+			else if (propertyName== "SkyBox Texture") {
+			
 			}
 			return QVariant();
 		}
@@ -144,6 +151,13 @@ namespace MOON {
 			else if (propertyName=="Bottom Color") {
 				auto color = value.value<QColor>();
 				skypass->GetSetting().bottomColor = Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f };
+			}
+			else if (propertyName == "Clear Color") {
+				auto color = value.value<QColor>();
+				skypass->GetSetting().clearColor = Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f };
+			}
+			else if (propertyName == "SkyBox Texture") {
+				skypass->updateSkyTexture(value.toString().toStdString());
 			}
 		}
 	};
