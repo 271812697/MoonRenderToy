@@ -5,6 +5,18 @@
 #include <Core/Resources/Material.h>
 namespace Core::Rendering
 {
+	enum class SkyMode
+	{
+		SkyBox=0,
+		PureColor = 1,
+		Gradient=2
+	};
+	struct SkyBoxSetting
+	{
+		SkyMode mode = SkyMode::SkyBox;
+		Maths::FVector4 topColor{ 1.0f,0.0f,0.0f,1.0f };
+		Maths::FVector4 bottomColor{ 0.0f,1.0f,1.0f,1.0f };
+	};
 	class SkyboxRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
@@ -13,9 +25,13 @@ namespace Core::Rendering
 		::Rendering::HAL::Texture* GetIrradianceCube();
 		::Rendering::HAL::Texture* GetPrefilterCube();
 		::Rendering::HAL::Texture* GetBrdfTexture();
+		void updateSkyTexture() { needUpdateSkyTexture = true; }
+		SkyBoxSetting& GetSetting() { return mSetting; }
 
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+	private:
+		void computeSkyTexture();
 		
 	private:
 		::Core::Resources::Material m_skyboxMaterial;
@@ -30,6 +46,7 @@ namespace Core::Rendering
 		std::shared_ptr<::Rendering::HAL::Texture> skyBoxCube;
 		std::shared_ptr<::Rendering::HAL::Texture> irradianceCube;
 		std::shared_ptr<::Rendering::HAL::Texture> prefilterCube;
-		
+		SkyBoxSetting mSetting;
+		bool needUpdateSkyTexture = true;
 	};
 }

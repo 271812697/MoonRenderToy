@@ -16,7 +16,9 @@
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/SliderIntProperty.h"
 #include "Widgets/ColorPickerProperty.h"
+#include "Widgets/TextureProperty.h"
 #include "Core/Rendering/GbufferPass.h"
+#include "Core/Rendering/SkyBoxRenderPass .h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -43,7 +45,6 @@ namespace MOON {
 	public:
 		RenderPassComponent(Rendering::Core::ARenderPass* p) :pass(p) {
 			mProperties.push_back(new BoolProperty("Enable", this));
-			
 		}
 		virtual ~RenderPassComponent() {
 		}
@@ -97,10 +98,62 @@ namespace MOON {
 			}
 		}
 	};
+	class SkyBoxPassComponent :public RenderPassComponent
+	{
+	public:
+		SkyBoxPassComponent(::Core::Rendering::SkyboxRenderPass* p) :RenderPassComponent(p) {
+			mProperties.push_back(new EnumProperty("BackGround mode", this));
+			mProperties.push_back(new ColorPickerProperty("Top Color", this));
+			mProperties.push_back(new ColorPickerProperty("Bottom Color", this));
+			mProperties.push_back(new TextureProperty("SkyBox Texture", this));
+			//mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto skypass = dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass);
+			if (propertyName == "Enable") {
+				return QVariant::fromValue(pass->IsEnabled());
+			}
+			else if (propertyName == "BackGround mode") {
+				QList<QString>list = { "SkyBox","PureColor","Gradient" };
+				return QVariant::fromValue(list);
+			}
+			else if (propertyName == "Top Color") {
+				
+				auto v = skypass->GetSetting().topColor;
+				return QVariant::fromValue(QColor(v.x * 255, v.y * 255, v.z * 255, v.w * 255));
+			}
+			else if (propertyName == "Bottom Color") {
+			
+				auto v = skypass->GetSetting().bottomColor;
+				return QVariant::fromValue(QColor(v.x * 255, v.y * 255, v.z * 255, v.w * 255));
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto skypass = dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass);
+			if (propertyName == "Enable") {
+				pass->SetEnabled(value.value<bool>());
+			}
+			else if (propertyName == "BackGround mode") {
+				skypass->GetSetting().mode = static_cast<::Core::Rendering::SkyMode>(value.value<int>());
+			}
+			else if (propertyName == "Top Color") {
+				auto color = value.value<QColor>();
+				skypass->GetSetting().topColor = Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f };
+			}
+			else if (propertyName=="Bottom Color") {
+				auto color = value.value<QColor>();
+				skypass->GetSetting().bottomColor = Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f };
+			}
+		}
+	};
 
 	RenderPassComponent* CreateRenderPassComponent(Rendering::Core::ARenderPass* pass) {
 		if (dynamic_cast<::Core::Rendering::GbufferPass*>(pass)) {
 			return new GbufferPassComponent(dynamic_cast<::Core::Rendering::GbufferPass*>(pass));
+		}
+		else if (dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass)) {
+			return new SkyBoxPassComponent(dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass));
 		}
 		else {
 			return new RenderPassComponent(pass);
