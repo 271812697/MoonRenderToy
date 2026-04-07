@@ -28,6 +28,8 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 	gbufferMaterial.SetBackfaceCulling(false);
 	ssaoMaterial.SetShader(GetShaderService[":Shaders\\ssao.ovfx"]);
 	ssaoMaterial.SetBackfaceCulling(false);
+	ssaoblurMaterial.SetShader(GetShaderService[":Shaders\\ssaoblur.ovfx"]);
+	ssaoblurMaterial.SetBackfaceCulling(false);
 
 	{
 		::Rendering::Settings::TextureDesc colorDesc{
@@ -37,10 +39,10 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
 				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::RGB32F,
 				.useMipMaps = false,
 				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-					.format = ::Rendering::Settings::EFormat::RGBA,
+					.format = ::Rendering::Settings::EFormat::RGB,
 					.type = ::Rendering::Settings::EPixelDataType::FLOAT
 				}
 		};
@@ -87,10 +89,10 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 		.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 		.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
 		.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
-		.internalFormat = ::Rendering::Settings::EInternalFormat::R32F,
+		.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA,
 		.useMipMaps = false,
 		.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-			.format = ::Rendering::Settings::EFormat::RED,
+			.format = ::Rendering::Settings::EFormat::RGBA,
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT
 		}
 		};		
@@ -110,8 +112,6 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 		}
 
 		// generate noise texture
-
-		
 		for (unsigned int i = 0; i < 16; i++)
 		{
 			Maths::FVector3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f); // rotate around z-axis (in tangent space)
@@ -145,9 +145,15 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 		if (!ssaobuffer.Validate()) {
 			std::cout << "invalidate buffer" << std::endl;
 		}
+
+		gbufferData.occlusionBlur = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "occlusionBlur");
+		gbufferData.occlusionBlur->Allocate(colorDesc);
+		ssaoblurbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.occlusionBlur, ::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+		if (!ssaoblurbuffer.Validate()) {
+			std::cout << "invalidate buffer" << std::endl;
+		}
 	}
-
-
 }
 
 
@@ -156,40 +162,33 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 	ZoneScoped;
 	TracyGpuZone("SkyboxRenderPass");
 	using namespace Core::Rendering;
-	
+	//Render to gbuffer
 	{
 		gbuffer.Bind();
 		m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1.0));
-
 		const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
-
 		for (auto drawable : drawables.opaques | std::views::values)
 		{
+			//we should not draw sky box to gbuffer, but for now we just use the same pass for simplicity
+			if (drawable.primitiveMode == ::Rendering::Settings::EPrimitiveMode::TRIANGLES)
+			{
+				drawable.pass = "";
+				drawable.stateMask.depthWriting = true;
+				drawable.stateMask.colorWriting = true;
+				drawable.stateMask.blendable = false;
+				drawable.stateMask.frontfaceCulling = false;
+				drawable.stateMask.backfaceCulling = false;
+				drawable.stateMask.depthTest = true;
+				drawable.material = gbufferMaterial;
+				m_renderer.DrawEntity(p_pso, drawable);
+			}
 
-			drawable.pass = "";
-			drawable.stateMask.depthWriting = true;
-			drawable.stateMask.colorWriting = true;
-			drawable.stateMask.blendable = false;
-			drawable.stateMask.frontfaceCulling = false;
-			drawable.stateMask.backfaceCulling = false;
-			drawable.stateMask.depthTest = true;
-			drawable.material = gbufferMaterial;
-			m_renderer.DrawEntity(p_pso, drawable);
 		}
 		gbuffer.Unbind();
 	}
 
-	
+	//Render ssao
 	{
-		auto proj=m_renderer.GetFrameDescriptor().camera.value().GetViewProjectionMatrix();
-		ssaoMaterial.SetProperty("gPosition",gbufferData.position.get());
-		ssaoMaterial.SetProperty("gNormal", gbufferData.normal.get());
-		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
-		ssaoMaterial.SetProperty("projection",proj);
-		for (unsigned int i = 0; i < 64; ++i)
-			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
-		ssaobuffer.Bind();
-		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
 		::Rendering::Entities::Drawable drawable;
 		drawable.pass = "";
 		drawable.stateMask.depthWriting = true;
@@ -199,22 +198,48 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		drawable.stateMask.backfaceCulling = false;
 		drawable.stateMask.depthTest = true;
 		drawable.material = ssaoMaterial;
-		
+
 		drawable.mesh = m_renderer.m_unitQuad;
+
+		auto& frameDesc = m_renderer.GetFrameDescriptor();
+		auto proj=frameDesc.camera.value().GetProjectionMatrix();
+		auto view = frameDesc.camera.value().GetViewMatrix();
+		
+		ssaoMaterial.SetProperty("gPosition",gbufferData.position.get());
+		ssaoMaterial.SetProperty("gNormal", gbufferData.normal.get());
+		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
+		ssaoMaterial.SetProperty("projection",proj);
+		ssaoMaterial.SetProperty("view",view);
+		ssaoMaterial.SetProperty("radius", gbufferParam.ssaoParam.radius);
+		ssaoMaterial.SetProperty("bias", gbufferParam.ssaoParam.bias);
+		ssaoMaterial.SetProperty("screensize",Maths::FVector2(frameDesc.renderWidth,frameDesc.renderHeight));
+		for (unsigned int i = 0; i < 64; ++i)
+			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+		//compute ssao
+		ssaobuffer.Bind();
+		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
 		m_renderer.DrawEntity(p_pso, drawable);
 		ssaobuffer.Unbind();
+		//blur ssao
+		ssaoblurbuffer.Bind();
+		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
+		ssaoblurMaterial.SetProperty("ssaoInput", gbufferData.occlusion.get());
+		drawable.material = ssaoblurMaterial;
+		m_renderer.DrawEntity(p_pso, drawable);
+		ssaoblurbuffer.Unbind();
 	}
 
 
-	auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
-	mssaaframebuffer.Bind();
-	const auto& content = ssaobuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-	m_renderer.Present(content.value());
+	//auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
+	//mssaaframebuffer.Bind();
+	//const auto& content = ssaoblurbuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	//m_renderer.Present(content.value());
 }
 
 void Core::Rendering::GbufferPass::ResizeRenderer(int width, int height)
 {
 	gbuffer.Resize(width, height);
 	ssaobuffer.Resize(width,height);
+	ssaoblurbuffer.Resize(width,height);
 }
 

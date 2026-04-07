@@ -1,0 +1,37 @@
+#feature PureColor
+
+#shader vertex
+#version 450 core
+
+layout(location = 0) in vec2 geo_Pos;
+layout(location = 1) in vec2 geo_TexCoords;
+
+out vec2 TexCoords;
+
+void main()
+{
+    TexCoords = geo_TexCoords;
+    gl_Position = vec4(geo_Pos, 1.0, 1.0);
+}
+
+#shader fragment
+#version 450 core
+uniform vec4 uClearColor;
+uniform vec4 uTopColor;
+uniform vec4 uBottomColor;
+
+in vec2 TexCoords;
+
+out vec4 FragColor;
+
+
+void main()
+{
+#if !defined(PureColor)
+   float t=length(TexCoords-vec2(0.5,0.5))/0.7071;
+   FragColor =mix(uBottomColor,uTopColor,t);
+#else
+    FragColor = uClearColor;
+#endif
+
+}

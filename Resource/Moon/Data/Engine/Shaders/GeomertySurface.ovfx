@@ -22,6 +22,7 @@ out VS_OUT
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
+
     mat3 TBN;
 
 } vs_out;
@@ -222,6 +223,7 @@ uniform mat4 _LightSpaceMatrix;
 uniform samplerCube _IrradianceCube;
 uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
+uniform sampler2D occlusionTex;
 
 
 uniform samplerBuffer domainColorTex;
@@ -488,6 +490,7 @@ struct PixelParams {
 #endif
     float shading_NoV;
     vec3  shading_reflected; 
+    float ao;
 
 };
 void initMaterial(out MaterialInputs material) {
@@ -1114,9 +1117,6 @@ vec3 diffuseIrradiance(const vec3 n) {
 void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout vec3 color) {
     // specular layer
     vec3 Fr = vec3(0.0);
-
-
-
     // If screen-space reflections are turned on and have full contribution (ssr.a == 1.0), then we
     // skip sampling the IBL down below.
     vec3 E = specularDFG(pixel);
@@ -1127,9 +1127,9 @@ void evaluateIBL(const MaterialInputs material, const PixelParams pixel, inout v
    
 
     // Ambient occlusion
-    float ssao = 1.0;//evaluateSSAO(interpolationCache);
+    float ssao = pixel.ao;//1.0;//evaluateSSAO(interpolationCache);
     float diffuseAO = min(material.ambientOcclusion, ssao);
-    float specularAO = 1.0;//specularAO(shading_NoV, diffuseAO, pixel.roughness, interpolationCache);
+    float specularAO = pixel.ao;//specularAO(shading_NoV, diffuseAO, pixel.roughness, interpolationCache);
     vec3 specularSingleBounceAO = singleBounceAO(specularAO) * pixel.energyCompensation;
     Fr *= specularSingleBounceAO;
 
@@ -1194,7 +1194,7 @@ void main()
 
 
     vec3 normal = normalize(fs_in.Normal);
-
+  
     vec3 VD=normalize(ubo_ViewPos-fs_in.FragPos);
     if(ubo_CameraType==0){
        VD=vec3(ubo_View[0][2],ubo_View[1][2],ubo_View[2][2]);
@@ -1266,6 +1266,11 @@ void main()
     PixelParams pixel;  
     pixel.shading_NoV=max(dot(VD,normal),1e-4);
     pixel.shading_reflected=reflect(-VD, normal);;
+    vec4 ndcpos= ubo_Projection * ubo_View * vec4(fs_in.FragPos, 1.0);
+    ndcpos.xyz=ndcpos.xyz/ndcpos.w;
+    ndcpos.xy=(ndcpos.xy+1.0)/2.0;
+    pixel.ao=texture(occlusionTex, ndcpos.xy).r;
+    pbr*=pixel.ao;
     getPixelParams(inputs, pixel);
 
     vec3 iblColor=vec3(0,0,0);

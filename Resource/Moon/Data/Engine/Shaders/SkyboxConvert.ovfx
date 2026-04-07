@@ -18,12 +18,7 @@ out VS_OUT
 void main()
 {
     vs_out.dir = geo_Pos;
-#if defined(SKY_Convert)
-   gl_Position = ubo_Projection *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
-#else
-   gl_Position = ubo_Projection *ubo_View  * vec4( geo_Pos, 1.0);
-#endif
- 
+    gl_Position = ubo_Projection *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
 }
 
 #shader fragment

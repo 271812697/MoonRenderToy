@@ -46,6 +46,16 @@ Rendering::Resources::Texture* Core::ResourceManagement::TextureManager::CreateR
 		metaData.verticalWrap,
 		metaData.generateMipmap
 	);
+	if (!texture) {
+		texture = Rendering::Resources::Loaders::TextureLoader::Create(
+			p_path,
+			metaData.minFilter,
+			metaData.magFilter,
+			metaData.horizontalWrap,
+			metaData.verticalWrap,
+			metaData.generateMipmap
+		);
+	}
 
 	if (texture)
 		*reinterpret_cast<std::string*>(reinterpret_cast<char*>(texture) + offsetof(Rendering::Resources::Texture, path)) = p_path; // Force the resource path to fit the given path

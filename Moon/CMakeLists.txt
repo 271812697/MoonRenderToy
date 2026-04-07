@@ -63,6 +63,8 @@ libboost_thread-vc143-mt-x64-1_87
 libboost_chrono-vc143-mt-x64-1_87
 libboost_thread-vc143-mt-gd-x64-1_87
 libboost_chrono-vc143-mt-gd-x64-1_87
+libboost_thread-vc143-mt-gd-x64-1_85
+libboost_chrono-vc143-mt-gd-x64-1_85
 )
 
 add_custom_command(
