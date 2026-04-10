@@ -15,10 +15,8 @@ namespace Core::ECS::Components
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		MOON::TopoShape& GetTopoShape();
-
-		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override
-			;
-
+		void discretizationShape();
+		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;
 	private:
 		class CTopoShapeInternal;
