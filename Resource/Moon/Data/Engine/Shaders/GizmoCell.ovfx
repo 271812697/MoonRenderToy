@@ -197,12 +197,11 @@ void main()
     float diff=max(dot(lightDir,N),0);
     vec3 diffuse=diff*albedo.rgb;
     vec3 specular=sign(diffuse)*pow(max(dot(N,lightDir),0),100)*0.03*albedo.rgb;
-    vec3 col=diffuse+specular;
+    vec3 col=diffuse+specular+vec3(0.05,0.05,0.05);
     //col=pow(col, vec3(2.2));
     #if defined(BLOCK_COLOR)
      fResult = vec4(col,albedo.a);	
     #else
      fResult = vec4(col,1.0);	   
     #endif
-
 }
