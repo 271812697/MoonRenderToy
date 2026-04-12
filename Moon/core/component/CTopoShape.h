@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <Core/ECS/Components/AComponent.h>
-namespace MOON {
+namespace Part {
 	class TopoShape;
 }
 namespace Core::ECS { class Actor; }
@@ -14,7 +14,7 @@ namespace Core::ECS::Components
 		virtual ~CTopoShape()override;
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
-		MOON::TopoShape& GetTopoShape();
+		Part::TopoShape& GetTopoShape();
 		void discretizationShape();
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;

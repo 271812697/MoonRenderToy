@@ -6,7 +6,7 @@
 #include "Gizmo/Interactive/ExecuteCommand.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "core/component/CTopoShape.h"
-#include "Geomerty/TopoShape.h"
+#include "TopoShape.h"
 #include <TopoDS_Wire.hxx>
 #include <BRepAdaptor_CompCurve.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
@@ -390,7 +390,8 @@ namespace MOON {
 					if (topoComp) {
 						auto& topoShape= topoComp->GetTopoShape();
 						double offset = m_internal->zAxis.dot(m_internal->center);
-						auto wires=topoShape.slice(m_internal->zAxis,offset);
+						Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+						auto wires=topoShape.slice(dir,offset);
 						m_internal->sectionFace=DiscretizeSectionFace(wires);
 						
 						m_internal->slicelines.clear();

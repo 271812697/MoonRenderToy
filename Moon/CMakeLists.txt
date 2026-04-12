@@ -33,16 +33,13 @@ target_link_libraries(${TARGET_NAME} PUBLIC
         spdlog
         MoonRender
         tinygltf
-        ${MayoCore_LinkLibraries}
-        ${MayoIO_LinkLibraries}
+        MoonGeometry
 )
 target_include_directories(${TARGET_NAME} PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${EIGEN3_INCLUDE_DIR}
     ${ThirdPartyDir}
-    ${Mayo_IncludeDirectories}
     ${LibDIR}/oidn/include
-    ${BOOST_INCLUDE_DIR}
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
@@ -57,14 +54,6 @@ target_link_directories(${TARGET_NAME}
 )
 message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
 target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES} 
-libboost_thread-vc143-mt-x64-1_85
-libboost_chrono-vc143-mt-x64-1_85
-libboost_thread-vc143-mt-x64-1_87
-libboost_chrono-vc143-mt-x64-1_87
-libboost_thread-vc143-mt-gd-x64-1_87
-libboost_chrono-vc143-mt-gd-x64-1_87
-libboost_thread-vc143-mt-gd-x64-1_85
-libboost_chrono-vc143-mt-gd-x64-1_85
 )
 
 add_custom_command(
