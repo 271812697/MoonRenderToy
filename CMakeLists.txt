@@ -75,22 +75,22 @@ if(OpenCASCADE_FOUND)
         endif()
     endif()
 
-    # Add OpenCASCADE libraries
-    list(
-        APPEND MayoCore_LinkLibraries
-        # FoundationClasses
-        TKernel TKMath TKOffset TKFillet
-        # ModelingData
-        TKG2d TKG3d TKGeomBase TKBRep
-        # ModelingAlgorithms
-        TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
-        # Visualization
-        TKMeshVS TKOpenGl TKService TKV3d
-        # ApplicationFramework
-        TKBin TKBinL TKBinXCAF TKCAF TKCDF TKLCAF TKVCAF TKXml TKXmlL
-        # DataExchange
-        TKXCAF TKXmlXCAF TKXSBase
-    )
+# Add OpenCASCADE libraries
+list(
+    APPEND MayoCore_LinkLibraries
+    # FoundationClasses
+    TKernel TKMath TKOffset TKFeat TKFillet
+    # ModelingData
+    TKG2d TKG3d TKGeomBase TKBRep
+    # ModelingAlgorithms
+    TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
+    # Visualization
+    TKMeshVS TKOpenGl TKService TKV3d
+    # ApplicationFramework
+    TKBin TKBinL TKBinXCAF TKCAF TKCDF TKLCAF TKVCAF TKXml TKXmlL
+    # DataExchange
+    TKXCAF TKXmlXCAF TKXSBase
+)
 
     if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.8.0)
         list(APPEND MayoIO_LinkLibraries TKDE)
@@ -121,4 +121,6 @@ endif()
 add_subdirectory(Extern)
 add_subdirectory(Moon)
 add_subdirectory(MoonRender)
+add_subdirectory(MoonGeomerty)
+
 

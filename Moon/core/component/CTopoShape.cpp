@@ -5,7 +5,7 @@
 #include <Core/Global/ServiceLocator.h>
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
-#include "Geomerty/TopoShape.h"
+#include "TopoShape.h"
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
@@ -22,7 +22,7 @@ namespace Core::ECS::Components
 	private:
 		friend class CTopoShape;
 		CTopoShape* mSelf = nullptr;
-		MOON::TopoShape mTopoShape;
+		Part::TopoShape mTopoShape;
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
@@ -43,7 +43,7 @@ namespace Core::ECS::Components
 
 	}
 
-	MOON::TopoShape& CTopoShape::GetTopoShape()
+	Part::TopoShape& CTopoShape::GetTopoShape()
 	{
 		return mInternal->mTopoShape;
 	}
@@ -53,10 +53,10 @@ namespace Core::ECS::Components
         auto& view = GetService(::Editor::Panels::SceneView);
         auto& renderer = view.GetRenderer();
         auto scene = view.GetScene();
-		std::vector<Domain> domains;
-		std::vector<Vector3d>linePoints;
-		std::vector<Line>LineRanges;
-		mInternal->mTopoShape.getDomainfaces(domains, 1.0);
+		std::vector<Data::ComplexGeoData::Domain> domains;
+		std::vector<Base::Vector3d>linePoints;
+		std::vector<Data::ComplexGeoData::Line>LineRanges;
+		mInternal->mTopoShape.getDomainfaces(domains,1.0);
 		mInternal->mTopoShape.getLines(linePoints, LineRanges, 1.0);
 		static Maths::FVector4 colors[] = {
 				{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
@@ -88,9 +88,9 @@ namespace Core::ECS::Components
                 ::Rendering::Geometry::bbox subBox;
                 for (int k = 0; k < domains[i].points.size(); k++) {
                     faceVertices.emplace_back(
-                        Maths::FVector3{ static_cast<float>(domains[i].points[k].x()),static_cast<float>(domains[i].points[k].y()),static_cast<float>(domains[i].points[k].z()) },
+                        Maths::FVector3{ static_cast<float>(domains[i].points[k].x),static_cast<float>(domains[i].points[k].y),static_cast<float>(domains[i].points[k].z) },
                         Maths::FVector2{ domainIndex * 1.0f,0.0f },
-                        Maths::FVector3{ static_cast<float>(domains[i].normals[k].x()),static_cast<float>(domains[i].normals[k].y()),static_cast<float>(domains[i].normals[k].z()) }
+                        Maths::FVector3{ static_cast<float>(domains[i].normals[k].x),static_cast<float>(domains[i].normals[k].y),static_cast<float>(domains[i].normals[k].z) }
                     );
                     subBox.grow(faceVertices.back().position);
                 }
@@ -181,9 +181,9 @@ namespace Core::ECS::Components
             auto& l = LineRanges[i];
             for (int k = l.I1; k <= l.I2 - 1; k++) {
                 ::Rendering::Geometry::VertexBVH v;
-                v.position.x = static_cast<float>(linePoints[k].x());
-                v.position.y = static_cast<float>(linePoints[k].y());
-                v.position.z = static_cast<float>(linePoints[k].z());
+                v.position.x = static_cast<float>(linePoints[k].x);
+                v.position.y = static_cast<float>(linePoints[k].y);
+                v.position.z = static_cast<float>(linePoints[k].z);
                 v.texCoords.x = i * 1.0f;
                 v.texCoords.y = i * 1.0f;
                 p_vertices.emplace_back(v);
@@ -192,9 +192,9 @@ namespace Core::ECS::Components
                 lineIndex.push_back(k + 1);
             }
             ::Rendering::Geometry::VertexBVH v;
-            v.position.x = static_cast<float>(linePoints[l.I2].x());
-            v.position.y = static_cast<float>(linePoints[l.I2].y());
-            v.position.z = static_cast<float>(linePoints[l.I2].z());
+            v.position.x = static_cast<float>(linePoints[l.I2].x);
+            v.position.y = static_cast<float>(linePoints[l.I2].y);
+            v.position.z = static_cast<float>(linePoints[l.I2].z);
             v.texCoords.x = i * 1.0f;
             v.texCoords.y = i * 1.0f;
             p_vertices.emplace_back(v);

@@ -1,0 +1,249 @@
+﻿// SPDX-License-Identifier: LGPL-2.1-or-later
+
+/***************************************************************************
+ *   Copyright (c) 2009 Werner Mayer <wmayer[at]users.sourceforge.net>     *
+ *                                                                         *
+ *   This file is part of the FreeCAD CAx development system.              *
+ *                                                                         *
+ *   This library is free software; you can redistribute it and/or         *
+ *   modify it under the terms of the GNU Library General Public           *
+ *   License as published by the Free Software Foundation; either          *
+ *   version 2 of the License, or (at your option) any later version.      *
+ *                                                                         *
+ *   This library  is distributed in the hope that it will be useful,      *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU Library General Public License for more details.                  *
+ *                                                                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this library; see the file COPYING.LIB. If not,    *
+ *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
+ *   Suite 330, Boston, MA  02111-1307, USA                                *
+ *                                                                         *
+ ***************************************************************************/
+
+//#include <unicode/unistr.h>
+//#include <unicode/uchar.h>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <QDateTime>
+#include <QTimeZone>
+
+
+#include "Tools.h"
+
+namespace
+{
+ 
+
+
+
+
+
+
+};  // namespace
+
+std::string Base::Tools::getIdentifier(const std::string& name)
+{
+    
+
+    return name;
+}
+
+std::wstring Base::Tools::widen(const std::string& str)
+{
+    std::wostringstream wstm;
+    const std::ctype<wchar_t>& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
+    for (char i : str) {
+        wstm << ctfacet.widen(i);
+    }
+    return wstm.str();
+}
+
+std::string Base::Tools::narrow(const std::wstring& str)
+{
+    std::ostringstream stm;
+    const std::ctype<char>& ctfacet = std::use_facet<std::ctype<char>>(stm.getloc());
+    for (wchar_t i : str) {
+        stm << ctfacet.narrow(i, 0);
+    }
+    return stm.str();
+}
+
+std::string Base::Tools::escapedUnicodeFromUtf8(const char* s)
+{
+  
+    return "";
+}
+
+std::string Base::Tools::escapedUnicodeToUtf8(const std::string& s)
+{
+
+    return "";
+}
+
+std::string Base::Tools::escapeQuotesFromString(const std::string& s)
+{
+    std::string result;
+    size_t len = s.size();
+    for (size_t i = 0; i < len; ++i) {
+        switch (s.at(i)) {
+            case '\"':
+                result += "\\\"";
+                break;
+            case '\'':
+                result += "\\\'";
+                break;
+            default:
+                result += s.at(i);
+                break;
+        }
+    }
+    return result;
+}
+
+QString Base::Tools::escapeEncodeString(const QString& s)
+{
+    QString result;
+    const int len = s.length();
+    result.reserve(int(len * 1.1));
+    for (int i = 0; i < len; ++i) {
+        if (s.at(i) == QLatin1Char('\\')) {
+            result += QLatin1String("\\\\");
+        }
+        else if (s.at(i) == QLatin1Char('\"')) {
+            result += QLatin1String("\\\"");
+        }
+        else if (s.at(i) == QLatin1Char('\'')) {
+            result += QLatin1String("\\\'");
+        }
+        else {
+            result += s.at(i);
+        }
+    }
+    result.squeeze();
+    return result;
+}
+
+std::string Base::Tools::escapeEncodeString(const std::string& s)
+{
+    std::string result;
+    size_t len = s.size();
+    for (size_t i = 0; i < len; ++i) {
+        switch (s.at(i)) {
+            case '\\':
+                result += "\\\\";
+                break;
+            case '\"':
+                result += "\\\"";
+                break;
+            case '\'':
+                result += "\\\'";
+                break;
+            default:
+                result += s.at(i);
+                break;
+        }
+    }
+    return result;
+}
+
+QString Base::Tools::escapeEncodeFilename(const QString& s)
+{
+    QString result;
+    const int len = s.length();
+    result.reserve(int(len * 1.1));
+    for (int i = 0; i < len; ++i) {
+        if (s.at(i) == QLatin1Char('\"')) {
+            result += QLatin1String("\\\"");
+        }
+        else if (s.at(i) == QLatin1Char('\'')) {
+            result += QLatin1String("\\\'");
+        }
+        else {
+            result += s.at(i);
+        }
+    }
+    result.squeeze();
+    return result;
+}
+
+std::string Base::Tools::escapeEncodeFilename(const std::string& s)
+{
+    std::string result;
+    size_t len = s.size();
+    for (size_t i = 0; i < len; ++i) {
+        switch (s.at(i)) {
+            case '\"':
+                result += "\\\"";
+                break;
+            case '\'':
+                result += "\\\'";
+                break;
+            default:
+                result += s.at(i);
+                break;
+        }
+    }
+    return result;
+}
+
+std::string Base::Tools::quoted(const char* name)
+{
+    std::stringstream str;
+    str << "\"" << name << "\"";
+    return str.str();
+}
+
+std::string Base::Tools::quoted(const std::string& name)
+{
+    std::stringstream str;
+    str << "\"" << name << "\"";
+    return str.str();
+}
+
+std::string Base::Tools::joinList(const std::vector<std::string>& vec, const std::string& sep)
+{
+    std::stringstream str;
+    for (const auto& it : vec) {
+        str << it << sep;
+    }
+    return str.str();
+}
+
+std::string Base::Tools::currentDateTimeString()
+{
+    return QDateTime::currentDateTime()
+        .toTimeZone(QTimeZone::systemTimeZone())
+        .toString(Qt::ISODate)
+        .toStdString();
+}
+
+std::vector<std::string> Base::Tools::splitSubName(const std::string& subname)
+{
+    // Turns 'Part.Part001.Body.Pad.Edge1'
+    // Into ['Part', 'Part001', 'Body', 'Pad', 'Edge1']
+    std::vector<std::string> subNames;
+    std::string subName;
+    std::istringstream subNameStream(subname);
+    while (std::getline(subNameStream, subName, '.')) {
+        subNames.push_back(subName);
+    }
+
+    // Check if the last character of the input string is the delimiter.
+    // If so, add an empty string to the subNames vector.
+    // Because the last subname is the element name and can be empty.
+    if (!subname.empty() && subname.back() == '.') {
+        subNames.push_back("");  // Append empty string for trailing dot.
+    }
+
+    return subNames;
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void Base::ZipTools::rewrite(const std::string& source, const std::string& target)
+{
+
+}

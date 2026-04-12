@@ -1,5 +1,5 @@
 ﻿#include "io_occ_step.h"
-#include "Geomerty/TopoShape.h"
+#include "TopoShape.h"
 #include "Core/SceneSystem/Scene.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
@@ -35,7 +35,7 @@ namespace MOON {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
             auto& topoActor=scene->CreateActor("TopoShape", "TopoShape");
             auto& topoComp=topoActor.AddComponent<Core::ECS::Components::CTopoShape>();
-            TopoShape& topo= topoComp.GetTopoShape();
+            Part::TopoShape& topo= topoComp.GetTopoShape();
             topo.importStep(filePath);
             topoComp.discretizationShape();
         }
