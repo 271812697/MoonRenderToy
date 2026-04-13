@@ -385,7 +385,6 @@ namespace MOON {
 		if (mPreflag&&!mCurflag) {
 				auto selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
 				if (selectActor) {
-			
 					const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
 					if (topoComp) {
 						auto& topoShape= topoComp->GetTopoShape();
@@ -414,6 +413,16 @@ namespace MOON {
 				-m_internal->zAxis.dot(m_internal->center)
 				);
 		}
+	}
+
+	Maths::FVector4 ClipPlane::getClipPlane()
+	{
+		return Maths::FVector4(
+			m_internal->zAxis.x(),
+			m_internal->zAxis.y(),
+			m_internal->zAxis.z(),
+			m_internal->zAxis.dot(m_internal->center)
+		);
 	}
 
 }

@@ -22,6 +22,7 @@ namespace Editor::Panels
 		Core::EGizmoOperation GetGizmoOperation() const;
 		void ReceiveEvent(QEvent* e);
 		bool MouseHit(Maths::FVector3& out);
+		bool MouseClipHit(Maths::FVector3& out,const Maths::FVector4& clipPlane);
 		::Rendering::Geometry::Ray GetMouseRay();
 
 		

@@ -27,6 +27,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["Measure"] = new MOON::Measurement("Measure");
 			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane");
 			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
+			mWidgets["ClipPlane"]->setActive(false);
 		}
 		~GizmoRenderPassInternal()
 		{
@@ -40,7 +41,18 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 				mWidgets[name]->setActive(flag);
 			}
 		}
-
+		bool isEnableGizmoWidget(const std::string&name) {
+			if (mWidgets.find(name) != mWidgets.end()) {
+				return mWidgets[name]->isActived();
+			}
+			return false;
+		}
+		MOON::GizmoWidget* getGizmoWidget(const std::string& name) {
+			if (mWidgets.find(name) != mWidgets.end()) {
+				return mWidgets[name];
+			}
+			return nullptr;
+		}
 	private:
 		friend  class Editor::Rendering::GizmoRenderPass;
 		Editor::Rendering::GizmoRenderPass* mSelf = nullptr;
@@ -68,6 +80,18 @@ void Editor::Rendering::GizmoRenderPass::enableGizmoWidget(const std::string& na
 {
 	mInternal->enableGizmoWidget(name,flag);
 }
+
+bool Editor::Rendering::GizmoRenderPass::isEnableGizmoWidget(const std::string& name)
+{
+	return mInternal->isEnableGizmoWidget(name);
+}
+
+MOON::GizmoWidget* Editor::Rendering::GizmoRenderPass::getGizmoWidget(const std::string& name)
+{
+	return mInternal->getGizmoWidget(name);
+}
+
+
 
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {

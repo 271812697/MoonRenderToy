@@ -4,7 +4,9 @@
 #include <Core/Resources/Material.h>
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/SceneSystem/SceneManager.h>
-
+namespace MOON {
+	class GizmoWidget;
+}
 namespace Editor::Rendering
 {
 
@@ -14,6 +16,8 @@ namespace Editor::Rendering
 		GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
 		~GizmoRenderPass();
 		void enableGizmoWidget(const std::string& name,bool flag);
+		bool isEnableGizmoWidget(const std::string&name);
+		MOON::GizmoWidget* getGizmoWidget(const std::string& name);
 	private:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 	private:

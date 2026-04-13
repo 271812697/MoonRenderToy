@@ -258,6 +258,7 @@ namespace Core::SceneSystem
 		void AddTriangleInfo(int mid,const TriangleInfo& info);
 		void UpdateTriangleInfo();
 		bool RayHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
+		bool ClipRayHit(const ::Rendering::Geometry::Ray& ray, const Maths::FVector4& clipPlane,HitRes& outRes);
 		bool RayIteratorHit(const ::Rendering::Geometry::Ray& ray, HitRes& outRes);
 		bool PointPick(const Maths::FMatrix4& viewProj,int x,int y,float tolerance,PointPickRes& out);
 		std::vector<RectPickRes> RectPick(const Maths::FMatrix4& viewProj, float su, float sv,float eu,float ev);

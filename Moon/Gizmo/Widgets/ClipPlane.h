@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Gizmo/GizmoWidget.h"
+#include "Maths/FVector4.h"
 
 namespace MOON
 {
@@ -9,6 +10,7 @@ namespace MOON
 		ClipPlane(const std::string& name);
 		virtual ~ClipPlane();
 		virtual void onUpdate()override;
+		Maths::FVector4 getClipPlane();
 
 	private:
 		class ClipPlaneInternal;

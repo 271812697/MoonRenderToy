@@ -619,6 +619,99 @@ namespace Core::SceneSystem
 		//}
 		return hit;
 	}
+	bool BvhService::ClipRayHit(const::Rendering::Geometry::Ray& ray, const Maths::FVector4& clipPlane, HitRes& outRes)
+	{
+		Maths::FVector3 nor(clipPlane.ToFVector3());
+		float t0_ = nor.Dot((nor * clipPlane.w) - ray.origin_) /
+			nor.Dot(ray.direction_);
+		bool hitPlane= t0_ >= 0.0f;
+
+		ZoneScoped;
+		float triDist = 1e9;
+		bool hit = false;
+		int mid = -1;
+		int tid = -1;
+		int instanceId = -1;
+		Maths::FVector3 hitNormal;
+		Maths::FVector3 bary;
+		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+		if (m_sceneTriBvh != nullptr)
+			stack.push_back(m_sceneTriBvh->m_root);
+		while (!stack.empty()) {
+			auto cur = stack.back();stack.pop_back();
+			if (!cur)continue;
+			float tempDist = 1e9;
+			if (ray.HitDistance(cur->bounds, tempDist))
+			{
+				if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+					stack.push_back(cur->lc);
+					stack.push_back(cur->rc);
+				}
+				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+					for (int i = cur->startidx;i < cur->startidx + cur->numprims;i++) {
+						int index = m_sceneTriBvh->m_packed_indices[i];
+						int meshId = triMeshInstances[index].meshID;
+						auto matrix = triMeshInstances[index].transform;
+						auto invMatrix = Maths::FMatrix4::Inverse(matrix);
+						auto localRay = ray.Transformed(invMatrix);
+						auto& mesh = triMeshes[meshId];
+						auto meshBvh = mesh->GetBvh();
+						std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+						meshBvhStack.push_back(meshBvh->m_root);
+						while (!meshBvhStack.empty()) {
+							auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+							if (!meshBvhCur)continue;
+							float meshTempDist = 1e6;
+							if (localRay.HitDistance(meshBvhCur->bounds, meshTempDist))
+							{
+								if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+									meshBvhStack.push_back(meshBvhCur->lc);
+									meshBvhStack.push_back(meshBvhCur->rc);
+								}
+								else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+									for (int j = meshBvhCur->startidx;j < meshBvhCur->startidx + meshBvhCur->numprims;j++) {
+										int triIndex = meshBvh->m_packed_indices[j];
+										::Rendering::Geometry::VertexBVH v0 = mesh->GetVertexBVH(triIndex * 3);
+										::Rendering::Geometry::VertexBVH v1 = mesh->GetVertexBVH(triIndex * 3 + 1);
+										::Rendering::Geometry::VertexBVH v2 = mesh->GetVertexBVH(triIndex * 3 + 2);
+										float currentTriDist = 1e6;
+										Maths::FVector3 currentHitNormal;
+										Maths::FVector3 currentBary;
+										if (localRay.HitDistance(v0.position, v1.position, v2.position, currentTriDist, &currentHitNormal, &currentBary)) {
+											Maths::FVector3 hitPoint = v0.position * currentBary[0] + v1.position * currentBary[1] + v2.position * currentBary[2];
+											hitPoint = Maths::FMatrix4::MulPoint(matrix, hitPoint);
+											if (hitPlane) {
+												if (nor.Dot(hitPoint) - clipPlane.w > 0.0f) {
+													continue;
+												}
+											}
+											if (currentTriDist < triDist) {
+
+												triDist = currentTriDist;
+												hitNormal = currentHitNormal;
+												bary = currentBary;
+												outRes.hitPoint = hitPoint;
+												outRes.hitNormal = Maths::FMatrix4::MulDir(matrix, hitNormal);
+												outRes.triangleId = triIndex;
+												outRes.actorId = triMeshInstances[index].actorID;
+												outRes.hitUv = v0.texCoords * bary[0] + v1.texCoords * bary[1] + v2.texCoords * bary[2];
+
+												hit = true;
+												mid = meshId;
+												instanceId = index;
+												tid = triIndex;//j;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return hit;
+	}
 	bool BvhService::RayIteratorHit(const::Rendering::Geometry::Ray& ray, HitRes& outRes)
 	{
 		ZoneScoped;
