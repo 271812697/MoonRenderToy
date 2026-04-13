@@ -6,6 +6,8 @@
 #include "Core/Global/ServiceLocator.h"
 #include "SceneView.h"
 #include "Settings/DebugSetting.h"
+#include "renderer/GizmoRenderPass.h"
+#include "Gizmo/Widgets/ClipPlane.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -202,7 +204,19 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
 		if(e2->button()== Qt::RightButton)
 		{ 
-			MouseHit(m_roaterCenter);
+			MOON::GizmoWidget* gizmoWidget=GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").getGizmoWidget("ClipPlane");
+			
+			bool clipFlag = gizmoWidget->isActived();
+			if (clipFlag) {
+				MOON::ClipPlane* clipPlaneWidget = dynamic_cast<MOON::ClipPlane*>(gizmoWidget);
+				Maths::FVector4 plane=clipPlaneWidget->getClipPlane();
+				MouseClipHit(m_roaterCenter,plane);
+			}
+			else
+			{
+				MouseHit(m_roaterCenter);
+			}
+
 		}
 	}
 	if (!m_cameraController.IsRightMousePressed()) {
@@ -236,6 +250,19 @@ bool Editor::Panels::SceneView::MouseHit(Maths::FVector3& out)
 		return false;
 	}
 	if (GetScene()->RayHit(ray, res)) {
+		out = res.hitPoint;
+		return true;
+	}
+	return false;
+}
+
+bool Editor::Panels::SceneView::MouseClipHit(Maths::FVector3& out, const Maths::FVector4& clipPlane)
+{
+	auto [x, y] = input.GetMousePosition();
+	auto ray = GetCamera()->GetMouseRay(x, y);
+	::Core::SceneSystem::HitRes res;
+	
+	if (GetScene()->ClipRayHit(ray,clipPlane,res)) {
 		out = res.hitPoint;
 		return true;
 	}

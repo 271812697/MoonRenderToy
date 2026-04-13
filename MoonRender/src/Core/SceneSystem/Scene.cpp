@@ -444,6 +444,11 @@ bool Core::SceneSystem::Scene::RayHit(const::Rendering::Geometry::Ray& ray, HitR
 	return bvhService->RayHit(ray, outRes);
 }
 
+bool Core::SceneSystem::Scene::ClipRayHit(const::Rendering::Geometry::Ray& ray, const Maths::FVector4& plane, HitRes& outRes)
+{
+	return bvhService->ClipRayHit(ray,plane, outRes);
+}
+
 bool Core::SceneSystem::Scene::RayIteratorHit(const::Rendering::Geometry::Ray& ray,  HitRes& outRes)
 {
 	return bvhService->RayIteratorHit(ray, outRes);
