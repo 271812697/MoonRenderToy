@@ -3,6 +3,15 @@
 namespace Rendering::Geometry
 {
 static  float M_INFINITY = 1e9;
+bool Rendering::Geometry::Ray::hitPlane(const Maths::FVector3& normal, float w, Maths::FVector3& out) const
+{
+    float t0=normal.Dot(w*normal- origin_)/normal.Dot(direction_);
+    if (t0 < 0.0f) {
+        return false;
+    }
+    out = Value(t0);
+    return true;
+}
 Maths::FVector3 Ray::ClosestPoint(const Ray& ray) const
 {
     // Algorithm based on http://paulbourke.net/geometry/lineline3d/

@@ -16,7 +16,14 @@ namespace Rendering::Data
 }
 namespace MOON
 {
+	using Vec2 = Eigen::Vector2f;
 	class GizmoWidget;
+	enum class Plane2D
+	{
+		XPlane,
+		YPlane,
+		ZPlane
+	};
 	class Gizmo
 	{
 	private:
@@ -68,6 +75,7 @@ namespace MOON
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size, Eigen::Vector4<uint8_t> _color);
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size);
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b);
+		void drawLine2D(const Vec2& a, const Vec2& b, Plane2D plane=Plane2D::ZPlane);
 		void drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n);
 		void drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c);
 		void drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c, const Eigen::Vector4<uint8_t>& _color);
@@ -92,6 +100,7 @@ namespace MOON
 		void drawSphereFilled(const Eigen::Vector3f& _origin, float _radius, int _detail = -1);
 		void drawCircleFaceCamera(const Eigen::Vector3f& _origin);
 		void drawCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail = -1);
+		void drawCircle2D(const Vec2& _origin, float _radius ,int _detail = -1,Plane2D plane=Plane2D::ZPlane);
 		void drawConeFilled(
 			const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height, float _radius, int _detail);
 		void drawAlignedBox(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max);

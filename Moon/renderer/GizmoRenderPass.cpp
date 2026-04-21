@@ -12,6 +12,7 @@
 #include "Gizmo/Widgets/Measurement.h"
 #include "Gizmo/Widgets/ClipPlane.h"
 #include "Gizmo/Widgets/SplitScreen.h"
+#include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
 #include "Qtimgui/imgui/imgui.h"
 
 struct GizmoRenderSettings
@@ -27,6 +28,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["Measure"] = new MOON::Measurement("Measure");
 			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane");
 			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
+			mWidgets["DrawSketchHandlerCircle"] = new MOON::DrawSketchHandlerCircle("DrawSketchHandlerCircle");
 			mWidgets["ClipPlane"]->setActive(false);
 		}
 		~GizmoRenderPassInternal()

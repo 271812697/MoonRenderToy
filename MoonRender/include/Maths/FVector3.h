@@ -61,7 +61,7 @@ namespace Maths
 
 		bool operator!=(const FVector3& p_other);
 		float Length();
-		float Dot(const FVector3& p_left);
+		float Dot(const FVector3& p_left)const;
 		FVector3 Cross(const FVector3& p_right);
 		float Max();
 		static FVector3 Add(const FVector3& p_left, const FVector3& p_right);

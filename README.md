@@ -40,8 +40,6 @@ depth peel
 
 ### clip
 
-![image-20260408133711928](C:\Users\27181\AppData\Roaming\Typora\typora-user-images\image-20260408133711928.png)
-
 ![image-20260401213204139](README.assets/image-20260401213204139.png)
 
 ![image-20260325225532674](README.assets/image-20260325225532674.png)
@@ -53,6 +51,40 @@ depth peel
 ![image-20260325225722346](README.assets/image-20260325225722346.png)
 
 ![image-20260325225804474](README.assets/image-20260325225804474.png)
+
+## The things we do
+
+### Interactive Widgets
+
+viewcube
+
+clip
+
+### select 
+
+point  select
+
+rect select
+
+### render effects
+
+pbr 
+
+path trace
+
+ssao
+
+transparent
+
+post effects
+
+plans to do:
+
+- [ ] shadow
+
+## how we design it
+
+
 
 ## Features
 

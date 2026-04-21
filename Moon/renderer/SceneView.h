@@ -24,6 +24,7 @@ namespace Editor::Panels
 		bool MouseHit(Maths::FVector3& out);
 		bool MouseClipHit(Maths::FVector3& out,const Maths::FVector4& clipPlane);
 		::Rendering::Geometry::Ray GetMouseRay();
+		
 
 		
 	protected:
