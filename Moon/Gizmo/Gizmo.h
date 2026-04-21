@@ -20,9 +20,9 @@ namespace MOON
 	class GizmoWidget;
 	enum class Plane2D
 	{
-		ZPlane,
 		XPlane,
-		YPlane
+		YPlane,
+		ZPlane
 	};
 	class Gizmo
 	{

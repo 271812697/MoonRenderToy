@@ -1,10 +1,16 @@
 ﻿#pragma once
 #include "Gizmo/GizmoWidget.h"
+#include "Gizmo/Widgets/DrawSketchDefaultHandler.h"
 
 namespace MOON
 {
- 
-	class DrawSketchHandlerCircle: public GizmoWidget
+	enum class CircleEllipseConstructionMethod
+	{
+		Center,
+		ThreeRim,
+		End  // Must be the last one
+	};
+	class DrawSketchHandlerCircle: public DrawSketchDefaultHandler<DrawSketchHandlerCircle, StateMachines::ThreeSeekEnd,3, CircleEllipseConstructionMethod>
 	{
 	public:
 		DrawSketchHandlerCircle(const std::string& name);
@@ -14,6 +20,10 @@ namespace MOON
 		void onMouseClicked();
 		void onMouseMove();
 		void SetEnabled(int) override;
+		virtual void updateDataAndDrawToPosition(Vec2 onSketchPos)override;
+		virtual void onButtonPressed(Vec2 onSketchPos) override;
+		bool canGoToNextMode() override;
+
 	private:
 		class DrawSketchHandlerCircleInternal;
 		DrawSketchHandlerCircleInternal* m_internal = nullptr;

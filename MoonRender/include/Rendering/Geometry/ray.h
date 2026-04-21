@@ -32,7 +32,7 @@ public:
         origin_ = origin;
         direction_ = Maths::FVector3::Normalize(direction);
     }
-    Maths::FVector3 Value(float t) {
+    Maths::FVector3 Value(float t) const{
         return origin_ + direction_ * t;
     }
     /// Project a point on the ray.
@@ -48,7 +48,7 @@ public:
         Maths::FVector3 projected = Project(point);
         return (point - projected).Length();
     }
-
+    bool  hitPlane(const Maths::FVector3& normal,float w,Maths::FVector3&out)const;
     /// Return closest point to another ray.
     Maths::FVector3 ClosestPoint(const Ray& ray) const;
  

@@ -132,7 +132,7 @@ float Maths::FVector3::Length()
 	return Length(*this);
 }
 
-float Maths::FVector3::Dot(const FVector3& p_left)
+float Maths::FVector3::Dot(const FVector3& p_left)const
 {
 	return Dot(p_left,*this);
 }
