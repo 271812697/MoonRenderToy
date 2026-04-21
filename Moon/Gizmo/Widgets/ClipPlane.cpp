@@ -121,6 +121,7 @@ namespace MOON {
 	public:
 		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
 			clickObserver = mSelf->Interactor->AddObserver(ExecuteCommand::LeftButtonReleaseEvent, this, &ClipPlane::ClipPlaneInternal::onMouseLeftClick, 0.0f);		
+			mSelf->Interactor;
 		}
 		~ClipPlaneInternal() {
 			delete clickObserver.command;

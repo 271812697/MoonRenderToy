@@ -125,6 +125,9 @@ namespace MOON {
 
 			}
 		}
+		int* GetEventPosition() {
+			return this->EventPosition;
+		}
 		void SetEventInformationFlipY(int x, int y, int ctrl = 0, int shift = 0, char keycode = 0,
 			int repeatcount = 0, const char* keysym = nullptr)
 		{
