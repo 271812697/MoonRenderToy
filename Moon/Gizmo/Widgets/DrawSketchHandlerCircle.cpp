@@ -10,6 +10,10 @@
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 
 namespace MOON {
+    static Base::Vector3d toVector3d(const Vec2& vector2d)
+    {
+        return Base::Vector3d(vector2d.x(), vector2d.y(), 0.);
+    }
 	class DrawSketchHandlerCircle::DrawSketchHandlerCircleInternal {
 	public:
 		DrawSketchHandlerCircleInternal(DrawSketchHandlerCircle*s) :self(s){
@@ -25,7 +29,7 @@ namespace MOON {
 		
 		float radius;
         Vec2 centerPoint, firstPoint, secondPoint;
-        //double radius;
+       
         bool isDiameter;
 	};
 	
@@ -94,7 +98,7 @@ namespace MOON {
 
             m_internal->radius = (onSketchPos - m_internal->centerPoint).norm();
 
-            //CreateAndDrawShapeGeometry();
+            CreateAndDrawShapeGeometry();
 
             if (constructionMethod() == ConstructionMethod::Center) {
                // toolWidgetManager.drawDoubleAtCursor(onSketchPos, radius);
@@ -160,13 +164,24 @@ namespace MOON {
 
     bool DrawSketchHandlerCircle::canGoToNextMode()
     {
-        if (state() == SelectMode::SeekSecond && m_internal->radius < 1e-7) {
+        if (state() == SelectMode::SeekSecond && m_internal->radius < Precision::Confusion()) {
             // Prevent validation of null circle.
             return false;
         }
 
         return true;
         
+    }
+
+    void DrawSketchHandlerCircle::createShape(bool onlyeditoutline)
+    {
+        ShapeGeometry.clear();
+
+        if (m_internal->radius < Precision::Confusion()) {
+            return;
+        }
+
+        addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius,true);
     }
 
 }

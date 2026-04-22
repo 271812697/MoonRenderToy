@@ -23,7 +23,7 @@ namespace MOON
 		virtual void updateDataAndDrawToPosition(Vec2 onSketchPos)override;
 		virtual void onButtonPressed(Vec2 onSketchPos) override;
 		bool canGoToNextMode() override;
-
+		void createShape(bool onlyeditoutline) override;
 	private:
 		class DrawSketchHandlerCircleInternal;
 		DrawSketchHandlerCircleInternal* m_internal = nullptr;
