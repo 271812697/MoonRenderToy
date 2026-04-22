@@ -48,8 +48,13 @@ namespace MOON {
 	{
 		renderer->pushSize(3);
 		renderer->drawLine2D({100,0},{-100,0});
-		renderer->drawLine2D({ 0,100 }, { 0,-100 });
-		renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
+        renderer->drawLine2D({ 0,100 }, { 0,-100 });
+        for (int i = 0; i < lines.size();i+=2) {
+            renderer->drawLine2D({lines[i].x
+                ,lines[i].y}, { lines[i+1].x
+                ,lines[i+1].y });
+        }
+		//renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
 		renderer->popSize();
 	}
 
@@ -76,12 +81,10 @@ namespace MOON {
             //toolWidgetManager.drawPositionAtCursor(onSketchPos);
             if (constructionMethod() == ConstructionMethod::Center) {
                 m_internal->centerPoint = onSketchPos;
-
                 //seekAndRenderAutoConstraint(sugConstraints[0], onSketchPos, Base::Vector2d());
             }
             else {
                 m_internal->firstPoint = onSketchPos;
-
                 //seekAndRenderAutoConstraint(
                 //    sugConstraints[0],
                 //    onSketchPos,
@@ -95,11 +98,8 @@ namespace MOON {
                 m_internal->centerPoint = (onSketchPos - m_internal->firstPoint) / 2 + m_internal->firstPoint;
             }
             m_internal->secondPoint = onSketchPos;
-
             m_internal->radius = (onSketchPos - m_internal->centerPoint).norm();
-
             CreateAndDrawShapeGeometry();
-
             if (constructionMethod() == ConstructionMethod::Center) {
                // toolWidgetManager.drawDoubleAtCursor(onSketchPos, radius);
             }
@@ -168,19 +168,15 @@ namespace MOON {
             // Prevent validation of null circle.
             return false;
         }
-
         return true;
-        
     }
 
     void DrawSketchHandlerCircle::createShape(bool onlyeditoutline)
     {
         ShapeGeometry.clear();
-
         if (m_internal->radius < Precision::Confusion()) {
             return;
         }
-
         addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius,true);
     }
 
