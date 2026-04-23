@@ -74,17 +74,17 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerCircle::updateDataAndDrawToPosition(Vec2 onSketchPos)
+	void DrawSketchHandlerCircle::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{
         switch (state()) {
         case SelectMode::SeekFirst: {
             //toolWidgetManager.drawPositionAtCursor(onSketchPos);
             if (constructionMethod() == ConstructionMethod::Center) {
-                m_internal->centerPoint = onSketchPos;
+                m_internal->centerPoint = { onSketchPos.x,onSketchPos.y };
                 //seekAndRenderAutoConstraint(sugConstraints[0], onSketchPos, Base::Vector2d());
             }
             else {
-                m_internal->firstPoint = onSketchPos;
+                m_internal->firstPoint = { onSketchPos.x,onSketchPos.y };
                 //seekAndRenderAutoConstraint(
                 //    sugConstraints[0],
                 //    onSketchPos,
@@ -95,10 +95,10 @@ namespace MOON {
         } break;
         case SelectMode::SeekSecond: {
             if (constructionMethod() == ConstructionMethod::ThreeRim) {
-                m_internal->centerPoint = (onSketchPos - m_internal->firstPoint) / 2 + m_internal->firstPoint;
+                m_internal->centerPoint = (Vec2(onSketchPos.x,onSketchPos.y) - m_internal->firstPoint) / 2 + m_internal->firstPoint;
             }
-            m_internal->secondPoint = onSketchPos;
-            m_internal->radius = (onSketchPos - m_internal->centerPoint).norm();
+            m_internal->secondPoint = { onSketchPos.x,onSketchPos.y };
+            m_internal->radius = (Vec2(onSketchPos.x, onSketchPos.y) - m_internal->centerPoint).norm();
             CreateAndDrawShapeGeometry();
             if (constructionMethod() == ConstructionMethod::Center) {
                // toolWidgetManager.drawDoubleAtCursor(onSketchPos, radius);
@@ -147,7 +147,7 @@ namespace MOON {
         }
 	}
 
-    void DrawSketchHandlerCircle::onButtonPressed(Vec2 onSketchPos)
+    void DrawSketchHandlerCircle::onButtonPressed(Base::Vector2d onSketchPos)
     {
         this->updateDataAndDrawToPosition(onSketchPos);
         if (canGoToNextMode()) {

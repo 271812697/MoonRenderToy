@@ -14,14 +14,14 @@ namespace MOON
         auto isperiodicconic = geometry->is<Part::GeomCircle>() || geometry->is<Part::GeomEllipse>();
         auto isbounded = geometry->isDerivedFrom<Part::GeomBoundedCurve>();
 
-        //if (geometry->is<Part::GeomLineSegment>()) 
-        //{  // add a line
-        //    auto geo = static_cast<const Part::GeomLineSegment*>(geometry);
+        if (geometry->is<Part::GeomLineSegment>()) 
+        {  // add a line
+            auto geo = static_cast<const Part::GeomLineSegment*>(geometry);
 
-        //    emplaceasvector2d(geo->getStartPoint());
-        //    emplaceasvector2d(geo->getEndPoint());
-        //}
-        //else if (isperiodicconic || isbounded) 
+            emplaceasvector2d(geo->getStartPoint());
+            emplaceasvector2d(geo->getEndPoint());
+        }
+        else if (isperiodicconic || isbounded) 
         {
 
             auto geo = static_cast<const Part::GeomConic*>(geometry);

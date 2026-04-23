@@ -403,7 +403,7 @@ namespace MOON
             }
             return false;
         }
-        virtual void updateDataAndDrawToPosition(Vec2 onSketchPos)
+        virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
         {
 
         }
@@ -424,34 +424,34 @@ namespace MOON
             Maths::FVector3 out;
             ray.hitPlane(planeNormal,0,out);
             
-            onButtonPressed(Vec2(out.x, out.y));
+            onButtonPressed(Base::Vector2d(out.x, out.y));
         }
         void ButtonReleaseParse() {
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
             ray.hitPlane(planeNormal, 0, out);
 
-            releaseButton(Vec2(out.x, out.y));
+            releaseButton(Base::Vector2d(out.x, out.y));
         }
         void MouseMoveParse() {
             //need to make sure which plane
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
             ray.hitPlane( planeNormal, 0, out);
-            mouseMove(Vec2(out.x, out.y));
+            mouseMove(Base::Vector2d(out.x, out.y));
         }
-        virtual void mouseMove(Vec2 pos)
+        virtual void mouseMove(Base::Vector2d pos)
         {
             updateDataAndDrawToPosition(pos);
         }
-        virtual void onButtonPressed(Vec2 pos)
+        virtual void onButtonPressed(Base::Vector2d pos)
         {
             this->updateDataAndDrawToPosition(pos);
             if (canGoToNextMode()) {
                 this->moveToNextMode();
             }
         }
-        virtual bool releaseButton(Vec2 onSketchPos) 
+        virtual bool releaseButton(Base::Vector2d onSketchPos)
         {
            
             finish();

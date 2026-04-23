@@ -18,6 +18,7 @@ namespace Editor::Rendering
 		void enableGizmoWidget(const std::string& name,bool flag);
 		bool isEnableGizmoWidget(const std::string&name);
 		MOON::GizmoWidget* getGizmoWidget(const std::string& name);
+		std::unordered_map<std::string, MOON::GizmoWidget*>& getGizmoWidgets();
 	private:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 	private:

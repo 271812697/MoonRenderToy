@@ -1,5 +1,6 @@
 ﻿#include "resource/DarkStyle.h"
 #include "core/log.h"
+#include "GeometryInit.h"
 #include <QApplication>
 #include <QFontDatabase>
 #include <editor/editor.h>
@@ -13,7 +14,10 @@ int main(int argc, char* argv[])
 	QFont font(QFontDatabase::applicationFontFamilies(font_id).at(0));
 	font.setPointSize(10);
 	MOON::Log::Init();
-	CORE_INFO("start");
+	CORE_INFO("start ");
+	CORE_INFO("Init Geometry Types");
+	Part::GeometryTypeInit();
+	
 	QApplication::setFont(font);
 	MOON::Editor editor;
 	editor.setWindowTitle("MOON");

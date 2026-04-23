@@ -19,6 +19,7 @@
 #include "Widgets/TextureProperty.h"
 #include "Core/Rendering/GbufferPass.h"
 #include "Core/Rendering/SkyBoxRenderPass .h"
+#include "renderer/GizmoRenderPass.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -161,13 +162,47 @@ namespace MOON {
 			}
 		}
 	};
+	class GizmoPassComponent :public RenderPassComponent
+	{
+	public:
+		GizmoPassComponent(::Editor::Rendering::GizmoRenderPass* p) :RenderPassComponent(p) {
+			;
+			for (auto& item : p->getGizmoWidgets()) {
+				mProperties.push_back(new BoolProperty(QString::fromStdString(item.first), this));
+			}
 
+			//mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto gizmopass = dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass);
+			if (propertyName == "Enable") {
+				return QVariant::fromValue(pass->IsEnabled());
+			}
+			else {
+				return QVariant::fromValue(gizmopass->isEnableGizmoWidget(propertyName.toStdString()));
+			}
+			
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto gizmopass = dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass);
+			if (propertyName == "Enable") {
+				pass->SetEnabled(value.value<bool>());
+			}
+			else {
+				gizmopass->enableGizmoWidget(propertyName.toStdString(), value.value<bool>());
+			}
+		}
+	};
 	RenderPassComponent* CreateRenderPassComponent(Rendering::Core::ARenderPass* pass) {
 		if (dynamic_cast<::Core::Rendering::GbufferPass*>(pass)) {
 			return new GbufferPassComponent(dynamic_cast<::Core::Rendering::GbufferPass*>(pass));
 		}
 		else if (dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass)) {
 			return new SkyBoxPassComponent(dynamic_cast<::Core::Rendering::SkyboxRenderPass*>(pass));
+		}
+		else if (dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass)) {
+			return new GizmoPassComponent(dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass));
 		}
 		else {
 			return new RenderPassComponent(pass);
