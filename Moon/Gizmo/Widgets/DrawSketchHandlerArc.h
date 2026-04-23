@@ -2,26 +2,25 @@
 #include "Gizmo/GizmoWidget.h"
 #include "Gizmo/Widgets/DrawSketchDefaultHandler.h"
 #include "Gizmo/Widgets/CircleEllipseConstructionMethod.h"
-
 namespace MOON
 {
 
-	class DrawSketchHandlerCircle: public DrawSketchDefaultHandler<DrawSketchHandlerCircle, StateMachines::ThreeSeekEnd,3, CircleEllipseConstructionMethod>
+	class DrawSketchHandlerArc : public DrawSketchDefaultHandler<DrawSketchHandlerArc, StateMachines::ThreeSeekEnd,3, CircleEllipseConstructionMethod>
 	{
 	public:
-		DrawSketchHandlerCircle(const std::string& name);
-		virtual ~DrawSketchHandlerCircle();
+		DrawSketchHandlerArc(const std::string& name);
+		virtual ~DrawSketchHandlerArc();
 		virtual void onUpdate()override;
 		virtual void onSetActive(bool flag)override;
 		void onMouseClicked();
 		void onMouseMove();
 		void SetEnabled(int) override;
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
-		virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
+		//virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
 		bool canGoToNextMode() override;
 		void createShape(bool onlyeditoutline) override;
 	private:
-		class DrawSketchHandlerCircleInternal;
-		DrawSketchHandlerCircleInternal* m_internal = nullptr;
+		class DrawSketchHandlerArcInternal;
+		DrawSketchHandlerArcInternal* m_internal = nullptr;
 	};
 }

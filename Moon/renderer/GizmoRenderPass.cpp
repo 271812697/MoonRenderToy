@@ -13,6 +13,8 @@
 #include "Gizmo/Widgets/ClipPlane.h"
 #include "Gizmo/Widgets/SplitScreen.h"
 #include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
+#include "Gizmo/Widgets/DrawSketchHandlerArc.h"
+#include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
 #include "Qtimgui/imgui/imgui.h"
 
 struct GizmoRenderSettings
@@ -29,6 +31,8 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane");
 			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
 			mWidgets["DrawSketchHandlerCircle"] = new MOON::DrawSketchHandlerCircle("DrawSketchHandlerCircle");
+			mWidgets["DrawSketchHandlerArc"] = new MOON::DrawSketchHandlerArc("DrawSketchHandlerArc");
+			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
 			mWidgets["ClipPlane"]->setActive(false);
 		}
 		~GizmoRenderPassInternal()
@@ -91,6 +95,11 @@ bool Editor::Rendering::GizmoRenderPass::isEnableGizmoWidget(const std::string& 
 MOON::GizmoWidget* Editor::Rendering::GizmoRenderPass::getGizmoWidget(const std::string& name)
 {
 	return mInternal->getGizmoWidget(name);
+}
+
+std::unordered_map<std::string, MOON::GizmoWidget*>& Editor::Rendering::GizmoRenderPass::getGizmoWidgets()
+{
+	return mInternal->mWidgets;
 }
 
 
