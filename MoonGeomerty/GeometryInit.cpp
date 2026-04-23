@@ -17,6 +17,7 @@ namespace Part {
 		GeomConic::init();
 		GeomLine::init();
 		GeomBoundedCurve::init();
+		GeomBSplineCurve::init();
 		GeomTrimmedCurve::init();
 		GeomArcOfConic::init();
 		GeomArcOfCircle::init();

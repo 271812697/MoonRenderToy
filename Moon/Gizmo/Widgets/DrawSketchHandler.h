@@ -15,7 +15,8 @@ namespace MOON
 			: GizmoWidget(name)
 		{
 		}
-       
+        virtual void quit();
+        void clearEdit() ;
     protected:
         void drawEdit(const std::vector<Base::Vector2d>& EditCurve) ;
         void drawEdit(const std::list<std::vector<Base::Vector2d>>& list) ;

@@ -39,9 +39,16 @@ namespace MOON
 
         return vector2d;
     }
-    void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve) 
+    void DrawSketchHandler::quit()
+    {
+    }
+    void DrawSketchHandler::clearEdit()
     {
         lines.clear();
+    }
+    void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
+    {
+        //lines.clear();
         for (int i = 0; i < EditCurve.size() - 1; i++) {
             lines.push_back(EditCurve[i]);
             lines.push_back(EditCurve[i + 1]);
@@ -50,7 +57,7 @@ namespace MOON
     void DrawSketchHandler::drawEdit(const std::list<std::vector<Base::Vector2d>>& list) 
     {
         //lines.push_back
-        lines.clear();
+        //lines.clear();
         for (auto it = list.begin(); it != list.end(); it++) {
             auto& segment = *it;
             for (int i = 0; i < segment.size() - 1;i++) {
@@ -62,7 +69,7 @@ namespace MOON
     }
 
     void DrawSketchHandler::drawEdit(const std::vector<Part::Geometry*>& geometries)  {
-        lines.clear();
+        //lines.clear();
         std::list<std::vector<Base::Vector2d>> list;
         for (const auto& geo : geometries) {
             list.push_back(toVector2D(geo));

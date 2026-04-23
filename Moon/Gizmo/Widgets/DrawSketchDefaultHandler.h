@@ -182,6 +182,7 @@ namespace MOON
 
         void reset()
         {
+            
             nextMode = std::nullopt;
             if (Mode != static_cast<SelectModeT>(0)) {
                 setState(static_cast<SelectModeT>(0));
@@ -334,7 +335,7 @@ namespace MOON
         }
         void reset()
         {
-            //clearEdit();
+            clearEdit();
 
             //for (auto& ac : sugConstraints) {
             //    ac.clear();
@@ -467,6 +468,7 @@ namespace MOON
         }
         void CreateAndDrawShapeGeometry()
         {
+            clearEdit();
             createShape(true);
             drawEdit(toPointerVector(ShapeGeometry));
         }
