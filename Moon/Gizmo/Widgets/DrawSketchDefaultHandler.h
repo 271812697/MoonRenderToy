@@ -6,7 +6,11 @@
 #include "Gizmo/Interactive/WidgetCallbackMapper.h"
 #include "Gizmo/Interactive/WidgetEvent.h"
 #include "renderer/SceneView.h"
+#include "core/component/CGeometryLine.h"
+
+#include <Core/Global/ServiceLocator.h>
 #include "Geometry.h"
+#include <Core/ECS/Actor.h>
 #include <type_traits>
 #include <optional>
 #include <Eigen/Core>
@@ -336,6 +340,15 @@ namespace MOON
         void reset()
         {
             clearEdit();
+            auto& view = GetService(::Editor::Panels::SceneView);
+            auto scene = view.GetScene();
+            for (auto& geo : ShapeGeometry) {
+                auto& actor = scene->CreateActor("", "SketchGeomertyLine");
+                auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
+                geoComp.setGeometry(std::move(geo));
+                geoComp.discretizationShape(plane);
+            }
+            
 
             //for (auto& ac : sugConstraints) {
             //    ac.clear();
@@ -353,6 +366,7 @@ namespace MOON
         }
         bool handleContinuousMode()
         {
+
             if (continuousMode) {
                 // This code enables the continuous creation mode.
                 reset();
@@ -400,7 +414,9 @@ namespace MOON
                 //    // area).
                 //    Base::Console().error(e.what());
                 //}
-                return handleContinuousMode();
+                //return handleContinuousMode();
+                handleContinuousMode();
+                return true;
             }
             return false;
         }
@@ -424,22 +440,50 @@ namespace MOON
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
             ray.hitPlane(planeNormal,0,out);
-            
-            onButtonPressed(Base::Vector2d(out.x, out.y));
+			Base::Vector2d onSketchPos(out.x, out.y);
+            if (plane == 2) {
+				onSketchPos = Base::Vector2d(out.x, out.y);
+			}
+			else if (plane == 0) {
+				onSketchPos = Base::Vector2d(out.y, out.z);
+			}
+            else {
+                onSketchPos = Base::Vector2d(out.x, out.z);
+            }
+            onButtonPressed(onSketchPos);
         }
         void ButtonReleaseParse() {
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
             ray.hitPlane(planeNormal, 0, out);
-
-            releaseButton(Base::Vector2d(out.x, out.y));
+            Base::Vector2d onSketchPos(out.x, out.y);
+            if (plane == 2) {
+                onSketchPos = Base::Vector2d(out.x, out.y);
+            }
+            else if (plane == 0) {
+                onSketchPos = Base::Vector2d(out.y, out.z);
+            }
+            else {
+                onSketchPos = Base::Vector2d(out.x, out.z);
+            }
+            releaseButton(onSketchPos);
         }
         void MouseMoveParse() {
             //need to make sure which plane
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
             ray.hitPlane( planeNormal, 0, out);
-            mouseMove(Base::Vector2d(out.x, out.y));
+            Base::Vector2d onSketchPos(out.x, out.y);
+            if (plane == 2) {
+                onSketchPos = Base::Vector2d(out.x, out.y);
+            }
+            else if (plane == 0) {
+                onSketchPos = Base::Vector2d(out.y, out.z);
+            }
+            else {
+                onSketchPos = Base::Vector2d(out.x, out.z);
+            }
+            mouseMove(onSketchPos);
         }
         virtual void mouseMove(Base::Vector2d pos)
         {
@@ -454,8 +498,9 @@ namespace MOON
         }
         virtual bool releaseButton(Base::Vector2d onSketchPos)
         {
-           
-            finish();
+            if (finish()) {
+
+            }
             return true;
         }
         virtual bool canGoToNextMode()

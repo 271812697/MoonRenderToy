@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include<qmainwindow.h>
 class QSplitter;
 class QMenuBar;

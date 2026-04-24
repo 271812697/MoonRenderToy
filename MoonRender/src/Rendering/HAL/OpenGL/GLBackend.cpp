@@ -263,11 +263,6 @@ namespace Rendering::HAL
 	template<>
 	void GLBackend::DrawElements(Settings::EPrimitiveMode p_primitiveMode, uint32_t p_indexCount)
 	{
-		//if (p_primitiveMode == Settings::EPrimitiveMode::LINES) {
-		//	glEnable(GL_POLYGON_OFFSET_LINE);
-		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		//	glPolygonOffset(-1,-1);
-		//}
 		glDrawElements(EnumToValue<GLenum>(p_primitiveMode), p_indexCount, GL_UNSIGNED_INT, nullptr);
 	}
 

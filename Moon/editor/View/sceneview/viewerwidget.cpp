@@ -133,6 +133,7 @@ namespace MOON {
 	{
 		CallBackManager::instance().exectue();
 		mInternal->paintGL();
+		
 	}
 
 	bool ViewerWidget::event(QEvent* evt)
