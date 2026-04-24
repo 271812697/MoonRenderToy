@@ -65,7 +65,11 @@
         <file>icons/pqClip.svg</file>
         <file>icons/arrow_right.svg</file>
         <file>icons/arrow_down.svg</file>
-    </qresource>
+		<file>icons/Sketcher_CreateCircle.svg</file>
+		<file>icons/Sketcher_CreateBSpline.svg</file>
+		<file>icons/Sketcher_CreateArc.svg</file>
+		
+	</qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>
         <file>icons/pqEyeballClosed.svg</file>

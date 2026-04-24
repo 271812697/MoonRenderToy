@@ -18,7 +18,7 @@ namespace MOON
 		virtual ~DrawSketchHandlerBSpline();
 		virtual void onUpdate()override;
 		virtual void onSetActive(bool flag)override;
-		void SetEnabled(int) override;
+		
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
 		//virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
 		bool canGoToNextMode() override;

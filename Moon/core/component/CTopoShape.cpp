@@ -234,6 +234,7 @@ namespace Core::ECS::Components
         ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
         lineColorTex->Allocate(desc);
         lineMat->SetProperty("lineColorTex", lineColorTex);
+        lineMat->AddFeature("BATCHLINE");
         lineRener.SetMaterialAtIndex(0, *lineMat);
 
         lineRener.UpdateMaterialList();

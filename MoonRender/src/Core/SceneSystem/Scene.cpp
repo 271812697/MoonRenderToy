@@ -148,7 +148,7 @@ Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor()
 
 Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor(const std::string& p_name, const std::string& p_tag)
 {
-	m_actors.push_back(new Core::ECS::Actor(m_availableID++, p_name, p_tag, m_isPlaying));
+	m_actors.push_back(new Core::ECS::Actor(m_availableID++, p_name!=""?p_name:std::to_string(m_availableID), p_tag, m_isPlaying));
 	ECS::Actor& instance = *m_actors.back();
 	instance.ComponentAddedEvent	+= std::bind(&Scene::OnComponentAdded, this, std::placeholders::_1);
 	instance.ComponentRemovedEvent	+= std::bind(&Scene::OnComponentRemoved, this, std::placeholders::_1);

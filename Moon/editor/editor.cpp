@@ -11,7 +11,7 @@
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "UI/LogPanel/LogPanel.h"
-#include "Debug/debugPanel.h"
+#include "editor/Toolbar/sketchToolbar.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
@@ -102,6 +102,12 @@ namespace MOON {
 			buildViewMenu();
 	
 		}
+		void buildToolBar() {
+			QToolBar* toolBar = new SketchToolbar(self);
+			toolBar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, toolBar);
+
+		}
 		void retranslateUi() {
 			
 			self->setWindowTitle(QCoreApplication::translate("Editor", "MainWindow", nullptr));
@@ -122,6 +128,7 @@ namespace MOON {
 	{
 		mInternal->initPanels();
 		mInternal->buildMenu();
+		mInternal->buildToolBar();
 		mInternal->retranslateUi();
 	}
 	Editor::~Editor()

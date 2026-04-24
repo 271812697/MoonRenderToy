@@ -52,7 +52,7 @@ namespace MOON {
         for (int i = 0; i < lines.size();i+=2) {
             renderer->drawLine2D({lines[i].x
                 ,lines[i].y}, { lines[i+1].x
-                ,lines[i+1].y });
+                ,lines[i+1].y }, static_cast<MOON::Plane2D>(plane));
         }
 		//renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
 		renderer->popSize();
@@ -70,9 +70,7 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerCircle::SetEnabled(int)
-	{
-	}
+
 
 	void DrawSketchHandlerCircle::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{
