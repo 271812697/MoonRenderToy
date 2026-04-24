@@ -5,9 +5,6 @@
 
 namespace Core::Rendering::PostProcess
 {
-	/**
-	* Enum of available tonemapping modes
-	*/
 	enum class ETonemappingMode
 	{
 		NEUTRAL = 0,
@@ -18,9 +15,6 @@ namespace Core::Rendering::PostProcess
 		ACES = 5
 	};
 
-	/**
-	* Tonemapping effect settings
-	*/
 	struct TonemappingSettings : public Core::Rendering::PostProcess::EffectSettings
 	{
 		float exposure = 1.0f;
@@ -28,27 +22,10 @@ namespace Core::Rendering::PostProcess
 		bool gammaCorrection = true;
 	};
 
-	/**
-	* Post-processing effect that applies Tonemapping
-	* Remap HDR values to the LDR range.
-	*/
 	class TonemappingEffect : public AEffect
 	{
 	public:
-		/**
-		* Constructor of the TonemappingEffect class
-		* @param p_renderer
-		*/
 		TonemappingEffect(::Rendering::Core::CompositeRenderer& p_renderer);
-
-		/**
-		* Render the Tonemapping effect
-		* @note: make sure the effect is applicable before calling this method
-		* @param p_pso
-		* @param p_src
-		* @param p_dst
-		* @param p_settings
-		*/
 		virtual void Draw(
 			::Rendering::Data::PipelineState p_pso,
 			::Rendering::HAL::Framebuffer& p_src,

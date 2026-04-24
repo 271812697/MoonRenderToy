@@ -14,7 +14,6 @@ namespace Core::ECS::Components
 {
     static std::vector<Base::Vector2d> toVector2D(const Part::Geometry* geometry,int curvedEdgeCountSegments)
     {
-        
         std::vector<Base::Vector2d> vector2d;
         auto emplaceasvector2d = [&vector2d](const Base::Vector3d& point) {
             vector2d.emplace_back(point.x, point.y);
@@ -52,6 +51,7 @@ namespace Core::ECS::Components
 		friend class CGeometryLine;
 		CGeometryLine* mSelf = nullptr;
         bool update = false;
+        bool buildLine = false;
         int plane = 2;
         std::unique_ptr<Part::Geometry> mGeometry;
 	};
@@ -66,18 +66,21 @@ namespace Core::ECS::Components
 
 	std::string CGeometryLine::GetName()
 	{
-		return "CGeometry";
+		return "CGeometryLine";
 	}
 
 	void CGeometryLine::OnUpdate(float p_deltaTime)
-	{
+	{ 
+        //buildComp();
+        
         if (mInternal->update) {
 			mInternal->update = false;
-            MOON::createCallBack(MOON::CallBackManager::instance(), [this]() {
-                this->buildLines(mInternal->plane);
-                });
-			//buildLines(mInternal->plane);
+            buildLines(mInternal->plane);
+            //MOON::createCallBack(MOON::CallBackManager::instance(), [this]() {
+            //    this->buildLines(mInternal->plane);
+            //    });
         }
+   //     if()
 	}
 
 	Part::Geometry* CGeometryLine::GetGeometry()
@@ -95,8 +98,6 @@ namespace Core::ECS::Components
 	{
         mInternal->update = true;
         mInternal->plane = plane;
- 
-        //buildLines(mInternal->plane);
 	}
 
 	void CGeometryLine::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
@@ -107,14 +108,24 @@ namespace Core::ECS::Components
 	{
 	}
 
-	void CGeometryLine::buildLines(int plane)
+    void CGeometryLine::buildComp()
+    {
+        if (mInternal->update) {
+            mInternal->update = false;
+            mInternal->buildLine = true;
+            //owner.AddComponent<Core::ECS::Components::CModelRenderer>();
+            //owner.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+        }
+    }
+
+    void CGeometryLine::buildLines(int plane)
 	{
         //build lines
         std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
         std::vector<uint32_t>lineIndex;
         std::vector<Base::Vector2d>linePoints = toVector2D(mInternal->mGeometry.get(), 50);
         p_vertices.reserve(linePoints.size());
-        for (int i = 0;i < linePoints.size();i++) {
+        for (int i = 0; i < linePoints.size(); i++) {
             ::Rendering::Geometry::VertexBVH v;
             if (plane == 2) {
                 v.position.x = static_cast<float>(linePoints[i].x);
@@ -140,9 +151,6 @@ namespace Core::ECS::Components
                 lineIndex.push_back(i + 1);
             }
         }
-
-
-
         auto lineMesh = new ::Rendering::Resources::Mesh(
             p_vertices,
             lineIndex,
@@ -153,8 +161,8 @@ namespace Core::ECS::Components
         lineModel->GetMaterialNames().emplace_back("Default");
         lineModel->AddMesh(lineMesh);
 
-        owner.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(lineModel);
-        auto& lineRener = owner.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+        owner.GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(lineModel);
+        auto& lineRener = *owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 
         auto lineMat = new Core::Resources::Material();
         Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName() + std::string("_lineMat"), lineMat);
@@ -163,7 +171,6 @@ namespace Core::ECS::Components
         lineMat->SetCastShadows(false);
         lineMat->SetReceiveShadows(false);
         lineMat->SetLineWidth(2.0);
-
         lineRener.SetMaterialAtIndex(0, *lineMat);
         lineRener.UpdateMaterialList();
 	}

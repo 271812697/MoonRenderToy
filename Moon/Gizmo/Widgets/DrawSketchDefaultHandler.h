@@ -7,7 +7,8 @@
 #include "Gizmo/Interactive/WidgetEvent.h"
 #include "renderer/SceneView.h"
 #include "core/component/CGeometryLine.h"
-
+#include <Core/ECS/Components/CModelRenderer.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/Global/ServiceLocator.h>
 #include "Geometry.h"
 #include <Core/ECS/Actor.h>
@@ -345,6 +346,8 @@ namespace MOON
             for (auto& geo : ShapeGeometry) {
                 auto& actor = scene->CreateActor("", "SketchGeomertyLine");
                 auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
+                actor.AddComponent<Core::ECS::Components::CModelRenderer>();
+                actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
                 geoComp.setGeometry(std::move(geo));
                 geoComp.discretizationShape(plane);
             }

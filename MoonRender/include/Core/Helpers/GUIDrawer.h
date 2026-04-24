@@ -23,9 +23,7 @@ namespace Rendering::Resources
 
 namespace Core::Helpers
 {
-	/**
-	* Provide some helpers to draw UI elements
-	*/
+
 	class GUIDrawer
 	{
 	public:
@@ -34,10 +32,7 @@ namespace Core::Helpers
 		static const float _MIN_FLOAT;
 		static const float _MAX_FLOAT;
 
-		/**
-		* Defines the texture to use when there is no texture in a texture resource field
-		* @param p_emptyTexture
-		*/
+
 		static void ProvideEmptyTexture(::Rendering::Resources::Texture& p_emptyTexture);
 
 
