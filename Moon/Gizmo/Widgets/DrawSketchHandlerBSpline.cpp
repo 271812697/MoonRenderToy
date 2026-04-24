@@ -31,9 +31,6 @@ namespace MOON
 	void DrawSketchHandlerBSpline::onSetActive(bool flag)
 	{
 	}
-	void DrawSketchHandlerBSpline::SetEnabled(int)
-	{
-	}
 	void DrawSketchHandlerBSpline::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{
 		prevCursorPosition = onSketchPos;

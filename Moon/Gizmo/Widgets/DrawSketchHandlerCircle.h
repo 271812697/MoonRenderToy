@@ -15,7 +15,6 @@ namespace MOON
 		virtual void onSetActive(bool flag)override;
 		void onMouseClicked();
 		void onMouseMove();
-		void SetEnabled(int) override;
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
 		virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
 		bool canGoToNextMode() override;

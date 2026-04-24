@@ -70,9 +70,7 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerCircle::SetEnabled(int)
-	{
-	}
+
 
 	void DrawSketchHandlerCircle::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{

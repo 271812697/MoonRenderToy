@@ -144,9 +144,7 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerArc::SetEnabled(int)
-	{
-	}
+
 
 	void DrawSketchHandlerArc::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{

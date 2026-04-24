@@ -94,9 +94,13 @@ namespace MOON {
     CallBackManager::CallBack& createCallBack(CallBackManager& manager,
         CALLABLE&& func, ARGS&&... args) noexcept {
         struct Data {
-            explicit Data(std::function<void()> f) noexcept : f(std::move(f)) {}
+            explicit Data(std::function<void()> f) noexcept : f(std::move(f)) {
+            
+            }
             std::function<void()> f;
-            void gob(CallBackManager::CallBack*) noexcept { f(); }
+            void gob(CallBackManager::CallBack*) noexcept {
+                f(); 
+            }
         };
         return manager.emplaceCallBack<Data,&Data::gob>(std::bind(std::forward<CALLABLE>(func), std::forward<ARGS>(args)...));
     }
