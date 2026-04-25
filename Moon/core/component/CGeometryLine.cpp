@@ -71,16 +71,10 @@ namespace Core::ECS::Components
 
 	void CGeometryLine::OnUpdate(float p_deltaTime)
 	{ 
-        //buildComp();
-        
         if (mInternal->update) {
 			mInternal->update = false;
             buildLines(mInternal->plane);
-            //MOON::createCallBack(MOON::CallBackManager::instance(), [this]() {
-            //    this->buildLines(mInternal->plane);
-            //    });
         }
-   //     if()
 	}
 
 	Part::Geometry* CGeometryLine::GetGeometry()
@@ -113,8 +107,6 @@ namespace Core::ECS::Components
         if (mInternal->update) {
             mInternal->update = false;
             mInternal->buildLine = true;
-            //owner.AddComponent<Core::ECS::Components::CModelRenderer>();
-            //owner.AddComponent<Core::ECS::Components::CMaterialRenderer>();
         }
     }
 
