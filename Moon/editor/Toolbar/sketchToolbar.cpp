@@ -38,7 +38,7 @@ namespace MOON {
 		std::string handlerName = "";
 			 
 	};
-	std::vector<std::string> CreateCurveCommand::blackList = { "DrawSketchHandlerCircle","DrawSketchHandlerArc","DrawSketchHandlerBSpline" };
+	std::vector<std::string> CreateCurveCommand::blackList = { "DrawSketchHandlerCircle","DrawSketchHandlerArc","DrawSketchHandlerBSpline","DrawSketchHandlerRectangle" };
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
 	public:
@@ -50,12 +50,15 @@ namespace MOON {
 			circle = new CreateCurveCommand(self, "DrawSketchHandlerCircle");
 			arc = new CreateCurveCommand(self, "DrawSketchHandlerArc");
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
+			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
 			arc->setIcon(":/widgets/icons/Sketcher_CreateArc.svg");
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
+			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
 			self->addAction(arc->action());
 			self->addAction(bspline->action());
 			self->addAction(circle->action());
+			self->addAction(rectangle->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -69,6 +72,7 @@ namespace MOON {
 		CreateCurveCommand* circle;
 		CreateCurveCommand* arc;
 		CreateCurveCommand* bspline;
+		CreateCurveCommand* rectangle;
 	};
 
 	SketchToolbar::SketchToolbar(const QString& title, QWidget* parent)

@@ -68,8 +68,9 @@
 		<file>icons/Sketcher_CreateCircle.svg</file>
 		<file>icons/Sketcher_CreateBSpline.svg</file>
 		<file>icons/Sketcher_CreateArc.svg</file>
-		
-	</qresource>
+    <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
+
+    </qresource>
     <qresource prefix="/entityTree">
         <file>icons/pqEyeball.svg</file>
         <file>icons/pqEyeballClosed.svg</file>

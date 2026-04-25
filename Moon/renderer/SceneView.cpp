@@ -315,7 +315,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	if (m_gizmoOperations.IsPicking()&&input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();
-		GetScene()->BuildSceneBvh();
+		//GetScene()->BuildSceneBvh();
 	}
 
 	if (!m_gizmoOperations.IsPicking())
