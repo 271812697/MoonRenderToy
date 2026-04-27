@@ -105,14 +105,13 @@ namespace Core::ECS::Components
                     indices,
                     0,
                     ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
-
                 auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
               
                 // 创建并注册默认材质
                 Core::Resources::Material* tempMat = new Core::Resources::Material();
-                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName() + "_mat", tempMat);
+                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName()+std::to_string(owner.GetID()) + "_mat", tempMat);
                 tempMat->SetBackfaceCulling(false);
                 tempMat->SetCastShadows(false);
                 tempMat->SetReceiveShadows(false);
@@ -133,7 +132,6 @@ namespace Core::ECS::Components
                 tempMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
 
                 // 在场景中创建 Actor 并绑定模型/材质
-               
                 auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
                 materilaRener.SetMaterialAtIndex(0, *tempMat);
                 materilaRener.UpdateMaterialList();
@@ -200,16 +198,15 @@ namespace Core::ECS::Components
                 auto lineMesh = new ::Rendering::Resources::Mesh(
                     p_vertices,
                     lineIndex,
-                    0,
+                    1,
                     ::Rendering::Settings::EPrimitiveMode::LINES);
                 auto lineModel = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->AddMesh(lineMesh);
 
                 auto& lineRener = *owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
-
                 auto lineMat = new Core::Resources::Material();
-                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName() + std::string("_lineMat"), lineMat);
+                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName() + std::to_string(owner.GetID()) + std::string("_lineMat"), lineMat);
                 lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
                 lineMat->SetBackfaceCulling(false);
                 lineMat->SetCastShadows(false);
@@ -236,8 +233,6 @@ namespace Core::ECS::Components
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }
-
-
 	}
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -252,7 +247,7 @@ namespace Core::ECS::Components
 
     void CTopoShape::discretizationEdgeShape()
     {
-		//mInternal->updateEdge = true;
+		mInternal->updateEdge = true;
     }
 
 	void CTopoShape::discretizationShape()

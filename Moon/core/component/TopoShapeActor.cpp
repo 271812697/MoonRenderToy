@@ -7,19 +7,22 @@
 #include "Core/ResourceManagement/ModelManager.h"
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
+#include <Core/SceneSystem/Scene.h>
 
 namespace Core::ECS {
 
-	TopoActor::TopoActor(int64_t p_actorID, const std::string&p_name , const std::string& p_tag, bool p_playing) : Actor(p_actorID, p_name, p_tag, p_playing)
+	TopoActor::TopoActor(Core::SceneSystem::Scene* scene, const std::string&p_name , const std::string& p_tag, bool p_playing) : Actor(scene->GetAvailableID(), p_name, p_tag, p_playing)
 	{
+		scene->AddActor(this);
 		AddComponent<Core::ECS::Components::CModelRenderer>();
 		AddComponent<Core::ECS::Components::CMaterialRenderer>();
 		AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
 		AddComponent<Core::ECS::Components::CBatchMeshLine>();
 		AddComponent<Core::ECS::Components::CTopoShape>();
-		auto model = new ::Rendering::Resources::Model(p_name + std::string("_Model"));
+		
+		auto model = new ::Rendering::Resources::Model(p_name + std::string("_Model")+std::to_string(this->GetID()));
 		GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(model);
-		Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(p_name + std::string("_Model"), model);
+		Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(p_name + std::string("_Model") + std::to_string(this->GetID()), model);
 	}
 
 	TopoActor::~TopoActor()

@@ -34,8 +34,7 @@ namespace MOON {
     // 读取 STEP 模型并返回其形状
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
-            auto topoActor = new Core::ECS::TopoActor(scene->GetAvailableID(), "TopoShape", "TopoShape", false);
-            scene->AddActor(topoActor);
+            auto topoActor = new Core::ECS::TopoActor(scene, "TopoShape", "TopoShape", false);
             const auto& topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             Part::TopoShape& topo= topoComp->GetTopoShape();
             topo.importStep(filePath);

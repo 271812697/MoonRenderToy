@@ -262,7 +262,18 @@ bool Core::ECS::Actor::RemoveComponent(Core::ECS::Components::AComponent& p_comp
 			return true;
 		}
 	}
+	return false;
+}
 
+bool Core::ECS::Actor::HasComponent(const std::string& compName)
+{
+	for (auto it = m_components.begin(); it != m_components.end(); ++it)
+	{
+		if (it->get()->GetName()==compName)
+		{
+			return true;
+		}
+	}
 	return false;
 }
 

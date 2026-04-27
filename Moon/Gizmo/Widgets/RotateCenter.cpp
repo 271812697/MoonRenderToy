@@ -96,7 +96,7 @@ namespace MOON {
 			for (auto& it : actorPointMap) {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
-					if (actor->GetTag() == "Geomerty") {
+					if (actor->HasComponent("CTopoShape")) {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetColor(it.second, Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
@@ -121,7 +121,7 @@ namespace MOON {
 				eid = id;
 				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
 				if (actor) {
-					if (actor->GetTag() == "Geomerty") {
+					if (actor->HasComponent("CTopoShape")) {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						if (colorBar) {
 							colorBar->SetHoverColor( eid , Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
@@ -141,7 +141,7 @@ namespace MOON {
 				subLineId = id;
 				auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
 				if (actor) {
-					if (actor->GetTag() == "GeomertyLine") {
+					if (actor->HasComponent("CTopoShape")) {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
 						if (colorBar) {
 							//colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
