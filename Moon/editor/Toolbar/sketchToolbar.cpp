@@ -65,6 +65,7 @@ namespace MOON {
 			circle->action()->setText(QCoreApplication::translate("SketchToolbar", "Circle", nullptr));
 			arc->action()->setText(QCoreApplication::translate("SketchToolbar", "Arc", nullptr));
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
+			rectangle->action()->setText(QCoreApplication::translate("SketchToolbar", "Rectangle", nullptr));
 		}
 	private:
 		friend class SketchToolbar;

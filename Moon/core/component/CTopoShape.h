@@ -15,6 +15,8 @@ namespace Core::ECS::Components
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		Part::TopoShape& GetTopoShape();
+		void discretizationFaceShape();
+		void discretizationEdgeShape();
 		void discretizationShape();
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;

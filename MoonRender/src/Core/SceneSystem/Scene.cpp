@@ -165,6 +165,26 @@ Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor(const std::string& p_nam
 	return instance;
 }
 
+void Core::SceneSystem::Scene::AddActor(ECS::Actor* p_target)
+{
+	if (p_target != nullptr) {
+		m_actors.push_back(p_target);
+		ECS::Actor& instance = *m_actors.back();
+		instance.ComponentAddedEvent += std::bind(&Scene::OnComponentAdded, this, std::placeholders::_1);
+		instance.ComponentRemovedEvent += std::bind(&Scene::OnComponentRemoved, this, std::placeholders::_1);
+		if (m_isPlaying)
+		{
+			instance.SetSleeping(false);
+			if (instance.IsActive())
+			{
+				instance.OnAwake();
+				instance.OnEnable();
+				instance.OnStart();
+			}
+		}
+	}
+}
+
 bool Core::SceneSystem::Scene::DestroyActor(ECS::Actor& p_target)
 {
 	auto found = std::find_if(m_actors.begin(), m_actors.end(), [&p_target](Core::ECS::Actor* element)
@@ -234,6 +254,11 @@ Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByID(int64_t p_id) const
 		return *result;
 	else
 		return nullptr;
+}
+
+int64_t Core::SceneSystem::Scene::GetAvailableID() 
+{
+	return m_availableID++;
 }
 
 std::vector<std::reference_wrapper<Core::ECS::Actor>> Core::SceneSystem::Scene::FindActorsByName(const std::string & p_name) const
