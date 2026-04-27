@@ -39,11 +39,13 @@ namespace Core::SceneSystem
 		void LateUpdate(float p_deltaTime);
 		ECS::Actor& CreateActor();
 		ECS::Actor& CreateActor(const std::string& p_name, const std::string& p_tag = "");
+		void AddActor(ECS::Actor* p_target);
 		bool DestroyActor(ECS::Actor& p_target);
 		void CollectGarbages();
 		ECS::Actor* FindActorByName(const std::string& p_name) const;
 		ECS::Actor* FindActorByTag(const std::string& p_tag) const;
 		ECS::Actor* FindActorByID(int64_t p_id) const;
+		int64_t GetAvailableID();
 		std::vector<std::reference_wrapper<ECS::Actor>> FindActorsByName(const std::string& p_name) const;
 		std::vector<std::reference_wrapper<ECS::Actor>> FindActorsByTag(const std::string& p_tag) const;
 		Core::ECS::Components::CCamera* FindMainCamera() const;

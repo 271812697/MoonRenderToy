@@ -1,6 +1,7 @@
 ﻿#include "io_occ_step.h"
 #include "TopoShape.h"
 #include "Core/SceneSystem/Scene.h"
+#include "core/component/TopoShapeActor.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include "renderer/AView.h"
@@ -33,11 +34,12 @@ namespace MOON {
     // 读取 STEP 模型并返回其形状
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
-            auto& topoActor=scene->CreateActor("TopoShape", "TopoShape");
-            auto& topoComp=topoActor.AddComponent<Core::ECS::Components::CTopoShape>();
-            Part::TopoShape& topo= topoComp.GetTopoShape();
+            auto topoActor = new Core::ECS::TopoActor(scene->GetAvailableID(), "TopoShape", "TopoShape", false);
+            scene->AddActor(topoActor);
+            const auto& topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
+            Part::TopoShape& topo= topoComp->GetTopoShape();
             topo.importStep(filePath);
-            topoComp.discretizationShape();
+            topoComp->discretizationShape();
         }
     }
 }

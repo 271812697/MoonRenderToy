@@ -12,6 +12,7 @@
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "UI/LogPanel/LogPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
+#include "editor/Toolbar/primitiveToolbar.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
@@ -103,9 +104,12 @@ namespace MOON {
 	
 		}
 		void buildToolBar() {
-			QToolBar* toolBar = new SketchToolbar(self);
-			toolBar->layout()->setSpacing(0);
-			self->addToolBar(Qt::TopToolBarArea, toolBar);
+			QToolBar* sketchtoolBar = new SketchToolbar(self);
+			sketchtoolBar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, sketchtoolBar);
+			QToolBar* primitiveToolBar = new PrimitiveToolbar(self);
+			primitiveToolBar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, primitiveToolBar);
 
 		}
 		void retranslateUi() {
