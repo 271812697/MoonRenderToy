@@ -1,4 +1,4 @@
-﻿#include "Gizmo/Widgets/PrimitiveBox.h"
+﻿#include "Gizmo/Widgets/PrimitiveSphere.h"
 #include "Gizmo/Gizmo.h"
 #include "Qtimgui/imgui/imgui.h"
 
@@ -10,42 +10,42 @@
 #include "core/component/TopoShapeActor.h"
 #include "TopoShape.h"
 
-#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
 #include <Precision.hxx>
 
 namespace MOON {
 	
-	PrimitiveBox::PrimitiveBox(const std::string& name) :PrimitiveShape(name)
+	PrimitiveSphere::PrimitiveSphere(const std::string& name) :PrimitiveShape(name)
 	{
 		translation = { 0,0,0 };
-		rot = Eigen::Matrix3f::Identity();
-		scale = { 1,1,1 };
+		radius = 1.0f;
 	}
-	PrimitiveBox::~PrimitiveBox()
+	PrimitiveSphere::~PrimitiveSphere()
 	{
 	}
-	void PrimitiveBox::onUpdate()
+	void PrimitiveSphere::onUpdate()
 	{
-		renderer->boxEdit(renderer->makeId("Box"), translation, rot, scale);
+		renderer->sphereEdit(renderer->makeId("Sphere"), translation, radius);
+		
 
 	}
 
-	void PrimitiveBox::createTopoShape()
-	{	auto scene = m_sceneView->GetScene();
-
-		BRepPrimAPI_MakeBox mkBox(2*scale.x(), 2*scale.y(), 2*scale.z());
+	void PrimitiveSphere::createTopoShape()
+	{	
+		auto scene = m_sceneView->GetScene();
+		BRepPrimAPI_MakeSphere mkSphere(
+			radius
+		);
+		TopoDS_Shape ResultShape = mkSphere.Shape();
 	
-		TopoDS_Shape ResultShape = mkBox.Shape();
-	
-		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeBox", "TopoShape", false);
+		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeSphere", "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 
 		topo.setShape(ResultShape,false);
-		Eigen::Matrix4f mat1 = Coord3(-scale, Eigen::Matrix3f::Identity(), {1,1,1});
-		Eigen::Matrix4f mat2 = Coord3({0,0,0}, rot, {1,1,1});
+
 		Eigen::Matrix4f mat3 = Coord3(translation, Eigen::Matrix3f::Identity(), { 1,1,1 });
-		Eigen::Matrix4f mat =  mat3 * mat2 *mat1;
+		Eigen::Matrix4f mat =  mat3;
 		Base::Matrix4D mm(
 			mat(0,0), mat(0, 1),mat(0, 2), mat(0, 3),
 			mat(1, 0), mat(1, 1), mat(1, 2), mat(1, 3),

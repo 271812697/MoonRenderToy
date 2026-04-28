@@ -12,14 +12,11 @@ namespace MOON {
 		~TreeViewPanel();
 	signals:
 		void setSelectActor(Core::ECS::Actor* actor);
-
 	public slots:
 		void updateTreeViewSceneRoot();
 		void updateTreeViewPathRoot();
 	protected:
-		
 		void mousePressEvent(QMouseEvent* event) override;
-
 	private:
 		class TreeViewPanelInternal;
 		TreeViewPanelInternal* mInternal;

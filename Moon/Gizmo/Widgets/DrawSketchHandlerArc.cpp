@@ -109,8 +109,7 @@ namespace MOON {
 	
     DrawSketchHandlerArc::DrawSketchHandlerArc(const std::string& name) :DrawSketchDefaultHandler<DrawSketchHandlerArc, StateMachines::ThreeSeekEnd, 3, CircleEllipseConstructionMethod>(name),m_internal(new DrawSketchHandlerArcInternal(this))
 	{
-		// Define widget events
-		setActive(true);
+
 	}
 
     DrawSketchHandlerArc::~DrawSketchHandlerArc()

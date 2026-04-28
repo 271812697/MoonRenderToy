@@ -5,6 +5,7 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
+#include "editor/View/sceneview/viewerwidget.h"
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
 #include <Core/SceneSystem/Scene.h>
@@ -22,7 +23,8 @@ namespace Core::ECS {
 		
 		auto model = new ::Rendering::Resources::Model(p_name + std::string("_Model")+std::to_string(this->GetID()));
 		GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(model);
-		Core::Global::ServiceLocator::Get<Core::ResourceManagement::ModelManager>().RegisterResource(p_name + std::string("_Model") + std::to_string(this->GetID()), model);
+		GetService(Core::ResourceManagement::ModelManager).RegisterResource(p_name + std::string("_Model") + std::to_string(this->GetID()), model);
+		GetViewerWidget.updateTreeView();
 	}
 
 	TopoActor::~TopoActor()

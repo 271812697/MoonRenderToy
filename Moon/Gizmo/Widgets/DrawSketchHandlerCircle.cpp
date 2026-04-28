@@ -35,8 +35,7 @@ namespace MOON {
 	
 	DrawSketchHandlerCircle::DrawSketchHandlerCircle(const std::string& name) :DrawSketchDefaultHandler<DrawSketchHandlerCircle, StateMachines::ThreeSeekEnd, 3, CircleEllipseConstructionMethod>(name),m_internal(new DrawSketchHandlerCircleInternal(this))
 	{
-		// Define widget events
-		setActive(true);
+
 	}
 
 	DrawSketchHandlerCircle::~DrawSketchHandlerCircle()

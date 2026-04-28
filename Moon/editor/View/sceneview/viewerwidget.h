@@ -31,6 +31,7 @@ namespace MOON {
 	public slots:
 		void onActorSelected(Core::ECS::Actor* actor);
 		void onSceneChange(const QString& path);
+		void updateTreeView();
 	signals:
 		void sceneChange();
 

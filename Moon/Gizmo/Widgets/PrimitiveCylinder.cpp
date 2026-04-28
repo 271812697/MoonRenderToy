@@ -1,4 +1,4 @@
-﻿#include "Gizmo/Widgets/PrimitiveBox.h"
+﻿#include "Gizmo/Widgets/PrimitiveCylinder.h"
 #include "Gizmo/Gizmo.h"
 #include "Qtimgui/imgui/imgui.h"
 
@@ -10,49 +10,52 @@
 #include "core/component/TopoShapeActor.h"
 #include "TopoShape.h"
 
-#include <BRepPrimAPI_MakeBox.hxx>
+
+#include <BRepPrimAPI_MakeCylinder.hxx>
 #include <Precision.hxx>
 
 namespace MOON {
 	
-	PrimitiveBox::PrimitiveBox(const std::string& name) :PrimitiveShape(name)
+	PrimitiveCylinder::PrimitiveCylinder(const std::string& name) :PrimitiveShape(name)
 	{
 		translation = { 0,0,0 };
-		rot = Eigen::Matrix3f::Identity();
-		scale = { 1,1,1 };
+		normal = { 0,0,1 };
+		height = 1.0f;
+		radiusTop = 0.5f;
+		radiusBottom = 0.5f;
 	}
-	PrimitiveBox::~PrimitiveBox()
+	PrimitiveCylinder::~PrimitiveCylinder()
 	{
 	}
-	void PrimitiveBox::onUpdate()
+	void PrimitiveCylinder::onUpdate()
 	{
-		renderer->boxEdit(renderer->makeId("Box"), translation, rot, scale);
+		renderer->clydinerEdit(renderer->makeId("cylinder"),translation,normal,height,radiusTop,radiusBottom);
+		
 
 	}
 
-	void PrimitiveBox::createTopoShape()
-	{	auto scene = m_sceneView->GetScene();
-
-		BRepPrimAPI_MakeBox mkBox(2*scale.x(), 2*scale.y(), 2*scale.z());
+	void PrimitiveCylinder::createTopoShape()
+	{	
+		auto scene = m_sceneView->GetScene();
+		BRepPrimAPI_MakeCylinder mkCylinder(radiusTop, height);
+		TopoDS_Shape ResultShape = mkCylinder.Shape();
 	
-		TopoDS_Shape ResultShape = mkBox.Shape();
-	
-		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeBox", "TopoShape", false);
+		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeCylinder", "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 
 		topo.setShape(ResultShape,false);
-		Eigen::Matrix4f mat1 = Coord3(-scale, Eigen::Matrix3f::Identity(), {1,1,1});
-		Eigen::Matrix4f mat2 = Coord3({0,0,0}, rot, {1,1,1});
+		Eigen::Matrix4f mat1 = Coord3( Eigen::Vector3f(0,0,-1)*height * 0.5, Eigen::Matrix3f::Identity(), { 1,1,1 });
+		
+		Eigen::Matrix4f mat2 = Coord3({ 0,0,0 }, RotationMatrixZ(normal), {1,1,1});
 		Eigen::Matrix4f mat3 = Coord3(translation, Eigen::Matrix3f::Identity(), { 1,1,1 });
-		Eigen::Matrix4f mat =  mat3 * mat2 *mat1;
+		Eigen::Matrix4f mat = mat3*mat2* mat1;
 		Base::Matrix4D mm(
 			mat(0,0), mat(0, 1),mat(0, 2), mat(0, 3),
 			mat(1, 0), mat(1, 1), mat(1, 2), mat(1, 3),
 			mat(2, 0), mat(2, 1), mat(2, 2), mat(2, 3),
 			mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3)
 		);
-		
 		topo.setTransform(mm);
 		topoComp->discretizationShape();
 	}

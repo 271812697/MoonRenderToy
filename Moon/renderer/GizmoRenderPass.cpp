@@ -17,6 +17,9 @@
 #include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
 #include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
 #include "Gizmo/Widgets/PrimitiveBox.h"
+#include "Gizmo/Widgets/PrimitiveSphere.h"
+#include "Gizmo/Widgets/PrimitiveCylinder.h"
+#include "Gizmo/Widgets/PrimitiveCone.h"
 #include "Qtimgui/imgui/imgui.h"
 
 struct GizmoRenderSettings
@@ -37,6 +40,9 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
 			mWidgets["DrawSketchHandlerRectangle"] = new MOON::DrawSketchHandlerRectangle("DrawSketchHandlerRectangle");
 			mWidgets["PrimitiveBox"] = new MOON::PrimitiveBox("PrimitiveBox");
+			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
+			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
+			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
 			mWidgets["ClipPlane"]->setActive(false);
 		}
 		~GizmoRenderPassInternal()

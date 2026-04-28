@@ -28,6 +28,7 @@ namespace MOON {
 		}
 		void initializeGL() {
 			auto& tree = GetService(TreeViewPanel);
+			
 			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
@@ -51,6 +52,10 @@ namespace MOON {
 				mSwitchScene = false;
 				parser->ParsePathTraceScene(mScenePath.toStdString());
 				mSceneView->UnselectActor();
+				emit mSelf->sceneChange();
+			}
+			else if (mUpdateTreeView) {
+				mUpdateTreeView = false;
 				emit mSelf->sceneChange();
 			}
 			Gizmo::instance().newImgui();
@@ -90,6 +95,7 @@ namespace MOON {
 		int mViewHeight;
 		bool mInitFlag = false;
 		bool mSwitchScene = false;
+		bool mUpdateTreeView = false;
 		QString mScenePath = "";
 
 	};
@@ -133,7 +139,6 @@ namespace MOON {
 	{
 		CallBackManager::instance().exectue();
 		mInternal->paintGL();
-		
 	}
 
 	bool ViewerWidget::event(QEvent* evt)
@@ -182,6 +187,11 @@ namespace MOON {
 	void ViewerWidget::onSceneChange(const QString& path)
 	{
 		mInternal->onSwitchScene(path);
+	}
+	void ViewerWidget::updateTreeView()
+	{
+		mInternal->mUpdateTreeView = true;
+		
 	}
 	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {
 		if (actor != nullptr) {
