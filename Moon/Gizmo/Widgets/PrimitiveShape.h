@@ -15,10 +15,15 @@ namespace MOON
 		virtual void onRightMouseReleased();
 		virtual void onMouseMove();
 		virtual void createTopoShape();
+		void SetEnabled(int) override;
 		static void LeftMousePressed(AbstractWidget*);
 		static void LeftMouseReleased(AbstractWidget*);
 		static void RightMouseReleased(AbstractWidget*);
 		static void RightMousePressed(AbstractWidget*);
 		static void MouseMove(AbstractWidget*);
+	protected:
+		
+		CallbackCommand* KeyEventCallbackCommand;
+		static void ProcessKeyEvents(GizmoObject*, unsigned long, void*, void*);
 	};
 }

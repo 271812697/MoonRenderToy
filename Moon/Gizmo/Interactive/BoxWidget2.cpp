@@ -8,6 +8,7 @@
 #include "WidgetEvent.h"
 #include "WidgetEventTranslator.h"
 #include <algorithm>
+#include <string>
 
 namespace MOON {
 
@@ -190,7 +191,7 @@ namespace MOON {
 	void BoxWidget2::ProcessKeyEvents(GizmoObject*, unsigned long event, void* clientdata, void*)
 	{
 		BoxWidget2* self = static_cast<BoxWidget2*>(clientdata);
-	}
 
+	}
 
 }
