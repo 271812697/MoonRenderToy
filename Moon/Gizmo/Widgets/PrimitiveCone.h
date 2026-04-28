@@ -4,18 +4,18 @@
 
 namespace MOON
 {
-	class PrimitiveBox : public PrimitiveShape
+	class PrimitiveCone : public PrimitiveShape
 	{
 	public:
-		PrimitiveBox(const std::string& name);
-		virtual ~PrimitiveBox()override;
+		PrimitiveCone(const std::string& name);
+		virtual ~PrimitiveCone()override;
 		virtual void onUpdate()override;
 		virtual void createTopoShape()override;
-		
-
 	private:
 		Eigen::Vector3f translation;
-		Eigen::Vector3f scale;
-		Eigen::Matrix3f rot;
+		Eigen::Vector3f normal;
+		float height;
+		float radiusTop;
+		float radiusBottom;
 	};
 }

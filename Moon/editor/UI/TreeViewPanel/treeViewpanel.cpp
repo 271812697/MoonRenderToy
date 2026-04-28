@@ -19,7 +19,6 @@ namespace MOON {
 			return false;
 		}
 		return true;
-
 	}
 	class TreeViewPanel::TreeViewPanelInternal {
 	public:
@@ -27,7 +26,6 @@ namespace MOON {
 			mModel = new EntityTreeModel(mSelf);
 		}
 		~TreeViewPanelInternal() {
-
 		}
 	private:
 		friend TreeViewPanel;
@@ -50,7 +48,6 @@ namespace MOON {
 			"QTreeView::indicator:checked {image: url(:/entityTree/icons/pqEyeball.svg);}"
 			"QTreeView::indicator:unchecked {image: url(:/entityTree/icons/pqEyeballClosed.svg);}"
 		);
-
 	}
 	TreeViewPanel::~TreeViewPanel()
 	{
@@ -68,17 +65,12 @@ namespace MOON {
 	void TreeViewPanel::mousePressEvent(QMouseEvent* event)
 	{
 		QPoint mousePos = event->pos();
-
 		QTreeView::mousePressEvent(event);
 		QModelIndex index = indexAt(mousePos);
 		if (!index.isValid()) return;
 		QRect itemRect = visualRect(index);
-
-
 		// 获取item在视图中的矩形
-
 		if (!itemRect.contains(mousePos)) {
-
 			return;
 		}
 		QStyleOptionViewItem option = viewOptions();
@@ -93,12 +85,7 @@ namespace MOON {
 				if (isEntityCheckAble(actor->GetName())) {
                    emit setSelectActor(actor);
 				}
-				
 			}
-			
 		}
 	}
-
-
-
 }

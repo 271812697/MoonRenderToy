@@ -31,7 +31,6 @@ namespace MOON {
 			mIconMaps["SkyBox"] = QIcon(":/widgets/icons/awesomeface.png");
 			mIconMaps["PostProcessStack"] = QIcon(":/widgets/icons/awesomeface.png");
 			mIconMaps[""]= QIcon(":/widgets/icons/Model.png");
-			
 		}
 	private:
 		friend EntityTreeModel;
@@ -80,10 +79,9 @@ namespace MOON {
 
 					//temp->setIcon(mInternl->mIconMaps["eyeOpen"]);
 					temp->setCheckable(true);
-					temp->setCheckState(Qt::Checked);
+					temp->setCheckState(cur->IsActive()?Qt::Checked:Qt::Unchecked);
 					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->setChild(parent->rowCount(), temp);
-
 					for (auto& child : cur->GetChildren()) {
 						s.push_back(child);
 						root.push_back(temp);
@@ -91,7 +89,6 @@ namespace MOON {
 				}
 			}
 		}
-
 	}
 	void EntityTreeModel::onPathRootChange()
 	{

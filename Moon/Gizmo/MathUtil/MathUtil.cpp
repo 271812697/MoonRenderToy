@@ -658,6 +658,18 @@ namespace MOON
 		ret.block(0, 2, 3, 1) = forward;
 		return ret;
 	}
+	Eigen::Matrix3f RotationMatrixZ(const Eigen::Vector3f& axis)
+	{
+		const Eigen::Vector3f r = { 1, 0, 0 };
+		Eigen::Vector3f worldRight = axis.isApprox(r) ? Eigen::Vector3f(0, 1, 0) : r;
+		Eigen::Vector3f up = axis.cross(worldRight).normalized();
+		worldRight = up.cross(axis).normalized();
+		Eigen::Matrix3f ret;
+		ret.block(0, 0, 3, 1) = worldRight;
+		ret.block(0, 1, 3, 1) = up;
+		ret.block(0, 2, 3, 1) = axis.normalized();
+		return ret;
+	}
 	Eigen::Matrix4f RotationMatrix(const Eigen::Vector3f& point, const Eigen::Vector3f& axis, float rads)
 	{
 		Eigen::Matrix4f t1 = Eigen::Matrix4f::Identity(), t2 = Eigen::Matrix4f::Identity(), t3 = Eigen::Matrix4f::Identity();

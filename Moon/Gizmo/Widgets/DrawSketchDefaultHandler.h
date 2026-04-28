@@ -315,7 +315,7 @@ namespace MOON
 
             this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MouseMoveEvent, GizmoEvent::NoModifier, 0,
                 0, 0, WidgetEvent::Move3D, this, DSDH::MouseMove);
-            setActive(true);
+            setActive(false);
             makePlane(2);
         }
         ~DrawSketchDefaultHandler() override

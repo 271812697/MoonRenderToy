@@ -10,7 +10,7 @@ namespace MOON
         , prevCursorPosition(Base::Vector2d())
         , resetSeekSecond(false)
 	{
-		setActive(true);
+		
 	}
 	DrawSketchHandlerBSpline::~DrawSketchHandlerBSpline()
 	{
