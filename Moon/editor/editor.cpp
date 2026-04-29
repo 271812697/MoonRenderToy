@@ -13,6 +13,7 @@
 #include "UI/LogPanel/LogPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "editor/Toolbar/primitiveToolbar.h"
+#include "editor/View/sceneview/viewertitlebar.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
@@ -110,6 +111,9 @@ namespace MOON {
 			QToolBar* primitiveToolBar = new PrimitiveToolbar(self);
 			primitiveToolBar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, primitiveToolBar);
+			ViewerWindowTitleBar* titleBar = new ViewerWindowTitleBar(self);
+			titleBar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, titleBar);
 
 		}
 		void retranslateUi() {
