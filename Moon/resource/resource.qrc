@@ -69,11 +69,12 @@
 		<file>icons/Sketcher_CreateBSpline.svg</file>
 		<file>icons/Sketcher_CreateArc.svg</file>
         <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
+		<file>icons/Sketcher_NewSketch.svg</file>
 		<file>icons/parametric/Part_Box_Parametric.svg</file>
 		<file>icons/parametric/Part_Sphere_Parametric.svg</file>
 		<file>icons/parametric/Part_Cone_Parametric.svg</file>
 		<file>icons/parametric/Part_Cylinder_Parametric.svg</file>
-
+	
 
 	</qresource>
     <qresource prefix="/entityTree">

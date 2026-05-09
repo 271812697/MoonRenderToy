@@ -11,6 +11,7 @@
 #include "Gizmo/Widgets/RotateCenter.h"
 #include "Gizmo/Widgets/Measurement.h"
 #include "Gizmo/Widgets/ClipPlane.h"
+#include "Gizmo/Widgets/SketchPlane.h"
 #include "Gizmo/Widgets/SplitScreen.h"
 #include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
 #include "Gizmo/Widgets/DrawSketchHandlerArc.h"
@@ -24,7 +25,7 @@
 
 struct GizmoRenderSettings
 {
-	bool drawBvh = true;
+	bool drawBvh = false;
 }gizmoRenderSetting;
 class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 	public:
@@ -43,7 +44,10 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
 			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
+			mWidgets["GizmoSketchPlane"] = new MOON::SketchPlane("GizmoSketchPlane");
+			mWidgets["GizmoSketchPlane"]->setActive(false);
 			mWidgets["ClipPlane"]->setActive(false);
+			mWidgets["SplitScreen"]->setActive(false);
 		}
 		~GizmoRenderPassInternal()
 		{

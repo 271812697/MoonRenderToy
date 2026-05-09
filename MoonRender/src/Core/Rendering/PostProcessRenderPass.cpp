@@ -25,7 +25,7 @@ Core::Rendering::PostProcessRenderPass::PostProcessRenderPass(::Rendering::Core:
 
 	// Instantiate available effects
 	m_effects.reserve(4);
-	m_effects.push_back(std::make_unique<Core::Rendering::PostProcess::AutoExposureEffect>(p_renderer));
+	//m_effects.push_back(std::make_unique<Core::Rendering::PostProcess::AutoExposureEffect>(p_renderer));
 	m_effects.push_back(std::make_unique<Core::Rendering::PostProcess::BloomEffect>(p_renderer));
 	m_effects.push_back(std::make_unique<Core::Rendering::PostProcess::TonemappingEffect>(p_renderer));
 	m_effects.push_back(std::make_unique<Core::Rendering::PostProcess::FXAAEffect>(p_renderer));

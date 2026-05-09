@@ -16,6 +16,8 @@ This is a renderer written based on Qt+Opengl
 
 ![path](README.assets/path.png)
 
+![image-20260428220406581](README.assets/image-20260428220406581.png)
+
 ![image-20260102211418374](README.assets/image-20260102211418374.png)
 
 ![image-20260316220501762](README.assets/image-20260316220501762.png)

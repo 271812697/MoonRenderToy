@@ -17,7 +17,6 @@ namespace MOON {
         void setTexture(const QString& path);
         // 清空贴图
         void clearTexture();
-
     protected:
         // 拖拽事件重写
         void dragEnterEvent(QDragEnterEvent* event) override;
@@ -42,8 +41,6 @@ namespace MOON {
         QString m_texturePath;   // 当前贴图路径
         QPixmap m_displayPixmap; // 当前显示的图片
         bool    m_isEmpty;       // 是否为空
-
-
     };
 
 

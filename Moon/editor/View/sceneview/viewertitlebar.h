@@ -1,9 +1,9 @@
 ﻿#pragma once
-#include <QWidget>
+#include <QToolBar>
 namespace MOON {
 
 
-	class ViewerWindowTitleBar : public QWidget
+	class ViewerWindowTitleBar : public QToolBar
 	{
 	public:
 		explicit ViewerWindowTitleBar(QWidget* parent = nullptr);

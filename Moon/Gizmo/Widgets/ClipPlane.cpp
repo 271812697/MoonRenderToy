@@ -384,8 +384,11 @@ namespace MOON {
 		}
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
-				auto selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
-				if (selectActor) {
+			if (m_sceneView->IsSelectActor()) {
+				auto selectActor = &m_sceneView->GetSelectedActor();
+			
+				//if (selectActor->HasComponent("CTopoShape"))
+				{
 					const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
 					if (topoComp) {
 						auto& topoShape= topoComp->GetTopoShape();
@@ -402,7 +405,8 @@ namespace MOON {
 								);
 						}
 					}
-				}		
+				}	
+			}
 		}
 		if (ret) {
 			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();

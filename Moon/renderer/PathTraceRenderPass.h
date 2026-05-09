@@ -72,7 +72,7 @@ namespace Editor::Rendering
 		Maths::FVector2 invNumTiles;
 		int tileWidth;
 		int tileHeight;
-		int currentBuffer;
+		int currentBuffer=0;
 		int frameCounter;
 		int sampleCounter;
 		float pixelRatio;

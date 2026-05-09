@@ -423,4 +423,57 @@ namespace MOON {
 		}
 		return poly;
 	}
+	Polygon& GizmoSketchPlane()
+	{
+		static Polygon poly;
+		if (poly.cellArray.size() == 0) {
+			float halflen = 3.0f;
+			Maths::FMatrix4 model =Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 6,6,6 });
+			poly.drawEdge = false;
+			auto arrow = GetService(Editor::Core::Context).editorResources->GetModel("Arrow_Translate");
+			auto sphere = GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
+			poly.addModel(arrow, model, { 0,0,255,255 });
+			poly.switchNextBlock({ 0,0,1,1 }, "ZArrow");
+			poly.addModel(arrow, model.RotateOnAxisY(-90), { 255,0,0,255 });
+			poly.switchNextBlock({ 1,0,0,1 }, "XArrow");
+			poly.addModel(arrow, model.RotateOnAxisX(-90), { 0,255,0,255 });
+			poly.switchNextBlock({ 0,1,0,1 }, "YArrow");
+			poly.addModel(sphere, Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 0.5f,0.5f,0.5f }), { 255,255,0,255 });
+			poly.switchNextBlock({ 1,1,0,1 });
+			float quadlen = 3.0;
+			float quadoffset = 1.0;
+			//y axis
+			Cell cell;
+			cell.addPoint({ quadoffset,0,quadoffset }, { 0,0 });
+			cell.addPoint({ quadoffset + quadlen,0,quadoffset }, { 1.0 / 3,0 });
+			cell.addPoint({ quadoffset + quadlen,0,quadoffset + quadlen }, { 1.0/3,1 });
+			cell.addPoint({ quadoffset,0,quadoffset + quadlen }, { 0,1 });
+			cell.n = { 0,1,0 };
+			poly.addCell(cell);
+			poly.switchNextBlock({ 1,1,1,0.7 }, "YPlane");
+			//x axis
+			cell.clear();
+			cell.addPoint({ 0,quadoffset,quadoffset }, { 1.0/3,0 });
+			cell.addPoint({ 0,quadoffset + quadlen,quadoffset }, { 2.0/3,0 });
+			cell.addPoint({ 0,quadoffset + quadlen,quadoffset + quadlen }, { 2.0/3,1 });
+			cell.addPoint({ 0,quadoffset ,quadoffset + quadlen }, { 1.0/3,1 });
+			cell.n = { 1,0,0 };
+			poly.addCell(cell);
+			poly.switchNextBlock({ 1,1,1,0.7 }, "XPlane");
+			//z axis
+			cell.clear();
+			cell.addPoint({ quadoffset,quadoffset,0 }, { 2.0/3,0 });
+			cell.addPoint({ quadoffset + quadlen,quadoffset,0 }, { 1,0});
+			cell.addPoint({ quadoffset + quadlen,quadoffset + quadlen,0 }, { 1,1 });
+			cell.addPoint({ quadoffset ,quadoffset + quadlen,0 }, { 2.0/3,1 });
+			cell.n = { 0,0,1 };
+			poly.addCell(cell);
+			poly.switchNextBlock({ 1,1,1,0.7 }, "ZPlane");
+			poly.model = Eigen::Matrix4f::Identity();
+			poly.initGpuBuffer();
+			std::string texturePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/Textures/plane.png";
+			poly.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);
+		}
+		return poly;
+	}
 }

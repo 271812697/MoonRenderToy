@@ -169,7 +169,9 @@ void main()
     vec4 albedo = texture(u_AlbedoMap, fs_in.uv)*fs_in.color;
 #if defined(BLOCK_COLOR)
     int domainIndex=int(round(fs_in.pos.w));
-    albedo=texelFetch(blockTexture,domainIndex).rgba;
+    vec4 domainColor=texelFetch(blockTexture,domainIndex).rgba;
+    albedo.rgb*=domainColor.rgb;
+    albedo.a=domainColor.a;
 #endif
 
 #if defined(WITH_EDGE)
