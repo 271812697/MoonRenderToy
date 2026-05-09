@@ -197,6 +197,7 @@ namespace MOON
 
 
 	struct Polygon {
+		int id;
 		std::vector<Cell>cellArray;
 		std::vector<uint8_t>edgeValue;
 		std::vector<Maths::FVector4>blockColor;

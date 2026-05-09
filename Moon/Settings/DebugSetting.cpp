@@ -254,6 +254,7 @@ namespace MOON {
 		add("View", "showBvh", false);
 		add("View", "debugElements", false);
 		add("View", "BvhRayHit", true);
+		add("View", "DebugImgui", false);
 		add("View", new DragFloat(0.5, 0.5, 10.0, "zoom speed"));
 		add("PathTracing", "PathTrace", false);
 		add("PathTracing", "reBuildBvh", false);

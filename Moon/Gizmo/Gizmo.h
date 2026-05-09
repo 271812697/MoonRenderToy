@@ -38,7 +38,9 @@ namespace MOON
 		void prepareGl();
 		void registerDebugSettings();
 		void terminate();
-
+		void selectPolygon(int pid,int bid);
+		bool isSelectPolygon(const std::string&pname,const std::string& bname);
+		void resetSelectPolygon();
 		void begin(PrimitiveMode _mode);
 		void end();
 
@@ -165,6 +167,7 @@ namespace MOON
 		void drawUnsort();
 		void drawSort();
 		void drawMesh();
+		void drawMeshPick();
 		void newFrame(Editor::Panels::SceneView* view);
 		void endFrame();
 		void newImgui();
@@ -315,6 +318,9 @@ namespace MOON
 		//short lasting
 		std::vector<PolygonInstance> drawMeshList;
 		std::unordered_map<std::string, Polygon*>mPreStorePolygon;
+		std::unordered_map<uint8_t,std::string >mPreStorePolygonId;
+		int selectPolygonId = -1;
+		int selectBlockId= -1;
 		
 		bool enableLit;
 		bool sortCalled;

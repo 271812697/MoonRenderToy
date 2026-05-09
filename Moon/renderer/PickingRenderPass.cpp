@@ -6,6 +6,7 @@
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
+#include "Gizmo/Gizmo.h"
 #include <Rendering/HAL/Profiling.h>
 
 namespace
@@ -61,30 +62,43 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 	uint32_t p_y
 )
 {
-	uint8_t pixel[3];
-
+	uint8_t pixel[4];
+	auto& gizmoInstance = MOON::Gizmo::instance();
+	bool resetPloygon = false;
 	m_actorPickingFramebuffer.ReadPixels(
 		p_x, p_y, 1, 1,
-		::Rendering::Settings::EPixelDataFormat::RGB,
+		::Rendering::Settings::EPixelDataFormat::RGBA,
 		::Rendering::Settings::EPixelDataType::UNSIGNED_BYTE,
 		pixel
 	);
+	if (pixel[3] == 255) {
+		gizmoInstance.resetSelectPolygon();
+		uint32_t actorID = (0 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | (pixel[0] << 0);
+		auto actorUnderMouse = p_scene.FindActorByID(actorID);
 
-	uint32_t actorID = (0 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | (pixel[0] << 0);
-	auto actorUnderMouse = p_scene.FindActorByID(actorID);
-
-	if (actorUnderMouse)
-	{
-		return Tools::Utils::OptRef(*actorUnderMouse);
+		if (actorUnderMouse)
+		{
+			return Tools::Utils::OptRef(*actorUnderMouse);
+		}
+		else if (
+			pixel[0] == 255 &&
+			pixel[1] == 255 &&
+			pixel[2] >= 252 &&
+			pixel[2] <= 254
+			)
+		{
+			return static_cast<Editor::Core::GizmoBehaviour::EDirection>(pixel[2] - 252);
+		}
 	}
-	else if (
-		pixel[0] == 255 &&
-		pixel[1] == 255 &&
-		pixel[2] >= 252 &&
-		pixel[2] <= 254
-		)
+	else if(pixel[3]==254)
 	{
-		return static_cast<Editor::Core::GizmoBehaviour::EDirection>(pixel[2] - 252);
+		uint32_t polygonID = pixel[2];
+		uint32_t blockID = pixel[1];
+		gizmoInstance.selectPolygon(polygonID,blockID);
+	}
+	else
+	{
+		gizmoInstance.resetSelectPolygon();
 	}
 
 	return std::nullopt;
@@ -117,7 +131,8 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	DrawPickableCameras(pso, scene);
 	DrawPickableReflectionProbes(pso, scene);
 	DrawPickableLights(pso, scene);
-
+	auto& gizmoInstance = MOON::Gizmo::instance();
+	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
 	m_renderer.Clear(false, true, false);
 
