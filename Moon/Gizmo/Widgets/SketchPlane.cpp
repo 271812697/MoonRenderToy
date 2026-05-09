@@ -46,27 +46,34 @@ namespace MOON {
 			Eigen::Matrix3f::Identity(),
 			Eigen::Vector3f{ 0.2f,0.2f,0.2f },
 			"GizmoSketchPlane");
-		if (renderer->isSelectPolygon("GizmoSketchPlane", "YPlane")) {
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "YPlane")|| renderer->isSelectPolygon("GizmoSketchPlane", "YArrow")) {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YPlane"),{1,1,0,0.7});
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YArrow"), { 1,1,0,1.0 });
 		}
 		else
 		{
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YPlane"), { 1,1,1,1 });
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YArrow"), { 0,1,0,1 });
 		}
-		if (renderer->isSelectPolygon("GizmoSketchPlane", "XPlane")) {
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "XPlane") || renderer->isSelectPolygon("GizmoSketchPlane", "XArrow")) {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,0,0.7 });
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XArrow"), { 1,1,0,1.0 });
 		}
 		else
 		{
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,1,1 });
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XArrow"), { 1,0,0,1.0 });
 		}
-		if (renderer->isSelectPolygon("GizmoSketchPlane", "ZPlane")) {
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "ZPlane") || renderer->isSelectPolygon("GizmoSketchPlane", "ZArrow")) {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,0,0.7 });
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZArrow"), { 1,1,0,1.0 });
 		}
 		else
 		{
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,1,1 });
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZArrow"), { 0,0,1,1.0 });
 		}
+
 	}
 
 
