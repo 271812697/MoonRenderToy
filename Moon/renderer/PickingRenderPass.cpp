@@ -132,7 +132,7 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	DrawPickableReflectionProbes(pso, scene);
 	DrawPickableLights(pso, scene);
 	auto& gizmoInstance = MOON::Gizmo::instance();
-	//gizmoInstance.drawMeshPick();
+	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
 	m_renderer.Clear(false, true, false);
 

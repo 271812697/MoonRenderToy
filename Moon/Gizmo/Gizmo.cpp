@@ -4195,7 +4195,7 @@ namespace MOON
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
 			mCellMaterial->SetProperty("u_AlbedoMap",polygon->texture);
 			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
-			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube,"");
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			polygon->bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);
 		}
