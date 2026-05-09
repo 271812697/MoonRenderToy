@@ -132,6 +132,14 @@ namespace MOON
 		mPreStorePolygon["GizmoAxis"] = &GizmoAxis();
 		mPreStorePolygon["ViewCube"] = &ViewCube();
 		mPreStorePolygon["GizmoSketchPlane"] = &GizmoSketchPlane();
+		mPreStorePolygon["Axis"]->id=0;
+		mPreStorePolygon["GizmoAxis"]->id = 1;;
+		mPreStorePolygon["ViewCube"]->id = 2;
+		mPreStorePolygon["GizmoSketchPlane"]->id = 3;;
+		mPreStorePolygonId[0] = "Axis";
+		mPreStorePolygonId[1] = "GizmoAxis";
+		mPreStorePolygonId[2] = "ViewCube";
+		mPreStorePolygonId[3] = "GizmoSketchPlane";
 	}
 	void Gizmo::prepareGl()
 	{
@@ -189,6 +197,19 @@ namespace MOON
 		delete mTriangleMaterial;
 		delete mCellMaterial;
 		delete mLitMaterial;
+	}
+    void Gizmo::selectPolygon(int pid, int bid)
+	{
+		selectBlockId = bid;
+		selectPolygonId = pid;
+	}
+	bool Gizmo::isSelectPolygon(const std::string& pname, const std::string& bname)
+	{
+		return mPreStorePolygon[pname]->id == selectPolygonId && mPreStorePolygon[pname]->getBlockId(bname) == selectBlockId;
+	}
+	void Gizmo::resetSelectPolygon()
+	{
+		selectPolygon(-1,-1);
 	}
 	void Gizmo::begin(PrimitiveMode _mode)
 	{
@@ -2841,7 +2862,6 @@ namespace MOON
 			bool hit = IntersectBox(ray, Eigen::Vector3f(-1, -1, -1), Eigen::Vector3f(1, 1, 1), tr);
 			if (hit)
 			{
-
 				tr = (MatrixMulPoint(mat, ray.m_origin + ray.m_direction * tr) - cameraParam.rayOrigin).norm();
 			}
 
@@ -2965,7 +2985,6 @@ namespace MOON
 		sizeStack.pop_back();
 		matrixStack.pop_back();
 		popId();
-
 		return ret;
 	}
 
@@ -4176,7 +4195,45 @@ namespace MOON
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
 			mCellMaterial->SetProperty("u_AlbedoMap",polygon->texture);
 			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
-			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube,"");
+			polygon->bind();
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);
+		}
+	}
+
+	void Gizmo::drawMeshPick()
+	{
+		auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
+		auto p_pso = driver->CreatePipelineState();
+		p_pso.stencilTest = true;
+		p_pso.stencilWriteMask = 0xFF;
+		p_pso.stencilFuncRef = 1;
+		p_pso.stencilFuncMask = 0xFF;
+		p_pso.stencilOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.depthOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.bothOpFail = Rendering::Settings::EOperation::REPLACE;
+		p_pso.colorWriting.mask = 0x00;
+		p_pso.depthWriting = true;
+		p_pso.colorWriting.mask = 0xFF;
+		p_pso.blending = false;
+		p_pso.blendingEquation = Rendering::Settings::EBlendingEquation::FUNC_ADD;
+		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
+		p_pso.culling = 0;
+		p_pso.depthTest = true;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		driver->SetPipelineState(p_pso);
+		mCellMaterial->SetFeatures({ "WITH_EDGE","FIXED_SCALE","BLOCK_COLOR" });
+		
+		for (auto& drawMesh : drawMeshList)
+		{
+			auto polygon = mPreStorePolygon[drawMesh.mesh];
+			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(drawMesh.model));
+			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
+			mCellMaterial->SetProperty("u_AlbedoMap", polygon->texture);
+			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
+			mCellMaterial->SetProperty("polygonId", polygon->id);
+			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube, "PICKING_PASS");
+			
 			polygon->bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);
 		}
@@ -4218,7 +4275,6 @@ namespace MOON
 	void Gizmo::updateDepth(float _depth)
 	{
 		hotDepth = _depth;
-
 	}
 	bool Gizmo::makeHot(unsigned int _id, float _depth, bool _intersects)
 	{
@@ -4227,10 +4283,8 @@ namespace MOON
 			hotId = _id;
 			appHotId = appId;
 			hotDepth = _depth;
-
 			return true;
 		}
-
 		return false;
 	}
 	bool Gizmo::makeHot2D(unsigned int id)

@@ -46,6 +46,27 @@ namespace MOON {
 			Eigen::Matrix3f::Identity(),
 			Eigen::Vector3f{ 0.2f,0.2f,0.2f },
 			"GizmoSketchPlane");
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "YPlane")) {
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YPlane"),{1,1,0,0.7});
+		}
+		else
+		{
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YPlane"), { 1,1,1,1 });
+		}
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "XPlane")) {
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,0,0.7 });
+		}
+		else
+		{
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,1,1 });
+		}
+		if (renderer->isSelectPolygon("GizmoSketchPlane", "ZPlane")) {
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,0,0.7 });
+		}
+		else
+		{
+			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,1,1 });
+		}
 	}
 
 

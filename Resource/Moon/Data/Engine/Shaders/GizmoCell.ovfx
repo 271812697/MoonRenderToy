@@ -1,3 +1,4 @@
+#pass PICKING_PASS
 #feature WITH_EDGE
 #feature CUSTOM_PROJECT
 #feature CUSTOM_VIEWPORT
@@ -89,6 +90,7 @@ uniform float uViewPortSize;
 
 uniform usamplerBuffer edgeTexture;
 
+
 void main() 
 {
     vec2 pos[4];
@@ -163,9 +165,15 @@ layout(location=0) out vec4 fResult;
 uniform mat4 uViewMatrix;
 uniform sampler2D u_AlbedoMap;
 uniform samplerBuffer blockTexture;
+#if defined(PICKING_PASS)
+uniform int polygonId;
+#endif
 
 void main() 
 {
+#if defined(PICKING_PASS)
+    fResult = vec4(0,int(round(fs_in.pos.w))/255.0,polygonId/255.0,254.0/255.0);
+#else
     vec4 albedo = texture(u_AlbedoMap, fs_in.uv)*fs_in.color;
 #if defined(BLOCK_COLOR)
     int domainIndex=int(round(fs_in.pos.w));
@@ -206,4 +214,7 @@ void main()
     #else
      fResult = vec4(col,1.0);	   
     #endif
+#endif
+
+
 }
