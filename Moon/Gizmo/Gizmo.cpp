@@ -131,6 +131,7 @@ namespace MOON
 		mPreStorePolygon["Axis"] = &ViewAxis();
 		mPreStorePolygon["GizmoAxis"] = &GizmoAxis();
 		mPreStorePolygon["ViewCube"] = &ViewCube();
+		mPreStorePolygon["GizmoSketchPlane"] = &GizmoSketchPlane();
 	}
 	void Gizmo::prepareGl()
 	{
@@ -3251,14 +3252,13 @@ namespace MOON
 		drawLine(drawAt + normal * h - xaxis * tr, drawAt - normal * h - xaxis * br, 2, Color_Green);
 		drawLine(drawAt + normal * h + zaxis * tr, drawAt - normal * h + zaxis * br, 2, Color_Green);
 		drawLine(drawAt + normal * h - zaxis * tr, drawAt - normal * h - zaxis * br, 2, Color_Green);
-		drawPoint(drawAt + normal * h + xaxis * tr, 8, Color_Green);
-		drawPoint(drawAt - normal * h + xaxis * br, 8, Color_Green);
-		drawPoint(drawAt + normal * h - xaxis * tr, 8, Color_Green);
-		drawPoint(drawAt - normal * h - xaxis * br, 8, Color_Green);
-		drawPoint(drawAt + normal * h + zaxis * tr, 8, Color_Green);
-		drawPoint(drawAt - normal * h + zaxis * br, 8, Color_Green);
-		drawPoint(drawAt + normal * h - zaxis * tr, 8, Color_Green);
-		drawPoint(drawAt - normal * h - zaxis * br, 8, Color_Green);
+		
+
+
+		for (int i = 0;i < 4;i++) {
+			drawPoint(topCircle[i].pos, 8, topCircle[i].centerId==hotId? Color_Gold : Color_Green);
+			drawPoint(bottomCircle[i].pos, 8, bottomCircle[i].centerId == hotId ? Color_Gold : Color_Green);
+		}
 		drawPoint(drawAt + normal * (h), 8, opNormal == hotId ? Color_Gold : Color_Green);
 		drawPoint(drawAt - normal * (h), 8, opNormal == hotId ? Color_Gold : Color_Green);
 		drawArrow(topArrow, drawAt + normal * (height / 2), normal, worldHeight, Color_Green);
@@ -4174,6 +4174,7 @@ namespace MOON
 			auto polygon = mPreStorePolygon[drawMesh.mesh];
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(drawMesh.model));
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
+			mCellMaterial->SetProperty("u_AlbedoMap",polygon->texture);
 			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			polygon->bind();

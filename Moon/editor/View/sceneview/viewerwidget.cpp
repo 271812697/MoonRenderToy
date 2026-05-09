@@ -13,6 +13,8 @@
 #include "Gizmo/Gizmo.h"
 #include "Gizmo/Interactive/RenderWindowInteractor.h"
 #include "core/log.h"
+#include "Core/Rendering/GbufferPass.h"
+#include "Qtimgui/imgui/imgui.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -62,6 +64,14 @@ namespace MOON {
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
+			ImVec2 a = { 0,1 }, b = { 1,0 };
+			//ImVec2 size = ImVec2(mViewWidth / 2, mViewHeight/2);
+			ImVec2 size = ImVec2(mViewWidth, mViewHeight);
+			auto& gbufferData=mSceneView->GetRenderer().GetPass<::Core::Rendering::GbufferPass>("Gbuffer").GetGbufferData();
+			ImGui::Image(gbufferData.position->GetID(), size, a, b);
+			ImGui::Image(gbufferData.normal->GetID(), size, a, b);
+			ImGui::Image(gbufferData.occlusion->GetID(), size, a, b);
+			ImGui::Image(gbufferData.occlusionBlur->GetID(), size, a, b);
 			Gizmo::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
 		}

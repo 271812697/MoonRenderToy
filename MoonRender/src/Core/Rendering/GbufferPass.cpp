@@ -160,7 +160,7 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
 	ZoneScoped;
-	TracyGpuZone("SkyboxRenderPass");
+	TracyGpuZone("GbufferPass");
 	using namespace Core::Rendering;
 	//Render to gbuffer
 	{
@@ -228,7 +228,7 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		m_renderer.DrawEntity(p_pso, drawable);
 		ssaoblurbuffer.Unbind();
 	}
-
+	
 
 	//auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 	//mssaaframebuffer.Bind();

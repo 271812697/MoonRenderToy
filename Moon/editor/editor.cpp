@@ -11,12 +11,14 @@
 #include "MulViewPanel.h"
 #include "UI/ReousrcePanel/resourcePanel.h"
 #include "UI/LogPanel/LogPanel.h"
+#include "UI/TaskPanel/TaskViewPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "editor/Toolbar/primitiveToolbar.h"
 #include "editor/View/sceneview/viewertitlebar.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
+#include "Command/menubar/sketch.h"
 
 namespace MOON {
 	class Editor::EditorInternal {
@@ -52,9 +54,15 @@ namespace MOON {
 			propertyPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
 			propertyPanel->setWindowTitle(QApplication::translate("Propertypanel", "Property", nullptr));
 
+			auto taskViewPanel = new TaskViewPanel(self);
+			taskViewPanel->setAllowedAreas(Qt::AllDockWidgetAreas);
+			taskViewPanel->setWindowTitle(QApplication::translate("TaskViewPanel", "Task View", nullptr));
+
 			self->addDockWidget(Qt::LeftDockWidgetArea, hierarchypanel);
 			self->addDockWidget(Qt::LeftDockWidgetArea, settingPanel);
 			self->addDockWidget(Qt::RightDockWidgetArea,propertyPanel);
+			self->addDockWidget(Qt::RightDockWidgetArea, taskViewPanel);
+
 			auto resourcePanelDock = new ResPanel(self);
 			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
 			auto logPanelDock = new LogPanel(self);
@@ -71,21 +79,14 @@ namespace MOON {
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
 			menu_Display->addAction(cameraModeCommand->action());
-		/*	QIcon icon;
-			icon.addFile(QString::fromUtf8(":/widgets/icons/points.png"), QSize(), QIcon::Normal, QIcon::On);
-			auto openfile = new QAction(self);
-			
-			openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
-			openfile->setText("Open");
-			openfile->setStatusTip("Open");
-			openfile->setShortcut(QCoreApplication::translate("pqFileMenuBuilder", "Ctrl+O", nullptr));
-		
-			openfile->setIcon(icon);
-			menu_Display->addAction(openfile);*/
 		}
 		void buildViewMenu() {
 			auto visible=new VisibleViewCommand(menu_View);
 			visible->setUp(menu_View);
+		}
+		void buildSketchMenu() {
+			auto sketchCommand = new SketchCommand(self);
+			menu_sketch->addAction(sketchCommand->action());
 		}
 		void buildMenu() {
 			mMenubar = new QMenuBar(self);
@@ -96,12 +97,15 @@ namespace MOON {
 			menu_File = new QMenu(mMenubar);
 			menu_Display = new QMenu(mMenubar);
 			menu_View = new QMenu(mMenubar);
+			menu_sketch = new QMenu(mMenubar);
 			mMenubar->addAction(menu_File->menuAction());
 			mMenubar->addAction(menu_Display->menuAction());
 			mMenubar->addAction(menu_View->menuAction());
+			mMenubar->addAction(menu_sketch->menuAction());
 			buildFileMenu();
 			buildDisplayMenu();
 			buildViewMenu();
+			buildSketchMenu();
 	
 		}
 		void buildToolBar() {
@@ -122,6 +126,7 @@ namespace MOON {
 			menu_File->setTitle("&File");
 			menu_Display->setTitle("&Display");
 			menu_View->setTitle("&View");
+			menu_sketch->setTitle("&Sketch");
 		
 		}
 	private:
@@ -131,6 +136,7 @@ namespace MOON {
 		QMenu* menu_File;
 		QMenu* menu_Display;
 		QMenu* menu_View;
+		QMenu* menu_sketch;
 	};
 	Editor::Editor() :mInternal(new EditorInternal(this))
 	{

@@ -21,10 +21,10 @@ out VS_OUT
 
 void main()
 {
-    vs_out.FragPos = vec3(ubo_Model * vec4(geo_Pos, 1.0));
+    vs_out.FragPos = vec3( ubo_View *ubo_Model * vec4(geo_Pos, 1.0));
     vs_out.TexCoords = geo_TexCoords;
-    vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
-    gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
+    vs_out.Normal = normalize(transpose(inverse(mat3(ubo_View *ubo_Model)))* geo_Normal);
+    gl_Position = ubo_Projection * vec4(vs_out.FragPos, 1.0);
 }
 
 
