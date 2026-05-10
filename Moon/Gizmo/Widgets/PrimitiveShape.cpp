@@ -23,17 +23,7 @@ namespace MOON {
 	
 	PrimitiveShape::PrimitiveShape(const std::string& name) :GizmoWidget(name)
 	{
-		// Define widget events
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::NoModifier, 0,
-			0, 0, WidgetEvent::Select, this, PrimitiveShape::LeftMousePressed);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, GizmoEvent::NoModifier, 0,
-			0, 0, WidgetEvent::Select3D, this, PrimitiveShape::LeftMouseReleased);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonReleaseEvent, GizmoEvent::NoModifier, 0,
-			0, 0, WidgetEvent::Completed, this, PrimitiveShape::RightMouseReleased);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonPressEvent, GizmoEvent::NoModifier, 0,
-			0, 0, WidgetEvent::EndSelect, this, PrimitiveShape::RightMousePressed);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MouseMoveEvent, GizmoEvent::NoModifier, 0,
-			0, 0, WidgetEvent::Move3D, this, PrimitiveShape::MouseMove);
+
 
 		this->KeyEventCallbackCommand = CallbackCommand::New();
 		this->KeyEventCallbackCommand->SetClientData(this);
@@ -44,26 +34,7 @@ namespace MOON {
 	{
 	}
 
-	void PrimitiveShape::onLeftMousePressed()
-	{
-	}
 
-	void PrimitiveShape::onLeftMouseReleased()
-	{
-	}
-
-	void PrimitiveShape::onRightMousePressed()
-	{
-	}
-
-	void PrimitiveShape::onRightMouseReleased()
-	{
-		
-	}
-
-	void PrimitiveShape::onMouseMove()
-	{
-	}
 
 	void PrimitiveShape::createTopoShape()
 	{
@@ -90,35 +61,7 @@ namespace MOON {
 	}
 
 
-	void PrimitiveShape::LeftMousePressed(AbstractWidget*w)
-	{
-		PrimitiveShape* self = reinterpret_cast<PrimitiveShape*>(w);
-		self->onLeftMousePressed();
-	}
 
-	void PrimitiveShape::LeftMouseReleased(AbstractWidget*w)
-	{
-		PrimitiveShape* self = reinterpret_cast<PrimitiveShape*>(w);
-		self->onLeftMouseReleased();
-	}
-
-	void PrimitiveShape::RightMouseReleased(AbstractWidget*w)
-	{
-		PrimitiveShape* self = reinterpret_cast<PrimitiveShape*>(w);
-		self->onRightMouseReleased();
-	}
-
-	void PrimitiveShape::RightMousePressed(AbstractWidget*w)
-	{
-		PrimitiveShape* self = reinterpret_cast<PrimitiveShape*>(w);
-		self->onRightMousePressed();
-	}
-	
-	void PrimitiveShape::MouseMove(AbstractWidget* w)
-	{
-		PrimitiveShape* self = reinterpret_cast<PrimitiveShape*>(w);
-		self->onMouseMove();
-	}
 	void PrimitiveShape::ProcessKeyEvents(GizmoObject*, unsigned long event, void* clientdata, void*)
 	{
 		PrimitiveShape* self = static_cast<PrimitiveShape*>(clientdata);

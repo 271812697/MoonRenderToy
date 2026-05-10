@@ -1,5 +1,7 @@
 ﻿#include "SketchTaskDialog.h"
 #include "TaskBox.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "Sketcher/SketcherObj.h"
 #include <QLabel>
 #include <QLineEdit>
 #include <QCheckBox>
@@ -11,6 +13,8 @@ namespace MOON {
         : BaseTaskDialog(parent)
     {
         buildUi();
+        SketcherObjManager::instance().Push();
+        sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
     }
 
     void SketchTaskDialog::buildUi()

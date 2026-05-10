@@ -12,7 +12,7 @@ namespace MOON
 		virtual void onUpdate()override;
 		virtual void createTopoShape()override;
 		
-
+		
 	private:
 		Eigen::Vector3f translation;
 		float radius;

@@ -17,6 +17,7 @@ namespace MOON
 	}
 	void DrawSketchHandlerBSpline::onUpdate()
 	{
+        DrawSketchHandler::onUpdate();
 		renderer->pushSize(3);
 		renderer->drawLine2D({ 100,0 }, { -100,0 });
 		renderer->drawLine2D({ 0,100 }, { 0,-100 });

@@ -45,6 +45,7 @@ namespace MOON {
 
 	void DrawSketchHandlerCircle::onUpdate()
 	{
+        DrawSketchHandler::onUpdate();
 		renderer->pushSize(3);
 		renderer->drawLine2D({100,0},{-100,0});
         renderer->drawLine2D({ 0,100 }, { 0,-100 });
@@ -61,13 +62,7 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerCircle::onMouseClicked()
-	{
-	}
 
-	void DrawSketchHandlerCircle::onMouseMove()
-	{
-	}
 
 
 

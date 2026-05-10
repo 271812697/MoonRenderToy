@@ -9,18 +9,9 @@ namespace MOON
 	public:
 		PrimitiveShape(const std::string& name);
 		virtual ~PrimitiveShape()override;
-		virtual void onLeftMousePressed();
-		virtual void onLeftMouseReleased();
-		virtual void onRightMousePressed();
-		virtual void onRightMouseReleased();
-		virtual void onMouseMove();
+		
 		virtual void createTopoShape();
 		void SetEnabled(int) override;
-		static void LeftMousePressed(AbstractWidget*);
-		static void LeftMouseReleased(AbstractWidget*);
-		static void RightMouseReleased(AbstractWidget*);
-		static void RightMousePressed(AbstractWidget*);
-		static void MouseMove(AbstractWidget*);
 	protected:
 		
 		CallbackCommand* KeyEventCallbackCommand;

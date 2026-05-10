@@ -306,35 +306,14 @@ namespace MOON
             ConstructionMethodMachine<ConstructionMethodT>(constructionmethod),
             continuousMode(true)
         {            
-            this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, GizmoEvent::NoModifier, 0,
-                0, 0, WidgetEvent::Completed, this, DSDH::MouseReleased);
-            // Define widget events
-            this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::NoModifier, 0,
-                0, 0, WidgetEvent::Select, this,DSDH::MousePressed );
-            // Define widget events
 
-            this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MouseMoveEvent, GizmoEvent::NoModifier, 0,
-                0, 0, WidgetEvent::Move3D, this, DSDH::MouseMove);
             setActive(false);
             makePlane(2);
         }
         ~DrawSketchDefaultHandler() override
         {
         }
-        void makePlane(int v) {
-            plane = v;
-            if (plane==2) {
-                planeNormal = { 0,0,1 };
-            }
-            else if(plane==0)
-            {
-                planeNormal = { 1,0,0};
-            }
-            else
-            {
-                planeNormal = { 0,1,0 };
-            }
-        }
+
         virtual void onReset()
         {
         }
@@ -427,18 +406,16 @@ namespace MOON
         {
 
         }
-        static void  MouseReleased(AbstractWidget* w) {
-            DSDH* self = reinterpret_cast<DSDH*>(w);
-            self->ButtonReleaseParse();
+        virtual void onLeftMousePressed()override {
+            ButtonPressParse();
         }
-        static void MousePressed(AbstractWidget*w) {
-            DSDH* self = reinterpret_cast<DSDH*>(w);
-            self->ButtonPressParse();
+        virtual void onLeftMouseReleased()override {
+            ButtonReleaseParse();
         }
-        static void MouseMove(AbstractWidget*w) {
-            DSDH* self = reinterpret_cast<DSDH*>(w);
-            self->MouseMoveParse();
+        virtual void onMouseMove()override {
+             MouseMoveParse();
         }
+
         void ButtonPressParse() {
             auto ray = m_sceneView->GetMouseRay();
             Maths::FVector3 out;
@@ -581,8 +558,7 @@ namespace MOON
         using ModeStateMachine = StateMachine<SelectModeT>;
         using ConstructionMethod = ConstructionMethodT;
         using ConstructionMachine = ConstructionMethodMachine<ConstructionMethodT>;
-        int plane = 2;//0->X,1->Y,2->Z;
-        Maths::FVector3 planeNormal;
+
         std::vector<std::unique_ptr<Part::Geometry>> ShapeGeometry;
         bool continuousMode;
     };

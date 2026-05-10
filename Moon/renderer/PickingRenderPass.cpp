@@ -149,6 +149,7 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	}
 
 	m_actorPickingFramebuffer.Unbind();
+	
 
 	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
