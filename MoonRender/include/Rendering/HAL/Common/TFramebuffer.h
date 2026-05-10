@@ -61,7 +61,7 @@ namespace Rendering::HAL
 		Tools::Utils::OptRef<T> GetAttachment(
 			Rendering::Settings::EFramebufferAttachment p_attachment,
 			uint32_t p_index = 0
-		) const;
+		) ;
 		void SetDrawBuffers(const std::vector<uint32_t>&p_index);
 		void SetTargetDrawBuffer(std::optional<uint32_t> p_index);
 		void SetTargetReadBuffer(std::optional<uint32_t> p_index);

@@ -8,6 +8,8 @@
 #include "PickingRenderPass.h"
 #include "Gizmo/Gizmo.h"
 #include <Rendering/HAL/Profiling.h>
+#include "Qtimgui/imgui/imgui.h"
+#include "Settings/DebugSetting.h"
 
 namespace
 {
@@ -149,7 +151,18 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	}
 
 	m_actorPickingFramebuffer.Unbind();
-
+	
+	auto pickColor=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, uint32_t(0));
+	bool value = MOON::DebugSettings::instance().getNode("DebugImgui")->getData<bool>();
+	if (value) {
+		ImVec2 a = { 0,1 }, b = { 1,0 };
+		//ImVec2 size = ImVec2(mViewWidth / 2, mViewHeight/2);
+		ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+		ImGui::Image(pickColor.value().GetID(), size, a, b);
+		//ImGui::Image(gbufferData.normal->GetID(), size, a, b);
+		//ImGui::Image(gbufferData.occlusion->GetID(), size, a, b);
+		//ImGui::Image(gbufferData.occlusionBlur->GetID(), size, a, b);
+	}
 	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
 		output.value().Bind();

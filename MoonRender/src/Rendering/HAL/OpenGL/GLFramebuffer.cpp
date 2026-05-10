@@ -119,7 +119,7 @@ template<>
 Tools::Utils::OptRef<Rendering::HAL::GLTexture> Rendering::HAL::GLFramebuffer::GetAttachment(
 	Rendering::Settings::EFramebufferAttachment p_attachment,
 	uint32_t p_index
-) const
+) 
 {
 	const auto attachmentIndex = EnumToValue<GLenum>(p_attachment) + static_cast<GLenum>(p_index);
 
@@ -141,7 +141,7 @@ template<>
 Tools::Utils::OptRef<Rendering::HAL::GLRenderbuffer> Rendering::HAL::GLFramebuffer::GetAttachment(
 	Rendering::Settings::EFramebufferAttachment p_attachment,
 	uint32_t p_index
-) const
+) 
 {
 	const auto attachmentIndex = EnumToValue<GLenum>(p_attachment) + static_cast<GLenum>(p_index);
 
