@@ -53,7 +53,7 @@ namespace Core::ECS::Components
         bool update = false;
         bool buildLine = false;
         int plane = 2;
-        std::unique_ptr<Part::Geometry> mGeometry;
+        Part::Geometry* mGeometry;
 	};
 	CGeometryLine::CGeometryLine(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CGeometryLineInternal(this))
 	{
@@ -80,12 +80,12 @@ namespace Core::ECS::Components
 	Part::Geometry* CGeometryLine::GetGeometry()
 	{
         
-		return mInternal->mGeometry.get();
+		return mInternal->mGeometry;
 	}
 
-    void CGeometryLine::setGeometry(std::unique_ptr<Part::Geometry> geometry)
+    void CGeometryLine::setGeometry(Part::Geometry* geometry)
 	{
-		mInternal->mGeometry = std::move(geometry);
+		mInternal->mGeometry = geometry;
     }
 
 	void CGeometryLine::discretizationShape(int plane)
@@ -115,7 +115,7 @@ namespace Core::ECS::Components
         //build lines
         std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
         std::vector<uint32_t>lineIndex;
-        std::vector<Base::Vector2d>linePoints = toVector2D(mInternal->mGeometry.get(), 50);
+        std::vector<Base::Vector2d>linePoints = toVector2D(mInternal->mGeometry, 50);
         p_vertices.reserve(linePoints.size());
         for (int i = 0; i < linePoints.size(); i++) {
             ::Rendering::Geometry::VertexBVH v;

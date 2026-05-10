@@ -32,4 +32,8 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
     }
+    void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry> ptr)
+    {
+        mGeoList.push_back(std::move(ptr));
+    }
 }

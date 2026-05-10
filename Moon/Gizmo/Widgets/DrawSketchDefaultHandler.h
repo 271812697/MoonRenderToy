@@ -11,6 +11,9 @@
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/Global/ServiceLocator.h>
 #include "Geometry.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "Sketcher/SketcherObj.h"
+
 #include <Core/ECS/Actor.h>
 #include <type_traits>
 #include <optional>
@@ -327,8 +330,9 @@ namespace MOON
                 auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
                 actor.AddComponent<Core::ECS::Components::CModelRenderer>();
                 actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                geoComp.setGeometry(std::move(geo));
+                geoComp.setGeometry(geo.get());
                 geoComp.discretizationShape(plane);
+                SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry(std::move(geo));;
             }
             
 
