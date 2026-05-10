@@ -8,7 +8,11 @@ namespace MOON {
 		Q_OBJECT
 	public:
 		explicit SketchTaskDialog(QWidget* parent = nullptr);
+		~SketchTaskDialog();
 		virtual void buildUi() override;
+		virtual void clickOk() override;
+		virtual void clickApply() override;
+		virtual void clickCancel() override;
 		QVBoxLayout* mainLayout() { return m_layout; }
 	private:
 		

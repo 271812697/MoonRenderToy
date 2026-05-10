@@ -36,9 +36,9 @@ namespace MOON {
 
         m_mainLayout->addLayout(btnLay);
 
-        connect(btnOk, &QPushButton::clicked, this, &TaskViewWidget::taskOk);
-        connect(btnApply, &QPushButton::clicked, this, &TaskViewWidget::taskApply);
-        connect(btnCancel, &QPushButton::clicked, this, &TaskViewWidget::taskCancel);
+        connect(btnOk, &QPushButton::clicked, this, &TaskViewWidget::clickOk);
+        connect(btnApply, &QPushButton::clicked, this, &TaskViewWidget::clickApply);
+        connect(btnCancel, &QPushButton::clicked, this, &TaskViewWidget::clickCancel);
     }
 
     void TaskViewWidget::setTaskDialog(BaseTaskDialog* dlg)
@@ -58,6 +58,35 @@ namespace MOON {
             m_contentLayout->removeWidget(m_currentTask);
             m_currentTask->deleteLater();
             m_currentTask = nullptr;
+        }
+    }
+    bool TaskViewWidget::hasTask()
+    {
+        return m_currentTask != nullptr;
+    }
+    void TaskViewWidget::clickCancel()
+    {
+        emit taskCancel();
+        if (m_currentTask)
+        {
+            m_currentTask->clickCancel();
+        }
+    }
+    void TaskViewWidget::clickOk()
+    {
+        emit taskOk();
+        if (m_currentTask)
+        {
+            m_currentTask->clickOk();
+        }
+        clearTask();
+    }
+    void TaskViewWidget::clickApply()
+    {
+        emit taskApply();
+        if (m_currentTask)
+        {
+            m_currentTask->clickApply();
         }
     }
 }

@@ -161,6 +161,23 @@ void Editor::Panels::SceneView::FitToSelectedActor(const Maths::FVector3& dir)
 	}
 }
 
+void Editor::Panels::SceneView::LookAt(const Maths::FVector3& pivot, const Maths::FVector3& dir, float radius)
+{
+	float pi = 3.14159265359f;
+	Maths::FVector3 forward = dir;
+	float angle = Maths::FVector3::AngleBetween(forward, { 0,1,0 });
+	Maths::FVector3 up = (angle < FLT_EPSILON || abs(angle - pi) < FLT_EPSILON) ? Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
+	Maths::FQuaternion quat = Maths::FQuaternion::LookAt(forward, up);
+
+	if (m_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC) {
+		this->GetCameraController().MoveToPose(pivot - dir * radius, quat);
+	}
+	else
+	{
+		this->GetCameraController().MoveToPose(pivot - dir * radius, quat);
+	}
+}
+
 
 void Editor::Panels::SceneView::FitToScene(const Maths::FVector3& dir)
 {

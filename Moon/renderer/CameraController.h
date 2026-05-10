@@ -6,90 +6,29 @@
 
 namespace Editor::Core
 {
-	/**
-	* A simple camera controller used to navigate into views
-	*/
 	class CameraController
 	{
 	public:
-		/**
-		* Constructor
-		* @param p_view
-		* @param p_camera
-		*/
 		CameraController(
 			Editor::Panels::AView& p_view,
 			::Rendering::Entities::Camera& p_camera
 		);
 
-		/**
-		* Handle mouse and keyboard inputs
-		* @parma p_deltaTime
-		*/
 		void HandleInputs(float p_deltaTime);
 		void HandleFirstMouse();
-
-		/**
-		* Asks the camera to move to the target actor
-		* @param p_target
-		*/
 		void MoveToTarget(::Core::ECS::Actor& p_target);
 		void MoveToPose(const Maths::FVector3& pos, const Maths::FQuaternion& quat);
-
-		/**
-		* Defines the speed of the camera
-		* @param p_speed
-		*/
 		void SetSpeed(float p_speed);
-
-		/**
-		* Returns the camera speed
-		*/
 		float GetSpeed() const;
-
-		/**
-		* Defines the position of the camera
-		* @param p_position
-		*/
 		void SetPosition(const Maths::FVector3& p_position);
-
-		/**
-		* Defines the rotation of the camera
-		* @param p_rotation
-		*/
 		void SetRotation(const Maths::FQuaternion& p_rotation);
-
-		/**
-		* Returns the position of the camera
-		*/
 		const Maths::FVector3& GetPosition() const;
-
-		/**
-		* Returns the position of the camera
-		*/
 		const Maths::FQuaternion& GetRotation() const;
-
-		/**
-		* Returns true if the right mouse click is being pressed
-		*/
 		bool IsRightMousePressed() const;
-
-		/**
-		* Returns true if the camera controller is currently operating
-		*/
 		bool IsOperating() const;
-
-		/**
-		* Lock the target actor to the given actor.
-		* @note Usefull to force orbital camera or camera focus to target a specific actor
-		* @param p_actor
-		*/
 		void LockTargetActor(::Core::ECS::Actor& p_actor);
-
-		/**
-		* Removes any locked actor
-		*/
 		void UnlockTargetActor();
+		void EnableRotate(bool flag);
 
 	private:
 		std::optional<std::reference_wrapper<::Core::ECS::Actor>> GetTargetActor() const;
@@ -109,6 +48,7 @@ namespace Editor::Core
 		bool m_leftMousePressed = false;
 		bool m_middleMousePressed = false;
 		bool m_rightMousePressed = false;
+		bool m_enableRotate = true;
 
 		Maths::FVector3 m_targetSpeed;
 		Maths::FVector3 m_currentMovementSpeed;

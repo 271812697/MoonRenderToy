@@ -8,7 +8,6 @@
 #include "Sketcher/SketcherObj.h"
 
 namespace MOON {
-	
 	class SketchPlane::SketchPlaneInternal {
 	public:
 		SketchPlaneInternal(SketchPlane* clip):mSelf(clip) {
@@ -23,7 +22,7 @@ namespace MOON {
 			XZ_Plane,
 			NO_Plane
 		};
-		void onMouseLeftClick() {
+		bool onMouseLeftClick() {
 			if (mSelectPlane != mPreSelectPlane) {
 				mSelectPlane = mPreSelectPlane;
 				if (mSelectPlane != NO_Plane) {
@@ -37,8 +36,11 @@ namespace MOON {
 						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(0);
 					}
 					mSelf->setActive(false);
+					mSelectPlane = NO_Plane;
+					return true;
 				}
 			}
+			return false;
 		}
 	private:
 		friend class SketchPlane;
@@ -49,7 +51,6 @@ namespace MOON {
 
 	SketchPlane::SketchPlane(const std::string& name) :GizmoWidget(name)
 	, m_internal(new SketchPlaneInternal(this)){
-	
 	}
 	SketchPlane::~SketchPlane()
 	{
@@ -57,6 +58,7 @@ namespace MOON {
 	}
 	void SketchPlane::onUpdate()
 	{
+		
 		m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::NO_Plane;
 		float radius = renderer->pixelsToWorldSize({0,0,0}, 48);
 		renderer->drawOneMesh(

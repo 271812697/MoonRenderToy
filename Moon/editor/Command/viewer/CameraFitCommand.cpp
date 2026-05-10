@@ -19,7 +19,6 @@ namespace MOON {
 		switch (this->ReactionMode)
 		{
 		case RESET_CAMERA:
-
 			break;
 		case RESET_POSITIVE_X:
 			dir = { 1,0,0 };

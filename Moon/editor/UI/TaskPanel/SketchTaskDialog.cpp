@@ -17,6 +17,11 @@ namespace MOON {
         sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
     }
 
+    SketchTaskDialog::~SketchTaskDialog()
+    {
+        
+    }
+
     void SketchTaskDialog::buildUi()
     {
         // ========== 1. 草图常规设置 ==========
@@ -63,7 +68,16 @@ namespace MOON {
         layView->addWidget(new QCheckBox(QStringLiteral("隐藏背景零件")));
         boxView->setContent(wView);
         mainLayout()->addWidget(boxView);
-
         mainLayout()->addStretch();
+    }
+    void SketchTaskDialog::clickOk()
+    {
+        sketchObj->makeDone();
+    }
+    void SketchTaskDialog::clickApply()
+    {
+    }
+    void SketchTaskDialog::clickCancel()
+    {
     }
 }

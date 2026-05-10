@@ -16,12 +16,16 @@ namespace MOON {
         void setTaskDialog(BaseTaskDialog* dlg);
         // 清空任务
         void clearTask();
+        bool hasTask();
 
     signals:
         void taskOk();
         void taskApply();
         void taskCancel();
-
+    public slots:
+        void clickOk();
+        void clickApply();
+        void clickCancel();
     private:
         QVBoxLayout* m_mainLayout;
         QWidget* m_contentWidget;
