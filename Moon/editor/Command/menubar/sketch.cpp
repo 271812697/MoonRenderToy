@@ -43,10 +43,7 @@ namespace MOON {
 		{
 			task.clearTask();
 		}
-	
 	}
-
-
 }
 
 

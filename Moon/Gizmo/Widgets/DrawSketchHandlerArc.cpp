@@ -119,6 +119,7 @@ namespace MOON {
 
 	void DrawSketchHandlerArc::onUpdate()
 	{
+        DrawSketchHandler::onUpdate();
 		renderer->pushSize(3);
 		renderer->drawLine2D({100,0},{-100,0});
         renderer->drawLine2D({ 0,100 }, { 0,-100 });
@@ -135,13 +136,7 @@ namespace MOON {
 	{
 	}
 
-	void DrawSketchHandlerArc::onMouseClicked()
-	{
-	}
 
-	void DrawSketchHandlerArc::onMouseMove()
-	{
-	}
 
 
 

@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "DrawSketchHandler.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "Sketcher/SketcherObj.h"
 namespace MOON
 {
     static std::vector<Base::Vector2d> toVector2D(const Part::Geometry* geometry)
@@ -37,6 +39,28 @@ namespace MOON
     void DrawSketchHandler::clearEdit()
     {
         lines.clear();
+    }
+    void DrawSketchHandler::makePlane(int v)
+    {
+        plane = v;
+        if (plane == 2) {
+            planeNormal = { 0,0,1 };
+        }
+        else if (plane == 0)
+        {
+            planeNormal = { 1,0,0 };
+        }
+        else
+        {
+            planeNormal = { 0,1,0 };
+        }
+    }
+    void DrawSketchHandler::onUpdate()
+    {
+       auto sketchobj= SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+       if (sketchobj) {
+           makePlane(sketchobj->getPlane());
+       }
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
     {

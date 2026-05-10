@@ -21,6 +21,17 @@ namespace MOON
 		void update();
 		virtual void onUpdate();
 		virtual void onSetActive(bool flag);
+
+		virtual void onLeftMousePressed();
+		virtual void onLeftMouseReleased();
+		virtual void onRightMousePressed();
+		virtual void onRightMouseReleased();
+		virtual void onMouseMove();
+		static void LeftMousePressed(AbstractWidget*);
+		static void LeftMouseReleased(AbstractWidget*);
+		static void RightMouseReleased(AbstractWidget*);
+		static void RightMousePressed(AbstractWidget*);
+		static void MouseMove(AbstractWidget*);
 	protected:
 		std::string mName;	
 		//mActive 
