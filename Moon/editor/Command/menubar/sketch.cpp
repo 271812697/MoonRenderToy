@@ -13,10 +13,6 @@ namespace MOON {
 	SketchCommand::SketchCommand(QObject* parentObject)
 		: Command(parentObject)
 	{
-		
-		
-		
-		
 		auto sketch=new QAction(this);
 		sketch->setCheckable(true);
 		setAction(sketch);
@@ -31,17 +27,12 @@ namespace MOON {
 
 	void SketchCommand::execute()
 	{
-		bool value = action()->isChecked();
-		auto& view = GetService(Editor::Panels::SceneView);
-		auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo");
-		gizmoPass.enableGizmoWidget(
-			"GizmoSketchPlane", value);
 		auto& task = GetService(TaskViewWidget);
-		if(value)
-		task.setTaskDialog(new SketchTaskDialog());
-		else
-		{
-			task.clearTask();
+		if (!task.hasTask()) {
+			auto& view = GetService(Editor::Panels::SceneView);
+			auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo");
+			gizmoPass.enableGizmoWidget("GizmoSketchPlane", true);
+			task.setTaskDialog(new SketchTaskDialog());
 		}
 	}
 }

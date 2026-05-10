@@ -16,6 +16,7 @@ namespace Editor::Panels
 		virtual void InitFrame() override;
 		virtual ::Core::SceneSystem::Scene* GetScene();
 		void FitToSelectedActor(const Maths::FVector3& dir);
+		void LookAt(const Maths::FVector3& pivot,const Maths::FVector3& dir,float radius);
 		void FitToScene(const Maths::FVector3& dir);
 		void BuildBvh();
 		void SetGizmoOperation(Core::EGizmoOperation p_operation);
@@ -24,9 +25,6 @@ namespace Editor::Panels
 		bool MouseHit(Maths::FVector3& out);
 		bool MouseClipHit(Maths::FVector3& out,const Maths::FVector4& clipPlane);
 		::Rendering::Geometry::Ray GetMouseRay();
-		
-
-		
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 	private:

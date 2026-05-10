@@ -6,6 +6,7 @@ namespace MOON {
 		~SketcherObj();
 		void setPlane(int p);
 		int getPlane();
+		void makeDone();
 	private:
 		int mPlane = 0;
 	};

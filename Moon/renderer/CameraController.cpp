@@ -120,7 +120,7 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 
 			m_lastMousePosX = xPos;
 			m_lastMousePosY = yPos;
-			if (m_rightMousePressed)
+			if (m_rightMousePressed&&m_enableRotate)
 			{	
 				HandleCameraOrbit(m_view.GetRoaterCenter(), mouseOffset, wasFirstMouse);
 			}
@@ -210,6 +210,11 @@ void Editor::Core::CameraController::LockTargetActor(::Core::ECS::Actor& p_actor
 void Editor::Core::CameraController::UnlockTargetActor()
 {
 	m_lockedActor = std::nullopt;
+}
+
+void Editor::Core::CameraController::EnableRotate(bool flag)
+{
+	m_enableRotate = flag;
 }
 
 std::optional<std::reference_wrapper<Core::ECS::Actor>> Editor::Core::CameraController::GetTargetActor() const
