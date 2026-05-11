@@ -121,9 +121,9 @@ namespace MOON {
         }
         if (mPlane == 0) {
 			result.setTransform(Base::Matrix4D(
-				0.0, 1.0, 0.0, 0.0,
 				0.0, 0.0, 1.0, 0.0,
 				1.0, 0.0, 0.0, 0.0,
+				0.0, 1.0, 0.0, 0.0,
 				0.0, 0.0, 0.0, 1.0
 			));
         }

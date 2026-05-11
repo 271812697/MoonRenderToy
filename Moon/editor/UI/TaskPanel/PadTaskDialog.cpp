@@ -96,18 +96,18 @@ namespace MOON {
         if (sketchObj) {
             std::cout << "we get a sketch obj" << std::endl;
             Part::TopoShape sketchshape=sketchObj->toShape();
-            //Part::TopoShape prism;
+            Part::TopoShape prism;
 			double dir[3] = { 1,0,0 };
             sketchObj->getPlaneNormal(dir);
             try {
-                //prism.makeElementPrism(sketchshape, 1.0 * gp_Vec(dir[0], dir[1], dir[2]));
+                prism.makeElementPrism(sketchshape, 1.0 * gp_Vec(dir[0], dir[1], dir[2]));
                 auto& view = GetService(Editor::Panels::SceneView);
                 auto scene = view.GetScene();
                 auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapePrism", "TopoShape", false);
                 const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
                 Part::TopoShape& topo = topoComp->GetTopoShape();
-
-                topo.makeElementPrism(sketchshape, 1.0 * gp_Vec(dir[0], dir[1], dir[2]));
+                topo.setShape(prism);
+                //topo.makeElementPrism(sketchshape, 1.0 * gp_Vec(dir[0], dir[1], dir[2]));
 
                 topoComp->discretizationShape();
             }
