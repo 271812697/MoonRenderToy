@@ -13,6 +13,7 @@
 #include "Geometry.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "core/log.h"
 
 #include <Core/ECS/Actor.h>
 #include <type_traits>
@@ -321,7 +322,8 @@ namespace MOON
         {
         }
         void reset()
-        {
+        { 
+            CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
             clearEdit();
             auto& view = GetService(::Editor::Panels::SceneView);
             auto scene = view.GetScene();
@@ -333,6 +335,8 @@ namespace MOON
                 geoComp.setGeometry(geo.get());
                 geoComp.discretizationShape(plane);
                 SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry(std::move(geo));;
+				
+               
             }
             
 

@@ -10,6 +10,7 @@
 #include "renderer/SceneView.h"
 #include "base/Tools2D.h"
 #include "core/callbackManager.h"
+#include "core/log.h"
 namespace Core::ECS::Components
 {
     static std::vector<Base::Vector2d> toVector2D(const Part::Geometry* geometry,int curvedEdgeCountSegments)
@@ -90,6 +91,7 @@ namespace Core::ECS::Components
 
 	void CGeometryLine::discretizationShape(int plane)
 	{
+		CORE_INFO("discretization GeometryLine for plane {0}", plane);
         mInternal->update = true;
         mInternal->plane = plane;
 	}
@@ -102,16 +104,11 @@ namespace Core::ECS::Components
 	{
 	}
 
-    void CGeometryLine::buildComp()
-    {
-        if (mInternal->update) {
-            mInternal->update = false;
-            mInternal->buildLine = true;
-        }
-    }
+
 
     void CGeometryLine::buildLines(int plane)
 	{
+        CORE_INFO("build GeometryLine");
         //build lines
         std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
         std::vector<uint32_t>lineIndex;

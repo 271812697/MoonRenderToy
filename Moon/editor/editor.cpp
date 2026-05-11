@@ -14,6 +14,7 @@
 #include "UI/TaskPanel/TaskViewPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "editor/Toolbar/primitiveToolbar.h"
+#include "editor/Toolbar/DesignModelingToolbar.h"
 #include "editor/View/sceneview/viewertitlebar.h"
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/cameraMode.h"
@@ -118,7 +119,9 @@ namespace MOON {
 			ViewerWindowTitleBar* titleBar = new ViewerWindowTitleBar(self);
 			titleBar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, titleBar);
-
+			DesignModelingToolbar* designModelingToolbar = new DesignModelingToolbar(self);
+			designModelingToolbar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, designModelingToolbar);
 		}
 		void retranslateUi() {
 			

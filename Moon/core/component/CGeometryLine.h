@@ -21,7 +21,7 @@ namespace Core::ECS::Components
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;
 	private:
-		void buildComp();
+		
 		void buildLines(int plane);
 		class CGeometryLineInternal;
 		CGeometryLineInternal* mInternal = nullptr;

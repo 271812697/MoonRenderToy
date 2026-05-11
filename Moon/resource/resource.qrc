@@ -74,7 +74,8 @@
 		<file>icons/parametric/Part_Sphere_Parametric.svg</file>
 		<file>icons/parametric/Part_Cone_Parametric.svg</file>
 		<file>icons/parametric/Part_Cylinder_Parametric.svg</file>
-	
+		<file>icons/partdesign/PartDesign_Pad.svg</file>
+
 
 	</qresource>
     <qresource prefix="/entityTree">
