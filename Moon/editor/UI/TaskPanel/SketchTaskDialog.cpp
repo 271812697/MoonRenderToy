@@ -73,7 +73,6 @@ namespace MOON {
     void SketchTaskDialog::clickOk()
     {
         sketchObj->makeDone();
-        sketchObj->toShape();
     }
     void SketchTaskDialog::clickApply()
     {

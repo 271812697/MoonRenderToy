@@ -103,9 +103,6 @@ namespace Core::ECS::Components
 	void CGeometryLine::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 	{
 	}
-
-
-
     void CGeometryLine::buildLines(int plane)
 	{
         CORE_INFO("build GeometryLine");

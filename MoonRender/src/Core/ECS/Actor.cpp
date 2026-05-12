@@ -231,10 +231,6 @@ void Core::ECS::Actor::OnUpdate(float p_deltaTime)
 	{
 		std::for_each(m_components.begin(), m_components.end(), [&](auto element) { element->OnUpdate(p_deltaTime); });
 	}
-	else
-	{
-		std::cout << "not active" << std::endl;
-	}
 }
 
 void Core::ECS::Actor::OnFixedUpdate(float p_deltaTime)

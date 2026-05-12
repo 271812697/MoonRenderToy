@@ -143,6 +143,7 @@ namespace MOON {
                 0.0, 0.0, 0.0, 1.0
             ));
         }
+        //return result.makeFace();
         return result;
     }
 }

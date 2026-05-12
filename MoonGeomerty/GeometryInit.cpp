@@ -2,6 +2,9 @@
 #include "GeometryInit.h"
 #include "base/BaseClass.h"
 #include "base/Exception.h"
+#include "App/FaceMaker.h"
+#include "App/FaceMakerBullseye.h"
+#include "App/FaceMakerCheese.h"
 namespace Part {
 	void Part::GeometryTypeInit()
 	{
@@ -26,5 +29,11 @@ namespace Part {
 		GeomEllipse::init();
 		GeomHyperbola::init();
 		GeomParabola::init();
+
+		FaceMaker::init();
+		FaceMakerPublic::init();
+		FaceMakerSimple::init();
+		FaceMakerBullseye::init();
+		FaceMakerCheese::init();
 	}
 }
