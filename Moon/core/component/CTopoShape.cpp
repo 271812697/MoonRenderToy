@@ -161,7 +161,7 @@ namespace Core::ECS::Components
                 mInternal->updateEdge = false;
                 std::vector<Base::Vector3d>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
-                mInternal->mTopoShape.getLines(linePoints, LineRanges, 1.0);
+                mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
                 //build lines
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
