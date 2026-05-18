@@ -60,7 +60,7 @@ namespace MOON {
 	{
 		
 		m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::NO_Plane;
-		float radius = renderer->pixelsToWorldSize({0,0,0}, 48);
+	
 		renderer->drawOneMesh(
 			{0,0,0},
 			Eigen::Matrix3f::Identity(),

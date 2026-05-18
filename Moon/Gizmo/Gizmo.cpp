@@ -10,6 +10,8 @@
 #include "renderer/SceneView.h"
 #include "Core/Global/ServiceLocator.h"
 #include "GizmoWidget.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "Sketcher/SketcherObj.h"
 
 #include "editor/View/sceneview/viewerwidget.h"
 #include <Rendering/Data/Material.h>
@@ -4244,11 +4246,13 @@ namespace MOON
 	{
 		runDrawTask();
 		drawWidgets();
-
-		test();
+		test();	
+		SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (sketchObj) {
+			sketchObj->draw();
+		}
 		assert(!endFrameCalled);
 		endFrameCalled = true;
-
 		drawMesh();
 		drawSort();
 		drawUnsort();

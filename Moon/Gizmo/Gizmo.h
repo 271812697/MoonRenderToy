@@ -18,7 +18,7 @@ namespace MOON
 {
 	using Vec2 = Eigen::Vector2f;
 	class GizmoWidget;
-	enum class Plane2D
+	enum  Plane2D
 	{
 		XPlane,
 		YPlane,

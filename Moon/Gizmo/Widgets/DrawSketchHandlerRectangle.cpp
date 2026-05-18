@@ -27,16 +27,12 @@ namespace MOON {
 	void DrawSketchHandlerRectangle::onUpdate()
 	{
         DrawSketchHandler::onUpdate();
-		renderer->pushSize(3);
-		renderer->drawLine2D({ 100,0 }, { -100,0 });
-		renderer->drawLine2D({ 0,100 }, { 0,-100 });
 		for (int i = 0; i < lines.size(); i += 2) {
 			renderer->drawLine2D({ lines[i].x
 				,lines[i].y }, { lines[i + 1].x
 				,lines[i + 1].y }, static_cast<MOON::Plane2D>(plane));
 		}
-		//renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
-		renderer->popSize();
+
 	}
 	void DrawSketchHandlerRectangle::onSetActive(bool flag)
 	{
