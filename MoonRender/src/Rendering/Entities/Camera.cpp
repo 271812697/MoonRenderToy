@@ -105,6 +105,18 @@ Maths::FMatrix4 Rendering::Entities::Camera::GetViewProjectionMatrix() const
 {
 	return m_projectionMatrix*m_viewMatrix;
 }
+Maths::FVector2 Rendering::Entities::Camera::WordlToScreen(const Maths::FVector3& worldPos) const
+{
+	Maths::FMatrix4 viewProj=GetViewProjectionMatrix();
+	Maths::FVector3 screenPos=viewProj.MulPoint(worldPos);
+	return Maths::FVector2((screenPos.x+1.0)/2.0* m_windowWidth,(1.0-screenPos.y)/2.0*m_windowHeight);
+}
+Maths::FVector2 Rendering::Entities::Camera::WordlToViewPort(const Maths::FVector3& worldPos) const
+{
+	Maths::FMatrix4 viewProj = GetViewProjectionMatrix();
+	Maths::FVector3 screenPos = viewProj.MulPoint(worldPos);
+	return Maths::FVector2((screenPos.x + 1.0) / 2.0 * m_windowWidth, (1.0 + screenPos.y) / 2.0 * m_windowHeight);
+}
 const Maths::FMatrix4& Rendering::Entities::Camera::GetViewMatrix() const
 {
 	return m_viewMatrix;

@@ -17,6 +17,7 @@
 #include "editor/Toolbar/DesignModelingToolbar.h"
 #include "editor/View/sceneview/viewertitlebar.h"
 #include "Command/menubar/openFile.h"
+#include "Command/menubar/exportFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
 #include "Command/menubar/sketch.h"
@@ -75,7 +76,10 @@ namespace MOON {
 		}
 		void buildFileMenu() {
 			auto openFileCommand=new OpenFileCommand(self);
+			auto exportFileCommand = new ExportFileCommand(self);
+			
 			menu_File->addAction(openFileCommand->action());
+			menu_File->addAction(exportFileCommand->action());
 		}
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);

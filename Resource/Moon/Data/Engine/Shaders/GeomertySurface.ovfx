@@ -1212,8 +1212,11 @@ void main()
     const float metallic = texture(u_MetallicMap, texCoords).r * u_Metallic;
     const float roughness = texture(u_RoughnessMap, texCoords).g * u_Roughness;
 #endif
-
-    const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
+    vec4 ndcpos= ubo_Projection * ubo_View * vec4(fs_in.FragPos, 1.0);
+    ndcpos.xyz=ndcpos.xyz/ndcpos.w;
+    ndcpos.xy=(ndcpos.xy+1.0)/2.0;
+    float ssao=texture(occlusionTex, ndcpos.xy).r;
+    const float ao = ssao;//texture(u_AmbientOcclusionMap, texCoords).r;
 
 #if defined(WITH_EDGE)
     float edist[3];
@@ -1266,11 +1269,9 @@ void main()
     PixelParams pixel;  
     pixel.shading_NoV=max(dot(VD,normal),1e-4);
     pixel.shading_reflected=reflect(-VD, normal);;
-    vec4 ndcpos= ubo_Projection * ubo_View * vec4(fs_in.FragPos, 1.0);
-    ndcpos.xyz=ndcpos.xyz/ndcpos.w;
-    ndcpos.xy=(ndcpos.xy+1.0)/2.0;
-    pixel.ao=texture(occlusionTex, ndcpos.xy).r;
-    pbr*=pixel.ao;
+
+    pixel.ao=ssao;
+    //pbr*=pixel.ao;
     getPixelParams(inputs, pixel);
 
     vec3 iblColor=vec3(0,0,0);

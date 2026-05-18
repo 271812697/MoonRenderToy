@@ -323,23 +323,7 @@ namespace MOON
         }
         void reset()
         { 
-            CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
             clearEdit();
-            auto& view = GetService(::Editor::Panels::SceneView);
-            auto scene = view.GetScene();
-            for (auto& geo : ShapeGeometry) {
-                auto& actor = scene->CreateActor("", "SketchGeomertyLine");
-                auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
-                actor.AddComponent<Core::ECS::Components::CModelRenderer>();
-                actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                geoComp.setGeometry(geo.get());
-                geoComp.discretizationShape(plane);
-                SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry(std::move(geo));;
-				
-               
-            }
-            
-
             //for (auto& ac : sugConstraints) {
             //    ac.clear();
             //}
@@ -405,14 +389,38 @@ namespace MOON
                 //    Base::Console().error(e.what());
                 //}
                 //return handleContinuousMode();
-                handleContinuousMode();
-                return true;
+               
+
+                CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
+              
+                auto& view = GetService(::Editor::Panels::SceneView);
+                auto scene = view.GetScene();
+                for (auto& geo : ShapeGeometry) {
+                    auto& actor = scene->CreateActor("", "SketchGeomertyLine");
+                    auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
+                    actor.AddComponent<Core::ECS::Components::CModelRenderer>();
+                    actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+                    geoComp.setGeometry(geo.get());
+                    geoComp.discretizationShape(plane);
+                    SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry(std::move(geo));;
+                }
+
+                return handleContinuousMode();
             }
             return false;
         }
         virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
         {
 
+        }
+        virtual void rightButtonOrEsc() {
+            if (this->isFirstState()) {
+                quit();
+            }
+            else
+            {
+                handleContinuousMode();
+            }
         }
         virtual void onLeftMousePressed()override {
             ButtonPressParse();
@@ -422,6 +430,9 @@ namespace MOON
         }
         virtual void onMouseMove()override {
              MouseMoveParse();
+        }
+        virtual void onRightMousePressed()override {
+            rightButtonOrEsc();
         }
 
         void ButtonPressParse() {

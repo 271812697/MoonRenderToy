@@ -46,6 +46,9 @@ namespace MOON {
 	void DrawSketchHandlerCircle::onUpdate()
 	{
         DrawSketchHandler::onUpdate();
+        if (state() == SelectMode::SeekSecond) {
+			drawFloatValue(m_internal->radius);
+        }
 		renderer->pushSize(3);
 		renderer->drawLine2D({100,0},{-100,0});
         renderer->drawLine2D({ 0,100 }, { 0,-100 });
@@ -70,7 +73,7 @@ namespace MOON {
 	{
         switch (state()) {
         case SelectMode::SeekFirst: {
-            //toolWidgetManager.drawPositionAtCursor(onSketchPos);
+            drawPositionAtCursor(onSketchPos);
             if (constructionMethod() == ConstructionMethod::Center) {
                 m_internal->centerPoint = { onSketchPos.x,onSketchPos.y };
                 //seekAndRenderAutoConstraint(sugConstraints[0], onSketchPos, Base::Vector2d());
@@ -86,6 +89,8 @@ namespace MOON {
             }
         } break;
         case SelectMode::SeekSecond: {
+            //drawPositionAtCursor(onSketchPos);
+            clearPositionAtCursor();
             if (constructionMethod() == ConstructionMethod::ThreeRim) {
                 m_internal->centerPoint = (Vec2(onSketchPos.x,onSketchPos.y) - m_internal->firstPoint) / 2 + m_internal->firstPoint;
             }

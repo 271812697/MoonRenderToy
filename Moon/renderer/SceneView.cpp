@@ -177,6 +177,11 @@ void Editor::Panels::SceneView::LookAt(const Maths::FVector3& pivot, const Maths
 	}
 }
 
+Maths::FVector2 Editor::Panels::SceneView::worldToScreen(const Maths::FVector3& worldPos)
+{
+	return this->GetCamera()->WordlToScreen(worldPos);
+}
+
 
 void Editor::Panels::SceneView::FitToScene(const Maths::FVector3& dir)
 {
