@@ -1,7 +1,10 @@
 ﻿#pragma once
 #include "DrawSketchHandler.h"
+#include "Gizmo/Gizmo.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "Qtimgui/imgui/imgui.h"
+#include "renderer/SceneView.h"
 namespace MOON
 {
     static std::vector<Base::Vector2d> toVector2D(const Part::Geometry* geometry)
@@ -61,6 +64,14 @@ namespace MOON
        if (sketchobj) {
            makePlane(sketchobj->getPlane());
        }
+       if (drawSketchPos) {
+            auto drawList=ImGui::GetForegroundDrawList();
+            Maths::FVector2 screenPos=m_sceneView->worldToScreen(getWorldPosFromSketchPos(onSketchPos));
+            screenPos.y -= 7;
+		    screenPos.x += 5;
+		    std::string posText = "(" + std::to_string(onSketchPos.x) + "," + std::to_string(onSketchPos.y) + ")";
+            drawList->AddText(nullptr,0,ImVec2(screenPos.x,screenPos.y), IM_COL32(0, 0, 0, 255),posText.c_str());
+       }
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
     {
@@ -86,5 +97,43 @@ namespace MOON
             list.push_back(toVector2D(geo));
         }
         drawEdit(list);
+    }
+    void DrawSketchHandler::drawPositionAtCursor(Base::Vector2d pos)
+    {
+        drawSketchPos = true;
+		onSketchPos = pos;  
+    }
+    void DrawSketchHandler::clearPositionAtCursor()
+    {
+        drawSketchPos = false;
+    }
+    void DrawSketchHandler::drawFloatValue(float value)
+    {
+        auto drawList = ImGui::GetForegroundDrawList();
+        Maths::FVector2 screenPos = m_sceneView->worldToScreen(getWorldPosFromSketchPos(onSketchPos));
+        screenPos.y -= 7;
+        screenPos.x += 5;
+        std::string posText = std::to_string(value);
+        drawList->AddText(nullptr, 0, ImVec2(screenPos.x, screenPos.y), IM_COL32(0, 0, 0, 255), posText.c_str());
+    }
+    Maths::FVector3 DrawSketchHandler::getWorldPosFromSketchPos(Base::Vector2d sketchPos)
+    {
+		Maths::FVector3 v;
+        if (plane == 2) {
+            v.x = static_cast<float>(sketchPos.x);
+            v.y = static_cast<float>(sketchPos.y);
+            v.z = 0;
+        }
+        else if (plane == 0) {
+            v.x = 0;
+            v.y = static_cast<float>(sketchPos.x);
+            v.z = static_cast<float>(sketchPos.y);
+        }
+        else {
+            v.x = static_cast<float>(sketchPos.x);
+            v.y = 0;
+            v.z = static_cast<float>(sketchPos.y);
+        }
+        return v;
     }
 }

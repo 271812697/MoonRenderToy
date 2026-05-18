@@ -71,6 +71,7 @@ namespace MOON {
         {
             m_currentTask->clickCancel();
         }
+        clearTask();
     }
     void TaskViewWidget::clickOk()
     {

@@ -24,12 +24,17 @@ namespace MOON
         void drawEdit(const std::vector<Base::Vector2d>& EditCurve) ;
         void drawEdit(const std::list<std::vector<Base::Vector2d>>& list) ;
         void drawEdit(const std::vector<Part::Geometry*>& geometries);
+		void drawPositionAtCursor(Base::Vector2d pos);
+		void clearPositionAtCursor();
+        void drawFloatValue(float value);
+		Maths::FVector3 getWorldPosFromSketchPos(Base::Vector2d sketchPos);
+        
     protected:
 		std::vector<Base::Vector2d> lines;
 		std::vector<Base::Vector2d> points;
+        bool drawSketchPos = false;
+        Base::Vector2d onSketchPos;
         int plane = 2;//0->X,1->Y,2->Z;
         Maths::FVector3 planeNormal;
-
-
     };
 }

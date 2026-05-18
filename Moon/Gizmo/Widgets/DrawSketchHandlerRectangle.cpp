@@ -19,6 +19,7 @@ namespace MOON {
 	DrawSketchHandlerRectangle::DrawSketchHandlerRectangle(const std::string& name):
 		DrawSketchDefaultHandler<DrawSketchHandlerRectangle, StateMachines::FiveSeekEnd, 3, RectangleConstructionMethod>(name)
 	{
+        makeFrame = false;
 	}
 	DrawSketchHandlerRectangle::~DrawSketchHandlerRectangle()
 	{

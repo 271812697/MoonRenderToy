@@ -49,7 +49,8 @@ namespace Core::ECS::Components
             if (mInternal->updateFace) {
 			    mInternal->updateFace = false; 
                 std::vector<Data::ComplexGeoData::Domain> domains;
-                mInternal->mTopoShape.getDomainfaces(domains, 1.0);
+               
+                mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
                 static Maths::FVector4 colors[] = {
                 { 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
                 { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
@@ -160,7 +161,7 @@ namespace Core::ECS::Components
                 mInternal->updateEdge = false;
                 std::vector<Base::Vector3d>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
-                mInternal->mTopoShape.getLines(linePoints, LineRanges, 1.0);
+                mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
                 //build lines
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;

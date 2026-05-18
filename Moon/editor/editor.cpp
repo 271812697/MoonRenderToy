@@ -14,8 +14,10 @@
 #include "UI/TaskPanel/TaskViewPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "editor/Toolbar/primitiveToolbar.h"
+#include "editor/Toolbar/DesignModelingToolbar.h"
 #include "editor/View/sceneview/viewertitlebar.h"
 #include "Command/menubar/openFile.h"
+#include "Command/menubar/exportFile.h"
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
 #include "Command/menubar/sketch.h"
@@ -74,7 +76,10 @@ namespace MOON {
 		}
 		void buildFileMenu() {
 			auto openFileCommand=new OpenFileCommand(self);
+			auto exportFileCommand = new ExportFileCommand(self);
+			
 			menu_File->addAction(openFileCommand->action());
+			menu_File->addAction(exportFileCommand->action());
 		}
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
@@ -118,7 +123,9 @@ namespace MOON {
 			ViewerWindowTitleBar* titleBar = new ViewerWindowTitleBar(self);
 			titleBar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, titleBar);
-
+			DesignModelingToolbar* designModelingToolbar = new DesignModelingToolbar(self);
+			designModelingToolbar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, designModelingToolbar);
 		}
 		void retranslateUi() {
 			

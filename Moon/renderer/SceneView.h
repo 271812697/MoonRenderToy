@@ -17,6 +17,7 @@ namespace Editor::Panels
 		virtual ::Core::SceneSystem::Scene* GetScene();
 		void FitToSelectedActor(const Maths::FVector3& dir);
 		void LookAt(const Maths::FVector3& pivot,const Maths::FVector3& dir,float radius);
+		Maths::FVector2 worldToScreen(const Maths::FVector3& worldPos);
 		void FitToScene(const Maths::FVector3& dir);
 		void BuildBvh();
 		void SetGizmoOperation(Core::EGizmoOperation p_operation);

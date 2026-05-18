@@ -33,6 +33,8 @@ namespace Rendering::Entities
 		const Maths::FMatrix4& GetProjectionMatrix() const;
 		const Maths::FMatrix4& GetViewMatrix() const;
 		Maths::FMatrix4 GetViewProjectionMatrix() const;
+		Maths::FVector2 WordlToScreen(const Maths::FVector3& worldPos) const;
+		Maths::FVector2 WordlToViewPort(const Maths::FVector3& worldPos) const;
 		const Maths::FTransform& GetTransform();
 		const Rendering::Data::Frustum& GetFrustum() const;
 		Tools::Utils::OptRef<const Rendering::Data::Frustum> GetGeometryFrustum() const;
