@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <any>
 #include <unordered_map>
+#define GetSceneView GetService(::Editor::Panels::SceneView)
 #define GetViewerWidget GetService(::MOON::ViewerWidget)
 #define GetService(Type)  ::Core::Global::ServiceLocator::Get<Type>()
 #define RegService(Type,T) ::Core::Global::ServiceLocator::Provide<Type>(T)

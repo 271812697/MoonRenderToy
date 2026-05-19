@@ -39,6 +39,7 @@ namespace Core::SceneSystem
 		void LateUpdate(float p_deltaTime);
 		ECS::Actor& CreateActor();
 		ECS::Actor& CreateActor(const std::string& p_name, const std::string& p_tag = "");
+		void RemoveActor(ECS::Actor* p_target);
 		void AddActor(ECS::Actor* p_target);
 		bool DestroyActor(ECS::Actor& p_target);
 		void CollectGarbages();

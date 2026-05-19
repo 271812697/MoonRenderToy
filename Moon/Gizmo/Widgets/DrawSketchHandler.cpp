@@ -72,6 +72,13 @@ namespace MOON
 		    std::string posText = "(" + std::to_string(onSketchPos.x) + "," + std::to_string(onSketchPos.y) + ")";
             drawList->AddText(nullptr,0,ImVec2(screenPos.x,screenPos.y), IM_COL32(0, 0, 0, 255),posText.c_str());
        }
+       renderer->pushSize(3);
+       for (int i = 0; i < lines.size();i += 2) {
+           renderer->drawLine2D({ lines[i].x
+               ,lines[i].y }, { lines[i + 1].x
+               ,lines[i + 1].y }, static_cast<MOON::Plane2D>(plane));
+       }
+       renderer->popSize();
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
     {

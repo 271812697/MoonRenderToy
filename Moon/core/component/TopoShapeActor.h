@@ -8,8 +8,12 @@ namespace Core::ECS {
 	class TopoActor :public Actor {
 	public:
 		TopoActor(Core::SceneSystem::Scene* scene, const std::string& p_name, const std::string& p_tag, bool p_playing);
+		void ClearModel();
 		virtual ~TopoActor() override;
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_actorsRoot) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_actorsRoot) override;
+		void RemoveFromScene();
+	private:
+		Core::SceneSystem::Scene* m_scene=nullptr;
 	};
 }

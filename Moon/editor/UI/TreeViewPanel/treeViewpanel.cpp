@@ -81,8 +81,9 @@ namespace MOON {
 		if (textRect.contains(posInItem)) {
 			::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
 			if (actor) {
-				GetService(PropertyWidget).setSelectedActor(actor);
+				
 				if (isEntityCheckAble(actor->GetName())) {
+					GetService(PropertyWidget).setSelectedActor(actor);
                    emit setSelectActor(actor);
 				}
 			}

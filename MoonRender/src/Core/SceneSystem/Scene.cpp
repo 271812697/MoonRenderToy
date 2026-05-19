@@ -23,7 +23,6 @@ Core::SceneSystem::Scene::~Scene()
 	{ 
 		delete element;
 	});
-
 	m_actors.clear();
 	delete bvhService;
 }
@@ -164,7 +163,27 @@ Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor(const std::string& p_nam
 	}
 	return instance;
 }
-
+void Core::SceneSystem::Scene::RemoveActor(ECS::Actor* p_target)
+{
+	if (p_target) {
+		auto found = std::find_if(m_actors.begin(), m_actors.end(), [&p_target](Core::ECS::Actor* element)
+			{
+				return element == p_target;
+			});
+		if (found != m_actors.end())
+		{
+			m_actors.erase(found);	
+			auto& childs = p_target->GetChildren();
+			for (int i = 0;i < childs.size();i++) {
+				RemoveActor(childs[i]);
+			}
+			for (int i = 0;i < childs.size();i++) {
+				delete childs[i];
+			}
+			childs.clear();
+		}
+	}
+}
 void Core::SceneSystem::Scene::AddActor(ECS::Actor* p_target)
 {
 	if (p_target != nullptr) {

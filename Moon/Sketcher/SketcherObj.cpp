@@ -1,5 +1,6 @@
 ﻿#include "Sketcher/SketcherObj.h"
 #include "renderer/SceneView.h"
+#include "Gizmo/Gizmo.h"
 #include "Core/Global/ServiceLocator.h"
 #include <TopoDS.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
@@ -49,8 +50,29 @@ namespace MOON {
             p[2] = 1;
         }
     }
+    void SketcherObj::draw() {
+        if (InEdit()) {
+            auto renderer=&Gizmo::instance();
+
+            renderer->pushSize(3);
+            renderer->pushColor({ 255,0,0,255 });
+            renderer->drawLine2D({ 100,0 }, { -100,0 },static_cast<Plane2D>(mPlane));
+            renderer->popColor();
+            renderer->pushColor({255,0,255,0});
+            renderer->drawLine2D({ 0,100 }, { 0,-100 }, static_cast<Plane2D>(mPlane));
+            renderer->popColor();
+            //renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
+            renderer->popSize();
+
+        }
+    }
+    bool SketcherObj::InEdit() const
+    {
+        return isInEdit;
+    }
     void SketcherObj::makeDone()
     {
+        isInEdit = false;
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
     }

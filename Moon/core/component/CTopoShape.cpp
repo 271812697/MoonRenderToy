@@ -109,33 +109,6 @@ namespace Core::ECS::Components
                 auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
-              
-                // 创建并注册默认材质
-                Core::Resources::Material* tempMat = new Core::Resources::Material();
-                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName()+std::to_string(owner.GetID()) + "_mat", tempMat);
-                tempMat->SetBackfaceCulling(false);
-                tempMat->SetCastShadows(false);
-                tempMat->SetReceiveShadows(false);
-                //tempMat->SetBlendable(true);
-                //tempMat->SetDepthWriting(false);
-                tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
-                tempMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 1));
-                tempMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
-                tempMat->SetProperty("u_Roughness", 0.25f);
-                tempMat->SetProperty("u_Metallic", 0.75f);
-                // Emission
-                tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
-                tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-                tempMat->AddFeature("WITH_EDGE");
-
-                tempMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
-                tempMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
-                tempMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
-
-                // 在场景中创建 Actor 并绑定模型/材质
-                auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
-                materilaRener.SetMaterialAtIndex(0, *tempMat);
-                materilaRener.UpdateMaterialList();
 
                 for (auto* acptr : domainActors) {
                     acptr->SetParent(owner);
@@ -151,6 +124,9 @@ namespace Core::ECS::Components
                 };
                 ::Rendering::HAL::GLTexture* domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
                 domainColorTex->Allocate(desc);
+                // 创建并注册默认材质
+                auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
+                Core::Resources::Material* tempMat = materilaRener.GetMaterialAtIndex(0);
                 tempMat->SetProperty("domainColorTex", domainColorTex);
                 auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
@@ -205,14 +181,8 @@ namespace Core::ECS::Components
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->AddMesh(lineMesh);
 
-                auto& lineRener = *owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
-                auto lineMat = new Core::Resources::Material();
-                Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(owner.GetName() + std::to_string(owner.GetID()) + std::string("_lineMat"), lineMat);
-                lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
-                lineMat->SetBackfaceCulling(false);
-                lineMat->SetCastShadows(false);
-                lineMat->SetReceiveShadows(false);
-                lineMat->SetLineWidth(2.0);
+   
+
 
                 ::Rendering::Settings::TextureDesc desc;
                 desc.isTextureBuffer = true;
@@ -223,12 +193,11 @@ namespace Core::ECS::Components
                 };
 
                 ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-                lineColorTex->Allocate(desc);
+                lineColorTex->Allocate(desc);  
+                auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
+                Core::Resources::Material* lineMat = materilaRener.GetMaterialAtIndex(1);
                 lineMat->SetProperty("lineColorTex", lineColorTex);
-                lineMat->AddFeature("BATCHLINE");
-                lineRener.SetMaterialAtIndex(1, *lineMat);
-
-                lineRener.UpdateMaterialList();
+               
                 auto& lineBacthMesh =*owner.GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.SetColors(lineColor);
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
@@ -240,6 +209,12 @@ namespace Core::ECS::Components
 	{
 		return mInternal->mTopoShape;
 	}
+
+    void CTopoShape::clearModel()
+    {
+    }
+
+
 
     void CTopoShape::discretizationFaceShape()
     {
