@@ -15,6 +15,8 @@ namespace Core::ECS::Components
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		Part::TopoShape& GetTopoShape();
+		void clearModel();
+		
 		void discretizationFaceShape();
 		void discretizationEdgeShape();
 		void discretizationShape();

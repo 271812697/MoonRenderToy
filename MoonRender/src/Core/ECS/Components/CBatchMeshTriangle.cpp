@@ -109,6 +109,17 @@ namespace Core::ECS::Components
 
 	void CBatchMeshTriangle::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
 	{
+		if (mInternal->rootBvh) {
+			delete mInternal->rootBvh;
+		}
+		if (mInternal->subMeshBvhs.size()) {
+			for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
+				if(mInternal->subMeshBvhs[i])
+				delete mInternal->subMeshBvhs[i];
+			}
+			mInternal->subMeshBvhs.clear();
+		}
+
 		mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
 		mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
 		auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();

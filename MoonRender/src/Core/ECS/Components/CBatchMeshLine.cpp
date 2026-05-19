@@ -126,6 +126,15 @@ namespace Core::ECS::Components
 
 	void CBatchMeshLine::BuildBvh( const std::vector<uint32_t>& subMeshRanges)
 	{
+		if (mInternal->rootBvh) {
+			delete mInternal->rootBvh;
+			mInternal->rootBvh = nullptr;
+			for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
+				if(mInternal->subMeshBvhs[i])
+				delete mInternal->subMeshBvhs[i];
+			} 
+			mInternal->subMeshBvhs.clear();
+		}
 		mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
 		std::vector<::Rendering::Geometry::bbox> boxs;
 		//mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;

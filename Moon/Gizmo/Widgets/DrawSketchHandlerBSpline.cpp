@@ -18,13 +18,6 @@ namespace MOON
 	void DrawSketchHandlerBSpline::onUpdate()
 	{
         DrawSketchHandler::onUpdate();
-
-		for (int i = 0; i < lines.size(); i += 2) {
-			renderer->drawLine2D({ lines[i].x
-				,lines[i].y }, { lines[i + 1].x
-				,lines[i + 1].y }, static_cast<MOON::Plane2D>(plane));
-		}
-
 	}
 	void DrawSketchHandlerBSpline::onSetActive(bool flag)
 	{
