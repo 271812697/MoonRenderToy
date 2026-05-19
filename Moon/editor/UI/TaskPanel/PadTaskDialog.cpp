@@ -51,7 +51,7 @@ namespace MOON {
             }
         }
         bool prismSketch() {
-
+            
             // 1. 获取当前激活的草图
             SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
             if (!sketchObj)
@@ -104,6 +104,7 @@ namespace MOON {
 
             // 6. 生成拉伸体（核心）
             Part::TopoShape sketchShape = sketchObj->toShape();
+            Part::TopoShape prism;
             try {
                 std::vector<Part::TopoShape> drafts;
                 Part::ExtrusionHelper::makeElementDraft(
@@ -114,11 +115,12 @@ namespace MOON {
                 if (drafts.empty()) {
                     return false;
                 }
-                m_previewShape.makeElementCompound(
+                prism.makeElementCompound(
                     drafts,
                     nullptr,
                     Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
                 );
+                m_previewShape = prism;
                 return true;
             }
             catch (...) {
@@ -244,8 +246,8 @@ namespace MOON {
         layParam->addWidget(mInternal->labelLen1);
         mInternal->spinLenForward = new QDoubleSpinBox;
         mInternal->spinLenForward->setRange(0.01, 9999.0);
-        mInternal->spinLenForward->setValue(0.5);
-        mInternal->spinLenForward->setSingleStep(0.05);
+        mInternal->spinLenForward->setValue(1);
+        mInternal->spinLenForward->setSingleStep(1);
         layParam->addWidget(mInternal->spinLenForward);
 
         mInternal->labelAngle1 = new QLabel(QStringLiteral("拉伸锥度1"));
@@ -253,15 +255,15 @@ namespace MOON {
         mInternal->spinAngleForward = new QDoubleSpinBox;
         mInternal->spinAngleForward->setRange(-90, 90);
         mInternal->spinAngleForward->setValue(0);
-        mInternal->spinAngleForward->setSingleStep(0.5);
+        mInternal->spinAngleForward->setSingleStep(1);
         layParam->addWidget(mInternal->spinAngleForward);
 
         mInternal->labelLen2 = new QLabel(QStringLiteral("拉伸长度2"));
         layParam->addWidget(mInternal->labelLen2);
         mInternal->spinLenRev = new QDoubleSpinBox;
         mInternal->spinLenRev->setRange(0.01, 9999.0);
-        mInternal->spinLenRev->setValue(0.5);
-        mInternal->spinLenRev->setSingleStep(0.05);
+        mInternal->spinLenRev->setValue(1);
+        mInternal->spinLenRev->setSingleStep(1);
         layParam->addWidget(mInternal->spinLenRev);
 
         mInternal->labelAngle2 = new QLabel(QStringLiteral("拉伸锥度2"));
@@ -269,7 +271,7 @@ namespace MOON {
         mInternal->spinAngleRev = new QDoubleSpinBox;
         mInternal->spinAngleRev->setRange(-90, 90);
         mInternal->spinAngleRev->setValue(0);
-        mInternal->spinAngleRev->setSingleStep(0.5);
+        mInternal->spinAngleRev->setSingleStep(1);
         layParam->addWidget(mInternal->spinAngleRev);
 
 
