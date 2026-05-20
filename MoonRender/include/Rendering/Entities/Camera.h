@@ -32,6 +32,7 @@ namespace Rendering::Entities
 		bool GetClearStencilBuffer() const;
 		const Maths::FMatrix4& GetProjectionMatrix() const;
 		const Maths::FMatrix4& GetViewMatrix() const;
+		Maths::FMatrix4 GetViewPortMatrix();
 		Maths::FMatrix4 GetViewProjectionMatrix() const;
 		Maths::FVector2 WordlToScreen(const Maths::FVector3& worldPos) const;
 		Maths::FVector2 WordlToViewPort(const Maths::FVector3& worldPos) const;

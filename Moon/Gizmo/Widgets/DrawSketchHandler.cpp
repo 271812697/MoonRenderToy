@@ -5,37 +5,10 @@
 #include "Sketcher/SketcherObj.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "renderer/SceneView.h"
+#include "Sketcher/SketcheTool2D.h"
 namespace MOON
 {
-    static std::vector<Base::Vector2d> toVector2D(const Part::Geometry* geometry)
-    {
-        int curvedEdgeCountSegments = 50;
-        std::vector<Base::Vector2d> vector2d;
-        auto emplaceasvector2d = [&vector2d](const Base::Vector3d& point) {
-            vector2d.emplace_back(point.x, point.y);
-            };
-        auto isperiodicconic = geometry->is<Part::GeomCircle>() || geometry->is<Part::GeomEllipse>();
-        auto isbounded = geometry->isDerivedFrom<Part::GeomBoundedCurve>();
 
-        if (geometry->is<Part::GeomLineSegment>()) 
-        {  // add a line
-            auto geo = static_cast<const Part::GeomLineSegment*>(geometry);
-            emplaceasvector2d(geo->getStartPoint());
-            emplaceasvector2d(geo->getEndPoint());
-        }
-        else if (isperiodicconic || isbounded) 
-        {
-            auto geo = static_cast<const Part::GeomConic*>(geometry);
-            double segment = (geo->getLastParameter() - geo->getFirstParameter())
-                / curvedEdgeCountSegments;
-            for (int i = 0; i < curvedEdgeCountSegments; i++) {
-                emplaceasvector2d(geo->value(geo->getFirstParameter() + i * segment));
-            }
-            // either close the curve for untrimmed conic or set the last point for bounded curves
-            emplaceasvector2d(isperiodicconic ? geo->value(0) : geo->value(geo->getLastParameter()));
-        }
-        return vector2d;
-    }
     void DrawSketchHandler::quit()
     {
     }
@@ -80,6 +53,22 @@ namespace MOON
        }
        renderer->popSize();
     }
+    void DrawSketchHandler::onMouseMove()
+    {
+        //need to make sure which plane
+        auto ray = m_sceneView->GetMouseRay();
+        Maths::FVector3 out;
+        ray.hitPlane(planeNormal, 0, out);
+        if (plane == 2) {
+            onSketchPos = Base::Vector2d(out.x, out.y);
+        }
+        else if (plane == 0) {
+            onSketchPos = Base::Vector2d(out.y, out.z);
+        }
+        else {
+            onSketchPos = Base::Vector2d(out.x, out.z);
+        }
+    }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
     {
         for (int i = 0; i < EditCurve.size() - 1; i++) {
@@ -101,7 +90,7 @@ namespace MOON
     void DrawSketchHandler::drawEdit(const std::vector<Part::Geometry*>& geometries)  {
         std::list<std::vector<Base::Vector2d>> list;
         for (const auto& geo : geometries) {
-            list.push_back(toVector2D(geo));
+            list.push_back(CurveConvert::toVector2D(geo,50));
         }
         drawEdit(list);
     }
@@ -122,6 +111,10 @@ namespace MOON
         screenPos.x += 5;
         std::string posText = std::to_string(value);
         drawList->AddText(nullptr, 0, ImVec2(screenPos.x, screenPos.y), IM_COL32(0, 0, 0, 255), posText.c_str());
+    }
+    int DrawSketchHandler::getPreselectCurve() const
+    {
+        return 0;
     }
     Maths::FVector3 DrawSketchHandler::getWorldPosFromSketchPos(Base::Vector2d sketchPos)
     {

@@ -426,7 +426,7 @@ Maths::FMatrix4 Maths::FMatrix4::Translation(const FVector3& p_translation)
 
 Maths::FMatrix4 Maths::FMatrix4::Translate(const FMatrix4& p_matrix, const FVector3& p_translation)
 {
-	return p_matrix * Translation(p_translation);
+	return  Translation(p_translation)*p_matrix ;
 }
 Maths::FVector3 Maths::FMatrix4::MulPoint(const FMatrix4& p_matrix, const FVector3& p)
 {
@@ -515,7 +515,7 @@ Maths::FMatrix4 Maths::FMatrix4::Scaling(const FVector3& p_scale)
 
 Maths::FMatrix4 Maths::FMatrix4::Scale(const FMatrix4& p_matrix, const FVector3& p_scale)
 {
-	return p_matrix * Scaling(p_scale);
+	return Scaling(p_scale) *p_matrix ;
 }
 
 Maths::FMatrix4 Maths::FMatrix4::Rotation(const FQuaternion& p_quaternion)

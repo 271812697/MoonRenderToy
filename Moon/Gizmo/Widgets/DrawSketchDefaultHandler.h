@@ -429,59 +429,20 @@ namespace MOON
             ButtonReleaseParse();
         }
         virtual void onMouseMove()override {
-             MouseMoveParse();
+            DrawSketchHandler::onMouseMove();
+            MouseMoveParse();
         }
         virtual void onRightMousePressed()override {
             rightButtonOrEsc();
         }
 
         void ButtonPressParse() {
-            auto ray = m_sceneView->GetMouseRay();
-            Maths::FVector3 out;
-            ray.hitPlane(planeNormal,0,out);
-			Base::Vector2d onSketchPos(out.x, out.y);
-            if (plane == 2) {
-				onSketchPos = Base::Vector2d(out.x, out.y);
-			}
-			else if (plane == 0) {
-				onSketchPos = Base::Vector2d(out.y, out.z);
-			}
-            else {
-                onSketchPos = Base::Vector2d(out.x, out.z);
-            }
             onButtonPressed(onSketchPos);
         }
         void ButtonReleaseParse() {
-            auto ray = m_sceneView->GetMouseRay();
-            Maths::FVector3 out;
-            ray.hitPlane(planeNormal, 0, out);
-            Base::Vector2d onSketchPos(out.x, out.y);
-            if (plane == 2) {
-                onSketchPos = Base::Vector2d(out.x, out.y);
-            }
-            else if (plane == 0) {
-                onSketchPos = Base::Vector2d(out.y, out.z);
-            }
-            else {
-                onSketchPos = Base::Vector2d(out.x, out.z);
-            }
             releaseButton(onSketchPos);
         }
         void MouseMoveParse() {
-            //need to make sure which plane
-            auto ray = m_sceneView->GetMouseRay();
-            Maths::FVector3 out;
-            ray.hitPlane( planeNormal, 0, out);
-            Base::Vector2d onSketchPos(out.x, out.y);
-            if (plane == 2) {
-                onSketchPos = Base::Vector2d(out.x, out.y);
-            }
-            else if (plane == 0) {
-                onSketchPos = Base::Vector2d(out.y, out.z);
-            }
-            else {
-                onSketchPos = Base::Vector2d(out.x, out.z);
-            }
             mouseMove(onSketchPos);
         }
         virtual void mouseMove(Base::Vector2d pos)

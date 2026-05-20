@@ -20,6 +20,7 @@ namespace MOON
         void clearEdit() ;
         void makePlane(int v);
         virtual void onUpdate()override;
+        virtual void onMouseMove()override;
     protected:
         void drawEdit(const std::vector<Base::Vector2d>& EditCurve) ;
         void drawEdit(const std::list<std::vector<Base::Vector2d>>& list) ;
@@ -27,6 +28,7 @@ namespace MOON
 		void drawPositionAtCursor(Base::Vector2d pos);
 		void clearPositionAtCursor();
         void drawFloatValue(float value);
+        int getPreselectCurve() const;
 		Maths::FVector3 getWorldPosFromSketchPos(Base::Vector2d sketchPos);
         
     protected:
