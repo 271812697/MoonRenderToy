@@ -38,7 +38,7 @@ namespace MOON {
 		std::string handlerName = "";
 			 
 	};
-	std::vector<std::string> CreateCurveCommand::blackList = { "DrawSketchHandlerCircle","DrawSketchHandlerArc","DrawSketchHandlerBSpline","DrawSketchHandlerRectangle" };
+	std::vector<std::string> CreateCurveCommand::blackList = { "DrawSketchHandlerCircle","DrawSketchHandlerArc","DrawSketchHandlerBSpline","DrawSketchHandlerRectangle" ,"DrawSketchHandlerTrimming"};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
 	public:
@@ -51,14 +51,17 @@ namespace MOON {
 			arc = new CreateCurveCommand(self, "DrawSketchHandlerArc");
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
 			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
+			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
 			arc->setIcon(":/widgets/icons/Sketcher_CreateArc.svg");
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
 			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
+			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
 			self->addAction(arc->action());
 			self->addAction(bspline->action());
 			self->addAction(circle->action());
 			self->addAction(rectangle->action());
+			self->addAction(trimming->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -66,6 +69,7 @@ namespace MOON {
 			arc->action()->setText(QCoreApplication::translate("SketchToolbar", "Arc", nullptr));
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
 			rectangle->action()->setText(QCoreApplication::translate("SketchToolbar", "Rectangle", nullptr));
+			trimming->action()->setText(QCoreApplication::translate("SketchToolbar", "Trimming", nullptr));
 		}
 	private:
 		friend class SketchToolbar;
@@ -74,6 +78,7 @@ namespace MOON {
 		CreateCurveCommand* arc;
 		CreateCurveCommand* bspline;
 		CreateCurveCommand* rectangle;
+		CreateCurveCommand* trimming;
 	};
 
 	SketchToolbar::SketchToolbar(const QString& title, QWidget* parent)
@@ -96,6 +101,5 @@ namespace MOON {
 	{
 		mInternal = new SketchToolbarInternal(this);
 		mInternal->setup();
-		
 	}
 }

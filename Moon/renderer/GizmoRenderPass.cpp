@@ -17,6 +17,7 @@
 #include "Gizmo/Widgets/DrawSketchHandlerArc.h"
 #include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
 #include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
+#include "Gizmo/Widgets/DrawSketchHandlerTrimming.h"
 #include "Gizmo/Widgets/PrimitiveBox.h"
 #include "Gizmo/Widgets/PrimitiveSphere.h"
 #include "Gizmo/Widgets/PrimitiveCylinder.h"
@@ -45,6 +46,8 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
 			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
 			mWidgets["GizmoSketchPlane"] = new MOON::SketchPlane("GizmoSketchPlane");
+			mWidgets["DrawSketchHandlerTrimming"] = new MOON::DrawSketchHandlerTrimming("DrawSketchHandlerTrimming");
+			mWidgets["DrawSketchHandlerTrimming"]->setActive(false);
 			mWidgets["GizmoSketchPlane"]->setActive(false);
 			mWidgets["ClipPlane"]->setActive(false);
 			mWidgets["SplitScreen"]->setActive(false);

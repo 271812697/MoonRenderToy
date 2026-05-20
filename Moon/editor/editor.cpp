@@ -25,7 +25,6 @@
 namespace MOON {
 	class Editor::EditorInternal {
 	public:
-
 		EditorInternal(Editor* editor) :self(editor)
 		{
 
@@ -156,5 +155,4 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
-
 }
