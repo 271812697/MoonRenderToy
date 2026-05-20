@@ -121,6 +121,10 @@ const Maths::FMatrix4& Rendering::Entities::Camera::GetViewMatrix() const
 {
 	return m_viewMatrix;
 }
+Maths::FMatrix4 Rendering::Entities::Camera::GetViewPortMatrix()
+{
+	return Maths::FMatrix4::Scale(Maths::FMatrix4::Translate(GetViewProjectionMatrix(), { 1.0f,1.0f,0.0f }), { 0.5f * m_windowWidth,0.5f*m_windowHeight,1.0f});
+}
 const Maths::FTransform& Rendering::Entities::Camera::GetTransform()
 {
 	return transform;

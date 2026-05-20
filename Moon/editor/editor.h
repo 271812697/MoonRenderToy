@@ -15,5 +15,4 @@ namespace MOON {
 		class EditorInternal;
 		EditorInternal* mInternal = nullptr;
 	};
-
 }
