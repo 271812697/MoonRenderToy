@@ -11,6 +11,19 @@
 #include <Geom2dAPI_InterCurveCurve.hxx>
 #include <Geom2dAPI_ProjectPointOnCurve.hxx>
 namespace MOON {
+    static bool areParamsWithinApproximation(double param1, double param2)
+    {
+        // From testing: 500x (or 0.000050) is needed in order to not falsely distinguish points
+        // calculated with seekTrimPoints
+        return (std::abs(param1 - param2) < Precision::PApproximation());
+    }
+    static bool arePointsWithinPrecision(const Base::Vector3d& point1, const Base::Vector3d& point2)
+    {
+        // From testing: 500x (or 0.000050) is needed in order to not falsely distinguish points
+        // calculated with seekTrimPoints
+        return ((point1 - point2).Length() < 500 * Precision::Confusion());
+    }
+
     SketcherObj::SketcherObj()
     {
     }
@@ -56,9 +69,9 @@ namespace MOON {
         }
     }
     void SketcherObj::draw() {
+        auto renderer=&Gizmo::instance();
         if (InEdit()) {
-            auto renderer=&Gizmo::instance();
-
+            
             renderer->pushSize(3);
             renderer->pushColor({ 255,0,0,255 });
             renderer->drawLine2D({ 100,0 }, { -100,0 },static_cast<Plane2D>(mPlane));
@@ -68,8 +81,18 @@ namespace MOON {
             renderer->popColor();
             //renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
             renderer->popSize();
-
+            renderer->pushColor({ 255,255,255,0 });
+            renderer->drawPoint2D({ 0,0 }, 10, static_cast<Plane2D>(mPlane));
+            renderer->popColor();
         }
+        renderer->pushSize(3);
+        for (auto& it: mGeoSegment) {
+            auto& seg = it.second;
+            for (int i = 0;i < seg.size()-1;i++) {
+                renderer->drawLine2D({seg[i].x,seg[i].y }, { seg[i+1].x,seg[i+1].y }, static_cast<Plane2D>(mPlane));
+            }
+        }
+        renderer->popSize();
     }
     bool SketcherObj::InEdit() const
     {
@@ -81,7 +104,7 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
     }
-    void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry> ptr)
+    void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
         Part::Geometry* geo = ptr.get();
         mGeoSegment[geo]=CurveConvert::toVector2D(geo, 50);
@@ -93,7 +116,7 @@ namespace MOON {
         Base::Vector3d p1 = trans * Base::Vector3d(pos.x, pos.y, 0);
 
         int ret = -1;
-        double deltaTole = 5.0;
+        double deltaTole = 2.0;
         double minDist = 10000.0;
 
         // ✅ Lambda：点到线段最短距离（内嵌，无需外部函数）
@@ -134,11 +157,18 @@ namespace MOON {
                 }
             }
         }
-
         return ret;
     }
-    bool SketcherObj::seekTrimPoints(int geometryIndex, const Base::Vector3d& point, int& geometryIndex1, Base::Vector3d& intersect1, int& geometryIndex2, Base::Vector3d& intersect2)
+    bool SketcherObj::seekTrimPoints(int geometryIndex,
+        const Base::Vector3d& point,
+        int& geometryIndex1,
+        Base::Vector3d& intersect1,
+        int& geometryIndex2,
+        Base::Vector3d& intersect2, double& u1, double& u2)
     {
+        if (geometryIndex >= mGeoList.size()) {
+            return false;
+        }
         gp_Pln plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
 
         Standard_Boolean periodic = Standard_False;
@@ -233,6 +263,7 @@ namespace MOON {
                             param = param - period * ceil((param - pickedParam) / period);
                             if (param > param1) {
                                 param1 = param;
+                                u1 = param1;
                                 p1 = p;
                                 geometryIndex1 = id;
                             }
@@ -240,6 +271,7 @@ namespace MOON {
                             // pickedParam+period]
                             if (param < param2) {
                                 param2 = param;
+                                u2 = param2;
                                 p2 = p;
                                 geometryIndex2 = id;
                             }
@@ -248,9 +280,11 @@ namespace MOON {
                             param1 = param;
                             p1 = p;
                             geometryIndex1 = id;
+                            u1 = param1;
                         }
                         else if (param > pickedParam && param < param2) {
                             param2 = param;
+                            u2 = param2;
                             p2 = p;
                             geometryIndex2 = id;
                         }
@@ -277,9 +311,130 @@ namespace MOON {
         if (geometryIndex1 >= 0) {
             intersect1 = Base::Vector3d(p1.X(), p1.Y(), 0.f);
         }
+        else
+        {
+            const auto* geoAsCurve = static_cast<Part::GeomCurve*>(mGeoList[geometryIndex].get());
+            u1 = geoAsCurve->getFirstParameter();
+            intersect1 = geoAsCurve->value(u1);
+
+        }
         if (geometryIndex2 >= 0) {
             intersect2 = Base::Vector3d(p2.X(), p2.Y(), 0.f);
         }
+        else
+        {
+            const auto* geoAsCurve = static_cast<Part::GeomCurve*>(mGeoList[geometryIndex].get());
+            u2 = geoAsCurve->getLastParameter();
+            intersect2 = geoAsCurve->value(u2);
+        }
+        return true;
+    }
+    void SketcherObj::deleteGeometry(int GeoId)
+    {
+        if (GeoId < mGeoList.size()) {
+		    auto it = mGeoList.begin();
+		    std::advance(it, GeoId);
+		    mGeoSegment.erase((*it).get());
+		    mGeoList.erase(it);
+        }
+    }
+    void SketcherObj::replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo)
+    {
+        if (oldGeoId < mGeoList.size()) {
+            mGeoSegment.erase(mGeoList[oldGeoId].get());
+			mGeoList[oldGeoId] = std::move((newGeo));
+			mGeoSegment[mGeoList[oldGeoId].get()] = CurveConvert::toVector2D(mGeoList[oldGeoId].get(), 50);
+        }
+    }
+    void SketcherObj::replaceGeometries(const std::vector<int>& oldGeoIds,  std::vector<std::unique_ptr<Part::Geometry>>& newGeos)
+    {
+        int i = 0;
+        for (;i < oldGeoIds.size()&&i< newGeos.size();i++) {
+			int oldGeoId = oldGeoIds[i];
+			if (oldGeoId < mGeoList.size()) {
+                replaceGeometry(oldGeoId,newGeos[i]);
+			}
+        }
+        for (;i < newGeos.size();i++) {
+            addGeometry(newGeos[i]);
+        }
+    }
+    bool SketcherObj::isClosedCurve(const Part::Geometry* geo)
+    {
+        return (geo->is<Part::GeomCircle>()
+            || geo->is<Part::GeomEllipse>()
+            || (geo->is<Part::GeomBSplineCurve>()
+                && static_cast<const Part::GeomBSplineCurve*>(geo)->isPeriodic()));
+    }
+    bool SketcherObj::trim(int GeoId, double u0, double u1,const Base::Vector3d& point0, const Base::Vector3d& point1)
+    {
+        const auto* geoAsCurve = static_cast<Part::GeomCurve*>(mGeoList[GeoId].get());
+        std::vector<std::pair<double, double>> paramsOfNewGeos;
+        paramsOfNewGeos.reserve(2);
+        double firstParam = geoAsCurve->getFirstParameter();
+        double lastParam = geoAsCurve->getLastParameter();
+        double cut0Param{ u0 }, cut1Param{ u1 };
+		bool isClosed = isClosedCurve(geoAsCurve);
+        int numUndefs=0;
+        bool cut0IsUndef = false;
+        bool cut1IsUndef = false;
+        if (!isClosed) {
+			if (areParamsWithinApproximation(cut0Param, firstParam)) {
+                numUndefs++;
+				cut0IsUndef = true;
+			}
+			if (areParamsWithinApproximation(cut1Param, lastParam)) {
+                numUndefs++;
+				cut1IsUndef = true;
+			}
+        }
+        if (numUndefs == 0 && arePointsWithinPrecision(point0,point1)) {
+            // If both points are detected and are coincident, deletion is the only option.
+            paramsOfNewGeos.clear();
+        }
+        else
+        {
+            paramsOfNewGeos.assign(2 - numUndefs, { firstParam, lastParam });
+            if (isClosed) {
+                paramsOfNewGeos.pop_back();
+            }
+            if (!cut0IsUndef) {
+                paramsOfNewGeos.front().second = cut0Param;
+            }
+            if (!cut1IsUndef) {
+                paramsOfNewGeos.back().first = cut1Param;
+            }
+        }
+
+        std::vector<int> newIds;
+        std::vector<std::unique_ptr<Part::Geometry>> newGeos;
+        switch (paramsOfNewGeos.size()) {
+            case 0: {
+                {
+					deleteGeometry(GeoId);
+                }
+                return true;
+            }
+            case 1: {
+                newIds.push_back(GeoId);
+                break;
+            }
+            case 2: {
+                newIds.push_back(GeoId);
+                newIds.push_back(mGeoList.size());
+                break;
+            }
+            default: {
+                return false;
+            }
+        }
+        for (auto& [param1, param2] : paramsOfNewGeos) {
+            Part::Geometry* newGeo = (geoAsCurve)->createArc(param1, param2);
+            assert(newGeo);
+			std::unique_ptr<Part::Geometry> newGeoPtr(newGeo);
+            newGeos.push_back(std::move(newGeoPtr));
+        }
+        replaceGeometries({GeoId},newGeos);
         return true;
     }
     Part::TopoShape SketcherObj::toShape() const
