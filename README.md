@@ -4,6 +4,12 @@ This is a renderer written based on Qt+Opengl
 
 ## Viewer
 
+### OCC geometric modeling
+
+------
+
+![image-20260521203930108](README.assets/image-20260521203930108.png)
+
 ### pbr and pathtrace
 
 ------
@@ -55,6 +61,10 @@ depth peel
 ![image-20260325225804474](README.assets/image-20260325225804474.png)
 
 ## The things we do
+
+### geometric modeling based OCC
+
+sketch-based modeling
 
 ### Interactive Widgets
 
