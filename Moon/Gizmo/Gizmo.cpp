@@ -499,6 +499,21 @@ namespace MOON
 		drawLine(_a, _b, sizeStack.back());
 	}
 
+	void Gizmo::drawPoint2D(const Eigen::Vector2f& a, float size, Plane2D plane)
+	{
+		if (plane == Plane2D::ZPlane)
+		{
+			drawPoint(Eigen::Vector3f(a.x(), a.y(), 0.0f), size, colorStack.back());
+		}
+
+		else if (plane == Plane2D::XPlane) {
+			drawPoint(Eigen::Vector3f(0.0f,a.x(), a.y() ), size, colorStack.back());
+		}
+		else if (plane == Plane2D::YPlane) {
+			drawPoint(Eigen::Vector3f(a.x(),0.0f,a.y()), size, colorStack.back());
+		}
+	}
+
 	void Gizmo::drawLine2D(const Vec2& a, const Vec2& b, Plane2D plane)
 	{
 		if (plane == Plane2D::ZPlane)

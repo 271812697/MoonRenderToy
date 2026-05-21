@@ -18,7 +18,7 @@ namespace MOON {
 		bool InEdit()const;
 		void draw();
 		void makeDone();
-		void addGeometry(std::unique_ptr<Part::Geometry>ptr);
+		void addGeometry( std::unique_ptr<Part::Geometry>&ptr);
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D&mat);
 		bool seekTrimPoints(
 			int GeoId,
@@ -26,8 +26,13 @@ namespace MOON {
 			int& GeoId1,
 			Base::Vector3d& intersect1,
 			int& GeoId2,
-			Base::Vector3d& intersect2
+			Base::Vector3d& intersect2,double& u1,double&u2
 		);
+		void deleteGeometry(int GeoId);
+		void replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo);
+		void replaceGeometries(const std::vector<int>& oldGeoIds, std::vector<std::unique_ptr<Part::Geometry>>& newGeos);
+		bool isClosedCurve(const Part::Geometry* geo);
+		bool trim(int GeoId,double u1,double u2, const Base::Vector3d& point1, const Base::Vector3d& point2);
 		Part::TopoShape toShape() const;
 		Base::Matrix4D getplaneTransform();
 	private:

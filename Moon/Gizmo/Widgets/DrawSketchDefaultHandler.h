@@ -393,16 +393,16 @@ namespace MOON
 
                 CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
               
-                auto& view = GetService(::Editor::Panels::SceneView);
-                auto scene = view.GetScene();
+                //auto& view = GetService(::Editor::Panels::SceneView);
+                //auto scene = view.GetScene();
                 for (auto& geo : ShapeGeometry) {
-                    auto& actor = scene->CreateActor("", "SketchGeomertyLine");
-                    auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
-                    actor.AddComponent<Core::ECS::Components::CModelRenderer>();
-                    actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                    geoComp.setGeometry(geo.get());
-                    geoComp.discretizationShape(plane);
-                    SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry(std::move(geo));;
+                    //auto& actor = scene->CreateActor("", "SketchGeomertyLine");
+                    //auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
+                    //actor.AddComponent<Core::ECS::Components::CModelRenderer>();
+                    //actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+                    //geoComp.setGeometry(geo.get());
+                    //geoComp.discretizationShape(plane);
+                    SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry((geo));;
                 }
 
                 return handleContinuousMode();
