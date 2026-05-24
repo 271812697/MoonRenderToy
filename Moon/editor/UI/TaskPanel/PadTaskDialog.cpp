@@ -24,6 +24,8 @@ namespace MOON {
         Internal(PadTaskDialog* pad) :self(pad) {
         }
         ~Internal() {
+
+
         }
         void updateDirectionUI(int dirType) {
             if (dirType == 0) { // 正向
@@ -245,8 +247,8 @@ namespace MOON {
         mInternal->labelLen1 = new QLabel(QStringLiteral("拉伸长度1"));
         layParam->addWidget(mInternal->labelLen1);
         mInternal->spinLenForward = new QDoubleSpinBox;
-        mInternal->spinLenForward->setRange(0.01, 9999.0);
-        mInternal->spinLenForward->setValue(1);
+        mInternal->spinLenForward->setRange(1, 9999.0);
+        mInternal->spinLenForward->setValue(10);
         mInternal->spinLenForward->setSingleStep(1);
         layParam->addWidget(mInternal->spinLenForward);
 
@@ -321,14 +323,19 @@ namespace MOON {
         if (mInternal->m_previewShape.isNull()) {
             mInternal->prismSketch();
         }
+        auto& view = GetService(Editor::Panels::SceneView);
+        auto scene = view.GetScene();
         if (!mInternal->m_previewShape.isNull()) {
-            auto& view = GetService(Editor::Panels::SceneView);
-            auto scene = view.GetScene();
             auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapePrism", "TopoShape", false);
             const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             Part::TopoShape& topo = topoComp->GetTopoShape();
             topo.setShape(mInternal->m_previewShape);
             topoComp->discretizationShape();
+        }
+        auto preActor = scene->FindActorByName("TopoShapePrismPreview");
+        if (preActor) {
+            scene->RemoveActor(preActor);
+            delete preActor;
         }
     }
     void PadTaskDialog::clickApply()

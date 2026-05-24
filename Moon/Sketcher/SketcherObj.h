@@ -19,7 +19,7 @@ namespace MOON {
 		void draw();
 		void makeDone();
 		void addGeometry( std::unique_ptr<Part::Geometry>&ptr);
-		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D&mat);
+		int getPickGeoIndex(const Base::Vector2d& pos);
 		bool seekTrimPoints(
 			int GeoId,
 			const Base::Vector3d& point,
