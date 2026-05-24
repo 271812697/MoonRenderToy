@@ -35,14 +35,17 @@ namespace MOON {
         mPlane = p;        
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(false);
+        view.GetCamera()->SetSize(100);
+        view.GetCamera()->SetProjectionMode(Rendering::Settings::EProjectionMode::ORTHOGRAPHIC);
+        float pos=view.GetCamera()->GetFar()/2.0;
         if (mPlane == 0) {
-            view.LookAt({0,0,0},{1,0,0},1);
+            view.LookAt({0,0,0},{1,0,0}, pos);
         }
         if (mPlane == 1) {
-            view.LookAt({ 0,0,0 }, { 0,1,0 }, 1);
+            view.LookAt({ 0,0,0 }, { 0,1,0 }, pos);
         }
         if (mPlane == 2) {
-            view.LookAt({ 0,0,0 }, { 0,0,1 }, 1);
+            view.LookAt({ 0,0,0 }, { 0,0,1 }, pos);
         }
         planeTransform = updateTransform();
     }
@@ -71,7 +74,6 @@ namespace MOON {
     void SketcherObj::draw() {
         auto renderer=&Gizmo::instance();
         if (InEdit()) {
-            
             renderer->pushSize(3);
             renderer->pushColor({ 255,0,0,255 });
             renderer->drawLine2D({ 100,0 }, { -100,0 },static_cast<Plane2D>(mPlane));
@@ -110,27 +112,27 @@ namespace MOON {
         mGeoSegment[geo]=CurveConvert::toVector2D(geo, 50);
         mGeoList.push_back(std::move(ptr));
     }
-    int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& mat)
+    int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos)
     {
-        Base::Matrix4D trans = mat * planeTransform;
-        Base::Vector3d p1 = trans * Base::Vector3d(pos.x, pos.y, 0);
+    
+        Base::Vector2d p1 = pos;;
 
         int ret = -1;
-        double deltaTole = 2.0;
+        double deltaTole = 1.0;
         double minDist = 10000.0;
 
         // ✅ Lambda：点到线段最短距离（内嵌，无需外部函数）
-        auto pointToSegmentDist = [](const Base::Vector3d& p, const Base::Vector3d& s, const Base::Vector3d& e) -> double {
-            Base::Vector3d se = e - s;
-            Base::Vector3d sp = p - s;
-            double t = sp.Dot(se) / se.Dot(se);
+        auto pointToSegmentDist = [](const Base::Vector2d& p, const Base::Vector2d& s, const Base::Vector2d& e) -> double {
+            Base::Vector2d se = e - s;
+            Base::Vector2d sp = p - s;
+            double t = (sp.x * se.x + sp.y * se.y) / (se.x * se.x + se.y * se.y);
 
             if (t < 0.0)
                 return sp.Length();
             if (t > 1.0)
                 return (p - e).Length();
 
-            Base::Vector3d proj = s + t * se;
+            Base::Vector2d proj = s + t * se;
             return (p - proj).Length();
             };
 
@@ -145,8 +147,8 @@ namespace MOON {
 
             // 遍历每一段线段 [k] → [k+1]
             for (int k = 0; k < segCount - 1; k++) {
-                Base::Vector3d s = trans * Base::Vector3d(segment[k].x, segment[k].y, 0);
-                Base::Vector3d e = trans * Base::Vector3d(segment[k + 1].x, segment[k + 1].y, 0);
+                Base::Vector2d s = segment[k];
+                Base::Vector2d e = segment[k + 1];
 
                 // ✅ 使用 Lambda 计算真正的点到线段距离
                 double dist = pointToSegmentDist(p1, s, e);
@@ -449,8 +451,7 @@ namespace MOON {
 			}
 		}
         // Hint: Use ShapeAnalysis_FreeBounds::ConnectEdgesToWires() as an alternative
-   //
-   // sort them together to wires
+        // sort them together to wires
         while (!edge_list.empty()) {
             BRepBuilderAPI_MakeWire mkWire;
             // add and erase first edge
@@ -499,7 +500,6 @@ namespace MOON {
             result.setShape(comp);
         }
         result.setTransform(planeTransform);
-      
         //return result.makeFace();
         return result;
     }

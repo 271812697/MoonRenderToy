@@ -36,8 +36,8 @@ namespace MOON {
 		DrawSketchHandler::onUpdate();
 		if (m_internal->trimCurveId!=-1) {
 			renderer->pushColor({255,0,255,0});
-			renderer->drawPoint2D({ m_internal->a.x,m_internal->a.y },10, static_cast<Plane2D>(plane));
-			renderer->drawPoint2D({ m_internal->b.x,m_internal->b.y },10, static_cast<Plane2D>(plane));
+			renderer->drawPoint2D({ m_internal->a.x,m_internal->a.y },15, static_cast<Plane2D>(plane));
+			renderer->drawPoint2D({ m_internal->b.x,m_internal->b.y },15, static_cast<Plane2D>(plane));
 			renderer->popColor();		
 		}
 	}
@@ -75,7 +75,7 @@ namespace MOON {
 				mat.data[8], mat.data[9], mat.data[10], mat.data[11],
 				mat.data[12], mat.data[13], mat.data[14], mat.data[15]
 			);
-			int GeoId = sketchObj->getPickGeoIndex(onSketchPos, pla);
+			int GeoId = sketchObj->getPickGeoIndex(onSketchPos);
 			if (GeoId != -1) {
 				CORE_DEBUG("DrawSketchHandlerTrimming::onMouseMove PickGeo")
 					int GeoId1, GeoId2;
