@@ -95,6 +95,10 @@ namespace MOON {
 					m_internal->trimCurveId = -1;
 				}
 			}
+			else
+			{
+				m_internal->trimCurveId = -1;
+			}
 		}
 	}
 }

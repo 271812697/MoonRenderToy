@@ -118,7 +118,8 @@ namespace MOON {
                 m_previewShape = prism;
                 return true;
             }
-            catch (...) {
+            catch (Base::ValueError e) {
+                CORE_ERROR(e.getMessage());
                 // 拉伸失败，清空预览
                 clearPreview();
                 return false;;
