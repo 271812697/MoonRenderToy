@@ -24,11 +24,6 @@ namespace MOON {
         Internal(PadTaskDialog* pad) :self(pad) {
         }
         ~Internal() {
-            if (m_previewActor != nullptr) {
-                m_previewActor->RemoveFromScene();
-                delete m_previewActor;
-                m_previewActor = nullptr;
-            }
         }
         void updateDirectionUI(int dirType) {
             if (dirType == 0) { // 正向
@@ -123,7 +118,8 @@ namespace MOON {
                 m_previewShape = prism;
                 return true;
             }
-            catch (...) {
+            catch (Base::ValueError e) {
+                CORE_ERROR(e.getMessage());
                 // 拉伸失败，清空预览
                 clearPreview();
                 return false;;
@@ -136,6 +132,10 @@ namespace MOON {
                 if (m_previewActor == nullptr) {
                     auto& view = GetService(Editor::Panels::SceneView);
                     auto scene = view.GetScene();
+                    auto preActor=scene->FindActorByName("TopoShapePrismPreview");
+                    if (preActor) {
+                        scene->RemoveActor(preActor);
+                    }
                     m_previewActor = new Core::ECS::TopoActor(scene, "TopoShapePrismPreview", "TopoShape", true);
                 }
                 m_previewActor->ClearModel();
