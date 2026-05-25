@@ -23,7 +23,7 @@ namespace MOON
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
 		//virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
 		bool canGoToNextMode() override;
-		void quit() override;
+		virtual void quit() override;
 		void createShape(bool onlyeditoutline) override;
 		bool addPos();
 		void addToVectors();
@@ -33,6 +33,8 @@ namespace MOON
 		virtual void onLeftMouseReleased()override;;
 		virtual void onMouseMove()override;
 		virtual void onReset()override;
+		virtual void onKeyPress(const std::string& key)override;
+		virtual void rightButtonOrEsc() override;
 	private:
 		size_t SplineDegree;
 		bool periodic;

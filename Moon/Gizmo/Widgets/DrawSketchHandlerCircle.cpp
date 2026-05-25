@@ -91,11 +91,6 @@ namespace MOON {
 	void DrawSketchHandlerCircle::onSetActive(bool flag)
 	{
 	}
-
-
-
-
-
 	void DrawSketchHandlerCircle::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{
         switch (state()) {

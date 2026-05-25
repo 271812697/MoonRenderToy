@@ -2,10 +2,8 @@
 #include "Gizmo/GizmoWidget.h"
 #include "Gizmo/Widgets/DrawSketchDefaultHandler.h"
 #include "Gizmo/Widgets/CircleEllipseConstructionMethod.h"
-
 namespace MOON
 {
-
 	class DrawSketchHandlerCircle: public DrawSketchDefaultHandler<DrawSketchHandlerCircle, StateMachines::ThreeSeekEnd,3, CircleEllipseConstructionMethod>
 	{
 	public:

@@ -137,7 +137,26 @@ namespace MOON
 	}
 	void DrawSketchHandlerBSpline::quit()
 	{
+
+        if (state() == SelectMode::SeekSecond) {
+            if (geoIds.size() > 1) {
+                // create B-spline from existing poles/knots
+                setState(SelectMode::End);
+                finish();
+            }
+            else {
+                // We don't want to finish() as that'll create auto-constraints
+                handleContinuousMode();
+            }
+        }
+        else {
+            DrawSketchHandler::quit();
+        }
 	}
+    void DrawSketchHandlerBSpline::rightButtonOrEsc()
+    {
+        quit();
+    }
 	void DrawSketchHandlerBSpline::createShape(bool onlyeditoutline)
 	{
         ShapeGeometry.clear();
@@ -343,7 +362,7 @@ namespace MOON
         {
             hotPointId = -1;
             hotTangentId = -1;
-            double tolerance = 0.2;
+            double tolerance = 2.0;
             for (int i = 0;i < points.size();i++) {
                 if ((onSketchPos - points[i]).Length() < tolerance) {
                     hotPointId = i;
@@ -372,9 +391,17 @@ namespace MOON
 		tangents.clear();
 		multiplicities.clear();
 		geoIds.clear();
+        SplineDegree = 3;
 		isPointActive = false;
 		isTangentActive = false;
 		hotPointId = -1;
 		hotTangentId = -1;
+    }
+    void DrawSketchHandlerBSpline::onKeyPress(const std::string& key)
+    {
+        SuperClass::onKeyPress(key);
+        if (key=="P") {
+            periodic = !periodic;
+        }
     }
 }
