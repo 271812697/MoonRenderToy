@@ -12,6 +12,7 @@ namespace MOON
 
 	class DrawSketchHandlerBSpline : public DrawSketchDefaultHandler<DrawSketchHandlerBSpline, StateMachines::ThreeSeekEnd,2, BSplineConstructionMethod>
 	{
+		using SuperClass = DrawSketchDefaultHandler<DrawSketchHandlerBSpline, StateMachines::ThreeSeekEnd, 2, BSplineConstructionMethod>;
 	public:
 		DrawSketchHandlerBSpline(const std::string& name,BSplineConstructionMethod constrMethod = BSplineConstructionMethod::ControlPoints,
 			bool periodic = false);
@@ -28,11 +29,21 @@ namespace MOON
 		void addToVectors();
 		bool addGeometry(Base::Vector2d pos, int geoId, bool firstPoint);
 		Base::Vector2d getLastPoint();
+		virtual void onLeftMousePressed()override;
+		virtual void onLeftMouseReleased()override;;
+		virtual void onMouseMove()override;
+		virtual void onReset()override;
 	private:
 		size_t SplineDegree;
 		bool periodic;
 		Base::Vector2d prevCursorPosition;
 		std::vector<Base::Vector2d> points;
+		std::vector<Base::Vector2d> tangents;
+		int hotPointId = -1;
+		int hotTangentId = -1;
+		bool isPointActive = false;
+		bool isTangentActive = false;
+		bool isForwardTangent = true;
 		std::vector<int> multiplicities;
 		std::vector<int> geoIds;
 		std::vector<bool> isBetweenC0Points;

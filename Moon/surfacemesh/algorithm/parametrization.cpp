@@ -1,5 +1,5 @@
-#include "algorithm/parametrization.h"
-#include "algorithm/util.h"
+﻿#include "surfacemesh/algorithm/parametrization.h"
+#include "surfacemesh/algorithm/util.h"
 namespace MOON {
 	void map_boundary_to_circle(SurfaceMesh& mesh) {
 		// get properties

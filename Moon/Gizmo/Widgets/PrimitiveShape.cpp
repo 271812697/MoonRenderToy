@@ -23,8 +23,6 @@ namespace MOON {
 	
 	PrimitiveShape::PrimitiveShape(const std::string& name) :GizmoWidget(name)
 	{
-
-
 		this->KeyEventCallbackCommand = CallbackCommand::New();
 		this->KeyEventCallbackCommand->SetClientData(this);
 		this->KeyEventCallbackCommand->SetCallback(PrimitiveShape::ProcessKeyEvents);
@@ -33,47 +31,15 @@ namespace MOON {
 	PrimitiveShape::~PrimitiveShape()
 	{
 	}
-
-
-
 	void PrimitiveShape::createTopoShape()
 	{
 	}
 
-	void PrimitiveShape::SetEnabled(int enabling)
+	void PrimitiveShape::onKeyPress(const std::string& key)
 	{
-		int enabled = this->Enabled;
-		// We do this step first because it sets the CurrentRenderer
-		GizmoWidget::SetEnabled(enabling);
-
-		// We defer enabling the handles until the selection process begins
-		if (enabling && !enabled)
+		if (key == "RETURN")
 		{
-			this->Interactor->AddObserver(
-				ExecuteCommand::KeyPressEvent, this->KeyEventCallbackCommand, this->Priority);
-			this->Interactor->AddObserver(
-				ExecuteCommand::KeyReleaseEvent, this->KeyEventCallbackCommand, this->Priority);	
-		}
-		else if (!enabling && enabled)
-		{
-			this->Interactor->RemoveObserver(this->KeyEventCallbackCommand);
-		}
-	}
-
-
-
-	void PrimitiveShape::ProcessKeyEvents(GizmoObject*, unsigned long event, void* clientdata, void*)
-	{
-		PrimitiveShape* self = static_cast<PrimitiveShape*>(clientdata);
-		char* cKeySym = self->Interactor->GetKeySym();
-		std::string keySym = cKeySym != nullptr ? cKeySym : "";
-		std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
-		if (event == ExecuteCommand::KeyPressEvent)
-		{
-			if (keySym == "RETURN")
-			{
-				self->createTopoShape();
-			}
+			createTopoShape();
 		}
 	}
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ExecuteCommand.h"
 
 namespace MOON {
@@ -26,12 +26,12 @@ namespace MOON {
 
 		void (*Callback)(GizmoObject*, unsigned long, void*, void*);
 		void (*ClientDataDeleteCallback)(void*);
-
+		~CallbackCommand() override;
 	protected:
 
 		int AbortFlagOnExecute;
 		void* ClientData;
 		CallbackCommand();
-		~CallbackCommand() override;
+		
 	};
 }

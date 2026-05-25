@@ -78,6 +78,7 @@ namespace MOON
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size);
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b);
 		void drawPoint2D(const Eigen::Vector2f& pos, float size, Plane2D plane = Plane2D::ZPlane);
+		void drawPoint2D(const Eigen::Vector2f& pos,const Eigen::Vector4<uint8_t>&color, float size, Plane2D plane = Plane2D::ZPlane);
 		void drawLine2D(const Vec2& a, const Vec2& b, Plane2D plane=Plane2D::ZPlane);
 		void drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n);
 		void drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c);

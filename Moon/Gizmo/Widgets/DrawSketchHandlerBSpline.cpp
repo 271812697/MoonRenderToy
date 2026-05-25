@@ -4,6 +4,7 @@
 #include "base/Exception.h"
 namespace MOON
 {
+
 	DrawSketchHandlerBSpline::DrawSketchHandlerBSpline(const std::string& name,BSplineConstructionMethod constrMethod,bool
         p):DrawSketchDefaultHandler<DrawSketchHandlerBSpline, StateMachines::ThreeSeekEnd, 2, BSplineConstructionMethod>(name), SplineDegree(3)
         , periodic(p)
@@ -18,6 +19,24 @@ namespace MOON
 	void DrawSketchHandlerBSpline::onUpdate()
 	{
         DrawSketchHandler::onUpdate();
+        Eigen::Vector4<uint8_t> normalColor = { 255,255,255,0 };
+        Eigen::Vector4<uint8_t> hotColor = { 255,0,255,255 };
+        Eigen::Vector4<uint8_t> activeColor = { 255,0,0,255 };
+        Eigen::Vector4<uint8_t> tangentColor = { 255,255,255,255 };
+        renderer->pushColor({255,255,255,0});
+        for (int i = 0;i < points.size();i++) {
+            renderer->drawPoint2D({ points[i].x,points[i].y }, i == hotPointId?(isPointActive? activeColor:hotColor) : normalColor, 15, static_cast<Plane2D>(plane));
+        }
+        if (constructionMethod() == ConstructionMethod::Knots) {
+            for (int i = 0;i < tangents.size();i++) {
+			    Base::Vector2d tangentE = points[i] + tangents[i];
+                Base::Vector2d tangentS = points[i] - tangents[i];
+			    renderer->drawPoint2D({ tangentE.x,tangentE.y }, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor, 15, static_cast<Plane2D>(plane));
+                renderer->drawPoint2D({ tangentS.x,tangentS.y }, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor, 15, static_cast<Plane2D>(plane));
+                renderer->drawLine2D({ tangentS.x,tangentS.y }, { tangentE.x,tangentE.y }, static_cast<Plane2D>(plane));
+            }
+        }
+        renderer->popColor();
 	}
 	void DrawSketchHandlerBSpline::onSetActive(bool flag)
 	{
@@ -128,10 +147,10 @@ namespace MOON
             bsplinePoints3D.emplace_back(point.x, point.y, 0.0);
         }
 
-        double len = (prevCursorPosition - getLastPoint()).Length();
-        if (onlyeditoutline && (points.empty() || len >= Precision::Confusion())) {
-            bsplinePoints3D.emplace_back(prevCursorPosition.x, prevCursorPosition.y, 0.0);
-        }
+        //double len = (prevCursorPosition - getLastPoint()).Length();
+        //if (onlyeditoutline && (points.empty() || len >= Precision::Confusion())) {
+        //    bsplinePoints3D.emplace_back(prevCursorPosition.x, prevCursorPosition.y, 0.0);
+        //}
         if (bsplinePoints3D.size() < 2) {
             return;
         }
@@ -178,10 +197,14 @@ namespace MOON
                 for (auto& p : bsplinePoints3D) {
                     editCurveForOCCT.emplace_back(p.x, p.y, 0.0);
                 }
-
+				std::vector<gp_Vec> editTangentsForOCCT;
+                editTangentsForOCCT.reserve(tangents.size());
+                for (auto& t : tangents) {
+					editTangentsForOCCT.emplace_back(t.x, t.y, 0.0);
+                }
                 // TODO: This maybe optimized by storing the spline as an attribute.
                 auto bSpline = std::make_unique<Part::GeomBSplineCurve>();
-                bSpline.get()->interpolate(editCurveForOCCT, periodic);
+                bSpline.get()->interpolate(editCurveForOCCT, editTangentsForOCCT);
 
                 //Sketcher::GeometryFacade::setConstruction(bSpline.get(), isConstructionMode());
                 ShapeGeometry.emplace_back(std::move(bSpline));
@@ -201,7 +224,19 @@ namespace MOON
     }
     void DrawSketchHandlerBSpline::addToVectors()
     {
+        if (hotPointId != -1|| hotTangentId!=-1) {
+            return;
+        }
+        if (points.size() > 0) {
+			Base::Vector2d delta = prevCursorPosition - points.back();
+            tangents.push_back(delta.Normalize()*10);
+        }
+        else
+        {
+            tangents.push_back(Base::Vector2d(1.0,0.0));
+        }
         points.push_back(prevCursorPosition);
+
         multiplicities.push_back(1);
         geoIds.push_back(1);
         //geoIds.push_back(getHighestCurveIndex() + 1);
@@ -259,5 +294,87 @@ namespace MOON
     Base::Vector2d DrawSketchHandlerBSpline::getLastPoint()
     {
         return points.empty() ? Base::Vector2d() : points.back();
+    }
+    void DrawSketchHandlerBSpline::onLeftMousePressed()
+    {
+        SuperClass::onLeftMousePressed();
+        if (hotPointId!=-1) {
+            isPointActive = true;
+        }
+        else
+        {
+            isPointActive = false;
+            if (constructionMethod() == ConstructionMethod::Knots) {
+                if (hotTangentId != -1) {
+				    isTangentActive = true;
+			    }
+                else
+                {
+                    isTangentActive = false;
+                }
+            }
+        }
+    }
+    void DrawSketchHandlerBSpline::onLeftMouseReleased()
+    {
+        SuperClass::onRightMouseReleased();
+        isPointActive = false;
+        isTangentActive = false;
+    }
+    void DrawSketchHandlerBSpline::onMouseMove()
+	{
+		SuperClass::onMouseMove();
+        if (isPointActive) {
+            if(hotPointId!=-1)
+			points[hotPointId] = onSketchPos;
+		}
+		else if (isTangentActive && constructionMethod() == ConstructionMethod::Knots) {
+            if (hotTangentId != -1) {
+                if (isForwardTangent) {
+					tangents[hotTangentId] = onSketchPos - points[hotTangentId];
+                }
+                else
+                {
+					tangents[hotTangentId] = points[hotTangentId] - onSketchPos;
+                }
+            }
+        }
+        else
+        {
+            hotPointId = -1;
+            hotTangentId = -1;
+            double tolerance = 0.2;
+            for (int i = 0;i < points.size();i++) {
+                if ((onSketchPos - points[i]).Length() < tolerance) {
+                    hotPointId = i;
+                }
+            }
+            if (hotPointId == -1&& constructionMethod() == ConstructionMethod::Knots) {
+                for (int i = 0;i < tangents.size();i++) {
+                    Base::Vector2d pos = points[i] + tangents[i];
+                    if ((onSketchPos - pos).Length() < tolerance) {
+                        hotTangentId = i;
+                        isForwardTangent = true;
+                    }
+                    pos = points[i] - tangents[i];
+                    if ((onSketchPos - pos).Length() < tolerance) {
+                        hotTangentId = i;
+                        isForwardTangent = false;
+                    }
+                }
+            }
+        }
+    }
+    void DrawSketchHandlerBSpline::onReset()
+	{
+		SuperClass::onReset();
+		points.clear();
+		tangents.clear();
+		multiplicities.clear();
+		geoIds.clear();
+		isPointActive = false;
+		isTangentActive = false;
+		hotPointId = -1;
+		hotTangentId = -1;
     }
 }

@@ -2,9 +2,54 @@
 #include "editor/View/sceneview/viewerwidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
+#include "surfacemesh/algorithm/decimation.h"
+#include "surfacemesh/read_mesh.h"
+#include <fstream>
 #include <QtWidgets/QFileDialog>
 #include <QCoreApplication>
 namespace MOON {
+
+	void write_stl(const SurfaceMesh& mesh, const std::filesystem::path& file
+		)
+	{
+		if (!mesh.is_triangle_mesh())
+		{
+			auto what = "write_stl: Not a triangle mesh.";
+			throw InvalidInputException(what);
+		}
+
+		auto fnormals = mesh.get_face_property<Normal>("f:normal");
+		if (!fnormals)
+		{
+			auto what = "write_stl: No face normals present.";
+			throw InvalidInputException(what);
+		}
+
+
+		std::ofstream ofs(file.string().c_str());
+		auto points = mesh.get_vertex_property<Point>("v:point");
+
+		ofs << "solid stl\n";
+
+		for (const auto& f : mesh.faces())
+		{
+			const auto& n = fnormals[f];
+			ofs << "  facet normal ";
+			ofs << n[0] << " " << n[1] << " " << n[2] << "\n";
+			ofs << "    outer loop\n";
+			for (const auto& v : mesh.vertices(f))
+			{
+				const auto& p = points[v];
+				ofs << "      vertex ";
+				ofs << p[0] << " " << p[1] << " " << p[2] << "\n";
+			}
+			ofs << "    endloop\n";
+			ofs << "  endfacet\n";
+		}
+		ofs << "endsolid\n";
+		ofs.close();
+	}
+
 	//-----------------------------------------------------------------------------
 	OpenFileCommand::OpenFileCommand(QObject* parentObject)
 		: Command(parentObject)
@@ -55,6 +100,20 @@ namespace MOON {
 			return;
 		CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 		emit sceneChange(fileName);
+		SurfaceMesh mesh;
+		read_stl( mesh, fileName.toStdString());
+		/*
+		void decimate(SurfaceMesh& mesh, unsigned int n_vertices,
+              Scalar aspect_ratio = 0.0, Scalar edge_length = 0.0,
+              unsigned int max_valence = 0, Scalar normal_deviation = 0.0,
+              Scalar hausdorff_error = 0.0, Scalar seam_threshold = 1e-2,
+              Scalar seam_angle_deviation = 1);
+		
+		*/
+		;
+		decimate(mesh,mesh.vertices_size()/5);
+		write_stl(mesh, "decimated.stl");
+
 	}
 
 

@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <filesystem>
-#include "core/surface_mesh.h"
+#include "surfacemesh/surface_mesh.h"
 
 namespace MOON {
-
+	void read_stl(SurfaceMesh& mesh, const std::filesystem::path& file);
 	void read_obj(SurfaceMesh& mesh, const std::filesystem::path& file);
 	void read_off(SurfaceMesh& mesh, const std::filesystem::path& file);
 	void read_off_ascii(SurfaceMesh& mesh, FILE* in, const bool has_normals,

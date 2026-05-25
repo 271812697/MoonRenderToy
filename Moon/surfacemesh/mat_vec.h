@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cmath>
 #include <cassert>
 
@@ -8,7 +8,7 @@
 #include <initializer_list>
 #include <numbers>
 #include <Eigen/Dense>
-#include "core/exceptions.h"
+#include "surfacemesh/exceptions.h"
 
 namespace MOON {
 	static const float PI = 3.14159265359;

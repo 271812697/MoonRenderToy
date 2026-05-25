@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
-#include "core/surface_mesh.h"
+#include "surfacemesh/surface_mesh.h"
 namespace MOON {
 	using Triplet = Eigen::Triplet<double>;
 

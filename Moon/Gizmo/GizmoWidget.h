@@ -27,12 +27,17 @@ namespace MOON
 		virtual void onRightMousePressed();
 		virtual void onRightMouseReleased();
 		virtual void onMouseMove();
+		virtual void onKeyPress(const std::string& key);
+		virtual void onKeyRelease(const std::string& key);
+		void SetEnabled(int) override;
 		static void LeftMousePressed(AbstractWidget*);
 		static void LeftMouseReleased(AbstractWidget*);
 		static void RightMouseReleased(AbstractWidget*);
 		static void RightMousePressed(AbstractWidget*);
 		static void MouseMove(AbstractWidget*);
 	protected:
+		CallbackCommand* KeyEventCallbackCommand;
+		static void ProcessKeyEvents(GizmoObject*, unsigned long, void*, void*);
 		std::string mName;	
 		//mActive 
 		bool mActive = true;

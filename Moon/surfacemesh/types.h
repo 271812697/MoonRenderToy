@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
-#include "core/mat_vec.h"
+#include "surfacemesh/mat_vec.h"
 
 namespace MOON {
 

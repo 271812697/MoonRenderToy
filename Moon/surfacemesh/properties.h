@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <algorithm>
 #include <cassert>
 #include <string>
 #include <utility>
 #include <vector>
-#include "core/exceptions.h"
+#include "surfacemesh/exceptions.h"
 
 namespace MOON {
 
