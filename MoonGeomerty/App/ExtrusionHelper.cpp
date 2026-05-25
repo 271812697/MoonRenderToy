@@ -685,10 +685,6 @@ void ExtrusionHelper::makeElementDraft(
         }
 
         try {
-#if defined(__GNUC__) && defined(FC_OS_LINUX)
-            Base::SignalException se;
-#endif
-
             // make loft
             BRepOffsetAPI_ThruSections mkGenerator(
                 params.solid ? Standard_True : Standard_False,

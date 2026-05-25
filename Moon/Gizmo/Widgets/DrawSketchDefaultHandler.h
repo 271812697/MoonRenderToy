@@ -456,6 +456,11 @@ namespace MOON
                 this->moveToNextMode();
             }
         }
+        virtual void onKeyPress(const std::string& key) {
+            if (key=="M" && !this->isLastState()) {
+                this->iterateToNextConstructionMethod();
+            }
+        }
         virtual bool releaseButton(Base::Vector2d onSketchPos)
         {
             if (finish()) {

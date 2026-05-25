@@ -60,13 +60,13 @@ namespace MOON
         Maths::FVector3 out;
         ray.hitPlane(planeNormal, 0, out);
         if (plane == 2) {
-            onSketchPos = Base::Vector2d(out.x, out.y);
+            onSketchPos = Base::Vector2d(int(out.x*100)/100.0, int(out.y*100)/100.0);
         }
         else if (plane == 0) {
-            onSketchPos = Base::Vector2d(out.y, out.z);
+            onSketchPos = Base::Vector2d(int(out.y * 100) / 100.0, int(out.z * 100) / 100.0);
         }
         else {
-            onSketchPos = Base::Vector2d(out.x, out.z);
+            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
         }
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)

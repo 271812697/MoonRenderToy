@@ -9,12 +9,8 @@ namespace MOON
 	public:
 		PrimitiveShape(const std::string& name);
 		virtual ~PrimitiveShape()override;
-		
 		virtual void createTopoShape();
-		void SetEnabled(int) override;
-	protected:
 		
-		CallbackCommand* KeyEventCallbackCommand;
-		static void ProcessKeyEvents(GizmoObject*, unsigned long, void*, void*);
+		virtual void onKeyPress(const std::string& key)override;
 	};
 }

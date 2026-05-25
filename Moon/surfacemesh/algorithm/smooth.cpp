@@ -1,6 +1,6 @@
-#pragma once
-#include"algorithm/smooth.h"
-#include"algorithm/util.h"
+﻿#pragma once
+#include "surfacemesh/algorithm/smooth.h"
+#include "surfacemesh/algorithm/util.h"
 
 namespace MOON {
 

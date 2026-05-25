@@ -1,4 +1,4 @@
-#include "algorithm/mesh_triangulate.h"
+﻿#include "surfacemesh/algorithm/mesh_triangulate.h"
 namespace MOON {
 	class Triangulation
 	{

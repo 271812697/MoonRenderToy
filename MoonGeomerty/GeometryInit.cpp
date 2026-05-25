@@ -1,4 +1,5 @@
 ﻿#include "Geometry.h"
+#include "Geometry2d.h"
 #include "GeometryInit.h"
 #include "base/BaseClass.h"
 #include "base/Exception.h"
@@ -29,6 +30,11 @@ namespace Part {
 		GeomEllipse::init();
 		GeomHyperbola::init();
 		GeomParabola::init();
+
+		Geometry2d::init();
+		Geom2dCurve::init();
+		Geom2dConic::init();
+		Geom2dCircle::init();
 
 		FaceMaker::init();
 		FaceMakerPublic::init();
