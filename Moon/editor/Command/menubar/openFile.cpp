@@ -100,19 +100,11 @@ namespace MOON {
 			return;
 		CORE_INFO("Switch to Scene {0}", fileName.toStdString());
 		emit sceneChange(fileName);
-		SurfaceMesh mesh;
-		read_stl( mesh, fileName.toStdString());
-		/*
-		void decimate(SurfaceMesh& mesh, unsigned int n_vertices,
-              Scalar aspect_ratio = 0.0, Scalar edge_length = 0.0,
-              unsigned int max_valence = 0, Scalar normal_deviation = 0.0,
-              Scalar hausdorff_error = 0.0, Scalar seam_threshold = 1e-2,
-              Scalar seam_angle_deviation = 1);
-		
-		*/
-		;
-		decimate(mesh,mesh.vertices_size()/5);
-		write_stl(mesh, "decimated.stl");
+		//SurfaceMesh mesh;
+		//read_stl( mesh, fileName.toStdString());
+		//;
+		//decimate(mesh,mesh.vertices_size()/5);
+		//write_stl(mesh, "decimated.stl");
 
 	}
 

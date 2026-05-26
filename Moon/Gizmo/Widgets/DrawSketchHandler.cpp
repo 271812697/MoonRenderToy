@@ -39,10 +39,10 @@ namespace MOON
        }
        if (drawSketchPos) {
             auto drawList=ImGui::GetForegroundDrawList();
-            Maths::FVector2 screenPos=m_sceneView->worldToScreen(getWorldPosFromSketchPos(onSketchPos));
+            Maths::FVector2 screenPos=m_sceneView->worldToScreen(getWorldPosFromSketchPos(drawPos));
             screenPos.y -= 7;
 		    screenPos.x += 5;
-		    std::string posText = "(" + std::to_string(onSketchPos.x) + "," + std::to_string(onSketchPos.y) + ")";
+		    std::string posText = "(" + std::to_string(drawPos.x) + "," + std::to_string(drawPos.y) + ")";
             drawList->AddText(nullptr,0,ImVec2(screenPos.x,screenPos.y), IM_COL32(0, 0, 0, 255),posText.c_str());
        }
        renderer->pushSize(3);
@@ -90,14 +90,16 @@ namespace MOON
     void DrawSketchHandler::drawEdit(const std::vector<Part::Geometry*>& geometries)  {
         std::list<std::vector<Base::Vector2d>> list;
         for (const auto& geo : geometries) {
-            list.push_back(CurveConvert::toVector2D(geo,50));
+            if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                list.push_back(CurveConvert::toVector2D(geo,50));
+            }
         }
         drawEdit(list);
     }
     void DrawSketchHandler::drawPositionAtCursor(Base::Vector2d pos)
     {
         drawSketchPos = true;
-		onSketchPos = pos;  
+		drawPos = pos;  
     }
     void DrawSketchHandler::clearPositionAtCursor()
     {

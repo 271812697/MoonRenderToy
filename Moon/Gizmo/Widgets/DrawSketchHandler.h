@@ -35,6 +35,7 @@ namespace MOON
 		std::vector<Base::Vector2d> lines;
 		std::vector<Base::Vector2d> points;
         bool drawSketchPos = false;
+        Base::Vector2d drawPos;
         Base::Vector2d onSketchPos;
         int plane = 2;//0->X,1->Y,2->Z;
         Maths::FVector3 planeNormal;

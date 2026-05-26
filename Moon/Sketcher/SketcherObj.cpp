@@ -88,10 +88,47 @@ namespace MOON {
             renderer->popColor();
         }
         renderer->pushSize(3);
+        Eigen::Vector4<uint8_t> pointColor(255, 0, 0, 255);
+        float pointSize = 12;
+        std::vector<Base::Vector3d> pointArr;
         for (auto& it: mGeoSegment) {
-            auto& seg = it.second;
-            for (int i = 0;i < seg.size()-1;i++) {
-                renderer->drawLine2D({seg[i].x,seg[i].y }, { seg[i+1].x,seg[i+1].y }, static_cast<Plane2D>(mPlane));
+            if (it.first->isDerivedFrom<Part::GeomCurve>()) {
+                if (it.first->is<Part::GeomArcOfCircle>()) {
+                    Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(it.first);
+                    pointArr.push_back(curve->getStartPoint());
+                    pointArr.push_back(curve->getEndPoint());
+                    pointArr.push_back(curve->getCenter());
+                }
+                else if (it.first->is<Part::GeomLineSegment>()) {
+                    Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(it.first);
+                    pointArr.push_back(lineSeg->getStartPoint());
+                    pointArr.push_back(lineSeg->getEndPoint());
+                }
+                else if (it.first->is<Part::GeomArcOfConic>()) {
+                    Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(it.first);
+                    pointArr.push_back(curve->getStartPoint());
+                    pointArr.push_back(curve->getEndPoint());
+                    pointArr.push_back(curve->getCenter());
+                }
+                else if (it.first->is<Part::GeomCircle>()) {
+                    Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(it.first);
+                    pointArr.push_back(curve->getCenter());
+                }
+            }
+            else if (it.first->is<Part::GeomPoint>()) {
+                Base::Vector3d pos=static_cast<Part::GeomPoint*>(it.first)->getPoint();
+                pointArr.push_back(pos);
+            }
+        }  
+        for (int i = 0;i < pointArr.size();i++) {
+            renderer->drawPoint2D({ pointArr[i].x,pointArr[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
+        }
+        for (auto& it : mGeoSegment) {
+            if (it.first->isDerivedFrom<Part::GeomCurve>()) {
+                auto& seg = it.second;
+                for (int i = 0;i < seg.size() - 1;i++) {
+                    renderer->drawLine2D({ seg[i].x,seg[i].y }, { seg[i + 1].x,seg[i + 1].y }, static_cast<Plane2D>(mPlane));
+                }
             }
         }
         renderer->popSize();
@@ -139,23 +176,25 @@ namespace MOON {
         // 遍历所有几何图元
         for (int i = 0; i < mGeoList.size(); i++) {
             Part::Geometry* geo = mGeoList[i].get();
-            auto& segment = mGeoSegment[geo];
-            int segCount = segment.size();
+            if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                auto& segment = mGeoSegment[geo];
+                int segCount = segment.size();
 
-            if (segCount < 2)
-                continue;
+                if (segCount < 2)
+                    continue;
 
-            // 遍历每一段线段 [k] → [k+1]
-            for (int k = 0; k < segCount - 1; k++) {
-                Base::Vector2d s = segment[k];
-                Base::Vector2d e = segment[k + 1];
+                // 遍历每一段线段 [k] → [k+1]
+                for (int k = 0; k < segCount - 1; k++) {
+                    Base::Vector2d s = segment[k];
+                    Base::Vector2d e = segment[k + 1];
 
-                // ✅ 使用 Lambda 计算真正的点到线段距离
-                double dist = pointToSegmentDist(p1, s, e);
+                    // ✅ 使用 Lambda 计算真正的点到线段距离
+                    double dist = pointToSegmentDist(p1, s, e);
 
-                if (dist < deltaTole && dist < minDist) {
-                    minDist = dist;
-                    ret = i;
+                    if (dist < deltaTole && dist < minDist) {
+                        minDist = dist;
+                        ret = i;
+                    }
                 }
             }
         }
@@ -306,9 +345,9 @@ namespace MOON {
             }
         }
 
-        if (geometryIndex1 < 0 && geometryIndex2 < 0) {
-            return false;
-        }
+        //if (geometryIndex1 < 0 && geometryIndex2 < 0) {
+        //    return false;
+        //}
 
         if (geometryIndex1 >= 0) {
             intersect1 = Base::Vector3d(p1.X(), p1.Y(), 0.f);

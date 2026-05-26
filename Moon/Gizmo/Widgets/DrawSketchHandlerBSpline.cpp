@@ -223,7 +223,7 @@ namespace MOON
                 }
                 // TODO: This maybe optimized by storing the spline as an attribute.
                 auto bSpline = std::make_unique<Part::GeomBSplineCurve>();
-                bSpline.get()->interpolate(editCurveForOCCT, editTangentsForOCCT);
+                bSpline.get()->interpolate(editCurveForOCCT, editTangentsForOCCT,periodic);
 
                 //Sketcher::GeometryFacade::setConstruction(bSpline.get(), isConstructionMode());
                 ShapeGeometry.emplace_back(std::move(bSpline));
@@ -402,6 +402,14 @@ namespace MOON
         SuperClass::onKeyPress(key);
         if (key=="P") {
             periodic = !periodic;
+        }
+        else if (key=="B") {
+            if (points.size()) {
+                points.pop_back();
+                tangents.pop_back();
+                multiplicities.pop_back();
+                geoIds.pop_back();
+            }
         }
     }
 }

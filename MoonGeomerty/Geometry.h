@@ -341,7 +341,7 @@ public:
     /*!
      * Set the poles and tangents for the cubic Hermite spline
      */
-    void interpolate(const std::vector<gp_Pnt>&, const std::vector<gp_Vec>&);
+    void interpolate(const std::vector<gp_Pnt>&, const std::vector<gp_Vec>& ,Standard_Boolean = Standard_False);
     /*!
      * Compute the tangents for a Cardinal spline using the
      * the cubic Hermite spline. It uses the method for Cardinal splines.
