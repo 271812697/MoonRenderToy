@@ -29,12 +29,12 @@ namespace MOON {
         }
         return vector2d;
 	}
-    void CurveConvert::toVector2D(const Part::Geometry* geometry, int curvedEdgeCountSegments, std::vector<Base::Vector2d>& vector2d, std::vector<double>& params)
+    void CurveConvert::toVector2D(const Part::Geometry* geometry, int curvedEdgeCountSegments, std::vector<Base::Vector3d>& vector2d, std::vector<double>& params)
     {
         vector2d.clear();
         params.clear();
         auto emplaceasvector2d = [&vector2d,&params](const Base::Vector3d& point,const double& u) {
-            vector2d.emplace_back(point.x, point.y);
+            vector2d.emplace_back(point);
 			params.push_back(u);
 			
             };

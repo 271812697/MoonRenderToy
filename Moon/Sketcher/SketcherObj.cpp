@@ -11,6 +11,25 @@
 #include <Geom2dAPI_InterCurveCurve.hxx>
 #include <Geom2dAPI_ProjectPointOnCurve.hxx>
 namespace MOON {
+    static double pointToSegmentDist(const Base::Vector3d& p, const Base::Vector3d& s, const Base::Vector3d& e, double& u) {
+        Base::Vector3d se = e - s;
+        Base::Vector3d sp = p - s;
+        double t = sp.Dot(se) / se.Dot(se);
+
+        if (t < 0.0) {
+            u = 0.0;
+            return sp.Length();
+        }
+
+        if (t > 1.0) {
+            u = 1.0;
+            return (p - e).Length();
+        }
+
+        u = t;
+        Base::Vector3d proj = s + t * se;
+        return (p - proj).Length();
+        };
     static bool areParamsWithinApproximation(double param1, double param2)
     {
         // From testing: 500x (or 0.000050) is needed in order to not falsely distinguish points
@@ -122,29 +141,15 @@ namespace MOON {
         mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
     }
-    int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos)
+    int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos,const Base::Matrix4D& mat)
     {
     
-        Base::Vector2d p1 = pos;;
+        Base::Matrix4D trans = mat * planeTransform;
+        Base::Vector3d p1 = trans * Base::Vector3d(pos.x, pos.y, 0);
 
         int ret = -1;
-        double deltaTole = 1.0;
+        double deltaTole = 15.0;
         double minDist = 10000.0;
-
-        // ✅ Lambda：点到线段最短距离（内嵌，无需外部函数）
-        auto pointToSegmentDist = [](const Base::Vector2d& p, const Base::Vector2d& s, const Base::Vector2d& e) -> double {
-            Base::Vector2d se = e - s;
-            Base::Vector2d sp = p - s;
-            double t = (sp.x * se.x + sp.y * se.y) / (se.x * se.x + se.y * se.y);
-
-            if (t < 0.0)
-                return sp.Length();
-            if (t > 1.0)
-                return (p - e).Length();
-
-            Base::Vector2d proj = s + t * se;
-            return (p - proj).Length();
-            };
 
         // 遍历所有几何图元
         for (int i = 0; i < mGeoList.size(); i++) {
@@ -158,11 +163,12 @@ namespace MOON {
 
                 // 遍历每一段线段 [k] → [k+1]
                 for (int k = 0; k < segCount - 1; k++) {
-                    Base::Vector2d s = segment.point[k];
-                    Base::Vector2d e = segment.point[k + 1];
+                    Base::Vector3d s = segment.point[k];
+                    Base::Vector3d e = segment.point[k + 1];
 
                     // ✅ 使用 Lambda 计算真正的点到线段距离
-                    double dist = pointToSegmentDist(p1, s, e);
+                    double u;
+                    double dist = pointToSegmentDist(p1, trans*s, trans*e,u);
 
                     if (dist < deltaTole && dist < minDist) {
                         minDist = dist;
@@ -173,10 +179,12 @@ namespace MOON {
         }
         return ret;
     }
-    bool SketcherObj::snapPoint(Base::Vector2d& pos)
+    bool SketcherObj::snapPoint(Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
     {
-        Base::Vector2d p1 = pos;
-        double deltaTole = 1.0;
+
+        Base::Matrix4D trans= viewPortMat*getplaneTransform();
+        Base::Vector3d p1 = trans*Base::Vector3d{pos.x,pos.y,0.0};
+        double deltaTole = 15.0;
         double minDist = 10000.0;
    
         bool ret = false;
@@ -185,7 +193,7 @@ namespace MOON {
             Part::Geometry* geo = mGeoList[i].get();  
             auto& segment = mGeoSegment[geo];
             for (int j = 0;j < segment.sepoints.size();j++) {
-				double dist = (p1 - Base::Vector2d(segment.sepoints[j].x, segment.sepoints[j].y)).Length();
+				double dist = (p1 -trans*segment.sepoints[j]).Length();
 				if (dist < deltaTole && dist < minDist) {
 					minDist = dist;
 					ret = true;
@@ -194,26 +202,7 @@ namespace MOON {
             }
         }
         if (!ret) {
-            // ✅ Lambda：点到线段最短距离（内嵌，无需外部函数）
-            auto pointToSegmentDist = [](const Base::Vector2d& p, const Base::Vector2d& s, const Base::Vector2d& e,double&u) -> double {
-                Base::Vector2d se = e - s;
-                Base::Vector2d sp = p - s;
-                double t = (sp.x * se.x + sp.y * se.y) / (se.x * se.x + se.y * se.y);
-
-                if (t < 0.0) {
-                    u = 0.0;
-                   return sp.Length();
-                }
- 
-                if (t > 1.0) {
-					u = 1.0;
-                    return (p - e).Length();
-                }
-
-                u = t;
-                Base::Vector2d proj = s + t * se;
-                return (p - proj).Length();
-                };
+      
             for (int i = 0; i < mGeoList.size(); i++) {
                 Part::Geometry* geo = mGeoList[i].get();
                 auto& segment = mGeoSegment[geo];
@@ -222,8 +211,8 @@ namespace MOON {
                         double u = 0.0;
                         double dist = pointToSegmentDist(
                             p1,
-                            Base::Vector2d(segment.point[j].x, segment.point[j].y),
-                            Base::Vector2d(segment.point[j+1].x, segment.point[j+1].y),
+                            trans * segment.point[j],
+                            trans * segment.point[j+1],
                             u);
                         
                         if (dist < deltaTole && dist < minDist) {

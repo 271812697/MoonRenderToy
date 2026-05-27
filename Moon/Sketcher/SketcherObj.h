@@ -19,8 +19,9 @@ namespace MOON {
 		void draw();
 		void makeDone();
 		void addGeometry( std::unique_ptr<Part::Geometry>&ptr);
-		int getPickGeoIndex(const Base::Vector2d& pos);
-		bool snapPoint(Base::Vector2d& pos);
+		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
+
+		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		bool seekTrimPoints(
 			int GeoId,
 			const Base::Vector3d& point,
@@ -44,12 +45,14 @@ namespace MOON {
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
+		int preSelectGeoId = -1;
+		int selectId = -1;
 		struct CurveSegement
 		{
-			std::vector<Base::Vector2d> point;
+			std::vector<Base::Vector3d> point;
 			std::vector<double> params;
 			std::vector<Base::Vector3d>sepoints;
-			CurveSegement(const std::vector<Base::Vector2d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) : point(p), params(u),sepoints(se) {}
+			CurveSegement(const std::vector<Base::Vector3d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) : point(p), params(u),sepoints(se) {}
 			CurveSegement() {}
 		};
 		std::unordered_map<Part::Geometry*, CurveSegement>mGeoSegment;
