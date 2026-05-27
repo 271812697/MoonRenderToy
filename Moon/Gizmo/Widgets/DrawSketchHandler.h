@@ -34,6 +34,7 @@ namespace MOON
     protected:
 		std::vector<Base::Vector2d> lines;
 		std::vector<Base::Vector2d> points;
+		bool isSnapedSketchPos = false;
         bool drawSketchPos = false;
         Base::Vector2d drawPos;
         Base::Vector2d onSketchPos;

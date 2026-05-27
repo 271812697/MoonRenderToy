@@ -23,7 +23,6 @@ namespace MOON {
         // calculated with seekTrimPoints
         return ((point1 - point2).Length() < 500 * Precision::Confusion());
     }
-
     SketcherObj::SketcherObj()
     {
     }
@@ -90,44 +89,18 @@ namespace MOON {
         renderer->pushSize(3);
         Eigen::Vector4<uint8_t> pointColor(255, 0, 0, 255);
         float pointSize = 12;
-        std::vector<Base::Vector3d> pointArr;
+        
         for (auto& it: mGeoSegment) {
-            if (it.first->isDerivedFrom<Part::GeomCurve>()) {
-                if (it.first->is<Part::GeomArcOfCircle>()) {
-                    Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(it.first);
-                    pointArr.push_back(curve->getStartPoint());
-                    pointArr.push_back(curve->getEndPoint());
-                    pointArr.push_back(curve->getCenter());
-                }
-                else if (it.first->is<Part::GeomLineSegment>()) {
-                    Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(it.first);
-                    pointArr.push_back(lineSeg->getStartPoint());
-                    pointArr.push_back(lineSeg->getEndPoint());
-                }
-                else if (it.first->is<Part::GeomArcOfConic>()) {
-                    Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(it.first);
-                    pointArr.push_back(curve->getStartPoint());
-                    pointArr.push_back(curve->getEndPoint());
-                    pointArr.push_back(curve->getCenter());
-                }
-                else if (it.first->is<Part::GeomCircle>()) {
-                    Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(it.first);
-                    pointArr.push_back(curve->getCenter());
-                }
-            }
-            else if (it.first->is<Part::GeomPoint>()) {
-                Base::Vector3d pos=static_cast<Part::GeomPoint*>(it.first)->getPoint();
-                pointArr.push_back(pos);
+            auto& sePoints = it.second.sepoints;
+            for (int i = 0;i < sePoints.size();i++) {
+                renderer->drawPoint2D({ sePoints[i].x,sePoints[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
             }
         }  
-        for (int i = 0;i < pointArr.size();i++) {
-            renderer->drawPoint2D({ pointArr[i].x,pointArr[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
-        }
         for (auto& it : mGeoSegment) {
             if (it.first->isDerivedFrom<Part::GeomCurve>()) {
                 auto& seg = it.second;
-                for (int i = 0;i < seg.size() - 1;i++) {
-                    renderer->drawLine2D({ seg[i].x,seg[i].y }, { seg[i + 1].x,seg[i + 1].y }, static_cast<Plane2D>(mPlane));
+                for (int i = 0;i < seg.point.size() - 1;i++) {
+                    renderer->drawLine2D({ seg.point[i].x,seg.point[i].y }, { seg.point[i + 1].x,seg.point[i + 1].y }, static_cast<Plane2D>(mPlane));
                 }
             }
         }
@@ -146,7 +119,7 @@ namespace MOON {
     void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
         Part::Geometry* geo = ptr.get();
-        mGeoSegment[geo]=CurveConvert::toVector2D(geo, 50);
+        mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
     }
     int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos)
@@ -178,15 +151,15 @@ namespace MOON {
             Part::Geometry* geo = mGeoList[i].get();
             if (geo->isDerivedFrom<Part::GeomCurve>()) {
                 auto& segment = mGeoSegment[geo];
-                int segCount = segment.size();
+                int segCount = segment.point.size();
 
                 if (segCount < 2)
                     continue;
 
                 // 遍历每一段线段 [k] → [k+1]
                 for (int k = 0; k < segCount - 1; k++) {
-                    Base::Vector2d s = segment[k];
-                    Base::Vector2d e = segment[k + 1];
+                    Base::Vector2d s = segment.point[k];
+                    Base::Vector2d e = segment.point[k + 1];
 
                     // ✅ 使用 Lambda 计算真正的点到线段距离
                     double dist = pointToSegmentDist(p1, s, e);
@@ -195,6 +168,72 @@ namespace MOON {
                         minDist = dist;
                         ret = i;
                     }
+                }
+            }
+        }
+        return ret;
+    }
+    bool SketcherObj::snapPoint(Base::Vector2d& pos)
+    {
+        Base::Vector2d p1 = pos;
+        double deltaTole = 1.0;
+        double minDist = 10000.0;
+   
+        bool ret = false;
+        // 遍历所有几何图元
+        for (int i = 0; i < mGeoList.size(); i++) {
+            Part::Geometry* geo = mGeoList[i].get();  
+            auto& segment = mGeoSegment[geo];
+            for (int j = 0;j < segment.sepoints.size();j++) {
+				double dist = (p1 - Base::Vector2d(segment.sepoints[j].x, segment.sepoints[j].y)).Length();
+				if (dist < deltaTole && dist < minDist) {
+					minDist = dist;
+					ret = true;
+					pos = { segment.sepoints[j].x, segment.sepoints[j].y };
+				}
+            }
+        }
+        if (!ret) {
+            // ✅ Lambda：点到线段最短距离（内嵌，无需外部函数）
+            auto pointToSegmentDist = [](const Base::Vector2d& p, const Base::Vector2d& s, const Base::Vector2d& e,double&u) -> double {
+                Base::Vector2d se = e - s;
+                Base::Vector2d sp = p - s;
+                double t = (sp.x * se.x + sp.y * se.y) / (se.x * se.x + se.y * se.y);
+
+                if (t < 0.0) {
+                    u = 0.0;
+                   return sp.Length();
+                }
+ 
+                if (t > 1.0) {
+					u = 1.0;
+                    return (p - e).Length();
+                }
+
+                u = t;
+                Base::Vector2d proj = s + t * se;
+                return (p - proj).Length();
+                };
+            for (int i = 0; i < mGeoList.size(); i++) {
+                Part::Geometry* geo = mGeoList[i].get();
+                auto& segment = mGeoSegment[geo];
+                if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                    for (int j = 0;j < segment.point.size()-1;j++) {
+                        double u = 0.0;
+                        double dist = pointToSegmentDist(
+                            p1,
+                            Base::Vector2d(segment.point[j].x, segment.point[j].y),
+                            Base::Vector2d(segment.point[j+1].x, segment.point[j+1].y),
+                            u);
+                        
+                        if (dist < deltaTole && dist < minDist) {
+                            minDist = dist;
+                            ret = true;
+                            u= segment.params[j] +u*(segment.params[j+1]-segment.params[j]);
+							Base::Vector3d pp=static_cast<Part::GeomCurve*>(geo)->value(u);
+                            pos = { pp.x, pp.y };
+                        }
+                    }   
                 }
             }
         }
@@ -384,7 +423,7 @@ namespace MOON {
         if (oldGeoId < mGeoList.size()) {
             mGeoSegment.erase(mGeoList[oldGeoId].get());
 			mGeoList[oldGeoId] = std::move((newGeo));
-			mGeoSegment[mGeoList[oldGeoId].get()] = CurveConvert::toVector2D(mGeoList[oldGeoId].get(), 50);
+            mGeoSegment[mGeoList[oldGeoId].get()] = getCurveSegment(mGeoList[oldGeoId].get());
         }
     }
     void SketcherObj::replaceGeometries(const std::vector<int>& oldGeoIds,  std::vector<std::unique_ptr<Part::Geometry>>& newGeos)
@@ -574,5 +613,38 @@ namespace MOON {
             );
         }
         return ret;
+    }
+    SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 
+    {
+		CurveSegement seg;
+		CurveConvert::toVector2D(geo, 50, seg.point, seg.params);
+        if (geo->isDerivedFrom<Part::GeomCurve>()) {
+            if (geo->is<Part::GeomArcOfCircle>()) {
+                Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(geo);
+                seg.sepoints.push_back(curve->getStartPoint());
+                seg.sepoints.push_back(curve->getEndPoint());
+                seg.sepoints.push_back(curve->getCenter());
+            }
+            else if (geo->is<Part::GeomLineSegment>()) {
+                Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
+                seg.sepoints.push_back(lineSeg->getStartPoint());
+                seg.sepoints.push_back(lineSeg->getEndPoint());
+            }
+            else if (geo->is<Part::GeomArcOfConic>()) {
+                Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(geo);
+                seg.sepoints.push_back(curve->getStartPoint());
+                seg.sepoints.push_back(curve->getEndPoint());
+                seg.sepoints.push_back(curve->getCenter());
+            }
+            else if (geo->is<Part::GeomCircle>()) {
+                Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
+                seg.sepoints.push_back(curve->getCenter());
+            }
+        }
+        else if (geo->is<Part::GeomPoint>()) {
+            Base::Vector3d pos = static_cast<Part::GeomPoint*>(geo)->getPoint();
+            seg.sepoints.push_back(pos);
+        }
+        return seg;
     }
 }

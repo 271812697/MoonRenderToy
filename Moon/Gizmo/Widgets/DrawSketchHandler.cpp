@@ -37,6 +37,9 @@ namespace MOON
        if (sketchobj) {
            makePlane(sketchobj->getPlane());
        }
+       if (isSnapedSketchPos) {
+           renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16, static_cast<MOON::Plane2D>(plane));
+       }
        if (drawSketchPos) {
             auto drawList=ImGui::GetForegroundDrawList();
             Maths::FVector2 screenPos=m_sceneView->worldToScreen(getWorldPosFromSketchPos(drawPos));
@@ -67,6 +70,11 @@ namespace MOON
         }
         else {
             onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
+        }
+        auto sketchobj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		isSnapedSketchPos = false;
+        if (sketchobj) {
+            isSnapedSketchPos=sketchobj->snapPoint(onSketchPos);
         }
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
