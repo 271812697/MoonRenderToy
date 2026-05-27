@@ -38,7 +38,14 @@ namespace MOON {
 		std::string handlerName = "";
 			 
 	};
-	std::vector<std::string> CreateCurveCommand::blackList = { "DrawSketchHandlerCircle","DrawSketchHandlerArc","DrawSketchHandlerBSpline","DrawSketchHandlerRectangle" ,"DrawSketchHandlerTrimming"};
+	std::vector<std::string> CreateCurveCommand::blackList = {
+		"DrawSketchHandlerPoint",
+		"DrawSketchHandlerLine",
+		"DrawSketchHandlerCircle",
+		"DrawSketchHandlerArc",
+		"DrawSketchHandlerBSpline",
+		"DrawSketchHandlerRectangle" ,
+		"DrawSketchHandlerTrimming"};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
 	public:
@@ -47,16 +54,22 @@ namespace MOON {
 		{
 		}
 		void setup() {
+			point = new CreateCurveCommand(self, "DrawSketchHandlerPoint");
+			line =new CreateCurveCommand(self, "DrawSketchHandlerLine");
 			circle = new CreateCurveCommand(self, "DrawSketchHandlerCircle");
 			arc = new CreateCurveCommand(self, "DrawSketchHandlerArc");
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
 			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
 			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
+			point->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
+		    line->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
 			arc->setIcon(":/widgets/icons/Sketcher_CreateArc.svg");
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
 			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
 			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
+			self->addAction(point->action());
+			self->addAction(line->action());
 			self->addAction(arc->action());
 			self->addAction(bspline->action());
 			self->addAction(circle->action());
@@ -65,6 +78,8 @@ namespace MOON {
 			retranslateUi();
 		}
 		void retranslateUi() {
+			point->action()->setText(QCoreApplication::translate("SketchToolbar", "Point", nullptr));
+			line->action()->setText(QCoreApplication::translate("SketchToolbar", "Line", nullptr));
 			circle->action()->setText(QCoreApplication::translate("SketchToolbar", "Circle", nullptr));
 			arc->action()->setText(QCoreApplication::translate("SketchToolbar", "Arc", nullptr));
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
@@ -74,6 +89,8 @@ namespace MOON {
 	private:
 		friend class SketchToolbar;
 		SketchToolbar* self = nullptr;
+		CreateCurveCommand* point;
+		CreateCurveCommand* line;
 		CreateCurveCommand* circle;
 		CreateCurveCommand* arc;
 		CreateCurveCommand* bspline;

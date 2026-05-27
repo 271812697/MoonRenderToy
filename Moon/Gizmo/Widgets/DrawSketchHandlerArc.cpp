@@ -292,57 +292,58 @@ namespace MOON {
             );
         }
 
-        if (onlyeditoutline) {
-            if (constructionMethod() == ConstructionMethod::Center) {
-                if (state() == SelectMode::SeekThird) {
-                    const double scale = 0.8;
-                    addLineToShapeGeometry(
-                        toVector3d(m_internal->centerPoint),
-                        Base::Vector3d(
-                            m_internal->centerPoint.x + cos(m_internal->startAngle) * scale * m_internal->radius,
-                            m_internal->centerPoint.y + sin(m_internal->startAngle) * scale * m_internal->radius,
-                            0.
-                        ),
-                        true
-                    );
+        //if (onlyeditoutline)
+        //{
+        //    if (constructionMethod() == ConstructionMethod::Center) {
+        //        if (state() == SelectMode::SeekThird) {
+        //            const double scale = 0.8;
+        //            addLineToShapeGeometry(
+        //                toVector3d(m_internal->centerPoint),
+        //                Base::Vector3d(
+        //                    m_internal->centerPoint.x + cos(m_internal->startAngle) * scale * m_internal->radius,
+        //                    m_internal->centerPoint.y + sin(m_internal->startAngle) * scale * m_internal->radius,
+        //                    0.
+        //                ),
+        //                true
+        //            );
 
-                    addLineToShapeGeometry(
-                        toVector3d(m_internal->centerPoint),
-                        Base::Vector3d(
-                            m_internal->centerPoint.x + cos(m_internal->endAngle) * scale * m_internal->radius,
-                            m_internal->centerPoint.y + sin(m_internal->endAngle) * scale * m_internal->radius,
-                            0.
-                        ),
-                        true
-                    );
-                }
-            }
-            else {
-                if (state() == SelectMode::SeekSecond) {
-                    addLineToShapeGeometry(
-                        toVector3d(m_internal->firstPoint),
-                        toVector3d(m_internal->secondPoint),
-                        true
-                    );
-                }
-                else if (state() == SelectMode::SeekThird) {
-                    const double scale = 0.8;
-                    addLineToShapeGeometry(
-                        toVector3d(m_internal->centerPoint),
-                        toVector3d(m_internal->centerPoint)
-                        + (toVector3d(m_internal->secondPoint) - toVector3d(m_internal->centerPoint)) * scale,
-                        true
-                    );
+        //            addLineToShapeGeometry(
+        //                toVector3d(m_internal->centerPoint),
+        //                Base::Vector3d(
+        //                    m_internal->centerPoint.x + cos(m_internal->endAngle) * scale * m_internal->radius,
+        //                    m_internal->centerPoint.y + sin(m_internal->endAngle) * scale * m_internal->radius,
+        //                    0.
+        //                ),
+        //                true
+        //            );
+        //        }
+        //    }
+        //    else {
+        //        if (state() == SelectMode::SeekSecond) {
+        //            addLineToShapeGeometry(
+        //                toVector3d(m_internal->firstPoint),
+        //                toVector3d(m_internal->secondPoint),
+        //                true
+        //            );
+        //        }
+        //        else if (state() == SelectMode::SeekThird) {
+        //            const double scale = 0.8;
+        //            addLineToShapeGeometry(
+        //                toVector3d(m_internal->centerPoint),
+        //                toVector3d(m_internal->centerPoint)
+        //                + (toVector3d(m_internal->secondPoint) - toVector3d(m_internal->centerPoint)) * scale,
+        //                true
+        //            );
 
-                    addLineToShapeGeometry(
-                        toVector3d(m_internal->centerPoint),
-                        toVector3d(m_internal->centerPoint)
-                        + (toVector3d(m_internal->firstPoint) - toVector3d(m_internal->centerPoint)) * scale,
-                        true
-                    );
-                }
-            }
-        }
+        //            addLineToShapeGeometry(
+        //                toVector3d(m_internal->centerPoint),
+        //                toVector3d(m_internal->centerPoint)
+        //                + (toVector3d(m_internal->firstPoint) - toVector3d(m_internal->centerPoint)) * scale,
+        //                true
+        //            );
+        //        }
+        //    }
+        //}
     }
 
 }

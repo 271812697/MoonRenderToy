@@ -1530,7 +1530,7 @@ void GeomBSplineCurve::interpolate(const std::vector<gp_Pnt>& p, Standard_Boolea
     this->myCurve = interpolate.Curve();
 }
 
-void GeomBSplineCurve::interpolate(const std::vector<gp_Pnt>& p, const std::vector<gp_Vec>& t)
+void GeomBSplineCurve::interpolate(const std::vector<gp_Pnt>& p, const std::vector<gp_Vec>& t, Standard_Boolean periodic)
 {
     if (p.size() < 2) {
         Standard_ConstructionError::Raise();
@@ -1552,7 +1552,7 @@ void GeomBSplineCurve::interpolate(const std::vector<gp_Pnt>& p, const std::vect
         fgs->SetValue(i + 1, Standard_True);
     }
 
-    GeomAPI_Interpolate interpolate(pts, Standard_False, tol3d);
+    GeomAPI_Interpolate interpolate(pts, periodic, tol3d);
     interpolate.Load(tgs, fgs);
     interpolate.Perform();
     this->myCurve = interpolate.Curve();

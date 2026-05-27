@@ -13,6 +13,8 @@
 #include "Gizmo/Widgets/ClipPlane.h"
 #include "Gizmo/Widgets/SketchPlane.h"
 #include "Gizmo/Widgets/SplitScreen.h"
+#include "Gizmo/Widgets/DrawSketchHandlerPoint.h"
+#include "Gizmo/Widgets/DrawSketchHandlerLine.h"
 #include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
 #include "Gizmo/Widgets/DrawSketchHandlerArc.h"
 #include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
@@ -37,6 +39,8 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["Measure"] = new MOON::Measurement("Measure");
 			mWidgets["ClipPlane"] = new MOON::ClipPlane("ClipPlane");
 			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
+			mWidgets["DrawSketchHandlerPoint"] = new MOON::DrawSketchHandlerPoint("DrawSketchHandlerPoint");
+			mWidgets["DrawSketchHandlerLine"]=new MOON::DrawSketchHandlerLine("DrawSketchHandlerLine");
 			mWidgets["DrawSketchHandlerCircle"] = new MOON::DrawSketchHandlerCircle("DrawSketchHandlerCircle");
 			mWidgets["DrawSketchHandlerArc"] = new MOON::DrawSketchHandlerArc("DrawSketchHandlerArc");
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
