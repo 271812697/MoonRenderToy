@@ -16,6 +16,7 @@ namespace MOON
 		void deleteOriginalGeos();
 		bool canGoToNextMode() override;
 		void executeCommands() override;
+		virtual void onKeyPress(const std::string& key)override;
 		//void onReset() override;
 	private:
 		std::vector<int> listOfGeoIds;

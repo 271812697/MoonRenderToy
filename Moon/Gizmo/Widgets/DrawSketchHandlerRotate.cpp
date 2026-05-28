@@ -153,4 +153,16 @@ namespace MOON {
 			deleteOriginalGeos();
 		}   
     }
+    void DrawSketchHandlerRotate::onKeyPress(const std::string& key)
+    {
+        if (key == "A") {
+            numberOfCopies++;
+        }
+        else if (key == "S") {
+            numberOfCopies--;
+            if (numberOfCopies < 0) {
+                numberOfCopies = 0;
+            }
+        }
+    }
 }
