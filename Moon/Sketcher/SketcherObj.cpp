@@ -1,6 +1,8 @@
 ﻿#include "Sketcher/SketcherObj.h"
+#include "Geometry.h"
 #include "renderer/SceneView.h"
 #include "Gizmo/Gizmo.h"
+#include "Gizmo/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Sketcher/SketcheTool2D.h"
 #include <TopoDS.hxx>
@@ -42,11 +44,93 @@ namespace MOON {
         // calculated with seekTrimPoints
         return ((point1 - point2).Length() < 500 * Precision::Confusion());
     }
-    SketcherObj::SketcherObj()
+	SketcherObj::SketcherObj() :GizmoWidget("SketcherObj")
     {
+        setActive(true);
     }
     SketcherObj::~SketcherObj()
     {
+    }
+    void SketcherObj::onUpdate()
+    {
+		isHaveActiveHandler = false;
+		auto& gizmoWidgets =renderer->getGizmoWidgets();
+        for (auto& it : gizmoWidgets) {
+            dynamic_cast<DrawSketchHandler*>(it.second);
+			if (it.second->isActived() && dynamic_cast<DrawSketchHandler*>(it.second)) {
+				isHaveActiveHandler = true;
+                break;
+			}
+        }
+        
+    }
+    void SketcherObj::onMouseMove()
+    {
+		Base::Vector2d preOnSketchPosMove = onSketchPosMove;
+        pickGeo();
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == MoveGeo) {
+                for (int i = 0;i < selectIds.size();i++) {
+                    int geoId = selectIds[i];
+                    mGeoList[geoId]->translate(Base::Vector3d(onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y, 0));
+                    updateGeoSegment(geoId);
+                }
+            }
+        }
+    }
+    void SketcherObj::onLeftMousePressed()
+    {
+        onSketchPosP1=getMouseHitSketchPlanePoint();
+        onSketchPosClicked = onSketchPosP1;
+		if (preSelectGeoId == -1) {
+            pickGeo();
+		}
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == SelectGeo) {
+                selectIds.clear();
+                if (preSelectGeoId != -1) {
+                    selectIds.push_back(preSelectGeoId);
+                    clickMoveState = MoveGeo;
+                }
+            }
+		    else if(clickMoveState == HasSelectGeo) {
+			    clickMoveState = MoveGeo;
+		    }
+        }
+
+    }
+    void SketcherObj::onLeftMouseReleased()
+    {
+        onSketchPosP2 = getMouseHitSketchPlanePoint();
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == SelectGeo) {
+	            selectIds.clear();
+			    Base::Vector2d minPt(std::min(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y));
+			    Base::Vector2d maxPt(std::max(onSketchPosP1.x, onSketchPosP2.x), std::max(onSketchPosP1.y, onSketchPosP2.y));
+			    for (int i = 0;i < mGeoList.size();i++) {
+				    auto& seg = mGeoSegment[mGeoList[i].get()];
+				    bool isInside = true;
+				    for (int j = 0;j < seg.point.size();j++) {
+                        bool flag = seg.point[j].x >= minPt.x && seg.point[j].x <= maxPt.x
+                            && seg.point[j].y >= minPt.y && seg.point[j].y <= maxPt.y;
+					    if (!flag) {
+                            isInside = false;
+						    break;
+					    }
+				    }
+                    if (isInside) {
+					    selectIds.push_back(i);
+                    }
+			    }
+                if (selectIds.size() > 0) {
+				    clickMoveState = HasSelectGeo;
+                }
+            }
+		    else if (clickMoveState == MoveGeo)
+            {
+			    clickMoveState = SelectGeo;
+            }
+        }
     }
     void SketcherObj::setPlane(int p)
     {
@@ -90,7 +174,7 @@ namespace MOON {
         }
     }
     void SketcherObj::draw() {
-        auto renderer=&Gizmo::instance();
+        
         if (InEdit()) {
             renderer->pushSize(3);
             renderer->pushColor({ 255,0,0,255 });
@@ -107,6 +191,8 @@ namespace MOON {
         }
         renderer->pushSize(3);
         Eigen::Vector4<uint8_t> pointColor(255, 0, 0, 255);
+        Eigen::Vector4<uint8_t> preselectColor(255, 0, 255, 255);
+        Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
         float pointSize = 12;
         
         for (auto& it: mGeoSegment) {
@@ -115,13 +201,31 @@ namespace MOON {
                 renderer->drawPoint2D({ sePoints[i].x,sePoints[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
             }
         }  
-        for (auto& it : mGeoSegment) {
-            if (it.first->isDerivedFrom<Part::GeomCurve>()) {
-                auto& seg = it.second;
+        for (int i = 0;i < mGeoList.size();i++) {
+			bool isSelect = false;
+			for (int j = 0;j < selectIds.size();j++) {
+				if (selectIds[j] == i) {
+					isSelect = true;
+					break;
+				}
+			}
+			if (isSelect) {
+				renderer->pushColor(selectColor);
+			}
+			else if (i == preSelectGeoId) {
+				renderer->pushColor(preselectColor);
+			}
+			else {
+				renderer->pushColor(Eigen::Vector4<uint8_t>(255, 0, 0, 0));
+			}
+			auto& geo = mGeoList[i];
+			if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                auto& seg = mGeoSegment[geo.get()];
                 for (int i = 0;i < seg.point.size() - 1;i++) {
                     renderer->drawLine2D({ seg.point[i].x,seg.point[i].y }, { seg.point[i + 1].x,seg.point[i + 1].y }, static_cast<Plane2D>(mPlane));
                 }
             }
+			renderer->popColor();
         }
         renderer->popSize();
     }
@@ -140,6 +244,17 @@ namespace MOON {
         Part::Geometry* geo = ptr.get();
         mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
+    }
+    Part::Geometry* SketcherObj::getGeometry(int GeoId)
+    {
+		if (GeoId >= 0 && GeoId < mGeoList.size()) {
+			return mGeoList[GeoId].get();
+		}
+        return nullptr;
+    }
+    int SketcherObj::getHighestCurveIndex()
+    {
+        return mGeoList.size()-1;
     }
     int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos,const Base::Matrix4D& mat)
     {
@@ -174,6 +289,43 @@ namespace MOON {
                         minDist = dist;
                         ret = i;
                     }
+                }
+            }
+        }
+        return ret;
+    }
+    int SketcherObj::testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
+    {
+        Base::Matrix4D trans = viewPortMat * getplaneTransform();
+        Base::Vector3d p1 = trans * Base::Vector3d{ pos.x,pos.y,0.0 };
+        double deltaTole = 5.0;
+        double minDist = 10000.0;
+		int ret = -1;
+        for (int i = 0; i < mGeoList.size(); i++) {
+            Part::Geometry* geo = mGeoList[i].get();
+            auto& segment = mGeoSegment[geo];
+            if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                for (int j = 0;j < segment.point.size() - 1;j++) {
+                    double u = 0.0;
+                    double dist = pointToSegmentDist(
+                        p1,
+                        trans * segment.point[j],
+                        trans * segment.point[j + 1],
+                        u);
+
+                    if (dist < deltaTole && dist < minDist) {
+                        minDist = dist;
+						ret = i;
+                    }
+                }
+            }
+            else if(geo->is<Part::GeomPoint>())
+            {
+                Base::Vector3d pp = static_cast<Part::GeomPoint*>(geo)->getPoint();
+                double dist=(p1-trans* pp).Length();
+                if (dist < deltaTole && dist < minDist) {
+                    minDist = dist;
+                    ret = i;
                 }
             }
         }
@@ -407,6 +559,27 @@ namespace MOON {
 		    mGeoList.erase(it);
         }
     }
+    void SketcherObj::deleteGeometries(const std::vector<int>& GeoIds)
+    {
+        std::vector<int>deletePos(mGeoList.size(),0);
+		for (int i = 0;i < GeoIds.size();i++) {
+			if (GeoIds[i] < mGeoList.size()) {
+				deletePos[GeoIds[i]] = 1;
+			}
+		}
+		auto it = mGeoList.begin();
+		int index = 0;
+		while (it != mGeoList.end()) {
+			if (deletePos[index] == 1) {
+				mGeoSegment.erase((*it).get());
+				it = mGeoList.erase(it);
+			}
+			else {
+				it++;
+			}
+			index++;
+		}
+    }
     void SketcherObj::replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo)
     {
         if (oldGeoId < mGeoList.size()) {
@@ -574,6 +747,24 @@ namespace MOON {
     {
         return planeTransform;
     }
+    void SketcherObj::updateGeoSegment(int id)
+    {
+        if (id < mGeoList.size()) {
+			mGeoSegment[mGeoList[id].get()] = getCurveSegment(mGeoList[id].get());
+        }
+    }
+    void SketcherObj::pickGeo()
+    {
+        Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
+        Base::Matrix4D pla(
+            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
+            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
+            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
+            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
+        );
+        onSketchPosMove = getMouseHitSketchPlanePoint();
+        preSelectGeoId = testSelect(onSketchPosMove, pla);
+    }
     Base::Matrix4D SketcherObj::updateTransform() const
     {
         Base::Matrix4D ret;
@@ -602,6 +793,27 @@ namespace MOON {
             );
         }
         return ret;
+    }
+    Base::Vector2d SketcherObj::getMouseHitSketchPlanePoint()
+    {
+        auto ray = m_sceneView->GetMouseRay();
+        Maths::FVector3 out;
+        Base::Vector2d onSketchPos;
+
+        if (mPlane == 2) {
+            ray.hitPlane(Maths::FVector3(0, 0, 1), 0, out);
+            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.y * 100) / 100.0);
+        }
+        else if (mPlane == 0) {
+            ray.hitPlane(Maths::FVector3(1, 0, 0), 0, out);
+            onSketchPos = Base::Vector2d(int(out.y * 100) / 100.0, int(out.z * 100) / 100.0);
+        }
+        else {
+            ray.hitPlane(Maths::FVector3(0, 1, 0), 0, out);
+            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
+        }
+
+        return onSketchPos;
     }
     SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 
     {

@@ -16,6 +16,7 @@
 #include "Gizmo/Widgets/DrawSketchHandlerPoint.h"
 #include "Gizmo/Widgets/DrawSketchHandlerLine.h"
 #include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
+#include "Gizmo/Widgets/DrawSketchHandlerRotate.h"
 #include "Gizmo/Widgets/DrawSketchHandlerArc.h"
 #include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
 #include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
@@ -50,6 +51,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
 			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
 			mWidgets["GizmoSketchPlane"] = new MOON::SketchPlane("GizmoSketchPlane");
+			mWidgets["DrawSketchHandlerRotate"] = new MOON::DrawSketchHandlerRotate("DrawSketchHandlerRotate");
 			mWidgets["DrawSketchHandlerTrimming"] = new MOON::DrawSketchHandlerTrimming("DrawSketchHandlerTrimming");
 			mWidgets["DrawSketchHandlerTrimming"]->setActive(false);
 			mWidgets["GizmoSketchPlane"]->setActive(false);

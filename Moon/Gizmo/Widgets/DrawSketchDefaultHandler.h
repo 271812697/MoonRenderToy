@@ -353,6 +353,22 @@ namespace MOON
                 return true;
             }
         }
+        virtual void executeCommands() {
+            CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
+
+            //auto& view = GetService(::Editor::Panels::SceneView);
+            //auto scene = view.GetScene();
+            for (auto& geo : ShapeGeometry) {
+                //auto& actor = scene->CreateActor("", "SketchGeomertyLine");
+                //auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
+                //actor.AddComponent<Core::ECS::Components::CModelRenderer>();
+                //actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+                //geoComp.setGeometry(geo.get());
+                //geoComp.discretizationShape(plane);
+                SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry((geo));;
+            }
+
+        }
         bool finish()
         {
             if (this->isState(SelectMode::End)) {
@@ -360,7 +376,7 @@ namespace MOON
                 //resetPositionText();
 
                 //try {
-                //    executeCommands();
+                    executeCommands();
 
                 //    if (sugConstraints.size() > 0) {
                 //        beforeCreateAutoConstraints();
@@ -389,22 +405,6 @@ namespace MOON
                 //    Base::Console().error(e.what());
                 //}
                 //return handleContinuousMode();
-               
-
-                CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
-              
-                //auto& view = GetService(::Editor::Panels::SceneView);
-                //auto scene = view.GetScene();
-                for (auto& geo : ShapeGeometry) {
-                    //auto& actor = scene->CreateActor("", "SketchGeomertyLine");
-                    //auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
-                    //actor.AddComponent<Core::ECS::Components::CModelRenderer>();
-                    //actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                    //geoComp.setGeometry(geo.get());
-                    //geoComp.discretizationShape(plane);
-                    SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry((geo));;
-                }
-
                 return handleContinuousMode();
             }
             return false;

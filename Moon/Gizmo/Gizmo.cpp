@@ -4468,25 +4468,33 @@ namespace MOON
 
 	void Gizmo::addGizmoWidget(GizmoWidget* widget)
 	{
-		if (mGizmoWidgets.find(widget->getName()) != mGizmoWidgets.end()) {
+		if (mGizmoWidgets.find(widget->getWidgetId()) != mGizmoWidgets.end()) {
 			assert(false&&"the widget has been added!");
 		}
-		mGizmoWidgets[widget->getName()]=widget;
+		mGizmoWidgets[widget->getWidgetId()]=widget;
 	}
 
 	void Gizmo::removeGizmoWidget(GizmoWidget* widget)
 	{
 		if (widget) {
-			mGizmoWidgets.erase(widget->getName());
+			mGizmoWidgets.erase(widget->getWidgetId());
 		}
 	}
 
 	GizmoWidget* Gizmo::getGizmoWidget(const std::string& name)
 	{
-		if (mGizmoWidgets.find(name)!=mGizmoWidgets.end()) {
-			return mGizmoWidgets[name];
+		int cnt = 0;
+		GizmoWidget* ptr = nullptr;
+		for (auto& it : mGizmoWidgets) {
+			if (it.second->getName() == name) {
+				cnt++;
+				ptr=it.second;
+			}
 		}
-		return nullptr;
+		if (cnt > 1) {
+			assert(false && "there are more than one widget with the same name!");
+		}
+		return ptr;
 	}
 
 	void Gizmo::pushAlpha(float value)

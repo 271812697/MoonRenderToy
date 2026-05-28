@@ -45,6 +45,7 @@ namespace MOON {
 		"DrawSketchHandlerArc",
 		"DrawSketchHandlerBSpline",
 		"DrawSketchHandlerRectangle" ,
+		"DrawSketchHandlerRotate",
 		"DrawSketchHandlerTrimming"};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
@@ -61,6 +62,7 @@ namespace MOON {
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
 			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
 			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
+			rotate = new CreateCurveCommand(self, "DrawSketchHandlerRotate");
 			point->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
 		    line->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
@@ -68,6 +70,7 @@ namespace MOON {
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
 			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
 			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
+			rotate->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
 			self->addAction(point->action());
 			self->addAction(line->action());
 			self->addAction(arc->action());
@@ -75,6 +78,7 @@ namespace MOON {
 			self->addAction(circle->action());
 			self->addAction(rectangle->action());
 			self->addAction(trimming->action());
+			self->addAction(rotate->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -85,6 +89,7 @@ namespace MOON {
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
 			rectangle->action()->setText(QCoreApplication::translate("SketchToolbar", "Rectangle", nullptr));
 			trimming->action()->setText(QCoreApplication::translate("SketchToolbar", "Trimming", nullptr));
+			rotate->action()->setText(QCoreApplication::translate("SketchToolbar", "Rotate", nullptr));
 		}
 	private:
 		friend class SketchToolbar;
@@ -92,6 +97,7 @@ namespace MOON {
 		CreateCurveCommand* point;
 		CreateCurveCommand* line;
 		CreateCurveCommand* circle;
+		CreateCurveCommand* rotate;
 		CreateCurveCommand* arc;
 		CreateCurveCommand* bspline;
 		CreateCurveCommand* rectangle;

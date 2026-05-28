@@ -10,8 +10,10 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/SceneView.h"
 namespace MOON {
-	GizmoWidget::GizmoWidget(const std::string& name):mName(name)
+	static unsigned int nextWidgetId = 0;
+	GizmoWidget::GizmoWidget(const std::string& name) : mWidgetId(++nextWidgetId)
 	{
+		mName = name + std::to_string(mWidgetId);;
 		Gizmo::instance().addGizmoWidget(this);;
 		renderer = &Gizmo::instance();
 		SetInteractor(RenderWindowInteractor::Instance());

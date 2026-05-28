@@ -1,26 +1,35 @@
 ﻿#pragma once
 #include<memory>
 #include <unordered_map>
-#include "Geometry.h"
+#include "Gizmo/GizmoWidget.h"
 #include "TopoShape.h"
 #include "base/Tools2D.h"
 namespace Part {
 	class  Geometry;
 }
 namespace MOON {
-	class SketcherObj {
+	class SketcherObj :public GizmoWidget
+	{
 	public:
 		SketcherObj();
 		~SketcherObj();
+
+		virtual void onUpdate()override;
+		virtual void onMouseMove()override;
+		virtual void onLeftMousePressed()override;
+		virtual void onLeftMouseReleased()override;
 		void setPlane(int p);
 		int getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
 		void draw();
 		void makeDone();
-		void addGeometry( std::unique_ptr<Part::Geometry>&ptr);
+		void addGeometry(std::unique_ptr<Part::Geometry>&ptr);
+		Part::Geometry* getGeometry(int GeoId);
+		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
-
+		int testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
+		std::vector<int> getSelectIds() const { return selectIds; }
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		bool seekTrimPoints(
 			int GeoId,
@@ -31,6 +40,7 @@ namespace MOON {
 			Base::Vector3d& intersect2,double& u1,double&u2
 		);
 		void deleteGeometry(int GeoId);
+		void deleteGeometries(const std::vector<int>& GeoIds);
 		void replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo);
 		void replaceGeometries(const std::vector<int>& oldGeoIds, std::vector<std::unique_ptr<Part::Geometry>>& newGeos);
 		bool isClosedCurve(const Part::Geometry* geo);
@@ -39,14 +49,31 @@ namespace MOON {
 		Base::Matrix4D getplaneTransform();
 	private:
 		struct CurveSegement;
+		void updateGeoSegment(int id);
+		void pickGeo();
 		Base::Matrix4D updateTransform()const;
+		Base::Vector2d getMouseHitSketchPlanePoint();
 		CurveSegement getCurveSegment( Part::Geometry* geo) ;
 		int mPlane = 0;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
 		int preSelectGeoId = -1;
-		int selectId = -1;
+		std::vector<int> selectIds ;
+		bool hasClickSelected = false;
+		enum ClickMoveState
+		{
+			SelectGeo,
+			HasSelectGeo,
+			MoveGeo,
+			End
+		};
+		bool isHaveActiveHandler = false;
+		ClickMoveState clickMoveState = SelectGeo;
+		Base::Vector2d onSketchPosP1;
+		Base::Vector2d onSketchPosClicked;//used for click when select geometry curve
+		Base::Vector2d onSketchPosMove;//used for mouse move
+		Base::Vector2d onSketchPosP2;
 		struct CurveSegement
 		{
 			std::vector<Base::Vector3d> point;
@@ -57,5 +84,4 @@ namespace MOON {
 		};
 		std::unordered_map<Part::Geometry*, CurveSegement>mGeoSegment;
 	};
-
 }
