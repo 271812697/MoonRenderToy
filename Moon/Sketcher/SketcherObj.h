@@ -18,6 +18,7 @@ namespace MOON {
 		virtual void onMouseMove()override;
 		virtual void onLeftMousePressed()override;
 		virtual void onLeftMouseReleased()override;
+		virtual void onKeyPress(const std::string& key)override;
 		void setPlane(int p);
 		int getPlane();
 		void getPlaneNormal(double*p);
@@ -25,11 +26,13 @@ namespace MOON {
 		void draw();
 		void makeDone();
 		void addGeometry(std::unique_ptr<Part::Geometry>&ptr);
+		void addGeometry(const std::vector<Part::Geometry*>& curveList);
 		Part::Geometry* getGeometry(int GeoId);
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		int testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		std::vector<int> getSelectIds() const { return selectIds; }
+		int getPreselectId()const {return preSelectGeoId;}
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		bool seekTrimPoints(
 			int GeoId,
@@ -45,6 +48,14 @@ namespace MOON {
 		void replaceGeometries(const std::vector<int>& oldGeoIds, std::vector<std::unique_ptr<Part::Geometry>>& newGeos);
 		bool isClosedCurve(const Part::Geometry* geo);
 		bool trim(int GeoId,double u1,double u2, const Base::Vector3d& point1, const Base::Vector3d& point2);
+		// clang-format on
+		int addSymmetric(const std::vector<int>& geoIdList,int refGeoId);
+		std::vector<Part::Geometry*> getSymmetric(
+			const std::vector<int>& geoIdList,
+			std::map<int, int>& geoIdMap,
+			std::map<int, bool>& isStartEndInverted,
+			int refGeoId
+		);
 		Part::TopoShape toShape() const;
 		Base::Matrix4D getplaneTransform();
 	private:

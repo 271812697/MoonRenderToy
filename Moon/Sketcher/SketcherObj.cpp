@@ -5,6 +5,8 @@
 #include "Gizmo/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Sketcher/SketcheTool2D.h"
+#include "base/Tools.h"
+#include "core/log.h"
 #include <TopoDS.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <ShapeFix_Wire.hxx>
@@ -132,6 +134,13 @@ namespace MOON {
             }
         }
     }
+    void SketcherObj::onKeyPress(const std::string& key)
+    {
+        if (key == "DELETE"&& !isHaveActiveHandler) {
+             deleteGeometries(selectIds);
+             selectIds.clear();
+        }
+    }
     void SketcherObj::setPlane(int p)
     {
         mPlane = p;        
@@ -244,6 +253,13 @@ namespace MOON {
         Part::Geometry* geo = ptr.get();
         mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
+    }
+    void SketcherObj::addGeometry(const std::vector<Part::Geometry*>& curveList)
+    {
+        for (int i = 0; i < curveList.size(); i++) {
+            std::unique_ptr<Part::Geometry> temp(curveList[i]->copy());
+            addGeometry(temp);
+        }
     }
     Part::Geometry* SketcherObj::getGeometry(int GeoId)
     {
@@ -561,6 +577,9 @@ namespace MOON {
     }
     void SketcherObj::deleteGeometries(const std::vector<int>& GeoIds)
     {
+        if (GeoIds.size() == 0) {
+            return;
+        }
         std::vector<int>deletePos(mGeoList.size(),0);
 		for (int i = 0;i < GeoIds.size();i++) {
 			if (GeoIds[i] < mGeoList.size()) {
@@ -678,6 +697,216 @@ namespace MOON {
         }
         replaceGeometries({GeoId},newGeos);
         return true;
+    }
+    int SketcherObj::addSymmetric(const std::vector<int>& geoIdList, int refGeoId)
+    {
+
+        std::map<int, int> geoIdMap;
+        std::map<int, bool> isStartEndInverted;
+        std::vector<Part::Geometry*> symgeos= getSymmetric(geoIdList, geoIdMap, isStartEndInverted, refGeoId);
+        addGeometry(symgeos);
+        return geoIdList.size() - 1;
+    }
+    std::vector<Part::Geometry*> SketcherObj::getSymmetric(const std::vector<int>& geoIdList, std::map<int, int>& geoIdMap, std::map<int, bool>& isStartEndInverted, int refGeoId)
+    {
+        std::vector<Part::Geometry*> symmetricVals;
+        
+        int cgeoid = getHighestCurveIndex() + 1;
+
+        const Part::Geometry* georef = getGeometry(refGeoId);
+        if (!georef->is<Part::GeomLineSegment>()) {
+            return {};
+        }
+
+        auto* refGeoLine = static_cast<const Part::GeomLineSegment*>(georef);
+        // line
+        Base::Vector3d refstart = refGeoLine->getStartPoint();
+        Base::Vector3d vectline = refGeoLine->getEndPoint() - refstart;
+
+        for (auto geoId : geoIdList) {
+            const Part::Geometry* geo = getGeometry(geoId);
+            Part::Geometry* geosym;
+
+            geosym = geo->copy();
+
+            // Handle Geometry
+            if (geosym->is<Part::GeomLineSegment>()) {
+                auto* geosymline = static_cast<Part::GeomLineSegment*>(geosym);
+                Base::Vector3d sp = geosymline->getStartPoint();
+                Base::Vector3d ep = geosymline->getEndPoint();
+
+                geosymline->setPoints(
+                    sp + 2.0 * (sp.Perpendicular(refGeoLine->getStartPoint(), vectline) - sp),
+                    ep + 2.0 * (ep.Perpendicular(refGeoLine->getStartPoint(), vectline) - ep)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomCircle>()) {
+                auto* geosymcircle = static_cast<Part::GeomCircle*>(geosym);
+                Base::Vector3d cp = geosymcircle->getCenter();
+
+                geosymcircle->setCenter(
+                    cp + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomArcOfCircle>()) {
+                auto* geoaoc = static_cast<Part::GeomArcOfCircle*>(geosym);
+                Base::Vector3d sp = geoaoc->getStartPoint(true);
+                Base::Vector3d ep = geoaoc->getEndPoint(true);
+                Base::Vector3d cp = geoaoc->getCenter();
+
+                Base::Vector3d ssp = sp
+                    + 2.0 * (sp.Perpendicular(refGeoLine->getStartPoint(), vectline) - sp);
+                Base::Vector3d sep = ep
+                    + 2.0 * (ep.Perpendicular(refGeoLine->getStartPoint(), vectline) - ep);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                double theta1 = Base::fmod(atan2(sep.y - scp.y, sep.x - scp.x), 2.f * 3.1415926535);
+                double theta2 = Base::fmod(atan2(ssp.y - scp.y, ssp.x - scp.x), 2.f * 3.1415926535);
+
+                geoaoc->setCenter(scp);
+                geoaoc->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomEllipse>()) {
+                auto* geosymellipse = static_cast<Part::GeomEllipse*>(geosym);
+                Base::Vector3d cp = geosymellipse->getCenter();
+
+                Base::Vector3d majdir = geosymellipse->getMajorAxisDir();
+                double majord = geosymellipse->getMajorRadius();
+                double minord = geosymellipse->getMinorRadius();
+                double df = sqrt(majord * majord - minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymellipse->setMajorAxisDir(sf1 - scp);
+
+                geosymellipse->setCenter(scp);
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomArcOfEllipse>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfEllipse*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d majdir = geosymaoe->getMajorAxisDir();
+                double majord = geosymaoe->getMajorRadius();
+                double minord = geosymaoe->getMinorRadius();
+                double df = sqrt(majord * majord - minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setMajorAxisDir(sf1 - scp);
+
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = 2.0 * 3.1415926535 - theta1;
+                theta2 = 2.0 * 3.1415926535 - theta2;
+                std::swap(theta1, theta2);
+                if (theta1 < 0) {
+                    theta1 += 2.0 * 3.1415926535;
+                    theta2 += 2.0 * 3.1415926535;
+                }
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomArcOfHyperbola>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfHyperbola*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d majdir = geosymaoe->getMajorAxisDir();
+                double majord = geosymaoe->getMajorRadius();
+                double minord = geosymaoe->getMinorRadius();
+                double df = sqrt(majord * majord + minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setMajorAxisDir(sf1 - scp);
+
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = -theta1;
+                theta2 = -theta2;
+                std::swap(theta1, theta2);
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomArcOfParabola>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfParabola*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d f1 = geosymaoe->getFocus();
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setXAxisDir(sf1 - scp);
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = -theta1;
+                theta2 = -theta2;
+                std::swap(theta1, theta2);
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomBSplineCurve>()) {
+                auto* geosymbsp = static_cast<Part::GeomBSplineCurve*>(geosym);
+
+                std::vector<Base::Vector3d> poles = geosymbsp->getPoles();
+
+                for (auto& pole : poles) {
+                    pole = pole
+                        + 2.0 * (pole.Perpendicular(refGeoLine->getStartPoint(), vectline) - pole);
+                }
+
+                geosymbsp->setPoles(poles);
+
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomPoint>()) {
+                auto* geosympoint = static_cast<Part::GeomPoint*>(geosym);
+                Base::Vector3d cp = geosympoint->getPoint();
+
+                geosympoint->setPoint(
+                    cp + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else {
+                CORE_ERROR("Unsupported Geometry!! Just copying it.\n");
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+
+            symmetricVals.push_back(geosym);
+            geoIdMap.insert(std::make_pair(geoId, cgeoid));
+            cgeoid++;
+        }
+
+        return symmetricVals;
     }
     Part::TopoShape SketcherObj::toShape() const
     {
@@ -840,6 +1069,13 @@ namespace MOON {
             else if (geo->is<Part::GeomCircle>()) {
                 Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
                 seg.sepoints.push_back(curve->getCenter());
+            }
+            else if (geo->is<Part::GeomBSplineCurve>()) {
+                Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
+                std::vector<Base::Vector3d>poles= curve->getPoles();
+                for (int i = 0; i < poles.size(); i++) {
+                    seg.sepoints.push_back(poles[i]);
+                }
             }
         }
         else if (geo->is<Part::GeomPoint>()) {

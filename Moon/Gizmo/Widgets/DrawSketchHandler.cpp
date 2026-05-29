@@ -131,7 +131,8 @@ namespace MOON
     }
     int DrawSketchHandler::getPreselectCurve() const
     {
-        return 0;
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        return Obj->getPreselectId();
     }
     Maths::FVector3 DrawSketchHandler::getWorldPosFromSketchPos(Base::Vector2d sketchPos)
     {
