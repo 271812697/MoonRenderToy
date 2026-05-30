@@ -47,7 +47,8 @@ namespace MOON {
 		"DrawSketchHandlerRectangle" ,
 		"DrawSketchHandlerRotate",
 		"DrawSketchHandlerSymmetry",
-		"DrawSketchHandlerTrimming"
+		"DrawSketchHandlerTrimming",
+		"DrawSketchHandlerFillet"
 	};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
@@ -66,6 +67,7 @@ namespace MOON {
 			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
 			rotate = new CreateCurveCommand(self, "DrawSketchHandlerRotate");
 			symmetry=new CreateCurveCommand(self, "DrawSketchHandlerSymmetry");
+			fillet = new CreateCurveCommand(self, "DrawSketchHandlerFillet");
 			point->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
 		    line->setIcon(":/widgets/icons/Sketcher_CreateLine.svg");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
@@ -75,6 +77,7 @@ namespace MOON {
 			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
 			rotate->setIcon(":/widgets/icons/Sketcher_Rotate.svg");
 			symmetry->setIcon(":/widgets/icons/Sketcher_Symmetry.svg");
+			fillet->setIcon(":/widgets/icons/Sketcher_CreateFillet.svg");
 			self->addAction(point->action());
 			self->addAction(line->action());
 			self->addAction(arc->action());
@@ -84,6 +87,7 @@ namespace MOON {
 			self->addAction(trimming->action());
 			self->addAction(rotate->action());
 			self->addAction(symmetry->action());
+			self->addAction(fillet->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -96,6 +100,7 @@ namespace MOON {
 			trimming->action()->setText(QCoreApplication::translate("SketchToolbar", "Trimming", nullptr));
 			rotate->action()->setText(QCoreApplication::translate("SketchToolbar", "Rotate", nullptr));
 			symmetry->action()->setText(QCoreApplication::translate("SketchToolbar", "Symmetry", nullptr));
+			fillet->action()->setText(QCoreApplication::translate("SketchToolbar", "Fillet", nullptr));
 		}
 	private:
 		friend class SketchToolbar;
@@ -109,6 +114,7 @@ namespace MOON {
 		CreateCurveCommand* rectangle;
 		CreateCurveCommand* trimming;
 		CreateCurveCommand* symmetry;
+		CreateCurveCommand* fillet;
 	};
 
 	SketchToolbar::SketchToolbar(const QString& title, QWidget* parent)

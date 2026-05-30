@@ -74,6 +74,7 @@
         <file>icons/Sketcher_CreateLine.svg</file>
         <file>icons/Sketcher_Rotate.svg</file>
         <file>icons/Sketcher_Symmetry.svg</file>
+        <file>icons/Sketcher_CreateFillet.svg</file>
 		
 		    <file>icons/Sketcher_NewSketch.svg</file>
 		    <file>icons/parametric/Part_Box_Parametric.svg</file>

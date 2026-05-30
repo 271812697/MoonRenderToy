@@ -25,15 +25,19 @@ namespace MOON {
 		bool InEdit()const;
 		void draw();
 		void makeDone();
-		void addGeometry(std::unique_ptr<Part::Geometry>&ptr);
+		int addGeometry(std::unique_ptr<Part::Geometry>&ptr);
+		int addGeometry(Part::Geometry* curve);
 		void addGeometry(const std::vector<Part::Geometry*>& curveList);
 		Part::Geometry* getGeometry(int GeoId);
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		int testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		std::vector<int> getSelectIds() const { return selectIds; }
+		void addSelect(const std::vector<int>& idList);
+		void removeSelect(const std::vector<int>& idList);
 		int getPreselectId()const {return preSelectGeoId;}
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
+		int fillet(int geoId1,int geoId2,const Base::Vector3d& refPnt1,const Base::Vector3d& refPnt2,double radius,bool trim = true,bool createCorner = false,bool chamfer = false);
 		bool seekTrimPoints(
 			int GeoId,
 			const Base::Vector3d& point,

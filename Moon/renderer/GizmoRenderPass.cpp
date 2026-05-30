@@ -22,6 +22,7 @@
 #include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
 #include "Gizmo/Widgets/DrawSketchHandlerTrimming.h"
 #include "Gizmo/Widgets/DrawSketchHandlerSymmetry.h"
+#include "Gizmo/Widgets/DrawSketchHandlerFillet.h"
 #include "Gizmo/Widgets/PrimitiveBox.h"
 #include "Gizmo/Widgets/PrimitiveSphere.h"
 #include "Gizmo/Widgets/PrimitiveCylinder.h"
@@ -48,6 +49,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
 			mWidgets["DrawSketchHandlerRectangle"] = new MOON::DrawSketchHandlerRectangle("DrawSketchHandlerRectangle");
 			mWidgets["DrawSketchHandlerSymmetry"] = new MOON::DrawSketchHandlerSymmetry("DrawSketchHandlerSymmetry");
+			mWidgets["DrawSketchHandlerFillet"] = new MOON::DrawSketchHandlerFillet("DrawSketchHandlerFillet");
 			mWidgets["PrimitiveBox"] = new MOON::PrimitiveBox("PrimitiveBox");
 			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");

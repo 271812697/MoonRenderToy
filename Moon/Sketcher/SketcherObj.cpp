@@ -248,11 +248,17 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
     }
-    void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
+    int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
         Part::Geometry* geo = ptr.get();
         mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
+        return mGeoList.size() - 1;
+    }
+    int SketcherObj::addGeometry(Part::Geometry* curve)
+    {
+        std::unique_ptr<Part::Geometry>temp(curve->copy());
+        return addGeometry(temp);
     }
     void SketcherObj::addGeometry(const std::vector<Part::Geometry*>& curveList)
     {
@@ -347,6 +353,31 @@ namespace MOON {
         }
         return ret;
     }
+    void SketcherObj::addSelect(const std::vector<int>& idList)
+    {
+        for (int i = 0; i < idList.size(); i++) {
+            if (idList[i] < mGeoList.size()) {
+                selectIds.push_back(idList[i]);
+            }
+        }
+    }
+    void SketcherObj::removeSelect(const std::vector<int>& idList)
+    {
+        int left = 0;
+        for (int right = 0; right < selectIds.size();right++) {
+            bool removeFlag = false;
+            for (int i = 0; i < idList.size(); i++) {
+                if (selectIds[right] == idList[i]) {
+                    removeFlag = true;
+                    break;
+                }
+            }     
+            if (!removeFlag) {
+                selectIds[left++] = selectIds[right];
+            }
+        }
+        selectIds.resize(left);
+    }
     bool SketcherObj::snapPoint(Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
     {
 
@@ -395,6 +426,94 @@ namespace MOON {
             }
         }
         return ret;
+    }
+    int SketcherObj::fillet(int GeoId1, int GeoId2, const Base::Vector3d& refPnt1, const Base::Vector3d& refPnt2, double radius, bool trim, bool createCorner, bool chamfer)
+    {
+        if (GeoId1 < 0 || GeoId1 > getHighestCurveIndex() || GeoId2 < 0 || GeoId2 > getHighestCurveIndex()) {
+            return -1;
+        }
+        // If either of the two input lines are locked, don't try to trim since it won't work anyway
+        Part::Geometry* geo1 = getGeometry(GeoId1);
+        Part::Geometry* geo2 = getGeometry(GeoId2);
+        int pos1 = 0;
+        int pos2 = 0;
+        bool reverse = false;
+        std::unique_ptr<Part::GeomArcOfCircle> arc(createFilletGeometry(geo1, geo2, refPnt1, refPnt2, radius, pos1, pos2, reverse));
+        if (!arc) {
+            return -1;
+        }
+
+        int filletId = addGeometry(arc.get());
+        if (filletId < 0) {
+            return -1;
+        }
+
+        int PosId1 = static_cast<int>(pos1);
+        int PosId2 = static_cast<int>(pos2);
+        int filletPosId1 = -1;
+        int filletPosId2 = -1;
+
+        Base::Vector3d p1 = arc->getStartPoint(true);
+        Base::Vector3d p2 = arc->getEndPoint(true);
+
+        if (trim) {
+            //if (reverse) {
+            //    moveGeometry(GeoId1, PosId1, p1, false, true);
+            //    moveGeometry(GeoId2, PosId2, p2, false, true);
+            //}
+            //else {
+            //    moveGeometry(GeoId1, PosId1, p2, false, true);
+            //    moveGeometry(GeoId2, PosId2, p1, false, true);
+            //}
+            auto* line1 = static_cast<Part::GeomLineSegment*>(geo1);
+            auto* line2 = static_cast<Part::GeomLineSegment*>(geo2);
+
+            auto s1= line1->getStartPoint();
+            auto e1 = line1->getEndPoint();
+            auto s2 = line2->getStartPoint();
+            auto e2 = line2->getEndPoint();
+           if (reverse) {
+               if (PosId1 == 1) {//>0
+                   line1->setPoints(p1,e1);
+               }
+               else if(PosId1==2)
+               {
+                   line1->setPoints(s1, p1);
+               }
+               if (PosId2 == 1) {//>0
+                   line2->setPoints(p2, e2);
+               }
+               else if (PosId2 == 2)
+               {
+                   line2->setPoints(s2, p2);
+               }
+            }
+            else {
+               if (PosId1 == 1) {//>0
+                   line1->setPoints(p2, e1);
+               }
+               else if (PosId1 == 2)
+               {
+                   line1->setPoints(s1, p2);
+               }
+               if (PosId2 == 1) {//>0
+                   line2->setPoints(p1, e2);
+               }
+               else if (PosId2 == 2)
+               {
+                   line2->setPoints(s2, p1);
+               }
+            }
+           updateGeoSegment(GeoId1);
+           updateGeoSegment(GeoId2);
+        }
+
+        if (chamfer) {
+            auto line = std::make_unique<Part::GeomLineSegment>();
+            line->setPoints(p1, p2);
+            int lineGeoId = addGeometry(line.get());
+        }
+        return 0;
     }
     bool SketcherObj::seekTrimPoints(int geometryIndex,
         const Base::Vector3d& point,
