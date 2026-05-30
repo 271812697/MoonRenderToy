@@ -49,17 +49,19 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 	HandleMousePressed();
 	auto& input = m_view.getInutState();
 	if (m_view.IsSelectActor()) {
-		auto& target = m_view.GetSelectedActor();
-		auto targetPos = target.transform.GetWorldPosition();
-		float dist = GetActorFocusDist(target);
+
 
 		if (input.IsKeyPressed(Editor::Panels::KEYF))
 		{
+			auto& target = m_view.GetSelectedActor();
 			MoveToTarget(target);
 		}
 
-		auto focusObjectFromAngle = [this, &targetPos, &dist](const Maths::FVector3& offset)
+		auto focusObjectFromAngle = [this](const Maths::FVector3& offset)
 			{
+				auto& target = m_view.GetSelectedActor();
+				auto targetPos = target.transform.GetWorldPosition();
+				float dist = GetActorFocusDist(target);
 				auto camPos = targetPos + offset * dist;
 				auto direction = Maths::FVector3::Normalize(targetPos - camPos);
 				m_camera.SetRotation(Maths::FQuaternion::LookAt(direction, abs(direction.y) == 1.0f ? Maths::FVector3::Right : Maths::FVector3::Up));

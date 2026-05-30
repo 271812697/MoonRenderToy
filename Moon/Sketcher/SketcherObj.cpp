@@ -1,8 +1,12 @@
 ﻿#include "Sketcher/SketcherObj.h"
+#include "Geometry.h"
 #include "renderer/SceneView.h"
 #include "Gizmo/Gizmo.h"
+#include "Gizmo/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Sketcher/SketcheTool2D.h"
+#include "base/Tools.h"
+#include "core/log.h"
 #include <TopoDS.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <ShapeFix_Wire.hxx>
@@ -42,11 +46,100 @@ namespace MOON {
         // calculated with seekTrimPoints
         return ((point1 - point2).Length() < 500 * Precision::Confusion());
     }
-    SketcherObj::SketcherObj()
+	SketcherObj::SketcherObj() :GizmoWidget("SketcherObj")
     {
+        setActive(true);
     }
     SketcherObj::~SketcherObj()
     {
+    }
+    void SketcherObj::onUpdate()
+    {
+		isHaveActiveHandler = false;
+		auto& gizmoWidgets =renderer->getGizmoWidgets();
+        for (auto& it : gizmoWidgets) {
+            dynamic_cast<DrawSketchHandler*>(it.second);
+			if (it.second->isActived() && dynamic_cast<DrawSketchHandler*>(it.second)) {
+				isHaveActiveHandler = true;
+                break;
+			}
+        }
+        
+    }
+    void SketcherObj::onMouseMove()
+    {
+		Base::Vector2d preOnSketchPosMove = onSketchPosMove;
+        pickGeo();
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == MoveGeo) {
+                for (int i = 0;i < selectIds.size();i++) {
+                    int geoId = selectIds[i];
+                    mGeoList[geoId]->translate(Base::Vector3d(onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y, 0));
+                    updateGeoSegment(geoId);
+                }
+            }
+        }
+    }
+    void SketcherObj::onLeftMousePressed()
+    {
+        onSketchPosP1=getMouseHitSketchPlanePoint();
+        onSketchPosClicked = onSketchPosP1;
+		if (preSelectGeoId == -1) {
+            pickGeo();
+		}
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == SelectGeo) {
+                selectIds.clear();
+                if (preSelectGeoId != -1) {
+                    selectIds.push_back(preSelectGeoId);
+                    clickMoveState = MoveGeo;
+                }
+            }
+		    else if(clickMoveState == HasSelectGeo) {
+			    clickMoveState = MoveGeo;
+		    }
+        }
+
+    }
+    void SketcherObj::onLeftMouseReleased()
+    {
+        onSketchPosP2 = getMouseHitSketchPlanePoint();
+        if (!isHaveActiveHandler) {
+            if (clickMoveState == SelectGeo) {
+	            selectIds.clear();
+			    Base::Vector2d minPt(std::min(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y));
+			    Base::Vector2d maxPt(std::max(onSketchPosP1.x, onSketchPosP2.x), std::max(onSketchPosP1.y, onSketchPosP2.y));
+			    for (int i = 0;i < mGeoList.size();i++) {
+				    auto& seg = mGeoSegment[mGeoList[i].get()];
+				    bool isInside = true;
+				    for (int j = 0;j < seg.point.size();j++) {
+                        bool flag = seg.point[j].x >= minPt.x && seg.point[j].x <= maxPt.x
+                            && seg.point[j].y >= minPt.y && seg.point[j].y <= maxPt.y;
+					    if (!flag) {
+                            isInside = false;
+						    break;
+					    }
+				    }
+                    if (isInside) {
+					    selectIds.push_back(i);
+                    }
+			    }
+                if (selectIds.size() > 0) {
+				    clickMoveState = HasSelectGeo;
+                }
+            }
+		    else if (clickMoveState == MoveGeo)
+            {
+			    clickMoveState = SelectGeo;
+            }
+        }
+    }
+    void SketcherObj::onKeyPress(const std::string& key)
+    {
+        if (key == "DELETE"&& !isHaveActiveHandler) {
+             deleteGeometries(selectIds);
+             selectIds.clear();
+        }
     }
     void SketcherObj::setPlane(int p)
     {
@@ -90,7 +183,7 @@ namespace MOON {
         }
     }
     void SketcherObj::draw() {
-        auto renderer=&Gizmo::instance();
+        
         if (InEdit()) {
             renderer->pushSize(3);
             renderer->pushColor({ 255,0,0,255 });
@@ -107,6 +200,8 @@ namespace MOON {
         }
         renderer->pushSize(3);
         Eigen::Vector4<uint8_t> pointColor(255, 0, 0, 255);
+        Eigen::Vector4<uint8_t> preselectColor(255, 0, 255, 255);
+        Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
         float pointSize = 12;
         
         for (auto& it: mGeoSegment) {
@@ -115,13 +210,31 @@ namespace MOON {
                 renderer->drawPoint2D({ sePoints[i].x,sePoints[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
             }
         }  
-        for (auto& it : mGeoSegment) {
-            if (it.first->isDerivedFrom<Part::GeomCurve>()) {
-                auto& seg = it.second;
+        for (int i = 0;i < mGeoList.size();i++) {
+			bool isSelect = false;
+			for (int j = 0;j < selectIds.size();j++) {
+				if (selectIds[j] == i) {
+					isSelect = true;
+					break;
+				}
+			}
+			if (isSelect) {
+				renderer->pushColor(selectColor);
+			}
+			else if (i == preSelectGeoId) {
+				renderer->pushColor(preselectColor);
+			}
+			else {
+				renderer->pushColor(Eigen::Vector4<uint8_t>(255, 0, 0, 0));
+			}
+			auto& geo = mGeoList[i];
+			if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                auto& seg = mGeoSegment[geo.get()];
                 for (int i = 0;i < seg.point.size() - 1;i++) {
                     renderer->drawLine2D({ seg.point[i].x,seg.point[i].y }, { seg.point[i + 1].x,seg.point[i + 1].y }, static_cast<Plane2D>(mPlane));
                 }
             }
+			renderer->popColor();
         }
         renderer->popSize();
     }
@@ -135,11 +248,35 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
     }
-    void SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
+    int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
         Part::Geometry* geo = ptr.get();
         mGeoSegment[geo]=getCurveSegment(geo);
         mGeoList.push_back(std::move(ptr));
+        return mGeoList.size() - 1;
+    }
+    int SketcherObj::addGeometry(Part::Geometry* curve)
+    {
+        std::unique_ptr<Part::Geometry>temp(curve->copy());
+        return addGeometry(temp);
+    }
+    void SketcherObj::addGeometry(const std::vector<Part::Geometry*>& curveList)
+    {
+        for (int i = 0; i < curveList.size(); i++) {
+            std::unique_ptr<Part::Geometry> temp(curveList[i]->copy());
+            addGeometry(temp);
+        }
+    }
+    Part::Geometry* SketcherObj::getGeometry(int GeoId)
+    {
+		if (GeoId >= 0 && GeoId < mGeoList.size()) {
+			return mGeoList[GeoId].get();
+		}
+        return nullptr;
+    }
+    int SketcherObj::getHighestCurveIndex()
+    {
+        return mGeoList.size()-1;
     }
     int SketcherObj::getPickGeoIndex(const Base::Vector2d& pos,const Base::Matrix4D& mat)
     {
@@ -178,6 +315,68 @@ namespace MOON {
             }
         }
         return ret;
+    }
+    int SketcherObj::testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
+    {
+        Base::Matrix4D trans = viewPortMat * getplaneTransform();
+        Base::Vector3d p1 = trans * Base::Vector3d{ pos.x,pos.y,0.0 };
+        double deltaTole = 5.0;
+        double minDist = 10000.0;
+		int ret = -1;
+        for (int i = 0; i < mGeoList.size(); i++) {
+            Part::Geometry* geo = mGeoList[i].get();
+            auto& segment = mGeoSegment[geo];
+            if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                for (int j = 0;j < segment.point.size() - 1;j++) {
+                    double u = 0.0;
+                    double dist = pointToSegmentDist(
+                        p1,
+                        trans * segment.point[j],
+                        trans * segment.point[j + 1],
+                        u);
+
+                    if (dist < deltaTole && dist < minDist) {
+                        minDist = dist;
+						ret = i;
+                    }
+                }
+            }
+            else if(geo->is<Part::GeomPoint>())
+            {
+                Base::Vector3d pp = static_cast<Part::GeomPoint*>(geo)->getPoint();
+                double dist=(p1-trans* pp).Length();
+                if (dist < deltaTole && dist < minDist) {
+                    minDist = dist;
+                    ret = i;
+                }
+            }
+        }
+        return ret;
+    }
+    void SketcherObj::addSelect(const std::vector<int>& idList)
+    {
+        for (int i = 0; i < idList.size(); i++) {
+            if (idList[i] < mGeoList.size()) {
+                selectIds.push_back(idList[i]);
+            }
+        }
+    }
+    void SketcherObj::removeSelect(const std::vector<int>& idList)
+    {
+        int left = 0;
+        for (int right = 0; right < selectIds.size();right++) {
+            bool removeFlag = false;
+            for (int i = 0; i < idList.size(); i++) {
+                if (selectIds[right] == idList[i]) {
+                    removeFlag = true;
+                    break;
+                }
+            }     
+            if (!removeFlag) {
+                selectIds[left++] = selectIds[right];
+            }
+        }
+        selectIds.resize(left);
     }
     bool SketcherObj::snapPoint(Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
     {
@@ -227,6 +426,94 @@ namespace MOON {
             }
         }
         return ret;
+    }
+    int SketcherObj::fillet(int GeoId1, int GeoId2, const Base::Vector3d& refPnt1, const Base::Vector3d& refPnt2, double radius, bool trim, bool createCorner, bool chamfer)
+    {
+        if (GeoId1 < 0 || GeoId1 > getHighestCurveIndex() || GeoId2 < 0 || GeoId2 > getHighestCurveIndex()) {
+            return -1;
+        }
+        // If either of the two input lines are locked, don't try to trim since it won't work anyway
+        Part::Geometry* geo1 = getGeometry(GeoId1);
+        Part::Geometry* geo2 = getGeometry(GeoId2);
+        int pos1 = 0;
+        int pos2 = 0;
+        bool reverse = false;
+        std::unique_ptr<Part::GeomArcOfCircle> arc(createFilletGeometry(geo1, geo2, refPnt1, refPnt2, radius, pos1, pos2, reverse));
+        if (!arc) {
+            return -1;
+        }
+
+        int filletId = addGeometry(arc.get());
+        if (filletId < 0) {
+            return -1;
+        }
+
+        int PosId1 = static_cast<int>(pos1);
+        int PosId2 = static_cast<int>(pos2);
+        int filletPosId1 = -1;
+        int filletPosId2 = -1;
+
+        Base::Vector3d p1 = arc->getStartPoint(true);
+        Base::Vector3d p2 = arc->getEndPoint(true);
+
+        if (trim) {
+            //if (reverse) {
+            //    moveGeometry(GeoId1, PosId1, p1, false, true);
+            //    moveGeometry(GeoId2, PosId2, p2, false, true);
+            //}
+            //else {
+            //    moveGeometry(GeoId1, PosId1, p2, false, true);
+            //    moveGeometry(GeoId2, PosId2, p1, false, true);
+            //}
+            auto* line1 = static_cast<Part::GeomLineSegment*>(geo1);
+            auto* line2 = static_cast<Part::GeomLineSegment*>(geo2);
+
+            auto s1= line1->getStartPoint();
+            auto e1 = line1->getEndPoint();
+            auto s2 = line2->getStartPoint();
+            auto e2 = line2->getEndPoint();
+           if (reverse) {
+               if (PosId1 == 1) {//>0
+                   line1->setPoints(p1,e1);
+               }
+               else if(PosId1==2)
+               {
+                   line1->setPoints(s1, p1);
+               }
+               if (PosId2 == 1) {//>0
+                   line2->setPoints(p2, e2);
+               }
+               else if (PosId2 == 2)
+               {
+                   line2->setPoints(s2, p2);
+               }
+            }
+            else {
+               if (PosId1 == 1) {//>0
+                   line1->setPoints(p2, e1);
+               }
+               else if (PosId1 == 2)
+               {
+                   line1->setPoints(s1, p2);
+               }
+               if (PosId2 == 1) {//>0
+                   line2->setPoints(p1, e2);
+               }
+               else if (PosId2 == 2)
+               {
+                   line2->setPoints(s2, p1);
+               }
+            }
+           updateGeoSegment(GeoId1);
+           updateGeoSegment(GeoId2);
+        }
+
+        if (chamfer) {
+            auto line = std::make_unique<Part::GeomLineSegment>();
+            line->setPoints(p1, p2);
+            int lineGeoId = addGeometry(line.get());
+        }
+        return 0;
     }
     bool SketcherObj::seekTrimPoints(int geometryIndex,
         const Base::Vector3d& point,
@@ -407,6 +694,30 @@ namespace MOON {
 		    mGeoList.erase(it);
         }
     }
+    void SketcherObj::deleteGeometries(const std::vector<int>& GeoIds)
+    {
+        if (GeoIds.size() == 0) {
+            return;
+        }
+        std::vector<int>deletePos(mGeoList.size(),0);
+		for (int i = 0;i < GeoIds.size();i++) {
+			if (GeoIds[i] < mGeoList.size()) {
+				deletePos[GeoIds[i]] = 1;
+			}
+		}
+		auto it = mGeoList.begin();
+		int index = 0;
+		while (it != mGeoList.end()) {
+			if (deletePos[index] == 1) {
+				mGeoSegment.erase((*it).get());
+				it = mGeoList.erase(it);
+			}
+			else {
+				it++;
+			}
+			index++;
+		}
+    }
     void SketcherObj::replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo)
     {
         if (oldGeoId < mGeoList.size()) {
@@ -506,6 +817,216 @@ namespace MOON {
         replaceGeometries({GeoId},newGeos);
         return true;
     }
+    int SketcherObj::addSymmetric(const std::vector<int>& geoIdList, int refGeoId)
+    {
+
+        std::map<int, int> geoIdMap;
+        std::map<int, bool> isStartEndInverted;
+        std::vector<Part::Geometry*> symgeos= getSymmetric(geoIdList, geoIdMap, isStartEndInverted, refGeoId);
+        addGeometry(symgeos);
+        return geoIdList.size() - 1;
+    }
+    std::vector<Part::Geometry*> SketcherObj::getSymmetric(const std::vector<int>& geoIdList, std::map<int, int>& geoIdMap, std::map<int, bool>& isStartEndInverted, int refGeoId)
+    {
+        std::vector<Part::Geometry*> symmetricVals;
+        
+        int cgeoid = getHighestCurveIndex() + 1;
+
+        const Part::Geometry* georef = getGeometry(refGeoId);
+        if (!georef->is<Part::GeomLineSegment>()) {
+            return {};
+        }
+
+        auto* refGeoLine = static_cast<const Part::GeomLineSegment*>(georef);
+        // line
+        Base::Vector3d refstart = refGeoLine->getStartPoint();
+        Base::Vector3d vectline = refGeoLine->getEndPoint() - refstart;
+
+        for (auto geoId : geoIdList) {
+            const Part::Geometry* geo = getGeometry(geoId);
+            Part::Geometry* geosym;
+
+            geosym = geo->copy();
+
+            // Handle Geometry
+            if (geosym->is<Part::GeomLineSegment>()) {
+                auto* geosymline = static_cast<Part::GeomLineSegment*>(geosym);
+                Base::Vector3d sp = geosymline->getStartPoint();
+                Base::Vector3d ep = geosymline->getEndPoint();
+
+                geosymline->setPoints(
+                    sp + 2.0 * (sp.Perpendicular(refGeoLine->getStartPoint(), vectline) - sp),
+                    ep + 2.0 * (ep.Perpendicular(refGeoLine->getStartPoint(), vectline) - ep)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomCircle>()) {
+                auto* geosymcircle = static_cast<Part::GeomCircle*>(geosym);
+                Base::Vector3d cp = geosymcircle->getCenter();
+
+                geosymcircle->setCenter(
+                    cp + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomArcOfCircle>()) {
+                auto* geoaoc = static_cast<Part::GeomArcOfCircle*>(geosym);
+                Base::Vector3d sp = geoaoc->getStartPoint(true);
+                Base::Vector3d ep = geoaoc->getEndPoint(true);
+                Base::Vector3d cp = geoaoc->getCenter();
+
+                Base::Vector3d ssp = sp
+                    + 2.0 * (sp.Perpendicular(refGeoLine->getStartPoint(), vectline) - sp);
+                Base::Vector3d sep = ep
+                    + 2.0 * (ep.Perpendicular(refGeoLine->getStartPoint(), vectline) - ep);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                double theta1 = Base::fmod(atan2(sep.y - scp.y, sep.x - scp.x), 2.f * 3.1415926535);
+                double theta2 = Base::fmod(atan2(ssp.y - scp.y, ssp.x - scp.x), 2.f * 3.1415926535);
+
+                geoaoc->setCenter(scp);
+                geoaoc->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomEllipse>()) {
+                auto* geosymellipse = static_cast<Part::GeomEllipse*>(geosym);
+                Base::Vector3d cp = geosymellipse->getCenter();
+
+                Base::Vector3d majdir = geosymellipse->getMajorAxisDir();
+                double majord = geosymellipse->getMajorRadius();
+                double minord = geosymellipse->getMinorRadius();
+                double df = sqrt(majord * majord - minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymellipse->setMajorAxisDir(sf1 - scp);
+
+                geosymellipse->setCenter(scp);
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomArcOfEllipse>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfEllipse*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d majdir = geosymaoe->getMajorAxisDir();
+                double majord = geosymaoe->getMajorRadius();
+                double minord = geosymaoe->getMinorRadius();
+                double df = sqrt(majord * majord - minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setMajorAxisDir(sf1 - scp);
+
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = 2.0 * 3.1415926535 - theta1;
+                theta2 = 2.0 * 3.1415926535 - theta2;
+                std::swap(theta1, theta2);
+                if (theta1 < 0) {
+                    theta1 += 2.0 * 3.1415926535;
+                    theta2 += 2.0 * 3.1415926535;
+                }
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomArcOfHyperbola>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfHyperbola*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d majdir = geosymaoe->getMajorAxisDir();
+                double majord = geosymaoe->getMajorRadius();
+                double minord = geosymaoe->getMinorRadius();
+                double df = sqrt(majord * majord + minord * minord);
+                Base::Vector3d f1 = cp + df * majdir;
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setMajorAxisDir(sf1 - scp);
+
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = -theta1;
+                theta2 = -theta2;
+                std::swap(theta1, theta2);
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomArcOfParabola>()) {
+                auto* geosymaoe = static_cast<Part::GeomArcOfParabola*>(geosym);
+                Base::Vector3d cp = geosymaoe->getCenter();
+
+                Base::Vector3d f1 = geosymaoe->getFocus();
+
+                Base::Vector3d sf1 = f1
+                    + 2.0 * (f1.Perpendicular(refGeoLine->getStartPoint(), vectline) - f1);
+                Base::Vector3d scp = cp
+                    + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp);
+
+                geosymaoe->setXAxisDir(sf1 - scp);
+                geosymaoe->setCenter(scp);
+
+                double theta1, theta2;
+                geosymaoe->getRange(theta1, theta2, true);
+                theta1 = -theta1;
+                theta2 = -theta2;
+                std::swap(theta1, theta2);
+
+                geosymaoe->setRange(theta1, theta2, true);
+                isStartEndInverted.insert(std::make_pair(geoId, true));
+            }
+            else if (geosym->is<Part::GeomBSplineCurve>()) {
+                auto* geosymbsp = static_cast<Part::GeomBSplineCurve*>(geosym);
+
+                std::vector<Base::Vector3d> poles = geosymbsp->getPoles();
+
+                for (auto& pole : poles) {
+                    pole = pole
+                        + 2.0 * (pole.Perpendicular(refGeoLine->getStartPoint(), vectline) - pole);
+                }
+
+                geosymbsp->setPoles(poles);
+
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else if (geosym->is<Part::GeomPoint>()) {
+                auto* geosympoint = static_cast<Part::GeomPoint*>(geosym);
+                Base::Vector3d cp = geosympoint->getPoint();
+
+                geosympoint->setPoint(
+                    cp + 2.0 * (cp.Perpendicular(refGeoLine->getStartPoint(), vectline) - cp)
+                );
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+            else {
+                CORE_ERROR("Unsupported Geometry!! Just copying it.\n");
+                isStartEndInverted.insert(std::make_pair(geoId, false));
+            }
+
+            symmetricVals.push_back(geosym);
+            geoIdMap.insert(std::make_pair(geoId, cgeoid));
+            cgeoid++;
+        }
+
+        return symmetricVals;
+    }
     Part::TopoShape SketcherObj::toShape() const
     {
         Part::TopoShape result;
@@ -574,6 +1095,24 @@ namespace MOON {
     {
         return planeTransform;
     }
+    void SketcherObj::updateGeoSegment(int id)
+    {
+        if (id < mGeoList.size()) {
+			mGeoSegment[mGeoList[id].get()] = getCurveSegment(mGeoList[id].get());
+        }
+    }
+    void SketcherObj::pickGeo()
+    {
+        Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
+        Base::Matrix4D pla(
+            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
+            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
+            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
+            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
+        );
+        onSketchPosMove = getMouseHitSketchPlanePoint();
+        preSelectGeoId = testSelect(onSketchPosMove, pla);
+    }
     Base::Matrix4D SketcherObj::updateTransform() const
     {
         Base::Matrix4D ret;
@@ -603,6 +1142,27 @@ namespace MOON {
         }
         return ret;
     }
+    Base::Vector2d SketcherObj::getMouseHitSketchPlanePoint()
+    {
+        auto ray = m_sceneView->GetMouseRay();
+        Maths::FVector3 out;
+        Base::Vector2d onSketchPos;
+
+        if (mPlane == 2) {
+            ray.hitPlane(Maths::FVector3(0, 0, 1), 0, out);
+            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.y * 100) / 100.0);
+        }
+        else if (mPlane == 0) {
+            ray.hitPlane(Maths::FVector3(1, 0, 0), 0, out);
+            onSketchPos = Base::Vector2d(int(out.y * 100) / 100.0, int(out.z * 100) / 100.0);
+        }
+        else {
+            ray.hitPlane(Maths::FVector3(0, 1, 0), 0, out);
+            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
+        }
+
+        return onSketchPos;
+    }
     SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 
     {
 		CurveSegement seg;
@@ -628,6 +1188,13 @@ namespace MOON {
             else if (geo->is<Part::GeomCircle>()) {
                 Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
                 seg.sepoints.push_back(curve->getCenter());
+            }
+            else if (geo->is<Part::GeomBSplineCurve>()) {
+                Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
+                std::vector<Base::Vector3d>poles= curve->getPoles();
+                for (int i = 0; i < poles.size(); i++) {
+                    seg.sepoints.push_back(poles[i]);
+                }
             }
         }
         else if (geo->is<Part::GeomPoint>()) {

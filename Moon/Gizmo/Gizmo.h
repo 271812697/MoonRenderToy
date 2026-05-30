@@ -229,7 +229,9 @@ namespace MOON
 		void addGizmoWidget(GizmoWidget* widget);
 		void removeGizmoWidget(GizmoWidget* widget);
 		GizmoWidget* getGizmoWidget(const std::string&name);
-
+		std::unordered_map<unsigned int, GizmoWidget*>& getGizmoWidgets() {
+			return mGizmoWidgets;
+		}
 		template<class T>
 		T* getGizmoWidgetAS(const std::string& name) {
 			return dynamic_cast<T*>(getGizmoWidget(name));
@@ -258,7 +260,7 @@ namespace MOON
 	private:
 		std::vector<std::string> cancelList;
 		std::unordered_map<std::string, std::function<void()>> mDrawTaskMap;
-		std::unordered_map<std::string, GizmoWidget*>mGizmoWidgets;
+		std::unordered_map<unsigned int, GizmoWidget*>mGizmoWidgets;
 		
 		Rendering::HAL::Texture mEmptyTexture2D;
 		Rendering::HAL::Texture mEmptyTextureCube;

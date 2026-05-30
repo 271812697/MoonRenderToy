@@ -45,7 +45,11 @@ namespace MOON {
 		"DrawSketchHandlerArc",
 		"DrawSketchHandlerBSpline",
 		"DrawSketchHandlerRectangle" ,
-		"DrawSketchHandlerTrimming"};
+		"DrawSketchHandlerRotate",
+		"DrawSketchHandlerSymmetry",
+		"DrawSketchHandlerTrimming",
+		"DrawSketchHandlerFillet"
+	};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
 	public:
@@ -61,13 +65,19 @@ namespace MOON {
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
 			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
 			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
+			rotate = new CreateCurveCommand(self, "DrawSketchHandlerRotate");
+			symmetry=new CreateCurveCommand(self, "DrawSketchHandlerSymmetry");
+			fillet = new CreateCurveCommand(self, "DrawSketchHandlerFillet");
 			point->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
-		    line->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
+		    line->setIcon(":/widgets/icons/Sketcher_CreateLine.svg");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
 			arc->setIcon(":/widgets/icons/Sketcher_CreateArc.svg");
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
 			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
 			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
+			rotate->setIcon(":/widgets/icons/Sketcher_Rotate.svg");
+			symmetry->setIcon(":/widgets/icons/Sketcher_Symmetry.svg");
+			fillet->setIcon(":/widgets/icons/Sketcher_CreateFillet.svg");
 			self->addAction(point->action());
 			self->addAction(line->action());
 			self->addAction(arc->action());
@@ -75,6 +85,9 @@ namespace MOON {
 			self->addAction(circle->action());
 			self->addAction(rectangle->action());
 			self->addAction(trimming->action());
+			self->addAction(rotate->action());
+			self->addAction(symmetry->action());
+			self->addAction(fillet->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -85,6 +98,9 @@ namespace MOON {
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
 			rectangle->action()->setText(QCoreApplication::translate("SketchToolbar", "Rectangle", nullptr));
 			trimming->action()->setText(QCoreApplication::translate("SketchToolbar", "Trimming", nullptr));
+			rotate->action()->setText(QCoreApplication::translate("SketchToolbar", "Rotate", nullptr));
+			symmetry->action()->setText(QCoreApplication::translate("SketchToolbar", "Symmetry", nullptr));
+			fillet->action()->setText(QCoreApplication::translate("SketchToolbar", "Fillet", nullptr));
 		}
 	private:
 		friend class SketchToolbar;
@@ -92,10 +108,13 @@ namespace MOON {
 		CreateCurveCommand* point;
 		CreateCurveCommand* line;
 		CreateCurveCommand* circle;
+		CreateCurveCommand* rotate;
 		CreateCurveCommand* arc;
 		CreateCurveCommand* bspline;
 		CreateCurveCommand* rectangle;
 		CreateCurveCommand* trimming;
+		CreateCurveCommand* symmetry;
+		CreateCurveCommand* fillet;
 	};
 
 	SketchToolbar::SketchToolbar(const QString& title, QWidget* parent)

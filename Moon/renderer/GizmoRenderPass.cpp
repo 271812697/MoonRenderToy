@@ -16,10 +16,13 @@
 #include "Gizmo/Widgets/DrawSketchHandlerPoint.h"
 #include "Gizmo/Widgets/DrawSketchHandlerLine.h"
 #include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
+#include "Gizmo/Widgets/DrawSketchHandlerRotate.h"
 #include "Gizmo/Widgets/DrawSketchHandlerArc.h"
 #include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
 #include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
 #include "Gizmo/Widgets/DrawSketchHandlerTrimming.h"
+#include "Gizmo/Widgets/DrawSketchHandlerSymmetry.h"
+#include "Gizmo/Widgets/DrawSketchHandlerFillet.h"
 #include "Gizmo/Widgets/PrimitiveBox.h"
 #include "Gizmo/Widgets/PrimitiveSphere.h"
 #include "Gizmo/Widgets/PrimitiveCylinder.h"
@@ -45,11 +48,14 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerArc"] = new MOON::DrawSketchHandlerArc("DrawSketchHandlerArc");
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
 			mWidgets["DrawSketchHandlerRectangle"] = new MOON::DrawSketchHandlerRectangle("DrawSketchHandlerRectangle");
+			mWidgets["DrawSketchHandlerSymmetry"] = new MOON::DrawSketchHandlerSymmetry("DrawSketchHandlerSymmetry");
+			mWidgets["DrawSketchHandlerFillet"] = new MOON::DrawSketchHandlerFillet("DrawSketchHandlerFillet");
 			mWidgets["PrimitiveBox"] = new MOON::PrimitiveBox("PrimitiveBox");
 			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
 			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
 			mWidgets["GizmoSketchPlane"] = new MOON::SketchPlane("GizmoSketchPlane");
+			mWidgets["DrawSketchHandlerRotate"] = new MOON::DrawSketchHandlerRotate("DrawSketchHandlerRotate");
 			mWidgets["DrawSketchHandlerTrimming"] = new MOON::DrawSketchHandlerTrimming("DrawSketchHandlerTrimming");
 			mWidgets["DrawSketchHandlerTrimming"]->setActive(false);
 			mWidgets["GizmoSketchPlane"]->setActive(false);

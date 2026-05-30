@@ -14,6 +14,7 @@ namespace MOON
 	public:
 		GizmoWidget(const std::string& name);
 		virtual ~GizmoWidget();
+		unsigned int getWidgetId() const { return mWidgetId; }
 		const std::string& getName() const { return mName; }
 		bool isActived() const { return mActive; }
 		void setActive(bool flag);
@@ -36,6 +37,7 @@ namespace MOON
 		static void RightMousePressed(AbstractWidget*);
 		static void MouseMove(AbstractWidget*);
 	protected:
+		unsigned int mWidgetId;
 		CallbackCommand* KeyEventCallbackCommand;
 		static void ProcessKeyEvents(GizmoObject*, unsigned long, void*, void*);
 		std::string mName;	
