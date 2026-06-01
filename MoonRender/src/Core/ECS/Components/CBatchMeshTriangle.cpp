@@ -5,6 +5,7 @@
 #include <Core/Global/ServiceLocator.h>
 #include <Core/ResourceManagement/MaterialManager.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
+#include<Core/ECS/Components/CModelRenderer.h>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/Geometry/split_bvh.h>
 namespace Core::ECS::Components
@@ -24,6 +25,7 @@ namespace Core::ECS::Components
 		friend class CBatchMeshTriangle;
 		CBatchMeshTriangle* mSelf = nullptr;
 		bool colorChange = false;
+		bool candidatesChange = false;
 		int hoverIndex =-1;
 		std::vector<int> candidatesIndex;
 		Maths::FVector4 candidateColor;
@@ -55,7 +57,6 @@ namespace Core::ECS::Components
 			auto mat = owner.GetComponent<CMaterialRenderer>()->GetMaterialAtIndex(0);
 			if (mat) {
 				const ::Rendering::Data::MaterialProperty prop = mat->GetProperty("domainColorTex").value();
-				::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
 				auto tex = std::get<::Rendering::HAL::TextureHandle*>(prop.value);
 
 				if (tex) {
@@ -78,6 +79,9 @@ namespace Core::ECS::Components
 				}
 			}
 		}
+		if (mInternal->candidatesChange) {
+			mInternal->candidatesChange = false;
+		}
 	}
 
 	void CBatchMeshTriangle::SetColors(const std::vector<Maths::FVector4>& colors)
@@ -85,10 +89,10 @@ namespace Core::ECS::Components
 		mInternal->m_defaultColors = colors;
 	}
 
-	void CBatchMeshTriangle::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
+	void CBatchMeshTriangle::SetColor( const Maths::FVector4& color)
 	{
 		//mInternal->candidatesIndex.clear();;
-		mInternal->candidatesIndex = index;
+	
 		mInternal->colorChange = true;
 		mInternal->candidateColor = color;
 		//for (int i = 0; i < index.size(); i++) {
@@ -98,6 +102,12 @@ namespace Core::ECS::Components
 		//		mInternal->candidatesIndex.push_back(index);
 		//	}
 		//}
+	}
+
+	void CBatchMeshTriangle::SetCandidatesIndex(const std::vector<int>& index)
+	{
+		mInternal->candidatesChange = true;
+		mInternal->candidatesIndex = index;
 	}
 
 	void CBatchMeshTriangle::SetHoverColor(int index, const Maths::FVector4& color)

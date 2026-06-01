@@ -82,21 +82,26 @@ void Rendering::Context::Driver::Draw(
 	uint32_t p_instances
 )
 {
+	Draw(p_pso,p_mesh,0,p_primitiveMode,p_instances);
+}
+
+void Rendering::Context::Driver::Draw(Rendering::Data::PipelineState p_pso, const Resources::IMesh& p_mesh, int index, Settings::EPrimitiveMode p_primitiveMode, uint32_t p_instances)
+{
 	if (p_instances > 0)
 	{
 		SetPipelineState(p_pso);
 
-		p_mesh.Bind();
+		p_mesh.Bind(index);
 
 		if (p_mesh.GetIndexCount() > 0)
 		{
 			if (p_instances == 1)
 			{
-				m_gfxBackend->DrawElements(p_primitiveMode, p_mesh.GetIndexCount());
+				m_gfxBackend->DrawElements(p_primitiveMode, p_mesh.GetIndexCount(index));
 			}
 			else
 			{
-				m_gfxBackend->DrawElementsInstanced(p_primitiveMode, p_mesh.GetIndexCount(), p_instances);
+				m_gfxBackend->DrawElementsInstanced(p_primitiveMode, p_mesh.GetIndexCount(index), p_instances);
 			}
 		}
 		else

@@ -74,6 +74,14 @@ std::vector<Rendering::Resources::Mesh*>& Rendering::Resources::Model::GetMeshes
 	return m_meshes;
 }
 
+Rendering::Resources::Mesh* Rendering::Resources::Model::GetMesh(int index)
+{
+	if (index < m_meshes.size()) {
+		return m_meshes[index];
+	}
+	return nullptr;
+}
+
 void Rendering::Resources::Model::ClearMeshes()
 {
 	for (auto mesh : m_meshes)
