@@ -34,6 +34,7 @@ namespace Rendering::Resources
 		virtual void Unbind() const override;
 		virtual uint32_t GetVertexCount() const override;
 		virtual uint32_t GetIndexCount() const override;
+
 		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const override;
 		virtual const Rendering::Geometry::bbox& GetBoundingBox()const override { return m_boundingBox; }
 		std::vector<uint32_t> GetMaterialIndex() const;
@@ -48,6 +49,8 @@ namespace Rendering::Resources
 		void SetPrimitiveMode(Settings::EPrimitiveMode mode) { mPrimitiveMode = mode; }
 		void BuildBvh();
 		Geometry::Bvh* GetBvh();
+		void UploadIndices(const std::vector<std::pair<int,int>>&childList);
+		void UploadIndices(const std::vector<uint32_t>& p_indices);
 	private:
 		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);
@@ -58,6 +61,7 @@ namespace Rendering::Resources
 		::Rendering::Settings::EPrimitiveMode mPrimitiveMode = ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
+		uint32_t uploadIndicesCount;
 		std::vector<uint32_t>m_materialIndex;
 		
 		HAL::VertexArray m_vertexArray;

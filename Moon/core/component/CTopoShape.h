@@ -14,9 +14,10 @@ namespace Core::ECS::Components
 		virtual ~CTopoShape()override;
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
+		std::vector<std::pair<int, int>>GetChildMeshInfo();
+		void setChildsMesh(const std::vector<int>& childs);
 		Part::TopoShape& GetTopoShape();
 		void clearModel();
-		
 		void discretizationFaceShape();
 		void discretizationEdgeShape();
 		void discretizationShape();

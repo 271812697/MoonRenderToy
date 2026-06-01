@@ -14,7 +14,8 @@ namespace Core::ECS::Components
 		std::string GetName() override;
 		virtual void OnUpdate(float p_deltaTime) override;
 		void SetColors(const std::vector<Maths::FVector4>& colors);
-		void SetColor(const std::vector<int>& index, const Maths::FVector4& color);
+		void SetColor( const Maths::FVector4& color);
+		void SetCandidatesIndex(const std::vector<int>& index);
 		void SetHoverColor(int index, const Maths::FVector4& color);
 		void BuildBvh(const std::vector<::Rendering::Geometry::bbox>&boxs,const  std::vector<uint32_t>&subMeshRanges);
 		std::vector<Core::SceneSystem::RectPickRes>RectPick(const Maths::FMatrix4& modelMatrix, const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev);

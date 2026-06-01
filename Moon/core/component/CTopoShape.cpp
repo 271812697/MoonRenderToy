@@ -12,6 +12,7 @@
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
 {
+
 	class CTopoShape::CTopoShapeInternal {
 	public:
 		CTopoShapeInternal(CTopoShape* self) :mSelf(self){
@@ -23,8 +24,11 @@ namespace Core::ECS::Components
 		friend class CTopoShape;
 		CTopoShape* mSelf = nullptr;
 		Part::TopoShape mTopoShape;
+        std::vector<std::pair<int, int>>childMeshInfos;
         bool updateFace = false;
         bool updateEdge = false;
+        bool updateChildMesh = false;
+        std::vector<std::pair<int, int>> curChildMesh;
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
@@ -48,6 +52,7 @@ namespace Core::ECS::Components
             auto scene = view.GetScene();
             if (mInternal->updateFace) {
 			    mInternal->updateFace = false; 
+                mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
                
                 mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
@@ -77,7 +82,8 @@ namespace Core::ECS::Components
                         cnt = (cnt + 1) % 12;
                         faceVertices.reserve(faceVertices.size() + domains[i].points.size());
 
-                        indices.resize(indexOffset + domains[i].facets.size() * 3);
+                        indices.resize(indexOffset + domains[i].facets.size() * 3);                       
+                        mInternal->childMeshInfos.push_back(std::make_pair<int,int>(indexOffset,domains[i].facets.size() * 3 ));
                         ::Rendering::Geometry::bbox subBox;
                         for (int k = 0; k < domains[i].points.size(); k++) {
                             faceVertices.emplace_back(
@@ -92,6 +98,7 @@ namespace Core::ECS::Components
                             indices[indexOffset + 3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
                             indices[indexOffset + 3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
                         }
+
                         vertexOffset = faceVertices.size();
                         indexOffset = indices.size();
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
@@ -180,10 +187,6 @@ namespace Core::ECS::Components
                 auto lineModel = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->AddMesh(lineMesh);
-
-   
-
-
                 ::Rendering::Settings::TextureDesc desc;
                 desc.isTextureBuffer = true;
                 desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
@@ -191,7 +194,6 @@ namespace Core::ECS::Components
                 desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
                     .data = lineColor.data()
                 };
-
                 ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
                 lineColorTex->Allocate(desc);  
                 auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
@@ -203,7 +205,30 @@ namespace Core::ECS::Components
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }
+        if (mInternal->updateChildMesh) {
+            mInternal->updateChildMesh = false;
+            auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+            model->GetMesh(0)->UploadIndices(mInternal->curChildMesh);
+        }
 	}
+
+    std::vector<std::pair<int, int>> CTopoShape::GetChildMeshInfo()
+    {
+        return mInternal->childMeshInfos;
+        
+    }
+
+    void CTopoShape::setChildsMesh(const std::vector<int>& childs)
+    {
+        mInternal->updateChildMesh = true;
+        std::vector<std::pair<int, int>>list;
+        list.resize(childs.size());
+        for (int i = 0;i < childs.size();i++) {
+            list[i] = mInternal->childMeshInfos[childs[i]];
+        }
+        mInternal->curChildMesh = list;
+
+    }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
 	{

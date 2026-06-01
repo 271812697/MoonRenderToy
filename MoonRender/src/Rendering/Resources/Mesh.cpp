@@ -73,7 +73,8 @@ uint32_t Rendering::Resources::Mesh::GetVertexCount() const
 
 uint32_t Rendering::Resources::Mesh::GetIndexCount() const
 {
-	return m_indicesCount;
+	return uploadIndicesCount;
+	//return m_indicesCount;
 }
 
 const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere() const
@@ -202,20 +203,43 @@ Rendering::Geometry::Bvh* Rendering::Resources::Mesh::GetBvh()
 	return m_bvh;
 }
 
+void Rendering::Resources::Mesh::UploadIndices(const std::vector<std::pair<int, int>>& childList)
+{
+	std::vector<uint32_t> p_indices;;
+	int numIndexs = 0;
+	for (int i = 0;i < childList.size();i++) {
+		numIndexs += childList[i].second;
+	}
+	p_indices.resize(numIndexs);
+	int offet = 0;
+	uint32_t* dst = p_indices.data();
+	uint32_t* src = m_indices.data();
+
+	for (int i = 0;i < childList.size();i++) {
+		memcpy(dst+offet,src+childList[i].first, childList[i].second*4);
+		offet += childList[i].second;
+	}
+	UploadIndices(p_indices);
+}
+void Rendering::Resources::Mesh::UploadIndices(const std::vector<uint32_t>& p_indices)
+{
+	if (m_indexBuffer.Allocate(p_indices.size() * sizeof(uint32_t)))
+	{
+		m_indexBuffer.Upload(p_indices.data());
+		uploadIndicesCount = p_indices.size();
+	}
+	else
+	{
+		("Empty index buffer!");
+	}
+}
 void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
 {
 	if (m_vertexBuffer.Allocate(p_vertices.size()*sizeof(Geometry::Vertex)))
 	{
 		m_vertexBuffer.Upload(p_vertices.data());
 
-		if (m_indexBuffer.Allocate(p_indices.size()*sizeof(uint32_t)))
-		{
-			m_indexBuffer.Upload(p_indices.data());
-		}
-		else
-		{
-			("Empty index buffer!");
-		}
+		UploadIndices(p_indices);
 		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
 			{ Settings::EDataType::FLOAT, 3 }, // position
 			{ Settings::EDataType::FLOAT, 2 }, // texCoords
@@ -235,14 +259,7 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::VertexBVH>& 
 	{
 		m_vertexBuffer.Upload(p_vertices.data());
 
-		if (m_indexBuffer.Allocate(p_indices.size() * sizeof(uint32_t)))
-		{
-			m_indexBuffer.Upload(p_indices.data());
-		}
-		else
-		{
-			("Empty index buffer!");
-		}
+		UploadIndices(p_indices);
 		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
 			{ Settings::EDataType::FLOAT, 3 }, // position
 			{ Settings::EDataType::FLOAT, 2 }, // texCoords
@@ -297,8 +314,6 @@ void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< 
 {
 	m_boundingSphere.position = Maths::FVector3::Zero;
 	m_boundingSphere.radius = 0.0f;
-
-
 	if (!p_vertices.empty())
 	{
 		float minX = std::numeric_limits<float>::max();
@@ -328,6 +343,4 @@ void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< 
 		}
 		BuildBvh();
 	}
-
-
 }

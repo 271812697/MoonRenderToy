@@ -11,6 +11,7 @@ namespace Rendering::Resources
 		friend class Loaders::ModelLoader;
 	public:
 		std::vector<Mesh*>& GetMeshes() ;
+		Mesh* GetMesh(int index);
 		void ClearMeshes();
 		void AddMesh(Mesh*mesh);
 		std::vector<std::string>& GetMaterialNames() ;
