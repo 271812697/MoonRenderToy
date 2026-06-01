@@ -14,6 +14,7 @@ namespace Rendering::Entities
 		Tools::Utils::OptRef<Rendering::Resources::IMesh> mesh;
 		Tools::Utils::OptRef<Rendering::Data::Material> material;
 		Data::StateMask stateMask;
+		int subIndexBufferIndex = 0;
 		Settings::EPrimitiveMode primitiveMode = Rendering::Settings::EPrimitiveMode::TRIANGLES;
 		std::optional<std::string> pass = std::nullopt;
 		std::optional<Data::FeatureSet> featureSetOverride = std::nullopt;

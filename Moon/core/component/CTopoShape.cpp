@@ -28,7 +28,8 @@ namespace Core::ECS::Components
         bool updateFace = false;
         bool updateEdge = false;
         bool updateChildMesh = false;
-        std::vector<std::pair<int, int>> curChildMesh;
+        std::vector<std::pair<int, int>> curTransparentChildMesh;
+        std::vector<std::pair<int, int>>curOpaqueChildMesh;
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
@@ -113,6 +114,9 @@ namespace Core::ECS::Components
                     indices,
                     0,
                     ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
+                //add this for transparent
+                faceMesh->AddSubRangeBuffer();
+                faceMesh->AddMaterial(2,1);
                 auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
@@ -208,7 +212,13 @@ namespace Core::ECS::Components
         if (mInternal->updateChildMesh) {
             mInternal->updateChildMesh = false;
             auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
-            model->GetMesh(0)->UploadIndices(mInternal->curChildMesh);
+            auto mesh = model->GetMesh(0);
+            if (mInternal->curOpaqueChildMesh.size()) {
+                mesh->UploadIndices(mInternal->curOpaqueChildMesh,0);
+            }
+            if (mInternal->curTransparentChildMesh.size()) {
+                 mesh->UploadIndices(mInternal->curTransparentChildMesh,1);
+            }
         }
 	}
 
@@ -221,12 +231,28 @@ namespace Core::ECS::Components
     void CTopoShape::setChildsMesh(const std::vector<int>& childs)
     {
         mInternal->updateChildMesh = true;
-        std::vector<std::pair<int, int>>list;
-        list.resize(childs.size());
-        for (int i = 0;i < childs.size();i++) {
-            list[i] = mInternal->childMeshInfos[childs[i]];
+        std::vector<std::pair<int, int>>listTransparent;
+        std::vector<std::pair<int, int>>listOpaque;
+        listTransparent.resize(childs.size());
+        listOpaque.resize(mInternal->childMeshInfos.size()- childs.size());
+        std::vector<int>table(mInternal->childMeshInfos.size(),0);
+        int indexTransparent = 0;
+        int indexOpaque = 0;
+        for (int i = 0; i < childs.size(); i++) {
+            table[childs[i]] = 1;
         }
-        mInternal->curChildMesh = list;
+        for (int i = 0;i < table.size();i++) {
+            if (table[i] == 1) {
+                listTransparent[indexTransparent++] = mInternal->childMeshInfos[i];
+            }
+            else
+            {
+                listOpaque[indexOpaque++]= mInternal->childMeshInfos[i];
+            }
+            
+        }
+        mInternal->curTransparentChildMesh = listTransparent;
+        mInternal->curOpaqueChildMesh = listOpaque;
 
     }
 

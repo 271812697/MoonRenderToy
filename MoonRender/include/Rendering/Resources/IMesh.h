@@ -11,10 +11,10 @@ namespace Rendering::Resources
 	class IMesh
 	{
 	public:
-		virtual void Bind() const = 0;
+		virtual void Bind(int index=0) const = 0;
 		virtual void Unbind() const = 0;
 		virtual uint32_t GetVertexCount() const = 0;
-		virtual uint32_t GetIndexCount() const = 0;
+		virtual uint32_t GetIndexCount(int index=0) const = 0;
 		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const = 0;
 		virtual const Rendering::Geometry::bbox& GetBoundingBox()const=0;
 	};

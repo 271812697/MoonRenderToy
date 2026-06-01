@@ -15,6 +15,12 @@ Rendering::Resources::Mesh::Mesh(
 	
 	m_indices.resize(m_indicesCount);
 	m_vertices.resize(m_vertexCount);
+	uploadIndicesCount.resize(1);
+	m_vertexArrays.resize(1);
+	m_IndexBuffers.resize(1);
+	m_vertexArrays[0] = std::make_unique<HAL::VertexArray>();
+	m_IndexBuffers[0] = std::make_unique <HAL::IndexBuffer>();
+
 	memcpy(m_indices.data(), p_indices.data(), p_indices.size()*sizeof(uint32_t));
 	for (int i = 0;i < p_vertices.size();i++) {
 	
@@ -29,7 +35,7 @@ Rendering::Resources::Mesh::Mesh(
 		m_vertices[i].normals.y = p_vertices[i].normals[1];
 		m_vertices[i].normals.z = p_vertices[i].normals[2];
 	}
-	m_materialIndex.push_back(p_materialIndex);
+	AddMaterial(p_materialIndex, 0);
 	Upload(p_vertices, p_indices);
 	ComputeBoundingSphereAndBox(p_vertices);
 }
@@ -46,8 +52,13 @@ m_indices(std::move(p_indices))
 {
 	isIndex = m_indicesCount > 0;
 
+	m_vertexArrays.resize(1);
+	m_IndexBuffers.resize(1);
+	m_vertexArrays[0] = std::make_unique<HAL::VertexArray>();
+	m_IndexBuffers[0] = std::make_unique <HAL::IndexBuffer>();
+	uploadIndicesCount.resize(1);
 
-	m_materialIndex.push_back(p_materialIndex);
+	AddMaterial(p_materialIndex,0);
 	Upload(p_vertices, p_indices);
 	ComputeBoundingSphereAndBox(p_vertices);
 }
@@ -56,14 +67,14 @@ Rendering::Resources::Mesh::~Mesh()
 	delete m_bvh;
 }
 	
-void Rendering::Resources::Mesh::Bind() const
+void Rendering::Resources::Mesh::Bind(int index) const
 {
-	m_vertexArray.Bind();
+	m_vertexArrays[index]->Bind();
 }
 
 void Rendering::Resources::Mesh::Unbind() const
 {
-	m_vertexArray.Unbind();
+	m_vertexArrays[0]->Unbind();
 }
 
 uint32_t Rendering::Resources::Mesh::GetVertexCount() const
@@ -71,10 +82,10 @@ uint32_t Rendering::Resources::Mesh::GetVertexCount() const
 	return m_vertexCount;
 }
 
-uint32_t Rendering::Resources::Mesh::GetIndexCount() const
+uint32_t Rendering::Resources::Mesh::GetIndexCount(int index) const
 {
-	return uploadIndicesCount;
-	//return m_indicesCount;
+
+	return uploadIndicesCount[index];
 }
 
 const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere() const
@@ -87,14 +98,20 @@ std::vector<uint32_t> Rendering::Resources::Mesh::GetMaterialIndex() const
 	return m_materialIndex;
 }
 
-void Rendering::Resources::Mesh::AddMaterial(int materialIndex)
+std::vector<uint32_t> Rendering::Resources::Mesh::GetSubRangeBufferIndex() const
 {
-	m_materialIndex.push_back(materialIndex);
+	return m_subRangeIndex;
 }
 
-Rendering::HAL::VertexArray& Rendering::Resources::Mesh::getVertexArray()
+void Rendering::Resources::Mesh::AddMaterial(int materialIndex, int subRangeIndex)
 {
-	return m_vertexArray;
+	m_materialIndex.push_back(materialIndex);
+	m_subRangeIndex.push_back(subRangeIndex);
+}
+
+Rendering::HAL::VertexArray& Rendering::Resources::Mesh::getVertexArray(int index)
+{
+	return *m_vertexArrays[index];
 }
 
 Rendering::HAL::VertexBuffer& Rendering::Resources::Mesh::getVertexBuffer()
@@ -203,7 +220,7 @@ Rendering::Geometry::Bvh* Rendering::Resources::Mesh::GetBvh()
 	return m_bvh;
 }
 
-void Rendering::Resources::Mesh::UploadIndices(const std::vector<std::pair<int, int>>& childList)
+void Rendering::Resources::Mesh::UploadIndices(const std::vector<std::pair<int, int>>& childList,int index)
 {
 	std::vector<uint32_t> p_indices;;
 	int numIndexs = 0;
@@ -219,19 +236,33 @@ void Rendering::Resources::Mesh::UploadIndices(const std::vector<std::pair<int, 
 		memcpy(dst+offet,src+childList[i].first, childList[i].second*4);
 		offet += childList[i].second;
 	}
-	UploadIndices(p_indices);
+	UploadIndices(p_indices,index);
 }
-void Rendering::Resources::Mesh::UploadIndices(const std::vector<uint32_t>& p_indices)
+void Rendering::Resources::Mesh::UploadIndices(const std::vector<uint32_t>& p_indices, int index)
 {
-	if (m_indexBuffer.Allocate(p_indices.size() * sizeof(uint32_t)))
+	if (m_IndexBuffers[index]->Allocate(p_indices.size() * sizeof(uint32_t)))
 	{
-		m_indexBuffer.Upload(p_indices.data());
-		uploadIndicesCount = p_indices.size();
+		m_IndexBuffers[index]->Upload(p_indices.data());
+		uploadIndicesCount[index] = p_indices.size();
 	}
 	else
 	{
 		("Empty index buffer!");
 	}
+}
+void Rendering::Resources::Mesh::AddSubRangeBuffer()
+{
+	m_vertexArrays.emplace_back();;
+	m_IndexBuffers.emplace_back();
+	m_vertexArrays.back() = std::make_unique<HAL::VertexArray>();
+	m_IndexBuffers.back() = std::make_unique <HAL::IndexBuffer>();
+	uploadIndicesCount.push_back(0);
+	int index = m_vertexArrays.size() - 1;
+	m_vertexArrays[index]->SetLayout(std::to_array<Settings::VertexAttribute>({
+		{ Settings::EDataType::FLOAT, 3 }, // position
+		{ Settings::EDataType::FLOAT, 2 }, // texCoords
+		{ Settings::EDataType::FLOAT, 3 } // normal
+		}), m_vertexBuffer, *m_IndexBuffers[index]);
 }
 void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
 {
@@ -240,13 +271,13 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_v
 		m_vertexBuffer.Upload(p_vertices.data());
 
 		UploadIndices(p_indices);
-		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+		m_vertexArrays[0]->SetLayout(std::to_array<Settings::VertexAttribute>({
 			{ Settings::EDataType::FLOAT, 3 }, // position
 			{ Settings::EDataType::FLOAT, 2 }, // texCoords
 			{ Settings::EDataType::FLOAT, 3 }, // normal
 			{ Settings::EDataType::FLOAT, 3 }, // tangent
 			{ Settings::EDataType::FLOAT, 3 }  // bitangent
-			}), m_vertexBuffer, m_indexBuffer);
+			}), m_vertexBuffer, *m_IndexBuffers[0]);
 	}
 	else
 	{
@@ -260,11 +291,11 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::VertexBVH>& 
 		m_vertexBuffer.Upload(p_vertices.data());
 
 		UploadIndices(p_indices);
-		m_vertexArray.SetLayout(std::to_array<Settings::VertexAttribute>({
+		m_vertexArrays[0]->SetLayout(std::to_array<Settings::VertexAttribute>({
 			{ Settings::EDataType::FLOAT, 3 }, // position
 			{ Settings::EDataType::FLOAT, 2 }, // texCoords
 			{ Settings::EDataType::FLOAT, 3 } // normal
-			}), m_vertexBuffer, m_indexBuffer);
+			}), m_vertexBuffer, *m_IndexBuffers[0]);
 	}
 	else
 	{

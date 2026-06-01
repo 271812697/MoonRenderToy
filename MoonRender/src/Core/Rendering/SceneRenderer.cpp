@@ -483,7 +483,15 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 
 		for (auto& mesh : model->GetMeshes())
 		{
-			for (auto& materialIndex : mesh->GetMaterialIndex()) {
+			std::vector<uint32_t> meshMatIndex = mesh->GetMaterialIndex();
+			std::vector<uint32_t> meshRangeBufferIndex = mesh->GetSubRangeBufferIndex();
+			for(int i=0;i<meshMatIndex.size();i++)
+			{
+				auto& materialIndex = meshMatIndex[i];
+				int bufferIndex = meshRangeBufferIndex[i];
+				if (mesh->GetIndexCount(bufferIndex) <= 0) {
+					continue;
+				}
 				Tools::Utils::OptRef<::Rendering::Data::Material> material;
 
 				if (materialIndex < kMaxMaterialCount)
@@ -495,6 +503,7 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 					.mesh = *mesh,
 					.material = material,
 					.stateMask = material.has_value() ? material->GenerateStateMask() : ::Rendering::Data::StateMask{},
+					.subIndexBufferIndex= bufferIndex,
 					.primitiveMode=primMode,
 				};
 
@@ -508,24 +517,19 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 					}
 					return std::nullopt;
 					}();
-
-					drawable.AddDescriptor<SceneDrawableDescriptor>({
-						.actor = modelRenderer->owner,
-						.visibilityFlags = materialRenderer->GetVisibilityFlags(),
-						.bounds = bounds,
-						});
-
-					drawable.AddDescriptor<EngineDrawableDescriptor>({
-						transform.GetWorldMatrix(),
-						materialRenderer->GetUserMatrix()
-						});
-
-					result.drawables.push_back(drawable);
+				drawable.AddDescriptor<SceneDrawableDescriptor>({
+					.actor = modelRenderer->owner,
+					.visibilityFlags = materialRenderer->GetVisibilityFlags(),
+					.bounds = bounds,
+					});
+				drawable.AddDescriptor<EngineDrawableDescriptor>({
+					transform.GetWorldMatrix(),
+					materialRenderer->GetUserMatrix()
+					});
+				result.drawables.push_back(drawable);
 			}
-	
 		}
 	}
-
 	return result;
 }
 

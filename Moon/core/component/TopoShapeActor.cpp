@@ -31,8 +31,11 @@ namespace Core::ECS {
 		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_linemat",lineMat);
 		Core::Resources::Material* faceMat = new Core::Resources::Material();
 		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_facemat", faceMat);
+		Core::Resources::Material* faceTransparentMat = new Core::Resources::Material();
+		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_faceTransparentMat", faceTransparentMat);
 		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(0, *faceMat);	
 		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(1, *lineMat);
+		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(2, *faceTransparentMat);
 		GetComponent<Core::ECS::Components::CMaterialRenderer>()->UpdateMaterialList();
 		{
 			auto& renderer=GetSceneView.GetRenderer();;
@@ -54,6 +57,28 @@ namespace Core::ECS {
 			faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
 			faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
 			faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
+
+			{
+				faceTransparentMat->SetBackfaceCulling(false);
+				faceTransparentMat->SetCastShadows(false);
+				faceTransparentMat->SetReceiveShadows(false);
+				//tempMat->SetBlendable(true);
+				//tempMat->SetDepthWriting(false);
+				faceTransparentMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
+				faceTransparentMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 0.5));
+				faceTransparentMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
+				faceTransparentMat->SetProperty("u_Roughness", 0.25f);
+				faceTransparentMat->SetProperty("u_Metallic", 0.75f);
+				// Emission
+				faceTransparentMat->SetProperty("u_EmissiveIntensity", 1.0f);
+				faceTransparentMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+
+				faceTransparentMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
+				faceTransparentMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
+				faceTransparentMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
+				faceTransparentMat->SetBlendable(true);
+				faceTransparentMat->SetDepthWriting(true);
+			}
 
 			lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
 			lineMat->SetBackfaceCulling(false);

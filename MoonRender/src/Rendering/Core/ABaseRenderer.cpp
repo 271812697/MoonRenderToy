@@ -382,6 +382,7 @@ void Rendering::Core::ABaseRenderer::DrawEntity(
 	m_driver.Draw(
 		p_pso,
 		p_drawable.mesh.value(),
+		p_drawable.subIndexBufferIndex,
 		p_drawable.primitiveMode,
 		p_drawable.material->GetGPUInstances()
 	);
