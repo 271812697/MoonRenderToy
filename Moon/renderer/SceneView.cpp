@@ -53,6 +53,7 @@ Editor::Panels::SceneView::SceneView
 				m_highlightedActor.reset();
 			}
 		};
+	
 }
 
 void Editor::Panels::SceneView::Update(float p_deltaTime)

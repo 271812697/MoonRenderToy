@@ -17,6 +17,7 @@ namespace Core::ECS::Components
 		void SetColor( const Maths::FVector4& color);
 		void SetCandidatesIndex(const std::vector<int>& index);
 		void SetHoverColor(int index, const Maths::FVector4& color);
+		void ClearHoverColor();
 		void BuildBvh(const std::vector<::Rendering::Geometry::bbox>&boxs,const  std::vector<uint32_t>&subMeshRanges);
 		std::vector<Core::SceneSystem::RectPickRes>RectPick(const Maths::FMatrix4& modelMatrix, const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev);
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;

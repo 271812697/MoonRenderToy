@@ -16,6 +16,7 @@
 #include "Core/Rendering/GbufferPass.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "Settings/DebugSetting.h"
+#include "core/SelectionManager.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -35,7 +36,9 @@ namespace MOON {
 			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
 				, Qt::ConnectionType::QueuedConnection);
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
+			QObject::connect(&tree, &TreeViewPanel::itemHovered, mSelf, &onActorHovered);
 
+			QObject::connect(&tree, &TreeViewPanel::itemLeave, mSelf, &onActorHoverLeaved);
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");
@@ -202,6 +205,20 @@ namespace MOON {
 		return mInternal->mSceneView;
 	}
 
+	void ViewerWidget::onActorHovered(Core::ECS::Actor* actor)
+	{
+		if (actor != nullptr) {
+			GetSelection.setPreselect(actor->GetID());
+		}
+	}
+
+	void ViewerWidget::onActorHoverLeaved(Core::ECS::Actor* actor)
+	{
+		if (actor != nullptr) {
+			GetSelection.clearPreselect();
+		}
+	}
+
 	void ViewerWidget::onSceneChange(const QString& path)
 	{
 		mInternal->onSwitchScene(path);
@@ -213,6 +230,7 @@ namespace MOON {
 	}
 	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {
 		if (actor != nullptr) {
+			
 			mInternal->mSceneView->SelectActor(*actor);
 		}
 	}

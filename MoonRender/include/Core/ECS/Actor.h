@@ -30,7 +30,9 @@ namespace Core::ECS
 		bool HasParent() const;
 		Actor* GetParent() const;
 		int64_t GetParentID() const;
+		int GetChildId( Actor*child)const;
 		std::vector<Actor*>& GetChildren();
+
 		void MarkAsDestroy();
 		bool IsAlive() const;
 		void SetSleeping(bool p_sleeping);
@@ -91,6 +93,7 @@ namespace Core::ECS
 		int64_t					m_parentID = 0;
 		Actor* m_parent = nullptr;
 		std::vector<Actor*>		m_children;
+		std::unordered_map<Actor*, int>m_childrenId;
 
 		/* Actors components */
 		std::vector<std::shared_ptr<Components::AComponent>> m_components;

@@ -7,17 +7,31 @@ namespace Part {
 namespace Core::ECS { class Actor; }
 namespace Core::ECS::Components
 {
+	struct HighLightOption
+	{
+		enum Mode
+		{
+			Color=0,
+			Transparent=1
+		};
+		Mode mode{ Transparent };
+		Maths::FVector4 hoverColor = { 1,1,0,1 };
+		Maths::FVector4 selectColor = {1,1,1.0,1};
+	};
 	class CTopoShape : public AComponent
 	{
 	public:
 		CTopoShape(ECS::Actor& p_owner);
 		virtual ~CTopoShape()override;
 		std::string GetName() override;
+		HighLightOption& getHightLightOption();
+		void switchHighLightMode(HighLightOption::Mode mode);
 		virtual void OnUpdate(float p_deltaTime) override;
 		std::vector<std::pair<int, int>>GetChildMeshInfo();
-		void setChildsMesh(const std::vector<int>& childs);
+		void setChildsMeshTransParent(const std::vector<int>& childs);
 		Part::TopoShape& GetTopoShape();
-		void clearModel();
+		void hoverChild(int childId);
+		void clearHover();
 		void discretizationFaceShape();
 		void discretizationEdgeShape();
 		void discretizationShape();
