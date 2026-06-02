@@ -27,8 +27,6 @@ namespace MOON {
 		void clearHighlight();	
 	public:
 		QModelIndex m_highlightIndex; // 用来保存当前高亮index
-	private:
-		QModelIndex findIndexByActor(QStandardItem* parent, Core::ECS::Actor* actor);
 
 	protected:
 		

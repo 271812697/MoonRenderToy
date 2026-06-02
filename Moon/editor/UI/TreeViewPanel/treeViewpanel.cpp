@@ -113,15 +113,16 @@ namespace MOON {
 
 		auto model = qobject_cast<MOON::EntityTreeModel*>(this->model());
 		if (!model) return;
-
-		QModelIndex idx = findIndexByActor(model->sceneRoot(), actor);
-
-		if (idx != m_highlightIndex) {
-			// 清空旧的
-			QModelIndex old = m_highlightIndex;
-			m_highlightIndex = idx;
-			if (old.isValid()) update(old);
-			if (idx.isValid()) update(idx);
+		auto item=model->actorItem(actor);
+		if (item) {
+			QModelIndex idx = item->index();
+			if (idx != m_highlightIndex) {
+				// 清空旧的
+				QModelIndex old = m_highlightIndex;
+				m_highlightIndex = idx;
+				if (old.isValid()) update(old);
+				if (idx.isValid()) update(idx);
+			}
 		}
 	}
 
@@ -133,28 +134,6 @@ namespace MOON {
 			update(old);
 		}
 	}
-
-	QModelIndex TreeViewPanel::findIndexByActor(QStandardItem* parent, Core::ECS::Actor* actor)
-	{
-		if (!parent || !actor) return {};
-
-		for (int i = 0; i < parent->rowCount(); ++i) {
-			QStandardItem* item = parent->child(i);
-			if (!item) continue;
-
-			auto ptr = item->data(Qt::UserRole).value<void*>();
-			auto itemActor = static_cast<Core::ECS::Actor*>(ptr);
-
-			if (itemActor == actor) {
-				return static_cast<QStandardItemModel*>(model()) ->indexFromItem(item);
-			}
-
-			QModelIndex subIdx = findIndexByActor(item, actor);
-			if (subIdx.isValid()) return subIdx;
-		}
-		return {};
-	}
-
 
 	void TreeViewPanel::mousePressEvent(QMouseEvent* event)
 	{
