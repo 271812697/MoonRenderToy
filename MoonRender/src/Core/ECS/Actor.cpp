@@ -115,6 +115,7 @@ void Core::ECS::Actor::SetParent(Actor& p_parent)
 	transform.SetParent(p_parent.transform);
 
 	/* Store the actor in the parent children list */
+	p_parent.m_childrenId[this] = p_parent.m_children.size();
 	p_parent.m_children.push_back(this);
 
 	AttachEvent.Invoke(*this, p_parent);
@@ -131,6 +132,7 @@ void Core::ECS::Actor::DetachFromParent()
 			{
 				return p_element == this;
 			}));
+		m_parent->m_childrenId.erase(this);
 	}
 
 	m_parent = nullptr;
@@ -168,6 +170,14 @@ Core::ECS::Actor* Core::ECS::Actor::GetParent() const
 int64_t Core::ECS::Actor::GetParentID() const
 {
 	return m_parentID;
+}
+
+int Core::ECS::Actor::GetChildId( Actor* child) const
+{
+	if (m_childrenId.find(child) != m_childrenId.end()) {
+		return m_childrenId.at(child);
+	}
+	return -1;
 }
 
 std::vector<Core::ECS::Actor*>& Core::ECS::Actor::GetChildren()

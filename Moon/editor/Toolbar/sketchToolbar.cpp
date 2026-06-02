@@ -21,6 +21,7 @@ namespace MOON {
 		virtual void execute()override {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
+			
 			auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo");
 			gizmoPass.enableGizmoWidget(handlerName, value);
 			if (value) {

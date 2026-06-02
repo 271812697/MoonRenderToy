@@ -9,6 +9,7 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
 {
@@ -22,12 +23,13 @@ namespace Core::ECS::Components
 		}
 	private:
 		friend class CTopoShape;
+        HighLightOption highOption;
 		CTopoShape* mSelf = nullptr;
 		Part::TopoShape mTopoShape;
         std::vector<std::pair<int, int>>childMeshInfos;
         bool updateFace = false;
         bool updateEdge = false;
-        bool updateChildMesh = false;
+        bool updateChildMeshTransparent = false;
         std::vector<std::pair<int, int>> curTransparentChildMesh;
         std::vector<std::pair<int, int>>curOpaqueChildMesh;
 	};
@@ -44,6 +46,21 @@ namespace Core::ECS::Components
 	{
 		return "CTopoShape";
 	}
+
+    HighLightOption& CTopoShape::getHightLightOption()
+    {
+        return mInternal->highOption;
+    }
+
+    void CTopoShape::switchHighLightMode(HighLightOption::Mode mode)
+    {
+        if (mode == HighLightOption::Mode::Color) {
+            if (mInternal->highOption.mode == HighLightOption::Mode::Transparent) {
+                setChildsMeshTransParent({});
+            }
+        }
+        mInternal->highOption.mode = mode;
+    }
 
 	void CTopoShape::OnUpdate(float p_deltaTime)
 	{
@@ -209,8 +226,8 @@ namespace Core::ECS::Components
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }
-        if (mInternal->updateChildMesh) {
-            mInternal->updateChildMesh = false;
+        if (mInternal->updateChildMeshTransparent) {
+            mInternal->updateChildMeshTransparent = false;
             auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
             auto mesh = model->GetMesh(0);
             if (mInternal->curOpaqueChildMesh.size()) {
@@ -228,9 +245,9 @@ namespace Core::ECS::Components
         
     }
 
-    void CTopoShape::setChildsMesh(const std::vector<int>& childs)
+    void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
     {
-        mInternal->updateChildMesh = true;
+        mInternal->updateChildMeshTransparent = true;
         std::vector<std::pair<int, int>>listTransparent;
         std::vector<std::pair<int, int>>listOpaque;
         listTransparent.resize(childs.size());
@@ -253,7 +270,6 @@ namespace Core::ECS::Components
         }
         mInternal->curTransparentChildMesh = listTransparent;
         mInternal->curOpaqueChildMesh = listOpaque;
-
     }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -261,9 +277,33 @@ namespace Core::ECS::Components
 		return mInternal->mTopoShape;
 	}
 
-    void CTopoShape::clearModel()
+    void CTopoShape::hoverChild(int childId)
     {
+        
+        GetTreeView.highlightByActor(owner.GetChildren()[childId]);
+        if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
+            auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            bacthMesh.SetHoverColor(childId, mInternal->highOption.hoverColor);
+        }
+        else if(mInternal->highOption.mode == HighLightOption::Mode::Transparent)
+        {
+            setChildsMeshTransParent({ childId });
+        }
     }
+
+    void CTopoShape::clearHover()
+    {
+        GetTreeView.clearHighlight();
+        if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
+            auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            bacthMesh.ClearHoverColor();
+        }
+        else if (mInternal->highOption.mode == HighLightOption::Mode::Transparent)
+        {
+            setChildsMeshTransParent({  });
+        }
+    }
+
 
 
 

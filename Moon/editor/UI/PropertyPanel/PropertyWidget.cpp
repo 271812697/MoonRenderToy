@@ -5,6 +5,7 @@
 #include "Core/ECS/Components/CPostProcessStack.h"
 #include "Core/ECS/Components/CPointLight.h"
 #include "core/ECS/Components/CDirectionalLight.h"
+#include "core/component/CTopoShape.h"
 #include "core/Resources/Material.h"
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
@@ -37,6 +38,50 @@
 #include <fstream>
 
 namespace MOON {
+	class TopoShapePropertyComponent :public ActorPropertyComponent
+	{
+	public:
+		TopoShapePropertyComponent(Core::ECS::Components::CTopoShape* comp) :ActorPropertyComponent(comp) {
+			mProperties.push_back(new EnumProperty("HighLight Mode", this));
+			mProperties.push_back(new ColorPickerProperty("HoverColor", this));
+			mProperties.push_back(new ColorPickerProperty("SeletedColor", this));
+		}
+		virtual ~TopoShapePropertyComponent() {
+
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CTopoShape*>(component);
+			auto& highLightOption = comp->getHightLightOption();
+			if (propertyName == "HighLight Mode") {
+				QList<QString>list = { "Color","Transparent" };
+				return QVariant::fromValue(list);
+			}else if (propertyName == "HoverColor") {
+				auto color = highLightOption.hoverColor;
+				return QVariant::fromValue(QColor(color.x * 255, color.y * 255, color.z * 255,color.w*255));
+			}
+			else if (propertyName == "SeletedColor") {
+				auto color = highLightOption.hoverColor;
+				return QVariant::fromValue(QColor(color.x * 255, color.y * 255, color.z * 255,color.w*255));
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto comp = dynamic_cast<Core::ECS::Components::CTopoShape*>(component);
+			auto& highLightOption = comp->getHightLightOption();
+			if (propertyName == "HighLight Mode") {
+				comp->switchHighLightMode(static_cast<Core::ECS::Components::HighLightOption::Mode>(value.value<int>()));
+			}
+			else if (propertyName == "HoverColor") {
+				auto color = value.value<QColor>();
+				highLightOption.hoverColor={ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha()/255.0f};
+			}
+			else if (propertyName == "SeletedColor") {
+				auto color = value.value<QColor>();
+				highLightOption.selectColor = { color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f };
+
+         	}
+		}
+	};
 	class PostProcessStackPropertyComponent :public ActorPropertyComponent
 	{
 	public:
@@ -340,6 +385,9 @@ namespace MOON {
 		else if (auto trans = dynamic_cast<Core::ECS::Components::CDirectionalLight*>(comp))
 		{
 			return new DirectionLightPropertyComponent(trans);
+		}
+		else if (auto trans = dynamic_cast<Core::ECS::Components::CTopoShape*>(comp)) {
+			return new TopoShapePropertyComponent(trans);
 		}
 		return new ActorPropertyComponent(comp);
 	}

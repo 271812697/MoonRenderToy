@@ -81,7 +81,6 @@ namespace MOON {
 	{
 		drawRect = false;
 		auto[w,h]=m_sceneView->GetSafeSize();
-
 		float su = 2 * (sx) / (float)w - 1;
 		float sv = 2 * (h - sy) / (float)h - 1;
 		float eu = 2 * (ex) / (float)w - 1;
@@ -98,15 +97,13 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
 					if (actor->HasComponent("CTopoShape")) {
-						
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						colorBar->SetCandidatesIndex(it.second);
 						if (colorBar) {
 							colorBar->SetColor( Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
 						}
-						auto mesh = actor->GetComponent<::Core::ECS::Components::CModelRenderer>()->GetModel()->GetMesh(0);
 						auto topoComp=actor->GetComponent<::Core::ECS::Components::CTopoShape>();
-						topoComp->setChildsMesh({ it.second });
+						topoComp->setChildsMeshTransParent({ it.second });
 					}
 				}
 			}
@@ -128,10 +125,8 @@ namespace MOON {
 				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
 				if (actor) {
 					if (actor->HasComponent("CTopoShape")) {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
-						if (colorBar) {
-							colorBar->SetHoverColor( eid , Maths::FVector4{ 1.0f,1.0f,0.0f,1.0f });
-						}
+						auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
+						topoComp->hoverChild(eid);
 					}
 				}
 			}
@@ -150,7 +145,6 @@ namespace MOON {
 					if (actor->HasComponent("CTopoShape")) {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
 						if (colorBar) {
-							//colorBar->SetHoverColor(subLineId, Maths::FVector4{ 1.0f,1.0f,1.0f,1.0f });
 							auto vertexArray=colorBar->getLineSeg(subLineId);
 							lineSeg.clear();
 							lineSeg.reserve(vertexArray.size());

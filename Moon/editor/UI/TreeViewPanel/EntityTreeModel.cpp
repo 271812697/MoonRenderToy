@@ -40,6 +40,7 @@ namespace MOON {
 		QStandardItem* sceneRoot = nullptr;
 		QStandardItem* pathRoot = nullptr;
 		std::unordered_map<std::string, QIcon>mIconMaps;
+		std::unordered_map<Core::ECS::Actor*, QStandardItem*>actorToItem;
 
 	};
 	EntityTreeModel::EntityTreeModel(TreeViewPanel* parent) :
@@ -60,7 +61,9 @@ namespace MOON {
 			return;
 		}
 		mInternl->sceneRoot->removeRows(0, mInternl->sceneRoot->rowCount());
+		mInternl->actorToItem.clear();
 		auto& actors = scene->GetActors();
+		
 		for (int i = 0; i < actors.size(); i++) {
 			if (!actors[i]->HasParent()) {
 				std::vector <QStandardItem*> root = { mInternl->sceneRoot };
@@ -69,6 +72,7 @@ namespace MOON {
 					Core::ECS::Actor* cur = s.back(); s.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
 					QStandardItem* temp = new QStandardItem;
+					mInternl->actorToItem[cur] = temp;
 					auto name = cur->GetName();
 					auto tag = cur->GetTag();
 					temp->setText(QString::fromStdString(name));
@@ -82,6 +86,7 @@ namespace MOON {
 					temp->setCheckState(cur->IsActive()?Qt::Checked:Qt::Unchecked);
 					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->setChild(parent->rowCount(), temp);
+					
 					for (auto& child : cur->GetChildren()) {
 						s.push_back(child);
 						root.push_back(temp);
@@ -102,6 +107,13 @@ namespace MOON {
 	QStandardItem* EntityTreeModel::pathRoot()
 	{
 		return mInternl->pathRoot;
+	}
+	QStandardItem* EntityTreeModel::actorItem(Core::ECS::Actor* actor)
+	{
+		if (mInternl->actorToItem.find(actor) != mInternl->actorToItem.end()) {
+			return mInternl->actorToItem[actor];
+		}
+		return nullptr;
 	}
 	// 同步子节点状态（父节点勾选/取消时调用）
 	void syncChildItems(QStandardItem* parent, Qt::CheckState state) {

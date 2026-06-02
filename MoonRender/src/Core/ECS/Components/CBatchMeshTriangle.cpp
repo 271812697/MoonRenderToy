@@ -117,6 +117,12 @@ namespace Core::ECS::Components
 		mInternal->colorChange = true;
 	}
 
+	void CBatchMeshTriangle::ClearHoverColor()
+	{
+		mInternal->colorChange = true;
+		mInternal->hoverIndex = -1;
+	}
+
 	void CBatchMeshTriangle::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
 	{
 		if (mInternal->rootBvh) {

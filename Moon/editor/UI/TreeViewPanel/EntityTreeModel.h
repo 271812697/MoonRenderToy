@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include <QStandardItemModel>
+namespace Core::ECS {
+	class Actor;
+}
 namespace MOON
 {
 	class TreeViewPanel;
@@ -13,6 +16,8 @@ namespace MOON
 		void onPathRootChange();
 		QStandardItem* sceneRoot();
 		QStandardItem* pathRoot();
+		QStandardItem* actorItem(Core::ECS::Actor* actor);
+		
 	public slots:
 		//void OnExpandedFilter(const QModelIndex& pIndex);
 		void onCheckStageChange(QStandardItem* item);

@@ -30,6 +30,8 @@ namespace MOON {
 		::Editor::Panels::AView* getView();
 	public slots:
 		void onActorSelected(Core::ECS::Actor* actor);
+		void onActorHovered(Core::ECS::Actor* actor);
+		void onActorHoverLeaved(Core::ECS::Actor* actor);
 		void onSceneChange(const QString& path);
 		void updateTreeView();
 	signals:
