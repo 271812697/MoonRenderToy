@@ -7,6 +7,9 @@
 #include <Core/ECS/Components/CBatchMeshTriangle.h>
 #include <core/ECS/Components/CBatchMeshLine.h>
 #include "core/component/CTopoShape.h"
+#include "Core/Global/ServiceLocator.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "core/SelectionManager.h"
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -73,8 +76,6 @@ namespace MOON {
 		auto it=m_sceneView->getInutState().GetMousePosition();
 		sx=it.first;
 		sy = it.second;
-
-
 	}
 
 	void RotateCenter::onMouseLeftButtonReleased()
@@ -127,8 +128,19 @@ namespace MOON {
 					if (actor->HasComponent("CTopoShape")) {
 						auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
 						topoComp->hoverChild(eid);
+						GetTreeView.highlightByActor(actor->GetChildren()[eid]);
+						SelectionManager::instance().setPreselect({ actor->GetChildren()[eid]->GetID() });
 					}
 				}
+			}
+		}
+		else
+		{
+			if (eid != -1) {
+				eid = -1;
+				SelectionManager::instance().clearPreselect();
+				GetTreeView.clearHighlight();
+				lineSeg.clear();
 			}
 		}
 		auto [w, h] = m_sceneView->GetSafeSize();

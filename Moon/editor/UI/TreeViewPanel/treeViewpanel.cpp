@@ -5,6 +5,8 @@
 #include "editor/UI/PropertyPanel/PropertyWidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
+#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObjManager.h"
 #include "renderer/Context.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
@@ -90,18 +92,24 @@ namespace MOON {
 		setFocusPolicy(Qt::StrongFocus);   // 获得焦点
 		viewport()->setAttribute(Qt::WA_Hover); // 关键：让视图识别hov
 		setItemDelegate(new HighlightDelegate(this, this));
+		setSelectionBehavior(QAbstractItemView::SelectRows);
+		setSelectionMode(QAbstractItemView::SingleSelection);
+
+		// 👇 这一句是关键！禁止点行触发勾选
+		setEditTriggers(QAbstractItemView::NoEditTriggers);
 	}
 	TreeViewPanel::~TreeViewPanel()
 	{
 		delete mInternal;
 	}
 
+	void TreeViewPanel::updateTreeViewSketcherRoot()
+	{
+		mInternal->mModel->onSketcherChange();
+	}
+
 	void TreeViewPanel::updateTreeViewSceneRoot() {
 		mInternal->mModel->onSceneRootChange();
-	}
-	void TreeViewPanel::updateTreeViewPathRoot()
-	{
-		mInternal->mModel->onPathRootChange();
 	}
 
 	void TreeViewPanel::highlightByActor(Core::ECS::Actor* actor)
@@ -122,6 +130,9 @@ namespace MOON {
 				m_highlightIndex = idx;
 				if (old.isValid()) update(old);
 				if (idx.isValid()) update(idx);
+
+				this->expand(idx.parent());//逐级展开折叠的父节点
+				this->scrollTo(idx, QAbstractItemView::PositionAtCenter);//滚动至屏幕中间
 			}
 		}
 	}
@@ -158,6 +169,11 @@ namespace MOON {
 				   GetService(PropertyWidget).setSelectedActor(actor);
                    emit setSelectActor(actor);
 				}
+			}
+			else
+			{
+				SketcherObj* sketcher = static_cast<SketcherObj*>(index.data(Qt::UserRole+1).value<void*>());
+				SketcherObjManager::instance().setCurrentActiveSketcherObj(sketcher);
 			}
 		}
 	}

@@ -27,6 +27,7 @@ namespace Core::ECS::Components
 		HighLightOption& getHightLightOption();
 		void switchHighLightMode(HighLightOption::Mode mode);
 		virtual void OnUpdate(float p_deltaTime) override;
+		void updateChildBuffer();
 		std::vector<std::pair<int, int>>GetChildMeshInfo();
 		void setChildsMeshTransParent(const std::vector<int>& childs);
 		Part::TopoShape& GetTopoShape();
@@ -38,6 +39,7 @@ namespace Core::ECS::Components
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node) override;
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;
 	private:
+		void updateChildMesh();
 		class CTopoShapeInternal;
 		CTopoShapeInternal* mInternal = nullptr;
 	};

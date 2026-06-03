@@ -12,10 +12,9 @@ namespace MOON
 	public:
 		EntityTreeModel(TreeViewPanel* parent);
 		~EntityTreeModel();
+		void onSketcherChange();
 		void onSceneRootChange();
-		void onPathRootChange();
 		QStandardItem* sceneRoot();
-		QStandardItem* pathRoot();
 		QStandardItem* actorItem(Core::ECS::Actor* actor);
 		
 	public slots:

@@ -9,11 +9,10 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
-#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
 {
-
 	class CTopoShape::CTopoShapeInternal {
 	public:
 		CTopoShapeInternal(CTopoShape* self) :mSelf(self){
@@ -29,7 +28,9 @@ namespace Core::ECS::Components
         std::vector<std::pair<int, int>>childMeshInfos;
         bool updateFace = false;
         bool updateEdge = false;
-        bool updateChildMeshTransparent = false;
+        bool updateChildMesh = false;
+		std::vector<int>curOpaqueChildMeshIndex;
+        std::vector<int>curTransparentChildMeshIndex;
         std::vector<std::pair<int, int>> curTransparentChildMesh;
         std::vector<std::pair<int, int>>curOpaqueChildMesh;
 	};
@@ -226,18 +227,16 @@ namespace Core::ECS::Components
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }
-        if (mInternal->updateChildMeshTransparent) {
-            mInternal->updateChildMeshTransparent = false;
-            auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
-            auto mesh = model->GetMesh(0);
-            if (mInternal->curOpaqueChildMesh.size()) {
-                mesh->UploadIndices(mInternal->curOpaqueChildMesh,0);
-            }
-            if (mInternal->curTransparentChildMesh.size()) {
-                 mesh->UploadIndices(mInternal->curTransparentChildMesh,1);
-            }
+        if (mInternal->updateChildMesh) {
+            mInternal->updateChildMesh = false;
+            updateChildMesh();
         }
 	}
+
+    void CTopoShape::updateChildBuffer()
+    {
+        mInternal->updateChildMesh = true;
+    }
 
     std::vector<std::pair<int, int>> CTopoShape::GetChildMeshInfo()
     {
@@ -247,29 +246,40 @@ namespace Core::ECS::Components
 
     void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
     {
-        mInternal->updateChildMeshTransparent = true;
-        std::vector<std::pair<int, int>>listTransparent;
-        std::vector<std::pair<int, int>>listOpaque;
-        listTransparent.resize(childs.size());
-        listOpaque.resize(mInternal->childMeshInfos.size()- childs.size());
+        updateChildBuffer();
+        //std::vector<std::pair<int, int>>listTransparent;
+        //std::vector<std::pair<int, int>>listOpaque;
+        std::vector<int>listTransparentIndex;
+        std::vector<int>listOpaqueIndex;
+        //listTransparent.resize(childs.size());
+        //listOpaque.resize(mInternal->childMeshInfos.size()- childs.size());
+        listTransparentIndex.resize(childs.size());
+        listOpaqueIndex.resize(mInternal->childMeshInfos.size() - childs.size());
         std::vector<int>table(mInternal->childMeshInfos.size(),0);
         int indexTransparent = 0;
         int indexOpaque = 0;
+        auto& children=owner.GetChildren();
         for (int i = 0; i < childs.size(); i++) {
             table[childs[i]] = 1;
         }
         for (int i = 0;i < table.size();i++) {
-            if (table[i] == 1) {
-                listTransparent[indexTransparent++] = mInternal->childMeshInfos[i];
-            }
-            else
+            //if (children[i]->IsActive())
             {
-                listOpaque[indexOpaque++]= mInternal->childMeshInfos[i];
+                if (table[i] == 1) {
+                    listTransparentIndex[indexTransparent++] = i;
+                    //listTransparent[indexTransparent++] = mInternal->childMeshInfos[i];
+                }
+                else
+                {
+                    listOpaqueIndex[indexOpaque++] = i;
+                   // listOpaque[indexOpaque++]= mInternal->childMeshInfos[i];
+                }
             }
-            
         }
-        mInternal->curTransparentChildMesh = listTransparent;
-        mInternal->curOpaqueChildMesh = listOpaque;
+		mInternal->curTransparentChildMeshIndex = listTransparentIndex;
+		mInternal->curOpaqueChildMeshIndex = listOpaqueIndex;
+        //mInternal->curTransparentChildMesh = listTransparent;
+        //mInternal->curOpaqueChildMesh = listOpaque;
     }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -279,8 +289,6 @@ namespace Core::ECS::Components
 
     void CTopoShape::hoverChild(int childId)
     {
-        
-        GetTreeView.highlightByActor(owner.GetChildren()[childId]);
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
             auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.SetHoverColor(childId, mInternal->highOption.hoverColor);
@@ -293,7 +301,6 @@ namespace Core::ECS::Components
 
     void CTopoShape::clearHover()
     {
-        GetTreeView.clearHighlight();
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
             auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.ClearHoverColor();
@@ -303,9 +310,6 @@ namespace Core::ECS::Components
             setChildsMeshTransParent({  });
         }
     }
-
-
-
 
     void CTopoShape::discretizationFaceShape()
     {
@@ -330,6 +334,26 @@ namespace Core::ECS::Components
 	void CTopoShape::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)
 	{
 	}
-
-	
+    void CTopoShape::updateChildMesh()
+    {
+		mInternal->curOpaqueChildMesh.clear();
+		mInternal->curTransparentChildMesh.clear();
+        auto& children = owner.GetChildren();
+        for (int i = 0;i < mInternal->curOpaqueChildMeshIndex.size();i++) {
+			int id = mInternal->curOpaqueChildMeshIndex[i];
+            if (children[id]->IsActive()) {
+				mInternal->curOpaqueChildMesh.push_back(mInternal->childMeshInfos[id]);
+            }   
+        }
+        for (int i = 0; i < mInternal->curTransparentChildMeshIndex.size(); i++) {
+			int id = mInternal->curTransparentChildMeshIndex[i];
+            if (children[id]->IsActive()) {
+				mInternal->curTransparentChildMesh.push_back(mInternal->childMeshInfos[id]);
+            }
+        }
+        auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+        auto mesh = model->GetMesh(0);
+        mesh->UploadIndices(mInternal->curOpaqueChildMesh, 0);
+        mesh->UploadIndices(mInternal->curTransparentChildMesh, 1);
+    }
 }

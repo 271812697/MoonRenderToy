@@ -243,12 +243,12 @@ void Rendering::Resources::Mesh::UploadIndices(const std::vector<uint32_t>& p_in
 	if (m_IndexBuffers[index]->Allocate(p_indices.size() * sizeof(uint32_t)))
 	{
 		m_IndexBuffers[index]->Upload(p_indices.data());
-		uploadIndicesCount[index] = p_indices.size();
 	}
 	else
 	{
 		("Empty index buffer!");
 	}
+	uploadIndicesCount[index] = p_indices.size();
 }
 void Rendering::Resources::Mesh::AddSubRangeBuffer()
 {

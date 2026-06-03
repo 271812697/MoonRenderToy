@@ -14,13 +14,13 @@ namespace MOON {
 	public:
 		TreeViewPanel(QWidget* parent);
 		~TreeViewPanel();
+		void updateTreeViewSketcherRoot();
 	signals:
 		void setSelectActor(Core::ECS::Actor* actor);
 		void itemHovered(Core::ECS::Actor* actor);   // 悬浮
 		void itemLeave(Core::ECS::Actor* actor);
 	public slots:
 		void updateTreeViewSceneRoot();
-		void updateTreeViewPathRoot();
 		// 外部调用：根据 Actor 指针高亮 TreeView 项
 		void highlightByActor(Core::ECS::Actor* actor);
 		// 清空高亮

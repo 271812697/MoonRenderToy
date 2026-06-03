@@ -58,12 +58,12 @@ namespace MOON {
 		isHaveActiveHandler = false;
 		auto& gizmoWidgets =renderer->getGizmoWidgets();
         for (auto& it : gizmoWidgets) {
-            dynamic_cast<DrawSketchHandler*>(it.second);
 			if (it.second->isActived() && dynamic_cast<DrawSketchHandler*>(it.second)) {
 				isHaveActiveHandler = true;
                 break;
 			}
         }
+        draw();
         
     }
     void SketcherObj::onMouseMove()
