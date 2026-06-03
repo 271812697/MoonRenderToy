@@ -181,16 +181,15 @@ namespace MOON {
 	{
 		// 获取鼠标下的项
 		QModelIndex index = indexAt(event->pos());
-		
-		if (index != mInternal->m_lastIndex) {
-			::Core::ECS::Actor* lastActor = static_cast<::Core::ECS::Actor*>(mInternal->m_lastIndex.data(Qt::UserRole).value<void*>());
-			::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
+		if (index != mInternal->m_lastIndex) {	
 			// 如果离开上一项 → 发送离开信号
 			if (mInternal->m_lastIndex.isValid()) {
+				::Core::ECS::Actor* lastActor = static_cast<::Core::ECS::Actor*>(mInternal->m_lastIndex.data(Qt::UserRole).value<void*>());
 				emit itemLeave(lastActor);
 			}
 			// 如果进入新项 → 发送悬浮信号
 			if (index.isValid()) {
+				::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
 				emit itemHovered(actor);
 			}
 			mInternal->m_lastIndex = index;

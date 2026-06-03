@@ -60,7 +60,7 @@ namespace MOON {
 	}
 	void EntityTreeModel::onSketcherChange()
 	{
-		mInternl->manaulCheck = false;
+		//mInternl->manaulCheck = false;
 		mInternl->sketcherRoot->removeRows(0, mInternl->sketcherRoot->rowCount());
 		auto sketcherList=SketcherObjManager::instance().GetAllSketcherObjs();
 		auto curActiveSketch=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
@@ -70,10 +70,11 @@ namespace MOON {
 			temp->setIcon(mInternl->mIconMaps["Sketcher"]);
 			mInternl->sketcherRoot->setChild(mInternl->sketcherRoot->rowCount(), temp);
 			temp->setData(QVariant::fromValue((void*)sketcherList[i]), Qt::UserRole+1);
+			temp->setData(QVariant::fromValue((void*)nullptr), Qt::UserRole);
 			temp->setCheckable(true);
 			temp->setCheckState(curActiveSketch== sketcherList[i] ? Qt::Checked : Qt::Unchecked);
 		}
-		mInternl->manaulCheck =true;
+		//mInternl->manaulCheck =true;
 	}
 	void EntityTreeModel::onSceneRootChange()
 	{
