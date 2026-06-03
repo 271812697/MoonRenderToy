@@ -8,6 +8,9 @@
 #include "Settings/DebugSetting.h"
 #include "renderer/GizmoRenderPass.h"
 #include "Gizmo/Widgets/ClipPlane.h"
+#include "core/component/CTopoShape.h"
+#include "core/SelectionManager.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -291,6 +294,11 @@ bool Editor::Panels::SceneView::MouseClipHit(Maths::FVector3& out, const Maths::
 	return false;
 }
 
+Editor::Rendering::PickingRenderPass::PickingResult Editor::Panels::SceneView::GetPickResult()
+{
+	return pickingResult;
+}
+
 ::Rendering::Geometry::Ray Editor::Panels::SceneView::GetMouseRay()
 {
 	
@@ -338,22 +346,58 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	{
 		m_gizmoOperations.StopPicking();
 		//GetScene()->BuildSceneBvh();
-	}
+	}	
 
-	if (!m_gizmoOperations.IsPicking())
-	{
-		auto mousePos = input.GetMousePosition();
-		int mouseY = GetSafeSize().second - mousePos.second - 1;
-		int mouseX = mousePos.first;
-		auto& scene = *GetScene();
-		auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-		const auto pickingResult = actorPickingPass.ReadbackPickingResult(
+	auto mousePos = input.GetMousePosition();
+	int mouseY = GetSafeSize().second - mousePos.second - 1;
+	int mouseX = mousePos.first;
+	auto& scene = *GetScene();
+	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+	//may be we can read by event
+	pickingResult = actorPickingPass.ReadbackPickingResult(
 			scene,
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
 		);
 
+	
+	if (pickingResult.has_value())
+	{
+		if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
+		{
+			auto actor = *pval;
+			if (actor) {
+				if (actor->HasParent()) {
+					auto parent = actor->GetParent();
+					if (parent->HasComponent("CTopoShape")) {
+						int childId = parent->GetChildId(&actor.value());
+						auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
+						topoComp->hoverChild(childId);
+						GetTreeView.highlightByActor(&actor.value());
+						MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
+					}
+				}
+			}
+			else
+			{
+				MOON::SelectionManager::instance().clearPreselect();
+				GetTreeView.clearHighlight();
+			}
+		}
+		else
+		{
+			MOON::SelectionManager::instance().clearPreselect();
+			GetTreeView.clearHighlight();
+		}
+	}
+	else
+	{
+		MOON::SelectionManager::instance().clearPreselect();
+		GetTreeView.clearHighlight();
+	}
 
+	if (!m_gizmoOperations.IsPicking())
+	{
 		m_highlightedActor = {};
 		m_highlightedGizmoDirection = {};
 

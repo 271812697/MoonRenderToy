@@ -96,6 +96,8 @@ namespace Core::ECS::Components
                 int domainIndex = -1;
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
+                        auto& actor = scene->CreateActor("face_" + std::to_string(i));
+                        domainActors.push_back(&actor);
                         domainIndex++;
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
@@ -107,7 +109,7 @@ namespace Core::ECS::Components
                         for (int k = 0; k < domains[i].points.size(); k++) {
                             faceVertices.emplace_back(
                                 Maths::FVector3{ static_cast<float>(domains[i].points[k].x),static_cast<float>(domains[i].points[k].y),static_cast<float>(domains[i].points[k].z) },
-                                Maths::FVector2{ domainIndex * 1.0f,0.0f },
+                                Maths::FVector2{ domainIndex * 1.0f,actor.GetID()*1.0f},
                                 Maths::FVector3{ static_cast<float>(domains[i].normals[k].x),static_cast<float>(domains[i].normals[k].y),static_cast<float>(domains[i].normals[k].z) }
                             );
                             subBox.grow(faceVertices.back().position);
@@ -120,8 +122,7 @@ namespace Core::ECS::Components
 
                         vertexOffset = faceVertices.size();
                         indexOffset = indices.size();
-                        auto& actor = scene->CreateActor("face_" + std::to_string(i));
-                        domainActors.push_back(&actor);
+
                         domainBoxs.push_back(subBox);
                         domainRange.push_back(indexOffset);
                     }

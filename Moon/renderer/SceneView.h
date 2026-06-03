@@ -25,6 +25,7 @@ namespace Editor::Panels
 		void ReceiveEvent(QEvent* e);
 		bool MouseHit(Maths::FVector3& out);
 		bool MouseClipHit(Maths::FVector3& out,const Maths::FVector4& clipPlane);
+		Editor::Rendering::PickingRenderPass::PickingResult GetPickResult();
 		::Rendering::Geometry::Ray GetMouseRay();
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
@@ -38,5 +39,6 @@ namespace Editor::Panels
 		::Core::Resources::Material m_fallbackMaterial;
 		Tools::Utils::OptRef<::Core::ECS::Actor> m_highlightedActor;
 		std::optional<Editor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
+		Editor::Rendering::PickingRenderPass::PickingResult pickingResult;
 	};
 }

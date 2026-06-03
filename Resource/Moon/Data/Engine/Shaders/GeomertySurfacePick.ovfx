@@ -1,0 +1,38 @@
+#shader vertex
+#version 450 core
+
+layout (location = 0) in vec3 geo_Pos;
+layout (location = 1) in vec2 geo_TexCoords;
+
+layout (std140) uniform EngineUBO
+{
+    mat4    ubo_Model;
+    mat4    ubo_View;
+    mat4    ubo_Projection;
+    vec3    ubo_ViewPos;
+    float   ubo_Time;
+};
+out vec2 VstexCoords;
+void main()
+{
+    VstexCoords=geo_TexCoords;
+    gl_Position = ubo_Projection * ubo_View * ubo_Model * vec4(geo_Pos, 1.0);
+}
+
+#shader fragment
+#version 450 core
+in vec2 VstexCoords;
+
+out vec4 FRAGMENT_COLOR;
+
+void main()
+{
+    int actorId=int(round(VstexCoords.y));
+    int r=actorId%255;
+    actorId/=255;
+    int g=actorId%255;
+    actorId/=255;
+    int b=actorId%255;
+
+    FRAGMENT_COLOR =vec4(r/255.0,g/255.0,b/255.0,1.0);
+}

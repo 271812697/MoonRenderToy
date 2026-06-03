@@ -49,7 +49,7 @@ namespace Core::ECS
 		template<typename T>
 		bool RemoveComponent();
 		bool RemoveComponent(Core::ECS::Components::AComponent& p_component);
-		bool HasComponent(const std::string& compName);
+		bool HasComponent(const std::string& compName)const;
 		template<typename T>
 		T* GetComponent() const;
 		std::vector<std::shared_ptr<Components::AComponent>>& GetComponents();

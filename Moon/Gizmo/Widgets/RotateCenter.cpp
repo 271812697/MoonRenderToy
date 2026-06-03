@@ -113,36 +113,71 @@ namespace MOON {
 
 	void RotateCenter::onMouseMove()
 	{
+		//auto pickingResult=m_sceneView->GetPickResult();
+		//if (pickingResult.has_value())
+		//{
+		//	if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
+		//	{
+		//		auto actor = *pval;
+		//		if (actor) {
+		//			if (actor->HasParent()) {
+		//				auto parent = actor->GetParent();
+		//				if (parent->HasComponent("CTopoShape")) {
+		//					int childId = parent->GetChildId(&actor.value());
+		//					auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
+		//					topoComp->hoverChild(childId);
+		//					GetTreeView.highlightByActor(&actor.value());
+		//					MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
+		//				}
+		//			}
+		//		}
+		//		else
+		//		{
+		//			MOON::SelectionManager::instance().clearPreselect();
+		//			GetTreeView.clearHighlight();
+		//		}
+		//	}
+		//	else
+		//	{
+		//		MOON::SelectionManager::instance().clearPreselect();
+		//		GetTreeView.clearHighlight();
+		//	}
+		//}
+		//else
+		//{
+		//	MOON::SelectionManager::instance().clearPreselect();
+		//	GetTreeView.clearHighlight();
+		//}
 		auto it = m_sceneView->getInutState().GetMousePosition();
 		ex = it.first;
 		ey = it.second;
-		auto ray=m_sceneView->GetMouseRay();
-		::Core::SceneSystem::HitRes res;
-		if (m_sceneView->GetScene()->RayHit(ray, res)) {
-			int id=round(res.hitUv.x);
-			if (id != eid) {
-				actorId =res.actorId;
-				eid = id;
-				auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
-				if (actor) {
-					if (actor->HasComponent("CTopoShape")) {
-						auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
-						topoComp->hoverChild(eid);
-						GetTreeView.highlightByActor(actor->GetChildren()[eid]);
-						SelectionManager::instance().setPreselect({ actor->GetChildren()[eid]->GetID() });
-					}
-				}
-			}
-		}
-		else
-		{
-			if (eid != -1) {
-				eid = -1;
-				SelectionManager::instance().clearPreselect();
-				GetTreeView.clearHighlight();
-				lineSeg.clear();
-			}
-		}
+		//auto ray=m_sceneView->GetMouseRay();
+		//::Core::SceneSystem::HitRes res;
+		//if (m_sceneView->GetScene()->RayHit(ray, res)) {
+		//	int id=round(res.hitUv.x);
+		//	if (id != eid) {
+		//		actorId =res.actorId;
+		//		eid = id;
+		//		auto actor = m_sceneView->GetScene()->FindActorByID(actorId);
+		//		if (actor) {
+		//			if (actor->HasComponent("CTopoShape")) {
+		//				auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
+		//				topoComp->hoverChild(eid);
+		//				GetTreeView.highlightByActor(actor->GetChildren()[eid]);
+		//				SelectionManager::instance().setPreselect({ actor->GetChildren()[eid]->GetID() });
+		//			}
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	if (eid != -1) {
+		//		eid = -1;
+		//		SelectionManager::instance().clearPreselect();
+		//		GetTreeView.clearHighlight();
+		//		lineSeg.clear();
+		//	}
+		//}
 		auto [w, h] = m_sceneView->GetSafeSize();
 		Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
 		::Core::SceneSystem::PointPickRes out;
