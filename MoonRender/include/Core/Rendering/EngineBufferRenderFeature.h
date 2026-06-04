@@ -19,6 +19,9 @@ namespace Core::Rendering
 		);
 		void SetCamera(const ::Rendering::Entities::Camera& p_camera);
 		void SetClipPlane(float x,float y,float z,float w);
+		void SetMirrorPlane(float x, float y, float z, float w);
+		void SetMirrorPlane(const Maths::FMatrix4& matrix);
+
 	protected:
 		virtual void OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor) override;
 		virtual void OnEndFrame() override;

@@ -7,7 +7,6 @@ const Rendering::Geometry::BoundingSphere& Rendering::Resources::Model::GetBound
 
 const Rendering::Geometry::bbox& Rendering::Resources::Model::GetBoundingBox()
 {
-	ComputeBoundingBox();
 	return m_boundingBox;
 }
 

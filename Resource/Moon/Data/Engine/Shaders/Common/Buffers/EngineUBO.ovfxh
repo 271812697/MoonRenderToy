@@ -10,5 +10,6 @@ layout (std140, binding = 0) uniform EngineUBO
     int     ubo_ScreenHeight;
     float   ubo_pad;
     vec4    ubo_plane;
+    mat4    ubo_MirroPlaneMatrix;
     mat4    ubo_UserMatrix;
 };

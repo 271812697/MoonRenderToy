@@ -9,8 +9,6 @@
 #include "renderer/GizmoRenderPass.h"
 #include "Gizmo/Widgets/ClipPlane.h"
 #include "core/component/CTopoShape.h"
-#include "core/SelectionManager.h"
-#include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -102,6 +100,7 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 
 void Editor::Panels::SceneView::InitFrame()
 {
+	
 	AViewControllable::InitFrame();
 
 	Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
@@ -330,8 +329,9 @@ Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::Creat
 
 void Editor::Panels::SceneView::DrawFrame()
 {
-	Editor::Panels::AViewControllable::DrawFrame();
 	HandleActorPicking();
+	Editor::Panels::AViewControllable::DrawFrame();
+
 }
 
 bool IsResizing()
@@ -359,42 +359,6 @@ void Editor::Panels::SceneView::HandleActorPicking()
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
 		);
-
-	
-	if (pickingResult.has_value())
-	{
-		if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
-		{
-			auto actor = *pval;
-			if (actor) {
-				if (actor->HasParent()) {
-					auto parent = actor->GetParent();
-					if (parent->HasComponent("CTopoShape")) {
-						int childId = parent->GetChildId(&actor.value());
-						auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-						topoComp->hoverChild(childId);
-						GetTreeView.highlightByActor(&actor.value());
-						MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
-					}
-				}
-			}
-			else
-			{
-				MOON::SelectionManager::instance().clearPreselect();
-				GetTreeView.clearHighlight();
-			}
-		}
-		else
-		{
-			MOON::SelectionManager::instance().clearPreselect();
-			GetTreeView.clearHighlight();
-		}
-	}
-	else
-	{
-		MOON::SelectionManager::instance().clearPreselect();
-		GetTreeView.clearHighlight();
-	}
 
 	if (!m_gizmoOperations.IsPicking())
 	{

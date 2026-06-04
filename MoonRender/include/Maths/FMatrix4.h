@@ -66,6 +66,7 @@ namespace Maths
 		FVector3 MulPoint(const FVector3& p)const;
 		FVector3 MulDir(const FVector3& p)const ;
 		FVector3 MulDirNotNormlaize(const FVector3& p)const;
+		static FMatrix4 ComputeTransformFromYAxisAndOrigin(const FVector3& yAxis, const FVector3& origin, const FVector3& scale);
 		static FMatrix4 Translate(const FMatrix4& p_matrix, const FVector3& p_translation);
 		static FMatrix4 RotationOnAxisX(float p_rotation);
 		static FMatrix4 RotateOnAxisX(const FMatrix4& p_matrix, float p_rotation);

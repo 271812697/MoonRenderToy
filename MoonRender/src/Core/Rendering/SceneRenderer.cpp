@@ -375,7 +375,7 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
-	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque+1);
+	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque-1);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
 	
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);

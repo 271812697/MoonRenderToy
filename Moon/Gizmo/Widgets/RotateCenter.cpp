@@ -113,41 +113,41 @@ namespace MOON {
 
 	void RotateCenter::onMouseMove()
 	{
-		//auto pickingResult=m_sceneView->GetPickResult();
-		//if (pickingResult.has_value())
-		//{
-		//	if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
-		//	{
-		//		auto actor = *pval;
-		//		if (actor) {
-		//			if (actor->HasParent()) {
-		//				auto parent = actor->GetParent();
-		//				if (parent->HasComponent("CTopoShape")) {
-		//					int childId = parent->GetChildId(&actor.value());
-		//					auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-		//					topoComp->hoverChild(childId);
-		//					GetTreeView.highlightByActor(&actor.value());
-		//					MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
-		//				}
-		//			}
-		//		}
-		//		else
-		//		{
-		//			MOON::SelectionManager::instance().clearPreselect();
-		//			GetTreeView.clearHighlight();
-		//		}
-		//	}
-		//	else
-		//	{
-		//		MOON::SelectionManager::instance().clearPreselect();
-		//		GetTreeView.clearHighlight();
-		//	}
-		//}
-		//else
-		//{
-		//	MOON::SelectionManager::instance().clearPreselect();
-		//	GetTreeView.clearHighlight();
-		//}
+		auto pickingResult=m_sceneView->GetPickResult();
+		if (pickingResult.has_value())
+		{
+			if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
+			{
+				auto actor = *pval;
+				if (actor) {
+					if (actor->HasParent()) {
+						auto parent = actor->GetParent();
+						if (parent->HasComponent("CTopoShape")) {
+							int childId = parent->GetChildId(&actor.value());
+							auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
+							topoComp->hoverChild(childId);
+							GetTreeView.highlightByActor(&actor.value());
+							MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
+						}
+					}
+				}
+				else
+				{
+					MOON::SelectionManager::instance().clearPreselect();
+					GetTreeView.clearHighlight();
+				}
+			}
+			else
+			{
+				MOON::SelectionManager::instance().clearPreselect();
+				GetTreeView.clearHighlight();
+			}
+		}
+		else
+		{
+			MOON::SelectionManager::instance().clearPreselect();
+			GetTreeView.clearHighlight();
+		}
 		auto it = m_sceneView->getInutState().GetMousePosition();
 		ex = it.first;
 		ey = it.second;

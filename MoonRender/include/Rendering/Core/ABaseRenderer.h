@@ -114,8 +114,6 @@ namespace Rendering::Core
 		Rendering::Resources::Mesh m_unitQuad;
 		Rendering::Resources::Mesh m_unitCube;
 	protected:
-		
-
 		Data::FrameDescriptor m_frameDescriptor;
 		Context::Driver& m_driver;
 		Rendering::HAL::Texture m_emptyTexture2D;

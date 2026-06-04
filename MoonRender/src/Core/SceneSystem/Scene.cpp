@@ -507,3 +507,27 @@ bool Core::SceneSystem::Scene::PointPick(const Maths::FMatrix4& viewPortMatrix, 
 {
 	return bvhService->m_sceneBvh;
 }
+
+void Core::SceneSystem::Scene::computeBoundingBox()
+{
+	m_sceneBoundingBox = ::Rendering::Geometry::bbox();
+	if (bvhService->m_sceneBvh) {
+		m_sceneBoundingBox = bvhService->m_sceneBvh->Bounds();
+	}
+	else
+	{
+		for (auto modelRenderer : m_fastAccessComponents.modelRenderers)
+		{
+			if (modelRenderer->owner.IsActive())
+			{
+				auto model = modelRenderer->GetModel();
+				if (model) {
+					auto matrix = modelRenderer->owner.transform.GetWorldMatrix();
+					for (auto& m : model->GetMeshes()) {
+						m_sceneBoundingBox.grow(m->GetBoundingBox().transform(matrix));
+					}
+				}
+			}
+		}
+	}
+}

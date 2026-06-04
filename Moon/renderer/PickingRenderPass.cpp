@@ -7,6 +7,7 @@
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "Gizmo/Gizmo.h"
+#include "Qtimgui/imgui/imgui.h"
 #include <Rendering/HAL/Profiling.h>
 
 namespace
@@ -129,9 +130,10 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	m_renderer.Clear(true, true, true);
 
 	DrawPickableModels(pso, scene);
-	DrawPickableCameras(pso, scene);
-	DrawPickableReflectionProbes(pso, scene);
-	DrawPickableLights(pso, scene);
+	//the following code has bugs and is temporarily disabled
+	//DrawPickableCameras(pso, scene);
+	//DrawPickableReflectionProbes(pso, scene);
+	//DrawPickableLights(pso, scene);
 	auto& gizmoInstance = MOON::Gizmo::instance();
 	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
@@ -151,6 +153,12 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 
 	m_actorPickingFramebuffer.Unbind();
 	
+	//the following code is for debug, it will display the picking framebuffer
+	//ImVec2 a = { 0,1 }, b = { 1,0 };
+	//ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+	//auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+	//ImGui::Image(resid->GetID(), size, a, b);
+
 
 	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{

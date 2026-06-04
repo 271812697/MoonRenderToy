@@ -11,7 +11,7 @@ namespace
 		Maths::FMatrix4    ubo_View;
 		Maths::FMatrix4    ubo_Projection;
 		Maths::FVector3    ubo_ViewPos;
-		int					ubo_CameraType; //0 orth,1 pers
+		int				   ubo_CameraType; //0 orth,1 pers
 	};
 	struct ViewInfo
 	{
@@ -20,17 +20,18 @@ namespace
 		int		ubo_screenHeigh;
 		float	ubo_pad;
 	};
-	struct ClipPlane
+	struct PlaneInfo
 	{
 		Maths::FVector4 plane;
+		Maths::FMatrix4    ubo_MirroPlaneMatrix;
 		static unsigned long long offset;
 	};
-	unsigned long long ClipPlane::offset = sizeof(Maths::FMatrix4)+ sizeof(CameraInfo) + sizeof(ViewInfo);
+	unsigned long long PlaneInfo::offset = sizeof(Maths::FMatrix4)+ sizeof(CameraInfo) + sizeof(ViewInfo);
 	struct EngineUBO{
 		Maths::FMatrix4    ubo_Model;
 		CameraInfo ubo_CameraInfo;
 		ViewInfo ubo_CustomInfo;
-		ClipPlane ubo_plane;
+		PlaneInfo ubo_plane;
 		Maths::FMatrix4    ubo_UserMatrix;
 
 	};
@@ -69,15 +70,73 @@ void Core::Rendering::EngineBufferRenderFeature::SetClipPlane(float x, float y, 
 	
 	Maths::FVector4 plane = {x,y,z,w};
 	m_engineBuffer->Upload(&plane, ::Rendering::HAL::BufferMemoryRange{
-	.offset = ClipPlane::offset, // Skip uploading the first matrix (Model matrix)
-	.size = sizeof(ClipPlane)
+	.offset = PlaneInfo::offset, // Skip uploading the first matrix (Model matrix)
+	.size = sizeof(Maths::FVector4)
+		});
+}
+
+void Core::Rendering::EngineBufferRenderFeature::SetMirrorPlane(float x, float y, float z, float w)
+{
+	// 平面方程：ax + by + cz + d = 0
+	float a = x;
+	float b = y;
+	float c = z;
+	float d = w;
+
+	// 1. 计算法向量长度
+	float len = sqrtf(a * a + b * b + c * c);
+	if (len < 1e-9f) {
+		return;
+	}
+
+	// 2. 单位化平面（必须！）
+	float nx = a / len;
+	float ny = b / len;
+	float nz = c / len;
+	float pd = d / len;
+
+	// ================================
+	// 3. 计算标准【镜像变换矩阵】
+	// 严格对应 FMatrix4::data[16]
+	// ================================
+	Maths::FMatrix4 mirrorMat;
+
+	mirrorMat.data[0] = 1 - 2 * nx * nx;
+	mirrorMat.data[1] = -2 * nx * ny;
+	mirrorMat.data[2] = -2 * nx * nz;
+	mirrorMat.data[3] = -2 * nx * pd;
+
+	mirrorMat.data[4] = -2 * ny * nx;
+	mirrorMat.data[5] = 1 - 2 * ny * ny;
+	mirrorMat.data[6] = -2 * ny * nz;
+	mirrorMat.data[7] = -2 * ny * pd;
+
+	mirrorMat.data[8] = -2 * nz * nx;
+	mirrorMat.data[9] = -2 * nz * ny;
+	mirrorMat.data[10] = 1 - 2 * nz * nz;
+	mirrorMat.data[11] = -2 * nz * pd;
+
+	mirrorMat.data[12] = 0.0f;
+	mirrorMat.data[13] = 0.0f;
+	mirrorMat.data[14] = 0.0f;
+	mirrorMat.data[15] = 1.0f;
+	// 4. 上传到 UBO（调用你已有的函数）
+	SetMirrorPlane(Maths::FMatrix4::Transpose(mirrorMat));
+}
+
+void Core::Rendering::EngineBufferRenderFeature::SetMirrorPlane(const Maths::FMatrix4& matrix)
+{
+	
+	m_engineBuffer->Upload(&matrix, ::Rendering::HAL::BufferMemoryRange{
+	.offset = PlaneInfo::offset+sizeof(Maths::FVector4), // Skip uploading the first matrix (Model matrix)
+	.size = sizeof(Maths::FMatrix4)
 		});
 }
 
 void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
 {
 	assert(p_frameDescriptor.camera.has_value()&&"Camera is not set in the frame descriptor");
-
+	
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	auto elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTime - m_startTime);
 
