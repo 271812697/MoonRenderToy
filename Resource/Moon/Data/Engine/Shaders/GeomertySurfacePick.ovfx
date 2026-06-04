@@ -12,27 +12,29 @@ layout (std140) uniform EngineUBO
     vec3    ubo_ViewPos;
     float   ubo_Time;
 };
+
 out vec2 VstexCoords;
+
 void main()
 {
-    VstexCoords=geo_TexCoords;
+    VstexCoords = geo_TexCoords;
     gl_Position = ubo_Projection * ubo_View * ubo_Model * vec4(geo_Pos, 1.0);
 }
 
 #shader fragment
 #version 450 core
+
 in vec2 VstexCoords;
 
 out vec4 FRAGMENT_COLOR;
 
 void main()
 {
-    int actorId=int(round(VstexCoords.y));
-    int r=actorId%256;
-    actorId/=256;
-    int g=actorId%256;
-    actorId/=256;
-    int b=actorId%256;
+    int actorId = int(round(VstexCoords.y));
+    
+    int r = actorId & 0xFF;
+    int g = (actorId >> 8) & 0xFF;
+    int b = (actorId >> 16) & 0xFF;
 
-    FRAGMENT_COLOR =vec4(r/255.0,g/255.0,b/255.0,1.0);
+    FRAGMENT_COLOR = vec4(r / 255.0, g / 255.0, b / 255.0, 1.0);
 }

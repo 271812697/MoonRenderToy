@@ -6,6 +6,7 @@
 
 namespace Editor::Core
 {
+	struct MirrorPlane { Maths::FVector3 Normal; Maths::FVector3 Point; float Score; };
 	class CameraController
 	{
 	public:
@@ -29,7 +30,8 @@ namespace Editor::Core
 		void LockTargetActor(::Core::ECS::Actor& p_actor);
 		void UnlockTargetActor();
 		void EnableRotate(bool flag);
-
+		MirrorPlane GetMirrorPlane() {return  mirrorPlane;
+		}
 	private:
 		std::optional<std::reference_wrapper<::Core::ECS::Actor>> GetTargetActor() const;
 		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
@@ -67,5 +69,6 @@ namespace Editor::Core
 		float m_focusLerpCoefficient = 8.0f;
 
 		std::optional<std::reference_wrapper<::Core::ECS::Actor>> m_lockedActor = std::nullopt;
+		MirrorPlane mirrorPlane;
 	};
 }

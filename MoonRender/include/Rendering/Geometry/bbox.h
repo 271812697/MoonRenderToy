@@ -66,6 +66,7 @@ namespace Rendering::Geometry
 		// Grow the bounding box by a box
 		void grow(bbox const& b);
 		bbox transform(const Maths::FMatrix4&)const;
+		bbox addgap(float ratio)const;
 
 		FVector3 pmin;
 		FVector3 pmax;
