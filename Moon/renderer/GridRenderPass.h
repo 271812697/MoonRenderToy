@@ -24,6 +24,8 @@ namespace Editor::Rendering
 		{
 			Maths::FVector3 gridColor;
 			Maths::FVector3 viewPosition;
+			Maths::FVector3 mirrorPlaneNormal;
+			Maths::FVector3 mirrorPlaneCenter;
 		};
 
 		/**

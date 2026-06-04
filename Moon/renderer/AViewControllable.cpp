@@ -25,12 +25,21 @@ void Editor::Panels::AViewControllable::Update(float p_deltaTime)
 
 void Editor::Panels::AViewControllable::InitFrame()
 {
+   
+
 	m_camera.SetFrustumGeometryCulling(false);
 	m_camera.SetFrustumLightCulling(false);
 	AView::InitFrame();
+
+    
+    Maths::FVector3 cameraPos = m_camera.GetPosition();
+	auto mirrorPlane=m_cameraController.GetMirrorPlane();
+  
 	m_renderer->AddDescriptor<Rendering::GridRenderPass::GridDescriptor>({
 		m_gridColor,
-		m_camera.GetPosition()
+        cameraPos,
+		mirrorPlane.Normal,
+		mirrorPlane.Point
 		});
 }
 

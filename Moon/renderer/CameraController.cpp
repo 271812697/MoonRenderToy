@@ -7,6 +7,62 @@
 #include <iostream>
 
 
+Editor::Core::MirrorPlane ComputeMirrorPlane(const Maths::FVector3& CameraPos, const Maths::FVector3& CameraForward, const Maths::FVector3& BBoxMin, const Maths::FVector3& BBoxMax)
+{
+	Maths::FVector3 Center = (BBoxMin + BBoxMax) * 0.5f;
+	Maths::FVector3 Extent = (BBoxMax - BBoxMin) * 0.5f;
+
+	Editor::Core::MirrorPlane Faces[6];
+
+	Faces[0] = { Maths::FVector3(-1,0,0), Maths::FVector3(BBoxMin.x, Center.y, Center.z), 0.0f };
+	Faces[1] = { Maths::FVector3(1,0,0), Maths::FVector3(BBoxMax.x, Center.y, Center.z), 0.0f };
+	Faces[2] = { Maths::FVector3(0,-1,0), Maths::FVector3(Center.x, BBoxMin.y, Center.z), 0.0f };
+	Faces[3] = { Maths::FVector3(0,1,0), Maths::FVector3(Center.x, BBoxMax.y, Center.z), 0.0f };
+	Faces[4] = { Maths::FVector3(0,0,-1), Maths::FVector3(Center.x, Center.y, BBoxMin.z), 0.0f };
+	Faces[5] = { Maths::FVector3(0,0,1), Maths::FVector3(Center.x, Center.y, BBoxMax.z), 0.0f };
+
+	float totalArea = (Extent.x * Extent.y + Extent.y * Extent.z + Extent.x * Extent.z) * 2.0f;
+
+	for (int i = 0; i < 6; ++i)
+	{
+		float dotNormalForward = Maths::FVector3::Dot(Faces[i].Normal, CameraForward);
+		float dist = Maths::FVector3::Dot(Faces[i].Normal, CameraPos - Faces[i].Point);
+
+		bool isFront = dist < 0.0f;
+		bool isHorizontal = (i == 2 || i == 3);
+
+		float facingScore = 0.0f;
+		if (isFront && dotNormalForward < 0.0f)
+			facingScore = std::abs(dotNormalForward);
+
+		float distScore = 0.0f;
+		if (isFront)
+		{
+			float d = std::abs(dist);
+			distScore = 1.0f / (1.0f + d * 0.15f);
+		}
+
+		float areaScore = 0.1f;
+		if (i == 0 || i == 1) areaScore = Extent.y * Extent.z;
+		if (i == 2 || i == 3) areaScore = Extent.x * Extent.z;
+		if (i == 4 || i == 5) areaScore = Extent.x * Extent.y;
+		areaScore = std::clamp(areaScore / (totalArea * 0.3f), 0.1f, 1.0f);
+
+		float horizontalBonus = isHorizontal ? 1.8f : 1.0f;
+		float finalScore = (facingScore * 0.5f + distScore * 0.3f + areaScore * 0.2f) * horizontalBonus;
+
+		Faces[i].Score = isFront ? finalScore : 0.0f;
+	}
+
+	int bestIdx = 0;
+	for (int i = 1; i < 6; ++i)
+	{
+		if (Faces[i].Score > Faces[bestIdx].Score)
+			bestIdx = i;
+	}
+
+	return Faces[bestIdx];
+}
 Editor::Core::CameraController::CameraController(
 	Editor::Panels::AView& p_view,
 	::Rendering::Entities::Camera& p_camera
@@ -15,7 +71,7 @@ Editor::Core::CameraController::CameraController(
 	m_camera(p_camera)
 {
 	m_camera.SetFov(60.0f);
-
+	mirrorPlane= { Maths::FVector3(0,1,0),Maths::FVector3(0,0,0),0 };
 }
 
 float GetActorFocusDist(Core::ECS::Actor& p_actor)
@@ -376,5 +432,12 @@ void Editor::Core::CameraController::HandleMouseReleased()
 	{
 		m_rightMousePressed = false;
 		m_firstMouse = true;
+		auto box = m_view.GetScene()->GetSceneBoundingBox();
+		if (box.isValid() ) {
+			box = box.addgap(0.1);
+			Maths::FVector3 cameraForward = m_camera.GetTransform().GetWorldForward();
+			Maths::FVector3 cameraPos = m_camera.GetPosition();
+			mirrorPlane = ComputeMirrorPlane(cameraPos, cameraForward, box.pmin, box.pmax);
+		}
 	}
 }

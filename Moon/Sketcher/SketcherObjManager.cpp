@@ -1,5 +1,7 @@
 ﻿#include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "Core/Global/ServiceLocator.h"
 #include <memory>
 #include <vector>
 namespace MOON {
@@ -14,6 +16,7 @@ namespace MOON {
 	private:
 		friend SketcherObjManager;
 		SketcherObjManager* self = nullptr;
+		SketcherObj* currentSketcherObj = nullptr;
 		std::vector<std::shared_ptr<SketcherObj>>sketchers;
 	};
 	SketcherObjManager& SketcherObjManager::instance() {
@@ -26,18 +29,59 @@ namespace MOON {
 	}
 	SketcherObj* SketcherObjManager::GetCurrentActiveSketcherObj()
 	{
-		if (mInternal->sketchers.size()) {
-			return mInternal->sketchers.back().get();
+		return mInternal->currentSketcherObj;
+	}
+	void SketcherObjManager::setCurrentActiveSketcherObj(SketcherObj* obj)
+	{
+		auto& sketchers = mInternal->sketchers;
+		if (!obj) {
+			if (sketchers.size()) {
+				mInternal->currentSketcherObj = sketchers.back().get();
+			}
+			else
+			{
+				mInternal->currentSketcherObj = nullptr;
+			}
 		}
-		return nullptr;
+		else
+		{
+			
+			for (int i = 0;i < sketchers.size();i++) {
+				if (sketchers[i].get() == obj) {
+					mInternal->currentSketcherObj = obj;
+					break;
+				}
+			}
+		}
+		//for (int i = 0;i < sketchers.size();i++) {
+		//	if (sketchers[i].get() != mInternal->currentSketcherObj) {
+		//		sketchers[i]->setActive(false);
+		//	}
+		//	else
+		//	{
+		//		sketchers[i]->setActive(true);
+		//	}
+		//}
+	}
+	std::vector<SketcherObj*> SketcherObjManager::GetAllSketcherObjs()
+	{
+		std::vector<SketcherObj*>res;
+		for (int i = 0;i < mInternal->sketchers.size();i++) {
+			res.push_back(mInternal->sketchers[i].get());
+		}
+		return res;
 	}
 	void SketcherObjManager::Push()
 	{
 		CreateSketcherObj();
+		setCurrentActiveSketcherObj(nullptr);
+		GetTreeView.updateTreeViewSketcherRoot();
 	}
 	void SketcherObjManager::Pop()
 	{
 		mInternal->sketchers.pop_back();
+		setCurrentActiveSketcherObj(nullptr);
+		GetTreeView.updateTreeViewSketcherRoot();
 	}
 	SketcherObj* SketcherObjManager::CreateSketcherObj()
 	{

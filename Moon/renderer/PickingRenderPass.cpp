@@ -7,6 +7,7 @@
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
 #include "Gizmo/Gizmo.h"
+#include "Qtimgui/imgui/imgui.h"
 #include <Rendering/HAL/Profiling.h>
 
 namespace
@@ -17,8 +18,7 @@ namespace
 		const std::string& p_uniformName = "_PickingColor"
 	)
 	{
-		uint32_t actorID = static_cast<uint32_t>(p_actor.GetID());
-
+		uint32_t actorID = static_cast<uint32_t>(p_actor.GetID());	
 		auto bytes = reinterpret_cast<uint8_t*>(&actorID);
 		auto color = Maths::FVector4{ bytes[0] / 255.0f, bytes[1] / 255.0f, bytes[2] / 255.0f, 1.0f };
 
@@ -54,6 +54,8 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 
 	/* Picking Material */
 	m_actorPickingFallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("PickingFallback"));
+	m_TopoShapePickingFallbackMaterial.SetShader(GetShaderService[":Shaders\\GeomertySurfacePick.ovfx"]);
+	m_TopoShapePickingFallbackMaterial.SetBackfaceCulling(false);
 }
 
 Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRenderPass::ReadbackPickingResult(
@@ -128,9 +130,10 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	m_renderer.Clear(true, true, true);
 
 	DrawPickableModels(pso, scene);
-	DrawPickableCameras(pso, scene);
-	DrawPickableReflectionProbes(pso, scene);
-	DrawPickableLights(pso, scene);
+	//the following code has bugs and is temporarily disabled
+	//DrawPickableCameras(pso, scene);
+	//DrawPickableReflectionProbes(pso, scene);
+	//DrawPickableLights(pso, scene);
 	auto& gizmoInstance = MOON::Gizmo::instance();
 	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
@@ -150,6 +153,12 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 
 	m_actorPickingFramebuffer.Unbind();
 	
+	//the following code is for debug, it will display the picking framebuffer
+	//ImVec2 a = { 0,1 }, b = { 1,0 };
+	//ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+	//auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+	//ImGui::Image(resid->GetID(), size, a, b);
+
 
 	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
@@ -165,28 +174,45 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 	const auto& filteredDrawables = m_renderer.GetDescriptor<::Core::Rendering::SceneRenderer::SceneFilteredDrawablesDescriptor>();
 	auto drawPickableModels = [&](auto drawables) {
 		for (auto& drawable : drawables)
-		{
-			const std::string pickingPassName = "PICKING_PASS";
-			// If the material has picking pass, use it, otherwise use the picking fallback material
-			auto& targetMaterial =
-				(drawable.material && drawable.material->IsValid() && drawable.material->HasPass(pickingPassName)) ?
-				drawable.material.value() :
-				m_actorPickingFallbackMaterial;
+		{			
 			const auto& actor = drawable.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDrawableDescriptor>().actor;
-			PreparePickingMaterial(actor, targetMaterial);
-			// Prioritize using the actual material state mask.
-			auto stateMask =
-				drawable.material && drawable.material->IsValid() ?
-				drawable.material->GenerateStateMask() :
-				targetMaterial.GenerateStateMask();
+			if (actor.HasComponent("CTopoShape")) {
+			
+				// Prioritize using the actual material state mask.
+				auto stateMask = m_TopoShapePickingFallbackMaterial.GenerateStateMask();
 
-			::Rendering::Entities::Drawable finalDrawable = drawable;
-			finalDrawable.material = targetMaterial;
-			finalDrawable.stateMask = stateMask;
-			finalDrawable.stateMask.frontfaceCulling = false;
-			finalDrawable.stateMask.backfaceCulling = false;
-			finalDrawable.pass = pickingPassName;
-			m_renderer.DrawEntity(p_pso, finalDrawable);
+				::Rendering::Entities::Drawable finalDrawable = drawable;
+				finalDrawable.material = m_TopoShapePickingFallbackMaterial;
+				finalDrawable.stateMask = stateMask;
+				finalDrawable.stateMask.frontfaceCulling = false;
+				finalDrawable.stateMask.backfaceCulling = false;
+				m_renderer.DrawEntity(p_pso, finalDrawable);
+			}
+			else
+			{
+				const std::string pickingPassName = "PICKING_PASS";
+				// If the material has picking pass, use it, otherwise use the picking fallback material
+				auto& targetMaterial =
+					(drawable.material && drawable.material->IsValid() && drawable.material->HasPass(pickingPassName)) ?
+					drawable.material.value() :
+					m_actorPickingFallbackMaterial;
+
+				PreparePickingMaterial(actor, targetMaterial);
+				// Prioritize using the actual material state mask.
+				auto stateMask =
+					drawable.material && drawable.material->IsValid() ?
+					drawable.material->GenerateStateMask() :
+					targetMaterial.GenerateStateMask();
+
+				::Rendering::Entities::Drawable finalDrawable = drawable;
+				finalDrawable.material = targetMaterial;
+				finalDrawable.stateMask = stateMask;
+				finalDrawable.stateMask.frontfaceCulling = false;
+				finalDrawable.stateMask.backfaceCulling = false;
+				finalDrawable.pass = pickingPassName;
+				m_renderer.DrawEntity(p_pso, finalDrawable);
+			}
+
 		}
 		};
 

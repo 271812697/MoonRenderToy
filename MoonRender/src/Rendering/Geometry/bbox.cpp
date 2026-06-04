@@ -56,6 +56,11 @@ namespace Rendering::Geometry
 		}
 		return ret;
 	}
+	bbox bbox::addgap(float ratio) const
+	{
+		FVector3 gap = extents() * ratio;
+		return bbox(pmin-gap,pmax+gap);
+	}
 	bool bbox::contains(FVector3 const& p) const
 	{
 		FVector3 radius = extents() * 0.5f;

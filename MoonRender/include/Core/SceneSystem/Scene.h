@@ -64,6 +64,12 @@ namespace Core::SceneSystem
 		bool PointPick(const Maths::FMatrix4& viewPortMatrix, int x, int y, float tolerance, PointPickRes& out);
 		::Rendering::Geometry::Bvh* GetBvh();
 		BvhService* GetBvhService() { return bvhService; }
+		::Rendering::Geometry::bbox GetSceneBoundingBox(){
+			computeBoundingBox();
+			return m_sceneBoundingBox;
+		}
+	private:
+		void computeBoundingBox();
 	private:
 		int64_t m_availableID = 1;
 		bool m_isPlaying = false;

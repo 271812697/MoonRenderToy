@@ -5,6 +5,8 @@
 #include "editor/UI/PropertyPanel/PropertyWidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/SceneSystem/SceneManager.h"
+#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObjManager.h"
 #include "renderer/Context.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
@@ -90,18 +92,24 @@ namespace MOON {
 		setFocusPolicy(Qt::StrongFocus);   // 获得焦点
 		viewport()->setAttribute(Qt::WA_Hover); // 关键：让视图识别hov
 		setItemDelegate(new HighlightDelegate(this, this));
+		setSelectionBehavior(QAbstractItemView::SelectRows);
+		setSelectionMode(QAbstractItemView::SingleSelection);
+
+		// 👇 这一句是关键！禁止点行触发勾选
+		setEditTriggers(QAbstractItemView::NoEditTriggers);
 	}
 	TreeViewPanel::~TreeViewPanel()
 	{
 		delete mInternal;
 	}
 
+	void TreeViewPanel::updateTreeViewSketcherRoot()
+	{
+		mInternal->mModel->onSketcherChange();
+	}
+
 	void TreeViewPanel::updateTreeViewSceneRoot() {
 		mInternal->mModel->onSceneRootChange();
-	}
-	void TreeViewPanel::updateTreeViewPathRoot()
-	{
-		mInternal->mModel->onPathRootChange();
 	}
 
 	void TreeViewPanel::highlightByActor(Core::ECS::Actor* actor)
@@ -122,6 +130,9 @@ namespace MOON {
 				m_highlightIndex = idx;
 				if (old.isValid()) update(old);
 				if (idx.isValid()) update(idx);
+
+				this->expand(idx.parent());//逐级展开折叠的父节点
+				this->scrollTo(idx, QAbstractItemView::PositionAtCenter);//滚动至屏幕中间
 			}
 		}
 	}
@@ -159,22 +170,26 @@ namespace MOON {
                    emit setSelectActor(actor);
 				}
 			}
+			else
+			{
+				SketcherObj* sketcher = static_cast<SketcherObj*>(index.data(Qt::UserRole+1).value<void*>());
+				SketcherObjManager::instance().setCurrentActiveSketcherObj(sketcher);
+			}
 		}
 	}
 	void TreeViewPanel::mouseMoveEvent(QMouseEvent* event)
 	{
 		// 获取鼠标下的项
 		QModelIndex index = indexAt(event->pos());
-		
-		if (index != mInternal->m_lastIndex) {
-			::Core::ECS::Actor* lastActor = static_cast<::Core::ECS::Actor*>(mInternal->m_lastIndex.data(Qt::UserRole).value<void*>());
-			::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
+		if (index != mInternal->m_lastIndex) {	
 			// 如果离开上一项 → 发送离开信号
 			if (mInternal->m_lastIndex.isValid()) {
+				::Core::ECS::Actor* lastActor = static_cast<::Core::ECS::Actor*>(mInternal->m_lastIndex.data(Qt::UserRole).value<void*>());
 				emit itemLeave(lastActor);
 			}
 			// 如果进入新项 → 发送悬浮信号
 			if (index.isValid()) {
+				::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
 				emit itemHovered(actor);
 			}
 			mInternal->m_lastIndex = index;

@@ -61,6 +61,7 @@ namespace Editor::Rendering
 	private:
 		::Rendering::HAL::Framebuffer m_actorPickingFramebuffer;
 		::Core::Resources::Material m_actorPickingFallbackMaterial;
+		::Core::Resources::Material m_TopoShapePickingFallbackMaterial;
 		::Core::Resources::Material m_reflectionProbeMaterial;
 		::Core::Resources::Material m_lightMaterial;
 		::Core::Resources::Material m_gizmoPickingMaterial;

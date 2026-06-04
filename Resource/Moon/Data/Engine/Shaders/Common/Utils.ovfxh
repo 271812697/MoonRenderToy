@@ -140,10 +140,11 @@ bool IsMasked(sampler2D maskMap, vec2 texCoords)
 
 mat3 ConstructTBN(mat4 model, vec3 normal, vec3 tangent, vec3 bitangent)
 {
-   return mat3(
-        normalize(vec3(model * vec4(tangent,   0.0))),
-        normalize(vec3(model * vec4(bitangent, 0.0))),
-        normalize(vec3(model * vec4(normal,    0.0)))
+    mat3 normalMatrix = mat3(transpose(inverse(model)));
+    return mat3(
+        normalize(normalMatrix * tangent),
+        normalize(normalMatrix * bitangent),
+        normalize(normalMatrix * normal)
     );
 }
 mat3 ComputeTBN(const vec3 position, const vec3 normal, const vec2 uv) {

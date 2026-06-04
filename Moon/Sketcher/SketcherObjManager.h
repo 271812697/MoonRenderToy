@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <vector>
 namespace MOON {
 	class SketcherObj;
 	class SketcherObjManager {
@@ -6,6 +7,8 @@ namespace MOON {
 		static SketcherObjManager& instance();
 		~SketcherObjManager();
 		SketcherObj* GetCurrentActiveSketcherObj();
+		void setCurrentActiveSketcherObj(SketcherObj* obj);
+		std::vector<SketcherObj*> GetAllSketcherObjs();
 		void Push();
 		void Pop();
 	private:

@@ -1,8 +1,11 @@
 ﻿#include "EntityTreeModel.h"
 #include "Core/Global/ServiceLocator.h"
+#include "core/component/CTopoShape.h"
 #include "Core/SceneSystem/Scene.h"
 #include "renderer/Context.h"
 #include "treeViewpanel.h"
+#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObjManager.h"
 
 
 namespace MOON {
@@ -16,11 +19,10 @@ namespace MOON {
 			QList<QStandardItem*> arrays;
 			sceneRoot = new QStandardItem;
 			sceneRoot->setText(QString("SceneActor"));
+			sketcherRoot = new QStandardItem;
+			sketcherRoot->setText(QString("Sketcher"));
 			arrays.push_back(sceneRoot);
-			pathRoot = new QStandardItem;
-			pathRoot->setText(QString("PathTrace"));
-
-			arrays.push_back(pathRoot);
+			arrays.push_back(sketcherRoot);
 			self->invisibleRootItem()->appendColumn(arrays);
 			mIconMaps["eyeOpen"] = QIcon(":/entityTree/icons/pqEyeball.svg");
 			mIconMaps["eyeClose"] = QIcon(":/entityTree/icons/pqEyeballClosed.svg");
@@ -31,14 +33,16 @@ namespace MOON {
 			mIconMaps["SkyBox"] = QIcon(":/widgets/icons/awesomeface.png");
 			mIconMaps["PostProcessStack"] = QIcon(":/widgets/icons/awesomeface.png");
 			mIconMaps[""]= QIcon(":/widgets/icons/Model.png");
+			mIconMaps["Sketcher"] = QIcon(":/widgets/icons/Sketcher_NewSketch.svg");
 		}
 	private:
 		friend EntityTreeModel;
 		TreeViewPanel* mTreeView = nullptr;// treeView
+		bool manaulCheck = false;
 		QModelIndex	mCurrentSelect;
 		EntityTreeModel* self = nullptr;
 		QStandardItem* sceneRoot = nullptr;
-		QStandardItem* pathRoot = nullptr;
+		QStandardItem* sketcherRoot = nullptr;
 		std::unordered_map<std::string, QIcon>mIconMaps;
 		std::unordered_map<Core::ECS::Actor*, QStandardItem*>actorToItem;
 
@@ -54,12 +58,31 @@ namespace MOON {
 	{
 		delete mInternl;
 	}
+	void EntityTreeModel::onSketcherChange()
+	{
+		//mInternl->manaulCheck = false;
+		mInternl->sketcherRoot->removeRows(0, mInternl->sketcherRoot->rowCount());
+		auto sketcherList=SketcherObjManager::instance().GetAllSketcherObjs();
+		auto curActiveSketch=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		for (int i = 0;i < sketcherList.size();i++) {
+			QStandardItem* temp = new QStandardItem;
+			temp->setText(QString::fromStdString("sketcher"));
+			temp->setIcon(mInternl->mIconMaps["Sketcher"]);
+			mInternl->sketcherRoot->setChild(mInternl->sketcherRoot->rowCount(), temp);
+			temp->setData(QVariant::fromValue((void*)sketcherList[i]), Qt::UserRole+1);
+			temp->setData(QVariant::fromValue((void*)nullptr), Qt::UserRole);
+			temp->setCheckable(true);
+			temp->setCheckState(curActiveSketch== sketcherList[i] ? Qt::Checked : Qt::Unchecked);
+		}
+		//mInternl->manaulCheck =true;
+	}
 	void EntityTreeModel::onSceneRootChange()
 	{
 		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
 		}
+		mInternl->manaulCheck = false;
 		mInternl->sceneRoot->removeRows(0, mInternl->sceneRoot->rowCount());
 		mInternl->actorToItem.clear();
 		auto& actors = scene->GetActors();
@@ -86,7 +109,9 @@ namespace MOON {
 					temp->setCheckState(cur->IsActive()?Qt::Checked:Qt::Unchecked);
 					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->setChild(parent->rowCount(), temp);
-					
+	
+					QModelIndex index = this->indexFromItem(temp);
+					mInternl->mTreeView->expand(index);
 					for (auto& child : cur->GetChildren()) {
 						s.push_back(child);
 						root.push_back(temp);
@@ -94,19 +119,11 @@ namespace MOON {
 				}
 			}
 		}
-	}
-	void EntityTreeModel::onPathRootChange()
-	{
-		
-		
+		mInternl->manaulCheck = true;
 	}
 	QStandardItem* EntityTreeModel::sceneRoot()
 	{
 		return mInternl->sceneRoot;
-	}
-	QStandardItem* EntityTreeModel::pathRoot()
-	{
-		return mInternl->pathRoot;
 	}
 	QStandardItem* EntityTreeModel::actorItem(Core::ECS::Actor* actor)
 	{
@@ -181,7 +198,6 @@ namespace MOON {
 			syncParentItem(item->parent());
 		}
 
-		isProcessing = false;
 		if (item->isCheckable()) {
 			Core::ECS::Actor* actor = static_cast<Core::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
 			if (actor) {
@@ -192,7 +208,33 @@ namespace MOON {
 				else if (currentState == Qt::Unchecked) {
 					actor->SetActive(false);
 				}
+				if (mInternl->manaulCheck) {
+					if (actor->HasParent()) {
+						auto parent = actor->GetParent();
+						if (parent->HasComponent("CTopoShape")) {
+							auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
+							int childId = parent->GetChildId(actor);
+							if (childId != -1) {
+								topoComp->updateChildBuffer();
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				SketcherObj* sketcher = static_cast<SketcherObj*>(item->data(Qt::UserRole + 1).value<void*>());
+				if (sketcher) {
+					Qt::CheckState currentState = item->checkState();
+					if (currentState == Qt::Checked) {
+						sketcher->setActive(true);
+					}
+					else if (currentState == Qt::Unchecked) {
+						sketcher->setActive(false);
+					}
+				}
 			}
 		}
+		isProcessing = false;
 	}
 }

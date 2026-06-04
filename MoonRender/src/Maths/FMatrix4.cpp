@@ -428,6 +428,42 @@ Maths::FMatrix4 Maths::FMatrix4::Translate(const FMatrix4& p_matrix, const FVect
 {
 	return  Translation(p_translation)*p_matrix ;
 }
+Maths::FMatrix4 Maths::FMatrix4::ComputeTransformFromYAxisAndOrigin(const FVector3& yAxis, const FVector3& origin, const FVector3& scale)
+{
+	FVector3 Y = yAxis;
+	Y.Normalize();
+
+	// 构建 X 轴和 Z 轴（正交基）
+	FVector3 X, Z;
+
+	// 选择一个不与 Y 平行的参考向量来构建 X 轴
+	if (abs(Y.x) < 0.999f)
+	{
+		X = FVector3::Cross(Y, FVector3(1.0f, 0.0f, 0.0f));
+	}
+	else
+	{
+		X = FVector3::Cross(Y, FVector3(0.0f, 0.0f, 1.0f));
+	}
+	X.Normalize();
+
+	// Z = X × Y
+	Z = FVector3::Cross(X, Y);
+	Z.Normalize();
+
+	// 重新计算 X 确保正交（Y × Z）
+	X = FVector3::Cross(Y, Z);
+	X.Normalize();
+
+	// 构建变换矩阵（局部到世界，包含缩放）
+	FMatrix4 mat;
+	mat.data[0] = X.x * scale.x;   mat.data[1] = X.y * scale.x;   mat.data[2] = X.z * scale.x;   mat.data[3] = 0.0f;
+	mat.data[4] = Y.x * scale.y;   mat.data[5] = Y.y * scale.y;   mat.data[6] = Y.z * scale.y;   mat.data[7] = 0.0f;
+	mat.data[8] = Z.x * scale.z;   mat.data[9] = Z.y * scale.z;   mat.data[10] = Z.z * scale.z;  mat.data[11] = 0.0f;
+	mat.data[12] = origin.x;       mat.data[13] = origin.y;       mat.data[14] = origin.z;       mat.data[15] = 1.0f;
+
+	return mat;
+}
 Maths::FVector3 Maths::FMatrix4::MulPoint(const FMatrix4& p_matrix, const FVector3& p)
 {
 	FVector4 hp = { p.x,p.y,p.z,1.0f };

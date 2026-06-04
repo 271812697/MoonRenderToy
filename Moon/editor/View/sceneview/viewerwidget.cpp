@@ -67,6 +67,7 @@ namespace MOON {
 		}
 
 		void paintGL() {
+			Gizmo::instance().newImgui();
 			mSceneView->Update(0.01);
 			if (mSwitchScene) {
 				mSwitchScene = false;
@@ -78,7 +79,7 @@ namespace MOON {
 				mUpdateTreeView = false;
 				emit mSelf->sceneChange();
 			}
-			Gizmo::instance().newImgui();
+			
 			mSceneView->Render();
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();

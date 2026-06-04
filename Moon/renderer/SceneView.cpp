@@ -8,6 +8,7 @@
 #include "Settings/DebugSetting.h"
 #include "renderer/GizmoRenderPass.h"
 #include "Gizmo/Widgets/ClipPlane.h"
+#include "core/component/CTopoShape.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -99,6 +100,7 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 
 void Editor::Panels::SceneView::InitFrame()
 {
+	
 	AViewControllable::InitFrame();
 
 	Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
@@ -291,6 +293,11 @@ bool Editor::Panels::SceneView::MouseClipHit(Maths::FVector3& out, const Maths::
 	return false;
 }
 
+Editor::Rendering::PickingRenderPass::PickingResult Editor::Panels::SceneView::GetPickResult()
+{
+	return pickingResult;
+}
+
 ::Rendering::Geometry::Ray Editor::Panels::SceneView::GetMouseRay()
 {
 	
@@ -322,8 +329,9 @@ Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::Creat
 
 void Editor::Panels::SceneView::DrawFrame()
 {
-	Editor::Panels::AViewControllable::DrawFrame();
 	HandleActorPicking();
+	Editor::Panels::AViewControllable::DrawFrame();
+
 }
 
 bool IsResizing()
@@ -338,22 +346,22 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	{
 		m_gizmoOperations.StopPicking();
 		//GetScene()->BuildSceneBvh();
-	}
+	}	
 
-	if (!m_gizmoOperations.IsPicking())
-	{
-		auto mousePos = input.GetMousePosition();
-		int mouseY = GetSafeSize().second - mousePos.second - 1;
-		int mouseX = mousePos.first;
-		auto& scene = *GetScene();
-		auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-		const auto pickingResult = actorPickingPass.ReadbackPickingResult(
+	auto mousePos = input.GetMousePosition();
+	int mouseY = GetSafeSize().second - mousePos.second - 1;
+	int mouseX = mousePos.first;
+	auto& scene = *GetScene();
+	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+	//may be we can read by event
+	pickingResult = actorPickingPass.ReadbackPickingResult(
 			scene,
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
 		);
 
-
+	if (!m_gizmoOperations.IsPicking())
+	{
 		m_highlightedActor = {};
 		m_highlightedGizmoDirection = {};
 
