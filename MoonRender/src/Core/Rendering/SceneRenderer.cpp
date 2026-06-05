@@ -281,8 +281,8 @@ void main()
 					m_renderer.DrawEntity(p_pso,blit);
 				}
 				mBlendFbo.Unbind();
-				auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
-				mssaaframebuffer.Bind();
+				
+				msaaframebuffer.Bind();
 				const auto& content = mBlendFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 				m_renderer.Present(content.value());
 			}

@@ -54,6 +54,7 @@ layout (std140) uniform EngineUBO
 
 uniform mat4 u_PlaneTransform;
 uniform vec3 u_Color;
+uniform sampler2D u_MirrorTex;
 
 
 uniform float u_GridSize = 0.001f;      
@@ -110,8 +111,11 @@ void main()
     vec3 planeNormal = normalize(mat3(u_PlaneTransform)[1]);
     float angleFactor = abs(dot(viewDir, planeNormal));
     float horizonFade = 0.1f + 0.9f * smoothstep(0.0f, 0.3f, angleFactor);
-    
+    vec2 reflectUV = gl_FragCoord.xy / textureSize(u_MirrorTex, 0);
+    vec3 reflectColor = texture(u_MirrorTex, reflectUV).rgb;
+    reflectColor *= mix(0.2, 1.0, angleFactor) *1.0;
     float alpha = grid * u_GridOpacity * horizonFade * fadeFactor;
-    
-    FRAGMENT_COLOR = vec4(u_Color, alpha);
+    vec3 finalColor = reflectColor;
+    finalColor = mix(reflectColor, u_Color, alpha);
+    FRAGMENT_COLOR = vec4(finalColor, 1.0);
 }

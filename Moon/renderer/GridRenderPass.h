@@ -36,8 +36,9 @@ namespace Editor::Rendering
 
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
-
+		virtual void ResizeRenderer(int width, int height) override;
 	private:
+		::Rendering::HAL::Framebuffer m_mirroFbo;
 		::Core::Resources::Material m_gridMaterial;
 	};
 }

@@ -21,6 +21,7 @@ namespace Core::Rendering
 		void SetClipPlane(float x,float y,float z,float w);
 		void SetMirrorPlane(float x, float y, float z, float w);
 		void SetMirrorPlane(const Maths::FMatrix4& matrix);
+		void SetViewMatrix(const Maths::FMatrix4& matrix);
 
 	protected:
 		virtual void OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor) override;
