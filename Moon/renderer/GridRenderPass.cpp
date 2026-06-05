@@ -81,6 +81,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	Maths::FMatrix4 viewMat= frameDesc.camera->GetViewMatrix();
 	viewMat =  viewMat*mirrorMat ;
 	engineBufferRenderFeature.SetViewMatrix(viewMat);
+	engineBufferRenderFeature.SetViewPos(mirrorMat.MulPoint(frameDesc.camera->GetPosition()));
 	engineBufferRenderFeature.SetMirrorPlane(mirrorMat);
 
 	/*
@@ -95,7 +96,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 		}
 		};
 	m_mirroFbo.Bind();
-	m_renderer.Clear(true, true, false, Maths::FVector4(0.8, 0.8, 0.8, 0.2));
+	m_renderer.Clear(true, true, false, Maths::FVector4(0.7, 0.7, 0.7 ,0.2));
 	drawMirroModels(filteredDrawables.opaques | std::views::values);
 	drawMirroModels(filteredDrawables.transparents | std::views::values);
 	m_mirroFbo.Unbind();

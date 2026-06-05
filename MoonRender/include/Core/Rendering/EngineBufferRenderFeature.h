@@ -17,6 +17,7 @@ namespace Core::Rendering
 			::Rendering::Core::CompositeRenderer& p_renderer,
 			::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 		);
+		void SetViewPos(const Maths::FVector3& viewPos);
 		void SetCamera(const ::Rendering::Entities::Camera& p_camera);
 		void SetClipPlane(float x,float y,float z,float w);
 		void SetMirrorPlane(float x, float y, float z, float w);

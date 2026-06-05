@@ -50,6 +50,14 @@ Core::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
 	m_startTime = std::chrono::high_resolution_clock::now();
 }
 
+void Core::Rendering::EngineBufferRenderFeature::SetViewPos(const Maths::FVector3& viewPos)
+{
+
+	m_engineBuffer->Upload(&viewPos, ::Rendering::HAL::BufferMemoryRange{
+		.offset = sizeof(Maths::FMatrix4)*3, // Skip uploading the first matrix (Model matrix)
+		.size = sizeof(Maths::FVector3) });
+}
+
 void Core::Rendering::EngineBufferRenderFeature::SetCamera(const ::Rendering::Entities::Camera& p_camera)
 {
      CameraInfo uboDataPage{

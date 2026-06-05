@@ -92,9 +92,9 @@ void main()
     float spacing3 = u_GridSize * 16.0f;   // 8m
     
 
-    float grid1 = MAG(0.4f, spacing1, texCoords);
-    float grid2 = MAG(0.5f, spacing2, texCoords);
-    float grid3 = MAG(0.6f, spacing3, texCoords);
+    float grid1 = MAG(1.4f, spacing1, texCoords);
+    float grid2 = MAG(1.5f, spacing2, texCoords);
+    float grid3 = MAG(1.6f, spacing3, texCoords);
     
 
     float fadeFactor = 1.0f ;//- clamp(height / u_FadeDistance, 0.0f, 1.0f);
