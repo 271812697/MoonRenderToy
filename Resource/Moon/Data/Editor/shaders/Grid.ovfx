@@ -57,7 +57,7 @@ uniform vec3 u_Color;
 uniform sampler2D u_MirrorTex;
 
 
-uniform float u_GridSize = 0.001f;      
+uniform float u_GridSize = 0.01f;      
 uniform float u_GridOpacity = 0.7f;   
 uniform float u_FadeDistance = 50.0f; 
 

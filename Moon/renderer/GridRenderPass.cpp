@@ -89,16 +89,21 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	Render the models to the mirror framebuffer,from the mirror camera
 	*/
 	const auto& filteredDrawables = m_renderer.GetDescriptor<::Core::Rendering::SceneRenderer::SceneFilteredDrawablesDescriptor>();
-	auto drawMirroModels = [&](auto drawables) {
+	auto drawMirroModels = [&](auto drawables,bool transparent) {
 		for (auto& drawable : drawables)
 		{
-			m_renderer.DrawEntity(p_pso, drawable);
+			auto drawableCopy = drawable;
+			if (transparent) {
+				drawableCopy.pass = "";
+				
+			}
+			m_renderer.DrawEntity(p_pso, drawableCopy);
 		}
 		};
 	m_mirroFbo.Bind();
 	m_renderer.Clear(true, true, false, Maths::FVector4(0.7, 0.7, 0.7 ,0.2));
-	drawMirroModels(filteredDrawables.opaques | std::views::values);
-	drawMirroModels(filteredDrawables.transparents | std::views::values);
+	drawMirroModels(filteredDrawables.opaques | std::views::values,false);
+	drawMirroModels(filteredDrawables.transparents | std::views::values,true);
 	m_mirroFbo.Unbind();
 	/*
 	Step 2.
