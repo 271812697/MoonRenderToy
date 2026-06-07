@@ -2008,7 +2008,8 @@ public:
     {
         return TopoShape(0, Hasher).makeElementWires(*this, op, tol, policy, output);
     }
-
+    TopoShape MakeBottle(double theWidth, double theHeight,
+        double theThickness);
     /** Make a new shape with transformation that may contain non-uniform scaling
      *
      * @param source: input shape

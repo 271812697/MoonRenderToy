@@ -428,6 +428,45 @@ Maths::FMatrix4 Maths::FMatrix4::Translate(const FMatrix4& p_matrix, const FVect
 {
 	return  Translation(p_translation)*p_matrix ;
 }
+Maths::FMatrix4 Maths::FMatrix4::MirrorPlane(float x, float y, float z, float w) {
+	Maths::FMatrix4 mirrorMat;
+	float a = x;
+	float b = y;
+	float c = z;
+	float d = w;
+
+	float len = sqrtf(a * a + b * b + c * c);
+	if (len < 1e-9f) {
+		return mirrorMat;
+	}
+
+	float nx = a / len;
+	float ny = b / len;
+	float nz = c / len;
+	float pd = d / len;
+	
+
+	mirrorMat.data[0] = 1 - 2 * nx * nx;
+	mirrorMat.data[1] = -2 * nx * ny;
+	mirrorMat.data[2] = -2 * nx * nz;
+	mirrorMat.data[3] = -2 * nx * pd;
+
+	mirrorMat.data[4] = -2 * ny * nx;
+	mirrorMat.data[5] = 1 - 2 * ny * ny;
+	mirrorMat.data[6] = -2 * ny * nz;
+	mirrorMat.data[7] = -2 * ny * pd;
+
+	mirrorMat.data[8] = -2 * nz * nx;
+	mirrorMat.data[9] = -2 * nz * ny;
+	mirrorMat.data[10] = 1 - 2 * nz * nz;
+	mirrorMat.data[11] = -2 * nz * pd;
+
+	mirrorMat.data[12] = 0.0f;
+	mirrorMat.data[13] = 0.0f;
+	mirrorMat.data[14] = 0.0f;
+	mirrorMat.data[15] = 1.0f;
+	return mirrorMat;
+}
 Maths::FMatrix4 Maths::FMatrix4::ComputeTransformFromYAxisAndOrigin(const FVector3& yAxis, const FVector3& origin, const FVector3& scale)
 {
 	FVector3 Y = yAxis;

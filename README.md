@@ -12,6 +12,10 @@ This is a renderer written based on Qt+Opengl
 
 ![image-20260530091405678](README.assets/image-20260530091405678.png)
 
+![image-20260607084702171](README.assets/image-20260607084702171.png)
+
+![image-20260607085050874](README.assets/image-20260607085050874.png)
+
 ### pbr and pathtrace
 
 ------

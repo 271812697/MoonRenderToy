@@ -19,6 +19,7 @@
 #include <QRadioButton>
 #include <numbers>
 namespace MOON {
+
     class PadTaskDialog::Internal {
     public:
         Internal(PadTaskDialog* pad) :self(pad) {
@@ -329,7 +330,8 @@ namespace MOON {
             auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapePrism", "TopoShape", false);
             const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             Part::TopoShape& topo = topoComp->GetTopoShape();
-            topo.setShape(mInternal->m_previewShape);
+            //topo.setShape(mInternal->m_previewShape);
+            topo.setShape(topo.MakeBottle(200,250,100));
             topoComp->discretizationShape();
         }
         auto preActor = scene->FindActorByName("TopoShapePrismPreview");

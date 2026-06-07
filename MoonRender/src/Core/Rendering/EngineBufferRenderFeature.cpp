@@ -50,6 +50,14 @@ Core::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
 	m_startTime = std::chrono::high_resolution_clock::now();
 }
 
+void Core::Rendering::EngineBufferRenderFeature::SetViewPos(const Maths::FVector3& viewPos)
+{
+
+	m_engineBuffer->Upload(&viewPos, ::Rendering::HAL::BufferMemoryRange{
+		.offset = sizeof(Maths::FMatrix4)*3, // Skip uploading the first matrix (Model matrix)
+		.size = sizeof(Maths::FVector3) });
+}
+
 void Core::Rendering::EngineBufferRenderFeature::SetCamera(const ::Rendering::Entities::Camera& p_camera)
 {
      CameraInfo uboDataPage{
@@ -77,59 +85,24 @@ void Core::Rendering::EngineBufferRenderFeature::SetClipPlane(float x, float y, 
 
 void Core::Rendering::EngineBufferRenderFeature::SetMirrorPlane(float x, float y, float z, float w)
 {
-	// 平面方程：ax + by + cz + d = 0
-	float a = x;
-	float b = y;
-	float c = z;
-	float d = w;
-
-	// 1. 计算法向量长度
-	float len = sqrtf(a * a + b * b + c * c);
-	if (len < 1e-9f) {
-		return;
-	}
-
-	// 2. 单位化平面（必须！）
-	float nx = a / len;
-	float ny = b / len;
-	float nz = c / len;
-	float pd = d / len;
-
-	// ================================
-	// 3. 计算标准【镜像变换矩阵】
-	// 严格对应 FMatrix4::data[16]
-	// ================================
-	Maths::FMatrix4 mirrorMat;
-
-	mirrorMat.data[0] = 1 - 2 * nx * nx;
-	mirrorMat.data[1] = -2 * nx * ny;
-	mirrorMat.data[2] = -2 * nx * nz;
-	mirrorMat.data[3] = -2 * nx * pd;
-
-	mirrorMat.data[4] = -2 * ny * nx;
-	mirrorMat.data[5] = 1 - 2 * ny * ny;
-	mirrorMat.data[6] = -2 * ny * nz;
-	mirrorMat.data[7] = -2 * ny * pd;
-
-	mirrorMat.data[8] = -2 * nz * nx;
-	mirrorMat.data[9] = -2 * nz * ny;
-	mirrorMat.data[10] = 1 - 2 * nz * nz;
-	mirrorMat.data[11] = -2 * nz * pd;
-
-	mirrorMat.data[12] = 0.0f;
-	mirrorMat.data[13] = 0.0f;
-	mirrorMat.data[14] = 0.0f;
-	mirrorMat.data[15] = 1.0f;
-	// 4. 上传到 UBO（调用你已有的函数）
-	SetMirrorPlane(Maths::FMatrix4::Transpose(mirrorMat));
+	SetMirrorPlane(Maths::FMatrix4::MirrorPlane(x, y, z, w));
 }
 
 void Core::Rendering::EngineBufferRenderFeature::SetMirrorPlane(const Maths::FMatrix4& matrix)
 {
-	
-	m_engineBuffer->Upload(&matrix, ::Rendering::HAL::BufferMemoryRange{
+	Maths::FMatrix4 mat = Maths::FMatrix4::Transpose(matrix);
+	m_engineBuffer->Upload(&mat, ::Rendering::HAL::BufferMemoryRange{
 	.offset = PlaneInfo::offset+sizeof(Maths::FVector4), // Skip uploading the first matrix (Model matrix)
 	.size = sizeof(Maths::FMatrix4)
+		});
+}
+
+void Core::Rendering::EngineBufferRenderFeature::SetViewMatrix(const Maths::FMatrix4& matrix)
+{
+	Maths::FMatrix4 mat = Maths::FMatrix4::Transpose(matrix);
+	m_engineBuffer->Upload(&mat, ::Rendering::HAL::BufferMemoryRange{
+			.offset = sizeof(Maths::FMatrix4),
+		.size = sizeof(Maths::FMatrix4)
 		});
 }
 
