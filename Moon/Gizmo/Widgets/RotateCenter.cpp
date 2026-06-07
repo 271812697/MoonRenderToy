@@ -154,9 +154,9 @@ namespace MOON {
 		{
 			MOON::SelectionManager::instance().clearPreselect();
 		}
-		//auto it = m_sceneView->getInutState().GetMousePosition();
-		//ex = it.first;
-		//ey = it.second;
+		auto it = m_sceneView->getInutState().GetMousePosition();
+		ex = it.first;
+		ey = it.second;
 		//auto ray=m_sceneView->GetMouseRay();
 		//::Core::SceneSystem::HitRes res;
 		//if (m_sceneView->GetScene()->RayHit(ray, res)) {

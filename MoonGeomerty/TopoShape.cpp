@@ -3673,9 +3673,13 @@ void TopoShape::getLinesFromSubShape(
     // build up map edge->face
     TopTools_IndexedDataMapOfShapeListOfShape edge2Face;
     TopExp::MapShapesAndAncestors(this->_Shape, TopAbs_EDGE, TopAbs_FACE, edge2Face);
+    TopTools_IndexedMapOfShape edgeMap;
+    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
+  
+    for (int i = 1; i <= edgeMap.Extent(); ++i)
+    {
 
-    for (TopExp_Explorer exp(shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-        TopoDS_Edge aEdge = TopoDS::Edge(exp.Current());
+        const TopoDS_Edge& aEdge = TopoDS::Edge(edgeMap(i));
         std::vector<gp_Pnt> points;
 
         if (!Tools::getPolygon3D(aEdge, points)) {
@@ -3703,14 +3707,52 @@ void TopoShape::getLinesFromSubShape(
         vertices.reserve(vertices.size() + points.size());
         std::for_each(points.begin(), points.end(), [&vertices](const gp_Pnt& p) {
             vertices.push_back(Base::convertTo<Base::Vector3d>(p));
-        });
+            });
 
         if (line_start + 1 < vertices.size()) {
             lines.emplace_back();
             lines.back().I1 = line_start;
             lines.back().I2 = vertices.size() - 1;
         }
+
     }
+    //for (TopExp_Explorer exp(shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+    //    TopoDS_Edge aEdge = TopoDS::Edge(exp.Current());
+    //    std::vector<gp_Pnt> points;
+
+    //    if (!Tools::getPolygon3D(aEdge, points)) {
+    //        // the edge has not its own triangulation, but then a face the edge is attached to
+    //        // must provide this triangulation
+
+    //        // Look for one face in our map (it doesn't care which one we take)
+    //        int index = edge2Face.FindIndex(aEdge);
+    //        if (index < 1) {
+    //            continue;
+    //        }
+
+    //        const auto& faces = edge2Face.FindFromIndex(index);
+    //        if (faces.IsEmpty()) {
+    //            continue;
+    //        }
+
+    //        const TopoDS_Face& aFace = TopoDS::Face(faces.First());
+    //        if (!Part::Tools::getPolygonOnTriangulation(aEdge, aFace, points)) {
+    //            continue;
+    //        }
+    //    }
+
+    //    auto line_start = vertices.size();
+    //    vertices.reserve(vertices.size() + points.size());
+    //    std::for_each(points.begin(), points.end(), [&vertices](const gp_Pnt& p) {
+    //        vertices.push_back(Base::convertTo<Base::Vector3d>(p));
+    //    });
+
+    //    if (line_start + 1 < vertices.size()) {
+    //        lines.emplace_back();
+    //        lines.back().I1 = line_start;
+    //        lines.back().I2 = vertices.size() - 1;
+    //    }
+    //}
 }
 
 void TopoShape::getLines(

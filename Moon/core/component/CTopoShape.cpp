@@ -70,7 +70,7 @@ namespace Core::ECS::Components
 	{
         if (mInternal->hoverLine) {
             auto& instance=MOON::Gizmo::instance();
-            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             auto& view = GetService(::Editor::Panels::SceneView);

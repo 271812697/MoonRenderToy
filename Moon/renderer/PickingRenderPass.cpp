@@ -155,10 +155,10 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	m_actorPickingFramebuffer.Unbind();
 	
 	//the following code is for debug, it will display the picking framebuffer
-	ImVec2 a = { 0,1 }, b = { 1,0 };
-	ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
-	auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
-	ImGui::Image(resid->GetID(), size, a, b);
+	//ImVec2 a = { 0,1 }, b = { 1,0 };
+	//ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+	//auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+	//ImGui::Image(resid->GetID(), size, a, b);
 
 
 	if (auto output = frameDescriptor.outputMsaaBuffer)
