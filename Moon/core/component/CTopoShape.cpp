@@ -172,10 +172,8 @@ namespace Core::ECS::Components
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-                std::vector<Maths::FVector4>lineColor;
 
                 p_vertices.reserve(linePoints.size());
-                lineColor.reserve(LineRanges.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
                     auto& l = LineRanges[i];
@@ -200,7 +198,6 @@ namespace Core::ECS::Components
                     p_vertices.emplace_back(v);
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
-                    lineColor.emplace_back(0, 1, 1, 1);
                 }
                 auto lineMesh = new ::Rendering::Resources::Mesh(
                     p_vertices,
@@ -210,21 +207,7 @@ namespace Core::ECS::Components
                 auto lineModel = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->AddMesh(lineMesh);
-                ::Rendering::Settings::TextureDesc desc;
-                desc.isTextureBuffer = true;
-                desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
-                desc.buffetLen = lineColor.size() * sizeof(Maths::FVector4);
-                desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-                    .data = lineColor.data()
-                };
-                ::Rendering::HAL::GLTexture* lineColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
-                lineColorTex->Allocate(desc);  
-                auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
-                Core::Resources::Material* lineMat = materilaRener.GetMaterialAtIndex(1);
-                lineMat->SetProperty("lineColorTex", lineColorTex);
-               
                 auto& lineBacthMesh =*owner.GetComponent<Core::ECS::Components::CBatchMeshLine>();
-                lineBacthMesh.SetColors(lineColor);
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }

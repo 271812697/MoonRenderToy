@@ -30,7 +30,6 @@ namespace Core::ECS::Components
 		Maths::FVector4 candidateColor;
 		Maths::FVector4 hoverColor;
 
-		std::vector<Maths::FVector4> m_defaultColors;
 		::Rendering::Geometry::Bvh* rootBvh = nullptr;
 		std::vector<::Rendering::Geometry::SplitBvh*>subMeshBvhs;
 		std::vector<uint32_t> subMeshRanges;
@@ -52,61 +51,11 @@ namespace Core::ECS::Components
 	void CBatchMeshLine::OnUpdate(float p_deltaTime)
 	{
 		if (mInternal->colorChange) {
-			mInternal->colorChange = false;
-			auto mat = owner.GetComponent<CMaterialRenderer>()->GetMaterialAtIndex(0);
-			if (mat) {
-				const ::Rendering::Data::MaterialProperty prop = mat->GetProperty("lineColorTex").value();
-				::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
-				auto tex = std::get<::Rendering::HAL::TextureHandle*>(prop.value);
-
-				if (tex) {
-					std::vector<Maths::FVector4> colors = mInternal->m_defaultColors;
 	
-					for (auto& idx : mInternal->candidatesIndex) {
-						colors[idx] = mInternal->candidateColor;
-					}
-					if (mInternal->hoverIndex != -1) {
-						colors[mInternal->hoverIndex] = mInternal->hoverColor;
-					}
-					::Rendering::Settings::TextureDesc desc;
-					desc.isTextureBuffer = true;
-					desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
-					desc.buffetLen = colors.size() * sizeof(Maths::FVector4);
-					desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
-						.data = colors.data()
-					};
-					static_cast<::Rendering::HAL::GLTexture*>(tex)->Allocate(desc);
-				}
-			}
 		}
 	}
 
-	void CBatchMeshLine::SetColors(const std::vector<Maths::FVector4>& colors)
-	{
-		mInternal->m_defaultColors = colors;
-	}
 
-	void CBatchMeshLine::SetColor(const std::vector<int>& index, const Maths::FVector4& color)
-	{
-		//mInternal->candidatesIndex.clear();;
-		mInternal->candidatesIndex = index;
-		mInternal->colorChange = true;
-		mInternal->candidateColor = color;
-		//for (int i = 0; i < index.size(); i++) {
-		//	int idx = index[i];
-		//	if (idx >= 0 && idx < mInternal->m_defaultColors.size()) {
-		//		mInternal->colorChange = true;
-		//		mInternal->candidatesIndex.push_back(index);
-		//	}
-		//}
-	}
-
-	void CBatchMeshLine::SetHoverColor(int index, const Maths::FVector4& color)
-	{
-		mInternal->hoverIndex = index;
-		mInternal->hoverColor = color;
-		mInternal->colorChange = true;
-	}
 
 	std::vector<Maths::FVector3> CBatchMeshLine::getLineSeg(int index)
 	{
