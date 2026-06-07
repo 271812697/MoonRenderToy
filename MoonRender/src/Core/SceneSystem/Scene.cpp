@@ -173,7 +173,7 @@ void Core::SceneSystem::Scene::RemoveActor(ECS::Actor* p_target)
 		if (found != m_actors.end())
 		{
 			m_actors.erase(found);	
-			auto& childs = p_target->GetChildren();
+			auto childs = p_target->GetChildren();
 			for (int i = 0;i < childs.size();i++) {
 				RemoveActor(childs[i]);
 			}

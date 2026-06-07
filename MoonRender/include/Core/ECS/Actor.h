@@ -29,6 +29,7 @@ namespace Core::ECS
 		bool IsDescendantOf(const Actor* p_actor) const;
 		bool HasParent() const;
 		Actor* GetParent() const;
+		Actor* GetChild(const std::string& p_name) const;
 		int64_t GetParentID() const;
 		int GetChildId( Actor*child)const;
 		std::vector<Actor*>& GetChildren();

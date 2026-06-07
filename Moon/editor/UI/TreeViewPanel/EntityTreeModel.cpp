@@ -211,11 +211,14 @@ namespace MOON {
 				if (mInternl->manaulCheck) {
 					if (actor->HasParent()) {
 						auto parent = actor->GetParent();
-						if (parent->HasComponent("CTopoShape")) {
-							auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-							int childId = parent->GetChildId(actor);
-							if (childId != -1) {
-								topoComp->updateChildBuffer();
+						if (parent->HasParent()) {
+							auto grandParent = parent->GetParent();
+							if (grandParent->HasComponent("CTopoShape")) {
+								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
+								int childId = parent->GetChildId(actor);
+								if (childId != -1) {
+									topoComp->updateChildBuffer();
+								}
 							}
 						}
 					}

@@ -8,16 +8,10 @@ namespace MOON
 		RotateCenter(const std::string& name);
 		virtual ~RotateCenter();
 		virtual void onUpdate()override;
-		void onMouseRightButtonPressed();
-		void onMouseRightButtonReleased();
-		void onMouseLeftButtonPressed();
-		void onMouseLeftButtonReleased();
-		void onMouseMove();
-	private:
-		ExecuteCommandPair m_rightButtonPressObserver;
-		ExecuteCommandPair m_rightButtonReleaseObserver;
-		ExecuteCommandPair m_leftButtonPressObserver;
-		ExecuteCommandPair m_leftButtonReleaseObserver;
-		ExecuteCommandPair m_mouseMoveObserver;
+		virtual void onLeftMousePressed()override;
+		virtual void onLeftMouseReleased()override;
+		virtual void onRightMousePressed()override;
+		virtual void onRightMouseReleased()override;
+		virtual void onMouseMove()override;
 	};
 }

@@ -135,7 +135,7 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 {
 	auto& view = GetService(Editor::Panels::SceneView);;
 	auto& renderer = MOON::Gizmo::instance();
-	renderer.newFrame(&view);
+	//renderer.newFrame(&view);
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();
 		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
@@ -157,5 +157,5 @@ void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p
 			renderer.drawAlignedBox({ pmin.x,pmin.y ,pmin.z }, { pmax.x,pmax.y ,pmax.z });
 		}
 	}
-	renderer.endFrame();
+	//renderer.endFrame();
 }
