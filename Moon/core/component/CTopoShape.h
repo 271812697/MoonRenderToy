@@ -32,7 +32,9 @@ namespace Core::ECS::Components
 		void setChildsMeshTransParent(const std::vector<int>& childs);
 		Part::TopoShape& GetTopoShape();
 		void hoverChild(int childId);
+		void hoverChildLine(int childId);
 		void clearHover();
+		void clearHoverLine();
 		void discretizationFaceShape();
 		void discretizationEdgeShape();
 		void discretizationShape();

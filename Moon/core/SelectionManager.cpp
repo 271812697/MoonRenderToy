@@ -31,11 +31,22 @@ namespace MOON {
 			auto actor = GetMainScene->FindActorByID(mInternal->preSelect);
 			if (actor->HasParent()) {
 				auto parent = actor->GetParent();
-				if (parent->HasComponent("CTopoShape")) {
-					auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-					int childId=parent->GetChildId(actor);
-					if (childId != -1) {
-						topoComp->hoverChild(childId);
+				if (parent->HasParent()) {
+					auto grandParent = parent->GetParent();
+					if (grandParent->HasComponent("CTopoShape")) {
+						auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
+						int childId=parent->GetChildId(actor);
+						if (parent->HasComponent("CBatchMeshTriangle")) {
+							if (childId != -1) {
+								topoComp->hoverChild(childId);
+							}
+						}
+						else if (parent->HasComponent("CBatchMeshLine")) {
+							if (childId != -1) {
+								topoComp->hoverChildLine(childId);
+								//topoComp->hoverChild(childId);
+							}
+						}					
 					}
 				}
 			}
@@ -54,11 +65,21 @@ namespace MOON {
 	{
 		if (mInternal->preSelect.isValid()) {
 			auto actor=GetMainScene->FindActorByID(mInternal->preSelect);
+			
 			if (actor->HasParent()) {
 				auto parent=actor->GetParent();
-				if (parent->HasComponent("CTopoShape")) {
-					auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-					topoComp->clearHover();
+				if (parent->HasParent()) {
+					auto grandParent = parent->GetParent();
+					if (grandParent->HasComponent("CTopoShape")) {
+						auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
+						if (parent->HasComponent("CBatchMeshTriangle")) {
+							
+							topoComp->clearHover();
+						}
+						else if (parent->HasComponent("CBatchMeshLine")) {
+							topoComp->clearHoverLine();
+						}
+					}
 				}
 			}
 			mInternal->preSelect.reset();

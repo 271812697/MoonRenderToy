@@ -61,7 +61,7 @@ namespace Core::ECS::Components
 	{
 		std::vector<Maths::FVector3>res;
 		auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
-		auto mesh = model->GetModel()->GetMeshes()[1];
+		auto mesh = model->GetModel()->GetMeshes()[0];
 		auto& indices = mesh->GetIndices();
 		auto& vertex = mesh->GetVerticesBVH();
 		uint32_t i1=mInternal->subMeshRanges[index];
@@ -88,7 +88,7 @@ namespace Core::ECS::Components
 		std::vector<::Rendering::Geometry::bbox> boxs;
 		//mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
 		auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();
-		auto mesh=model->GetModel()->GetMeshes()[1];
+		auto mesh=model->GetModel()->GetMeshes()[0];
 		auto& indices =mesh->GetIndices();
 		auto& vertex=mesh->GetVerticesBVH();
 		uint32_t ioffset = 0;
@@ -130,7 +130,7 @@ namespace Core::ECS::Components
 		float pixelDis = 100;
 		auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
 		int actorId = owner.GetID();
-		auto mesh = model->GetModel()->GetMeshes()[1];
+		auto mesh = model->GetModel()->GetMeshes()[0];
 		auto matrix = owner.GetComponent<Core::ECS::Components::CTransform>()->GetWorldMatrix();
 		auto& indices = mesh->GetIndices();
 		auto& vertex = mesh->GetVerticesBVH();

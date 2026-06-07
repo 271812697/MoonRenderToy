@@ -488,7 +488,7 @@ namespace Core::SceneSystem
 					auto actorId = triMeshInstances[instanceId].actorID;
 					auto actor = scene->FindActorByID(actorId);
 					if (actor->HasComponent("CTopoShape")) {
-						auto matList = actor->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+						auto matList = actor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
 						if (matList) {
 							auto mat = matList->GetMaterialAtIndex(0);
 							if (mat) {
@@ -776,7 +776,7 @@ namespace Core::SceneSystem
 		ZoneScoped;
 		bool isHit = false;
 		for (int i = 0;i < mSceneMeshInstances.size();i++) {
-			if (mSceneMeshInstances[i].actor->HasComponent("CTopoShape")) {
+			if (mSceneMeshInstances[i].actor->HasComponent("CBatchMeshLine")) {
 				auto cbatchMesh = mSceneMeshInstances[i].actor->GetComponent<Core::ECS::Components::CBatchMeshLine>();
 				isHit |= cbatchMesh->PointPick(viewPortMatrix, x, y, tolerance, out);
 			}
@@ -806,7 +806,7 @@ namespace Core::SceneSystem
 					for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
 						int index = m_sceneTriBvh->m_packed_indices[i];
 						auto matrix = triMeshInstances[index].transform;
-						if (triMeshInstances[index].actor->HasComponent("CTopoShape")) {
+						if (triMeshInstances[index].actor->HasComponent("CBatchMeshTriangle")) {
 							auto cbatchMesh= triMeshInstances[index].actor->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
 							const auto& pickRes=cbatchMesh->RectPick(matrix,viewProj,su,sv,eu,ev);
 							res.insert(res.end(),pickRes.begin(),pickRes.end());

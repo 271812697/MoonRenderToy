@@ -166,7 +166,14 @@ Core::ECS::Actor* Core::ECS::Actor::GetParent() const
 {
 	return m_parent;
 }
-
+Core::ECS::Actor* Core::ECS::Actor::GetChild(const std::string& p_name) const {
+	for (int i = 0; i < m_children.size(); i++) {
+		if (m_children[i]->GetName() == p_name) {
+			return m_children[i];
+		}
+	}
+	return nullptr;
+}
 int64_t Core::ECS::Actor::GetParentID() const
 {
 	return m_parentID;

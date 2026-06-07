@@ -17,15 +17,25 @@ namespace Core::ECS {
 	{
 		m_scene = scene;
 		scene->AddActor(this);
-		AddComponent<Core::ECS::Components::CModelRenderer>();
-		AddComponent<Core::ECS::Components::CMaterialRenderer>();
-		AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
-		AddComponent<Core::ECS::Components::CBatchMeshLine>();
+		Core::ECS::Actor& faceChild=scene->CreateActor("Face");
+		Core::ECS::Actor& edgeChild = scene->CreateActor("Edge");
+		faceChild.SetParent(*this);
+		edgeChild.SetParent(*this);
 		AddComponent<Core::ECS::Components::CTopoShape>();
+		faceChild.AddComponent<Core::ECS::Components::CModelRenderer>();
+		faceChild.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+		faceChild.AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
+		edgeChild.AddComponent<Core::ECS::Components::CModelRenderer>();
+		edgeChild.AddComponent<Core::ECS::Components::CMaterialRenderer>();
+		edgeChild.AddComponent<Core::ECS::Components::CBatchMeshLine>();
 		
-		auto model = new ::Rendering::Resources::Model(p_name + std::string("_Model")+std::to_string(this->GetID()));
-		GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(model);
-
+		
+		auto faceModel = new ::Rendering::Resources::Model(p_name + std::string("_faceModel")+std::to_string(this->GetID()));
+		faceChild.GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(faceModel);
+		GetService(Core::ResourceManagement::ModelManager).RegisterResource(p_name + std::string("_faceModel") + std::to_string(this->GetID()), faceModel);
+		auto edgeModel = new ::Rendering::Resources::Model(p_name + std::string("_edgeModel") + std::to_string(this->GetID()));
+		edgeChild.GetComponent<Core::ECS::Components::CModelRenderer>()->SetModel(edgeModel);
+		GetService(Core::ResourceManagement::ModelManager).RegisterResource(p_name + std::string("_edgeModel") + std::to_string(this->GetID()), edgeModel);
 
 		Core::Resources::Material* lineMat = new Core::Resources::Material();
 		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_linemat",lineMat);
@@ -33,32 +43,33 @@ namespace Core::ECS {
 		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_facemat", faceMat);
 		Core::Resources::Material* faceTransparentMat = new Core::Resources::Material();
 		Core::Global::ServiceLocator::Get<Core::ResourceManagement::MaterialManager>().RegisterResource(p_name + std::to_string(this->GetID()) + "_faceTransparentMat", faceTransparentMat);
-		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(0, *faceMat);	
-		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(1, *lineMat);
-		GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(2, *faceTransparentMat);
-		GetComponent<Core::ECS::Components::CMaterialRenderer>()->UpdateMaterialList();
+		faceChild.GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(0, *faceMat);
+		faceChild.GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(1, *faceTransparentMat);		
+		edgeChild.GetComponent<Core::ECS::Components::CMaterialRenderer>()->SetMaterialAtIndex(0, *lineMat);
+		faceChild.GetComponent<Core::ECS::Components::CMaterialRenderer>()->UpdateMaterialList();
+		edgeChild.GetComponent<Core::ECS::Components::CMaterialRenderer>()->UpdateMaterialList();
 		{
 			auto& renderer=GetSceneView.GetRenderer();;
-			
-			faceMat->SetBackfaceCulling(false);
-			faceMat->SetCastShadows(false);
-			faceMat->SetReceiveShadows(false);
-			//tempMat->SetBlendable(true);
-			//tempMat->SetDepthWriting(false);
-			faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
-			faceMat->SetProperty("u_Albedo",Maths::FVector4(1,1,1,1));
-			faceMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
-			faceMat->SetProperty("u_Roughness", 0.25f);
-			faceMat->SetProperty("u_Metallic", 0.75f);
-			// Emission
-			faceMat->SetProperty("u_EmissiveIntensity", 1.0f);
-			faceMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-
-			faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
-			faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
-			faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
-
 			{
+				faceMat->SetBackfaceCulling(false);
+				faceMat->SetCastShadows(false);
+				faceMat->SetReceiveShadows(false);
+				//tempMat->SetBlendable(true);
+				//tempMat->SetDepthWriting(false);
+				faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
+				faceMat->SetProperty("u_Albedo",Maths::FVector4(1,1,1,1));
+				faceMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
+				faceMat->SetProperty("u_Roughness", 0.25f);
+				faceMat->SetProperty("u_Metallic", 0.75f);
+				// Emission
+				faceMat->SetProperty("u_EmissiveIntensity", 1.0f);
+				faceMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+
+				faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
+				faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
+				faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
+
+
 				faceTransparentMat->SetBackfaceCulling(false);
 				faceTransparentMat->SetCastShadows(false);
 				faceTransparentMat->SetReceiveShadows(false);
@@ -79,22 +90,23 @@ namespace Core::ECS {
 				faceTransparentMat->SetBlendable(true);
 				faceTransparentMat->SetDepthWriting(true);
 			}
+			{
+				lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
+				lineMat->SetBackfaceCulling(false);
+				lineMat->SetCastShadows(false);
+				lineMat->SetReceiveShadows(false);
+				lineMat->SetLineWidth(2.0);
+				lineMat->AddFeature("BATCHLINE");
+			}
 
-			lineMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertyLine.ovfx"]);
-			lineMat->SetBackfaceCulling(false);
-			lineMat->SetCastShadows(false);
-			lineMat->SetReceiveShadows(false);
-			lineMat->SetLineWidth(2.0);
-			lineMat->AddFeature("BATCHLINE");
 		}
-		GetService(Core::ResourceManagement::ModelManager).RegisterResource(p_name + std::string("_Model") + std::to_string(this->GetID()), model);
 		GetViewerWidget.updateTreeView();
-		
 	}
 
 	void TopoActor::ClearModel()
 	{
-		GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("Face")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("Edge")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
 	}
 
 	TopoActor::~TopoActor()

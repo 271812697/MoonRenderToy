@@ -147,7 +147,7 @@ namespace MOON {
                 Part::TopoShape& topo = topoComp->GetTopoShape();
                 topo.setShape(m_previewShape);
                 topoComp->discretizationShape();
-                auto MatRender = m_previewActor->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+                auto MatRender = m_previewActor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
                 Core::Resources::Material* tempMat = MatRender->GetMaterialAtIndex(0);
                 tempMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 0.4));
                 tempMat->SetBlendable(true);
@@ -330,8 +330,8 @@ namespace MOON {
             auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapePrism", "TopoShape", false);
             const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             Part::TopoShape& topo = topoComp->GetTopoShape();
-            //topo.setShape(mInternal->m_previewShape);
-            topo.setShape(topo.MakeBottle(200,250,100));
+            topo.setShape(mInternal->m_previewShape);
+            //topo.setShape(topo.MakeBottle(200,250,100));
             topoComp->discretizationShape();
         }
         auto preActor = scene->FindActorByName("TopoShapePrismPreview");

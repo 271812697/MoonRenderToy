@@ -9,6 +9,7 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
+#include "Gizmo/Gizmo.h"
 
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
@@ -29,10 +30,12 @@ namespace Core::ECS::Components
         bool updateFace = false;
         bool updateEdge = false;
         bool updateChildMesh = false;
+        bool hoverLine = false;
 		std::vector<int>curOpaqueChildMeshIndex;
         std::vector<int>curTransparentChildMeshIndex;
         std::vector<std::pair<int, int>> curTransparentChildMesh;
         std::vector<std::pair<int, int>>curOpaqueChildMesh;
+        std::vector<Eigen::Vector3f> lineSeg;
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
@@ -65,6 +68,10 @@ namespace Core::ECS::Components
 
 	void CTopoShape::OnUpdate(float p_deltaTime)
 	{
+        if (mInternal->hoverLine) {
+            auto& instance=MOON::Gizmo::instance();
+            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+        }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             auto& view = GetService(::Editor::Panels::SceneView);
             auto& renderer = view.GetRenderer();
@@ -101,6 +108,7 @@ namespace Core::ECS::Components
                         domainIndex++;
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
+                        Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,actor.GetID() * 1.0f };
                         faceVertices.reserve(faceVertices.size() + domains[i].points.size());
 
                         indices.resize(indexOffset + domains[i].facets.size() * 3);                       
@@ -109,7 +117,7 @@ namespace Core::ECS::Components
                         for (int k = 0; k < domains[i].points.size(); k++) {
                             faceVertices.emplace_back(
                                 Maths::FVector3{ static_cast<float>(domains[i].points[k].x),static_cast<float>(domains[i].points[k].y),static_cast<float>(domains[i].points[k].z) },
-                                Maths::FVector2{ domainIndex * 1.0f,actor.GetID()*1.0f},
+                                indexId,
                                 Maths::FVector3{ static_cast<float>(domains[i].normals[k].x),static_cast<float>(domains[i].normals[k].y),static_cast<float>(domains[i].normals[k].z) }
                             );
                             subBox.grow(faceVertices.back().position);
@@ -135,13 +143,14 @@ namespace Core::ECS::Components
                     ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
                 //add this for transparent
                 faceMesh->AddSubRangeBuffer();
-                faceMesh->AddMaterial(2,1);
-                auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+                faceMesh->AddMaterial(1,1);
+                auto faceChild=owner.GetChild("Face");
+                auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
 
                 for (auto* acptr : domainActors) {
-                    acptr->SetParent(owner);
+                    acptr->SetParent(*faceChild);
                 }
                 //these two tex have leaks!!!!
                 //domain colors Tex
@@ -155,10 +164,10 @@ namespace Core::ECS::Components
                 ::Rendering::HAL::GLTexture* domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
                 domainColorTex->Allocate(desc);
                 // 创建并注册默认材质
-                auto& materilaRener = *owner.GetComponent <Core::ECS::Components::CMaterialRenderer>();
+                auto& materilaRener = *faceChild->GetComponent <Core::ECS::Components::CMaterialRenderer>();
                 Core::Resources::Material* tempMat = materilaRener.GetMaterialAtIndex(0);
                 tempMat->SetProperty("domainColorTex", domainColorTex);
-                auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+                auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
                 bacthMesh.BuildBvh(domainBoxs, domainRange);
             }
@@ -172,18 +181,21 @@ namespace Core::ECS::Components
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-
+                std::vector<Core::ECS::Actor*>sublineActors(LineRanges.size());
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
                     auto& l = LineRanges[i];
+                    auto& actor = scene->CreateActor("edge_" + std::to_string(i));
+                    float subLineId=actor.GetID() * 1.0f;
+                    sublineActors[i] = &actor;
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
                         v.position.x = static_cast<float>(linePoints[k].x);
                         v.position.y = static_cast<float>(linePoints[k].y);
                         v.position.z = static_cast<float>(linePoints[k].z);
                         v.texCoords.x = i * 1.0f;
-                        v.texCoords.y = i * 1.0f;
+                        v.texCoords.y = subLineId;
                         p_vertices.emplace_back(v);
 
                         lineIndex.push_back(k);
@@ -194,20 +206,25 @@ namespace Core::ECS::Components
                     v.position.y = static_cast<float>(linePoints[l.I2].y);
                     v.position.z = static_cast<float>(linePoints[l.I2].z);
                     v.texCoords.x = i * 1.0f;
-                    v.texCoords.y = i * 1.0f;
+                    v.texCoords.y = subLineId;
                     p_vertices.emplace_back(v);
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
                 }
+                auto edgeChild = owner.GetChild("Edge");
+                for (int i = 0; i < sublineActors.size();i++) {
+                    sublineActors[i]->SetParent(*edgeChild);
+                }
                 auto lineMesh = new ::Rendering::Resources::Mesh(
                     p_vertices,
                     lineIndex,
-                    1,
+                    0,
                     ::Rendering::Settings::EPrimitiveMode::LINES);
-                auto lineModel = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+               
+                auto lineModel = edgeChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->AddMesh(lineMesh);
-                auto& lineBacthMesh =*owner.GetComponent<Core::ECS::Components::CBatchMeshLine>();
+                auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
         }
@@ -242,7 +259,6 @@ namespace Core::ECS::Components
         std::vector<int>table(mInternal->childMeshInfos.size(),0);
         int indexTransparent = 0;
         int indexOpaque = 0;
-        auto& children=owner.GetChildren();
         for (int i = 0; i < childs.size(); i++) {
             table[childs[i]] = 1;
         }
@@ -274,7 +290,7 @@ namespace Core::ECS::Components
     void CTopoShape::hoverChild(int childId)
     {
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
-            auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.SetHoverColor(childId, mInternal->highOption.hoverColor);
         }
         else if(mInternal->highOption.mode == HighLightOption::Mode::Transparent)
@@ -283,16 +299,33 @@ namespace Core::ECS::Components
         }
     }
 
+    void CTopoShape::hoverChildLine(int childId)
+    {
+        mInternal->hoverLine = true;
+        auto& colorBar = *owner.GetChild("Edge")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
+        auto vertexArray = colorBar.getLineSeg(childId);
+        mInternal->lineSeg.clear();
+        mInternal->lineSeg.reserve(vertexArray.size());
+        for (auto v : vertexArray) {
+            mInternal->lineSeg.push_back(Eigen::Vector3f(v.x, v.y, v.z));;
+        }
+    }
+
     void CTopoShape::clearHover()
     {
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
-            auto& bacthMesh = *owner.GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.ClearHoverColor();
         }
         else if (mInternal->highOption.mode == HighLightOption::Mode::Transparent)
         {
             setChildsMeshTransParent({  });
         }
+    }
+
+    void CTopoShape::clearHoverLine()
+    {
+        mInternal->hoverLine = false;
     }
 
     void CTopoShape::discretizationFaceShape()
@@ -322,7 +355,7 @@ namespace Core::ECS::Components
     {
 		mInternal->curOpaqueChildMesh.clear();
 		mInternal->curTransparentChildMesh.clear();
-        auto& children = owner.GetChildren();
+        auto& children = owner.GetChild("Face")->GetChildren();
         for (int i = 0;i < mInternal->curOpaqueChildMeshIndex.size();i++) {
 			int id = mInternal->curOpaqueChildMeshIndex[i];
             if (children[id]->IsActive()) {
@@ -335,7 +368,7 @@ namespace Core::ECS::Components
 				mInternal->curTransparentChildMesh.push_back(mInternal->childMeshInfos[id]);
             }
         }
-        auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+        auto model = owner.GetChild("Face")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
         auto mesh = model->GetMesh(0);
         mesh->UploadIndices(mInternal->curOpaqueChildMesh, 0);
         mesh->UploadIndices(mInternal->curTransparentChildMesh, 1);

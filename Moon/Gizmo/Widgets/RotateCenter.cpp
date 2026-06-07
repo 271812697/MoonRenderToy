@@ -66,17 +66,9 @@ namespace MOON {
 			if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
 			{
 				auto actor = *pval;
-				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasComponent("CTopoShape")) {
-							//int childId = parent->GetChildId(&actor.value());
-							//auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-							//topoComp->hoverChild(childId);
-							GetTreeView.highlightByActor(&actor.value());
-							MOON::SelectionManager::instance().setSelect({ actor.value().GetID() });
-						}
-					}
+				if (actor) {	
+					GetTreeView.highlightByActor(&actor.value());
+					MOON::SelectionManager::instance().setSelect({ actor.value().GetID() });
 				}
 				else
 				{
@@ -95,7 +87,6 @@ namespace MOON {
 			MOON::SelectionManager::instance().clearPreselect();
 			GetTreeView.clearHighlight();
 		}
-
 	}
 	void RotateCenter::onLeftMouseReleased()
 	{
@@ -116,13 +107,13 @@ namespace MOON {
 			for (auto& it : actorPointMap) {
 				auto actor = m_sceneView->GetScene()->FindActorByID(it.first);
 				if (actor) {
-					if (actor->HasComponent("CTopoShape")) {
+					if (actor->HasComponent("CBatchMeshTriangle")) {
 						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshTriangle>();
 						colorBar->SetCandidatesIndex(it.second);
 						if (colorBar) {
 							colorBar->SetColor(Maths::FVector4{ 1.0f,0.5019f,0.0f,1.0f });
 						}
-						auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
+						auto topoComp = actor->GetParent()->GetComponent<::Core::ECS::Components::CTopoShape>();
 						topoComp->setChildsMeshTransParent({ it.second });
 					}
 				}
@@ -147,37 +138,25 @@ namespace MOON {
 			{
 				auto actor = *pval;
 				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasComponent("CTopoShape")) {
-							//int childId = parent->GetChildId(&actor.value());
-							//auto topoComp = parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-							//topoComp->hoverChild(childId);
-							//GetTreeView.highlightByActor(&actor.value());
-							MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
-						}
-					}
+					MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
 				}
 				else
 				{
 					MOON::SelectionManager::instance().clearPreselect();
-					//GetTreeView.clearHighlight();
 				}
 			}
 			else
 			{
 				MOON::SelectionManager::instance().clearPreselect();
-				//GetTreeView.clearHighlight();
 			}
 		}
 		else
 		{
 			MOON::SelectionManager::instance().clearPreselect();
-			//GetTreeView.clearHighlight();
 		}
-		auto it = m_sceneView->getInutState().GetMousePosition();
-		ex = it.first;
-		ey = it.second;
+		//auto it = m_sceneView->getInutState().GetMousePosition();
+		//ex = it.first;
+		//ey = it.second;
 		//auto ray=m_sceneView->GetMouseRay();
 		//::Core::SceneSystem::HitRes res;
 		//if (m_sceneView->GetScene()->RayHit(ray, res)) {
@@ -205,30 +184,30 @@ namespace MOON {
 		//		lineSeg.clear();
 		//	}
 		//}
-		auto [w, h] = m_sceneView->GetSafeSize();
-		Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
-		::Core::SceneSystem::PointPickRes out;
-		if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
-			static int subLineId = -1;
-			int id = out.subMeshId;
-			if (id != subLineId) 
-			{
-				subLineId = id;
-				auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
-				if (actor) {
-					if (actor->HasComponent("CTopoShape")) {
-						auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
-						if (colorBar) {
-							auto vertexArray=colorBar->getLineSeg(subLineId);
-							lineSeg.clear();
-							lineSeg.reserve(vertexArray.size());
-							for (auto v : vertexArray) {
-								lineSeg.push_back(Eigen::Vector3f(v.x,v.y,v.z));;
-							}
-						}
-					}
-				}
-			}
-		}
+		//auto [w, h] = m_sceneView->GetSafeSize();
+		//Maths::FMatrix4 viewPortMatrix=Maths::FMatrix4::Scaling({ w / 2.0f,h / 2.0f,1.0f })*Maths::FMatrix4::Translation({1,1,0})*m_sceneView->GetCamera()->GetViewProjectionMatrix();
+		//::Core::SceneSystem::PointPickRes out;
+		//if (m_sceneView->GetScene()->PointPick(viewPortMatrix, ex, h - ey, 3.0f, out)) {
+		//	static int subLineId = -1;
+		//	int id = out.subMeshId;
+		//	if (id != subLineId) 
+		//	{
+		//		subLineId = id;
+		//		auto actor = m_sceneView->GetScene()->FindActorByID(out.actorId);
+		//		if (actor) {
+		//			if (actor->HasComponent("CBatchMeshLine")) {
+		//				auto colorBar = actor->GetComponent<::Core::ECS::Components::CBatchMeshLine>();
+		//				if (colorBar) {
+		//					auto vertexArray = colorBar->getLineSeg(subLineId);
+		//					lineSeg.clear();
+		//					lineSeg.reserve(vertexArray.size());
+		//					for (auto v : vertexArray) {
+		//						lineSeg.push_back(Eigen::Vector3f(v.x, v.y, v.z));;
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 	}
 }

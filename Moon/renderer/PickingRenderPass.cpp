@@ -56,6 +56,7 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 	m_actorPickingFallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("PickingFallback"));
 	m_TopoShapePickingFallbackMaterial.SetShader(GetShaderService[":Shaders\\GeomertySurfacePick.ovfx"]);
 	m_TopoShapePickingFallbackMaterial.SetBackfaceCulling(false);
+	m_TopoShapePickingFallbackMaterial.SetLineWidth(8);
 }
 
 Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRenderPass::ReadbackPickingResult(
@@ -154,10 +155,10 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	m_actorPickingFramebuffer.Unbind();
 	
 	//the following code is for debug, it will display the picking framebuffer
-	//ImVec2 a = { 0,1 }, b = { 1,0 };
-	//ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
-	//auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
-	//ImGui::Image(resid->GetID(), size, a, b);
+	ImVec2 a = { 0,1 }, b = { 1,0 };
+	ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+	auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+	ImGui::Image(resid->GetID(), size, a, b);
 
 
 	if (auto output = frameDescriptor.outputMsaaBuffer)
@@ -176,13 +177,28 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 		for (auto& drawable : drawables)
 		{			
 			const auto& actor = drawable.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDrawableDescriptor>().actor;
-			if (actor.HasComponent("CTopoShape")) {
+			if (actor.HasComponent("CBatchMeshTriangle")) {
 			
 				// Prioritize using the actual material state mask.
+				//m_TopoShapePickingFallbackMaterial.SetDepthTest(true);
 				auto stateMask = m_TopoShapePickingFallbackMaterial.GenerateStateMask();
 
 				::Rendering::Entities::Drawable finalDrawable = drawable;
 				finalDrawable.material = m_TopoShapePickingFallbackMaterial;
+				finalDrawable.stateMask = stateMask;
+				finalDrawable.stateMask.frontfaceCulling = false;
+				finalDrawable.stateMask.backfaceCulling = false;
+				m_renderer.DrawEntity(p_pso, finalDrawable);
+			}
+			else if (actor.HasComponent("CBatchMeshLine")) {
+				// Prioritize using the actual material state mask.
+				//m_TopoShapePickingFallbackMaterial.SetDepthTest(false);
+
+				auto stateMask = m_TopoShapePickingFallbackMaterial.GenerateStateMask();
+
+				::Rendering::Entities::Drawable finalDrawable = drawable;
+				finalDrawable.material = m_TopoShapePickingFallbackMaterial;
+				
 				finalDrawable.stateMask = stateMask;
 				finalDrawable.stateMask.frontfaceCulling = false;
 				finalDrawable.stateMask.backfaceCulling = false;
