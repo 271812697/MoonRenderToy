@@ -134,6 +134,7 @@ namespace Part
 class  Tools
 {
 public:
+
     Handle(Geom_Surface) makeSurface(
         const TColStd_ListOfTransient& theBoundaries,
         const Standard_Real theTol,

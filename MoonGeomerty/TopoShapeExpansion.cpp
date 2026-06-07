@@ -80,7 +80,13 @@
 #include <ShapeFix_Shape.hxx>
 #include <ShapeFix_ShapeTolerance.hxx>
 #include <gp_Pln.hxx>
+#include <Geom2d_Ellipse.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
 
+#include <Geom2d_TrimmedCurve.hxx>
+#include <GC_MakeSegment.hxx>
+#include <GC_MakeArcOfCircle.hxx>
+#include <GCE2d_MakeSegment.hxx>  // 正确的头文件！
 #include <utility>
 
 #include <OSD_Parallel.hxx>
@@ -3476,6 +3482,154 @@ TopoShape& TopoShape::makeElementTransform(
         *this = tmp;
     }
     return *this;
+}
+
+TopoShape TopoShape::MakeBottle(double theWidth, double theHeight, double theThickness)
+{
+    // Profile : Define Support Points
+    gp_Pnt aPnt1(-theWidth / 2., 0, 0);
+    gp_Pnt aPnt2(-theWidth / 2., -theThickness / 4., 0);
+    gp_Pnt aPnt3(0, -theThickness / 2., 0);
+    gp_Pnt aPnt4(theWidth / 2., -theThickness / 4., 0);
+    gp_Pnt aPnt5(theWidth / 2., 0, 0);
+
+    // Profile : Define the Geometry
+    Handle(Geom_TrimmedCurve) anArcOfCircle = GC_MakeArcOfCircle(aPnt2, aPnt3, aPnt4);
+    Handle(Geom_TrimmedCurve) aSegment1 = GC_MakeSegment(aPnt1, aPnt2);
+    Handle(Geom_TrimmedCurve) aSegment2 = GC_MakeSegment(aPnt4, aPnt5);
+
+    // Profile : Define the Topology
+    TopoDS_Edge anEdge1 = BRepBuilderAPI_MakeEdge(aSegment1);
+    TopoDS_Edge anEdge2 = BRepBuilderAPI_MakeEdge(anArcOfCircle);
+    TopoDS_Edge anEdge3 = BRepBuilderAPI_MakeEdge(aSegment2);
+    TopoDS_Wire aWire = BRepBuilderAPI_MakeWire(anEdge1, anEdge2, anEdge3);
+
+    // Complete Profile
+    gp_Ax1 xAxis = gp::OX();
+    gp_Trsf aTrsf;
+
+    aTrsf.SetMirror(xAxis);
+    BRepBuilderAPI_Transform aBRepTrsf(aWire, aTrsf);
+    TopoDS_Shape aMirroredShape = aBRepTrsf.Shape();
+    TopoDS_Wire aMirroredWire = TopoDS::Wire(aMirroredShape);
+
+    BRepBuilderAPI_MakeWire aMkWire;
+    aMkWire.Add(aWire);
+    aMkWire.Add(aMirroredWire);
+    TopoDS_Wire aWireProfile = aMkWire.Wire();
+
+    // Body : Prism the Profile
+    TopoDS_Face aFaceProfile = BRepBuilderAPI_MakeFace(aWireProfile);
+    gp_Vec aPrismVec(0, 0, theHeight);
+    TopoDS_Shape aBody = BRepPrimAPI_MakePrism(aFaceProfile, aPrismVec);
+
+    // Body : Apply Fillets
+    BRepFilletAPI_MakeFillet aMkFillet(aBody);
+    TopExp_Explorer anEdgeExplorer(aBody, TopAbs_EDGE);
+    while (anEdgeExplorer.More()) {
+        TopoDS_Edge anEdge = TopoDS::Edge(anEdgeExplorer.Current());
+        //Add edge to fillet algorithm
+        aMkFillet.Add(theThickness / 12., anEdge);
+        anEdgeExplorer.Next();
+    }
+
+    aBody = aMkFillet.Shape();
+
+    // Body : Add the Neck
+    gp_Pnt aNeckLocation(0, 0, theHeight);
+    gp_Dir aNeckAxis = gp::DZ();
+    gp_Ax2 neckAx2(aNeckLocation, aNeckAxis);
+
+    double aNeckRadius = theThickness / 4.;
+    double aNeckHeight = theHeight / 10.;
+
+    BRepPrimAPI_MakeCylinder aMkCylinder(neckAx2, aNeckRadius, aNeckHeight);
+    TopoDS_Shape aNeck = aMkCylinder.Shape();
+
+    BRepAlgoAPI_Fuse aFuser(aBody, aNeck);
+    if (aFuser.IsDone())
+    {
+        aBody = aFuser.Shape();
+    }
+    else
+    {
+        // Fuse failed; proceed with unmodified aBody.
+        // In production code, report the error and handle the failure appropriately.
+    }
+
+    // Body : Create a Hollowed Solid
+    TopoDS_Face   aFaceToRemove;
+    double aZMax = -1;
+
+    for (TopExp_Explorer aFaceExplorer(aBody, TopAbs_FACE); aFaceExplorer.More(); aFaceExplorer.Next()) {
+        TopoDS_Face aFace = TopoDS::Face(aFaceExplorer.Current());
+        // Check if <aFace> is the top face of the bottle's neck 
+        Handle(Geom_Surface) aSurface = BRep_Tool::Surface(aFace);
+        if (!aSurface.IsNull() && aSurface->DynamicType() == STANDARD_TYPE(Geom_Plane)) {
+            Handle(Geom_Plane) aPlane = Handle(Geom_Plane)::DownCast(aSurface);
+            if (!aPlane.IsNull())
+            {
+                gp_Pnt aPnt = aPlane->Location();
+                double aZ = aPnt.Z();
+                if (aZ > aZMax) {
+                    aZMax = aZ;
+                    aFaceToRemove = aFace;
+                }
+            }
+        }
+    }
+
+    NCollection_List<TopoDS_Shape> aFacesToRemove;
+    aFacesToRemove.Append(aFaceToRemove);
+    BRepOffsetAPI_MakeThickSolid aSolidMaker;
+    aSolidMaker.MakeThickSolidByJoin(aBody, aFacesToRemove, -theThickness / 50, 1.e-3);
+    aBody = aSolidMaker.Shape();
+    // Threading : Create Surfaces
+    Handle(Geom_CylindricalSurface) aCyl1 = new Geom_CylindricalSurface(neckAx2, aNeckRadius * 0.99);
+    Handle(Geom_CylindricalSurface) aCyl2 = new Geom_CylindricalSurface(neckAx2, aNeckRadius * 1.05);
+
+    // Threading : Define 2D Curves
+    gp_Pnt2d aPnt(2. * M_PI, aNeckHeight / 2.);
+    gp_Dir2d aDir(2. * M_PI, aNeckHeight / 4.);
+    gp_Ax2d anAx2d(aPnt, aDir);
+
+    double aMajor = 2. * M_PI;
+    double aMinor = aNeckHeight / 10;
+
+    Handle(Geom2d_Ellipse) anEllipse1 = new Geom2d_Ellipse(anAx2d, aMajor, aMinor);
+    Handle(Geom2d_Ellipse) anEllipse2 = new Geom2d_Ellipse(anAx2d, aMajor, aMinor / 4);
+    Handle(Geom2d_TrimmedCurve) anArc1 = new Geom2d_TrimmedCurve(anEllipse1, 0, M_PI);
+    Handle(Geom2d_TrimmedCurve) anArc2 = new Geom2d_TrimmedCurve(anEllipse2, 0, M_PI);
+    gp_Pnt2d anEllipsePnt1 = anEllipse1->Value(0);
+    gp_Pnt2d anEllipsePnt2 = anEllipse1->Value(M_PI);
+
+    Handle(Geom2d_TrimmedCurve) aSegment = GCE2d_MakeSegment(anEllipsePnt1, anEllipsePnt2);
+    // Threading : Build Edges and Wiresd
+    TopoDS_Edge anEdge1OnSurf1 = BRepBuilderAPI_MakeEdge(anArc1, aCyl1);
+    TopoDS_Edge anEdge2OnSurf1 = BRepBuilderAPI_MakeEdge(aSegment, aCyl1);
+    TopoDS_Edge anEdge1OnSurf2 = BRepBuilderAPI_MakeEdge(anArc2, aCyl2);
+    TopoDS_Edge anEdge2OnSurf2 = BRepBuilderAPI_MakeEdge(aSegment, aCyl2);
+    TopoDS_Wire aThreadingWire1 = BRepBuilderAPI_MakeWire(anEdge1OnSurf1, anEdge2OnSurf1);
+    TopoDS_Wire aThreadingWire2 = BRepBuilderAPI_MakeWire(anEdge1OnSurf2, anEdge2OnSurf2);
+    BRepLib::BuildCurves3d(aThreadingWire1);
+    BRepLib::BuildCurves3d(aThreadingWire2);
+
+    // Create Threading 
+    BRepOffsetAPI_ThruSections aTool(true);
+    aTool.AddWire(aThreadingWire1);
+    aTool.AddWire(aThreadingWire2);
+    aTool.CheckCompatibility(false);
+
+    TopoDS_Shape aThreading = aTool.Shape();
+
+    // Building the Resulting Compound 
+    TopoDS_Compound aRes;
+    BRep_Builder aBuilder;
+    aBuilder.MakeCompound(aRes);
+    aBuilder.Add(aRes, aBody);
+    aBuilder.Add(aRes, aThreading);
+
+    return aRes;
 }
 
 TopoShape& TopoShape::makeElementGTransform(
