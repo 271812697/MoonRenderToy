@@ -91,7 +91,7 @@ namespace MOON {
 	void RotateCenter::onLeftMouseReleased()
 	{
 		drawRect = false;
-		auto [w, h] = m_sceneView->GetSafeSize();
+	/*	auto [w, h] = m_sceneView->GetSafeSize();
 		float su = 2 * (sx) / (float)w - 1;
 		float sv = 2 * (h - sy) / (float)h - 1;
 		float eu = 2 * (ex) / (float)w - 1;
@@ -118,7 +118,7 @@ namespace MOON {
 					}
 				}
 			}
-		}
+		}*/
 	}
 	void RotateCenter::onRightMousePressed()
 	{		
