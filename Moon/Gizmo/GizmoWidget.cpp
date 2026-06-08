@@ -11,9 +11,8 @@
 #include "renderer/SceneView.h"
 namespace MOON {
 	static unsigned int nextWidgetId = 0;
-	GizmoWidget::GizmoWidget(const std::string& name) : mWidgetId(++nextWidgetId)
+	GizmoWidget::GizmoWidget(const std::string& name) :mName(name), mWidgetId(++nextWidgetId)
 	{
-		mName = name + std::to_string(mWidgetId);;
 		Gizmo::instance().addGizmoWidget(this);;
 		renderer = &Gizmo::instance();
 		SetInteractor(RenderWindowInteractor::Instance());

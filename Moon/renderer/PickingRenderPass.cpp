@@ -155,12 +155,12 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	m_actorPickingFramebuffer.Unbind();
 	
 	//the following code is for debug, it will display the picking framebuffer
-	//ImVec2 a = { 0,1 }, b = { 1,0 };
-	//ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
-	//auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
-	//ImGui::Image(resid->GetID(), size, a, b);
-
-
+	if (mPickOption.debug) {
+		ImVec2 a = { 0,1 }, b = { 1,0 };
+		ImVec2 size = ImVec2(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
+		auto resid=m_actorPickingFramebuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR,0);
+		ImGui::Image(resid->GetID(), size, a, b);
+	}
 	if (auto output = frameDescriptor.outputMsaaBuffer)
 	{
 		output.value().Bind();
@@ -233,6 +233,7 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 		};
 
 	drawPickableModels(filteredDrawables.opaques | std::views::values);
+	drawPickableModels(filteredDrawables.lines | std::views::values);
 	drawPickableModels(filteredDrawables.transparents | std::views::values);
 	drawPickableModels(filteredDrawables.ui | std::views::values);
 }
@@ -327,4 +328,9 @@ void Editor::Rendering::PickingRenderPass::DrawPickableGizmo(
 
 	m_renderer.GetFeature<DebugModelRenderFeature>()
 		.DrawModelWithSingleMaterial(p_pso, *arrowModel, m_gizmoPickingMaterial, modelMatrix);
+}
+
+Editor::Rendering::PickPassOption& Editor::Rendering::PickingRenderPass::GetPickPassOption()
+{
+	return mPickOption;
 }

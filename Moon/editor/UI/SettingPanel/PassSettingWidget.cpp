@@ -20,6 +20,7 @@
 #include "Core/Rendering/GbufferPass.h"
 #include "Core/Rendering/SkyBoxRenderPass .h"
 #include "renderer/GizmoRenderPass.h"
+#include "renderer/PickingRenderPass.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -194,6 +195,38 @@ namespace MOON {
 			}
 		}
 	};
+	class PickPassComponent :public RenderPassComponent
+	{
+	public:
+		PickPassComponent(::Editor::Rendering::PickingRenderPass* p) :RenderPassComponent(p) {
+			mProperties.pop_back();
+			mProperties.push_back(new BoolProperty("DebugIdTexture", this));
+
+			//mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto pickPass = dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass);
+			auto& pickOption = pickPass->GetPickPassOption();
+			if (propertyName == "Enable") {
+				return QVariant::fromValue(pass->IsEnabled());
+			}
+			else if(propertyName == "DebugIdTexture"){
+				return QVariant::fromValue(pickOption.debug);
+			}
+
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto pickPass = dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass);
+			auto& pickOption = pickPass->GetPickPassOption();
+			if (propertyName == "Enable") {
+				pass->SetEnabled(value.value<bool>());
+			}
+			else if (propertyName == "DebugIdTexture") {
+				pickOption.debug = value.value<bool>();
+			}
+		}
+	};
 	RenderPassComponent* CreateRenderPassComponent(Rendering::Core::ARenderPass* pass) {
 		if (dynamic_cast<::Core::Rendering::GbufferPass*>(pass)) {
 			return new GbufferPassComponent(dynamic_cast<::Core::Rendering::GbufferPass*>(pass));
@@ -203,6 +236,9 @@ namespace MOON {
 		}
 		else if (dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass)) {
 			return new GizmoPassComponent(dynamic_cast<::Editor::Rendering::GizmoRenderPass*>(pass));
+		}
+		else if (dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass)) {
+			return new PickPassComponent(dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass));
 		}
 		else {
 			return new RenderPassComponent(pass);

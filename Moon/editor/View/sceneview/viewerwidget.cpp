@@ -17,6 +17,7 @@
 #include "Qtimgui/imgui/imgui.h"
 #include "Settings/DebugSetting.h"
 #include "core/SelectionManager.h"
+#include "renderer/GizmoRenderPass.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -68,7 +69,9 @@ namespace MOON {
 
 		void paintGL() {
 			Gizmo::instance().newImgui();
-			Gizmo::instance().newFrame(mSceneView);
+			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").IsEnabled()) {
+				Gizmo::instance().newFrame(mSceneView);
+			}
 			mSceneView->Update(0.01);
 			if (mSwitchScene) {
 				mSwitchScene = false;
@@ -82,10 +85,10 @@ namespace MOON {
 			}
 			
 			mSceneView->Render();
+			
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			debugImgui();
-			Gizmo::instance().endFrame();
 			Gizmo::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
 		}

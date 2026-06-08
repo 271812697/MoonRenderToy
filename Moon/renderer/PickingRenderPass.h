@@ -15,9 +15,11 @@
 
 namespace Editor::Rendering
 {
-	/**
-	* Draw the scene for actor picking
-	*/
+	struct PickPassOption
+	{
+		bool debug = false;
+
+	};
 	class PickingRenderPass : public ::Rendering::Core::ARenderPass
 	{
 	public:
@@ -26,25 +28,13 @@ namespace Editor::Rendering
 			std::variant<Tools::Utils::OptRef<::Core::ECS::Actor>,
 			Editor::Core::GizmoBehaviour::EDirection>
 			>;
-
-		/**
-		* Constructor
-		* @param p_renderer
-		*/
 		PickingRenderPass(::Rendering::Core::CompositeRenderer& p_renderer);
-
-		/**
-		* Return the picking result at the given position
-		* @param p_scene
-		* @param p_x
-		* @param p_y
-		*/
 		PickingResult ReadbackPickingResult(
 			const ::Core::SceneSystem::Scene& p_scene,
 			uint32_t p_x,
 			uint32_t p_y
 		);
-
+		PickPassOption& GetPickPassOption();
 	private:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 		void DrawPickableModels(::Rendering::Data::PipelineState p_pso, ::Core::SceneSystem::Scene& p_scene);
@@ -65,5 +55,6 @@ namespace Editor::Rendering
 		::Core::Resources::Material m_reflectionProbeMaterial;
 		::Core::Resources::Material m_lightMaterial;
 		::Core::Resources::Material m_gizmoPickingMaterial;
+		PickPassOption mPickOption;
 	};
 }

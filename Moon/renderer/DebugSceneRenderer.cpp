@@ -678,14 +678,15 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddFeature<GizmoRenderFeature, ::Rendering::Features::EFeatureExecutionPolicy::NEVER>();
 
 	
-	AddPass<DebugReflectionProbesRenderPass>("Debug Reflection Probes", ::Rendering::Settings::ERenderPassOrder::Debug);
-	AddPass<DebugLightsRenderPass>("Debug Lights", ::Rendering::Settings::ERenderPassOrder::Debug).SetEnabled(false);;
+	//AddPass<DebugReflectionProbesRenderPass>("Debug Reflection Probes", ::Rendering::Settings::ERenderPassOrder::Debug);
+	AddPass<DebugLightsRenderPass>("Debug Lights", ::Rendering::Settings::ERenderPassOrder::Debug).SetEnabled(false);
 	
-	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Debug);
-	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);
-	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::Last).SetEnabled(false);
-	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
-    AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last).SetEnabled(false);
+	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);	
 	AddPass<GridRenderPass>("Grid", ::Rendering::Settings::ERenderPassOrder::Opaque);
+	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::PathTrace).SetEnabled(false);
+	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
+	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Last);
+    //AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last).SetEnabled(false);
+
 
 }

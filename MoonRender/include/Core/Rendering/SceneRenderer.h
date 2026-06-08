@@ -85,6 +85,7 @@ namespace Core::Rendering
 		{
 			DrawableMap<EOrderingMode::FRONT_TO_BACK> opaques;
 			DrawableMap<EOrderingMode::BACK_TO_FRONT> transparents;
+			DrawableMap<EOrderingMode::FRONT_TO_BACK> lines;
 			DrawableMap<EOrderingMode::BACK_TO_FRONT> ui;
 		};
 

@@ -20,27 +20,26 @@ out VS_OUT
 {
     vec3 FragPos;
     vec2 TexCoords;
-    vec3 Normal;
+    vec3 ViewDir;
+    vec3 PlaneNormalWS;
 } vs_out;
 
 void main()
 {
     vec4 worldPos = ubo_Model * vec4(geo_Pos, 1.0);
     vs_out.FragPos = worldPos.xyz;
-    
-    mat4 worldToPlane = inverse(u_PlaneTransform);
-    vec4 localPos = worldToPlane * worldPos;
-    
+
+    vec4 localPos = inverse(u_PlaneTransform) * worldPos;
     vs_out.TexCoords = localPos.xz;
-    
-    vs_out.Normal = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
-    
+
+    vs_out.ViewDir = normalize(ubo_ViewPos - worldPos.xyz);
+    vs_out.PlaneNormalWS = normalize(mat3(transpose(inverse(ubo_Model))) * geo_Normal);
+
     gl_Position = ubo_Projection * ubo_View * worldPos;
 }
 
 #shader fragment
 #version 450 core
-
 out vec4 FRAGMENT_COLOR;
 
 layout (std140) uniform EngineUBO
@@ -56,66 +55,59 @@ uniform mat4 u_PlaneTransform;
 uniform vec3 u_Color;
 uniform sampler2D u_MirrorTex;
 
-
-uniform float u_GridSize = 0.01f;      
-uniform float u_GridOpacity = 0.7f;   
-uniform float u_FadeDistance = 50.0f; 
+uniform float u_GridSize = 0.001;
+uniform float u_GridOpacity = 0.7;
+uniform float u_FadeDistance = 80.0;
+uniform float u_ReflectStrength = 1.0;
 
 in VS_OUT
 {
     vec3 FragPos;
     vec2 TexCoords;
-    vec3 Normal;
+    vec3 ViewDir;
+    vec3 PlaneNormalWS;
 } fs_in;
 
-float MAG(float lineWidth, float spacing, vec2 texCoords)
+float GridLine(float width, float scale, vec2 uv)
 {
-    const vec2 coord = texCoords / spacing;
-    const vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
-    const float line = min(grid.x, grid.y);
-    const float lineResult = lineWidth - min(line, lineWidth);
-    return max(lineResult,0.2);
+    vec2 coord = uv / scale;
+    vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+    float line = min(grid.x, grid.y);
+    return 1.0 - smoothstep(width - 0.02, width + 0.02, line);
 }
 
 void main()
 {
-    mat4 worldToPlane = inverse(u_PlaneTransform);
-    vec4 localCameraPos = worldToPlane * vec4(ubo_ViewPos, 1.0);
-    vec4 localFragPos = worldToPlane * vec4(fs_in.FragPos, 1.0);
-    
-    float height = abs(localCameraPos.y - localFragPos.y);
-    
-    vec2 texCoords = fs_in.TexCoords;
-    
-    float spacing1 = u_GridSize;           // 0.5m
-    float spacing2 = u_GridSize * 4.0f;    // 2m
-    float spacing3 = u_GridSize * 16.0f;   // 8m
-    
+    vec4 localCam = inverse(u_PlaneTransform) * vec4(ubo_ViewPos, 1.0);
+    vec4 localFrag = inverse(u_PlaneTransform) * vec4(fs_in.FragPos, 1.0);
+    float height = abs(localCam.y - localFrag.y);
 
-    float grid1 = MAG(1.4f, spacing1, texCoords);
-    float grid2 = MAG(1.5f, spacing2, texCoords);
-    float grid3 = MAG(1.6f, spacing3, texCoords);
-    
+    float grid1 = GridLine(1.4, u_GridSize, fs_in.TexCoords);
+    float grid2 = GridLine(1.6, u_GridSize * 4.0, fs_in.TexCoords);
+    float grid3 = GridLine(1.8, u_GridSize * 16.0, fs_in.TexCoords);
 
-    float fadeFactor = 1.0f ;//- clamp(height / u_FadeDistance, 0.0f, 1.0f);
-    
-  
-    float grid = 0.0f;
-    if (height < 20.0f)
-        grid = grid1 * 0.8f + grid2 * 0.2f;
-    else if (height < 50.0f)
-        grid = grid2 * 0.7f + grid3 * 0.3f;
+    float grid;
+    if (height < 20.0)
+        grid = grid1 * 0.8 + grid2 * 0.2;
+    else if (height < 50.0)
+        grid = grid2 * 0.7 + grid3 * 0.3;
     else
-        grid = grid3 * fadeFactor;
-    vec3 viewDir = normalize(fs_in.FragPos - ubo_ViewPos);
-    vec3 planeNormal = normalize(mat3(u_PlaneTransform)[1]);
-    float angleFactor = abs(dot(viewDir, planeNormal));
-    float horizonFade = 0.1f + 0.9f * smoothstep(0.0f, 0.3f, angleFactor);
+        grid = grid3;
+
+    float dist = length(fs_in.FragPos - ubo_ViewPos);
+    float fade = 1.0 - smoothstep(u_FadeDistance * 0.5, u_FadeDistance, dist);
+
+    float angle = abs(dot(fs_in.ViewDir, fs_in.PlaneNormalWS));
+    float horizon = smoothstep(0.0, 0.25, angle);
+
+    float gridAlpha = grid * u_GridOpacity * fade * horizon;
+
     vec2 reflectUV = gl_FragCoord.xy / textureSize(u_MirrorTex, 0);
     vec3 reflectColor = texture(u_MirrorTex, reflectUV).rgb;
-    reflectColor *= mix(0.2, 1.0, angleFactor) *1.0;
-    float alpha = grid * u_GridOpacity * horizonFade * fadeFactor;
+    reflectColor *= mix(0.2, 1.0, angle) * u_ReflectStrength;
+
     vec3 finalColor = reflectColor;
-    finalColor = mix(reflectColor, u_Color, alpha);
-    FRAGMENT_COLOR = vec4(finalColor, 1.0);
+    finalColor = mix(finalColor, u_Color, gridAlpha);
+
+    FRAGMENT_COLOR = vec4(finalColor, 0.3);
 }
