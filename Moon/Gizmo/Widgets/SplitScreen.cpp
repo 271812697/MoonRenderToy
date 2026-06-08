@@ -15,8 +15,8 @@ namespace MOON {
 	private:
 		friend class SplitScreen;
 		SplitScreen* mSelf = nullptr;
-		Eigen::Vector2f a = {100,100};
-		Eigen::Vector2f b = { 600,600 };
+		Eigen::Vector2f a = { 0,0 };
+		Eigen::Vector2f b = { 0,100 };
 		unsigned int id = 0;
 	};
 
