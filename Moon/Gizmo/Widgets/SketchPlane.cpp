@@ -26,14 +26,21 @@ namespace MOON {
 			if (mSelectPlane != mPreSelectPlane) {
 				mSelectPlane = mPreSelectPlane;
 				if (mSelectPlane != NO_Plane) {
+					SketcherPlane2D plane;
 					if (mSelectPlane == XY_Plane) {
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(2);
+						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
 					}
 					if (mSelectPlane == XZ_Plane) {
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(1);
+						plane.xAxis = Base::Vector3d{ 1,0,0 };
+						plane.yAxis = Base::Vector3d{ 0,0,1 };
+						plane.normal = Base::Vector3d{ 0,1,0 };
+						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
 					}
 					if (mSelectPlane == YZ_Plane) {
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(0);
+						plane.xAxis = Base::Vector3d{ 0,1,0 };
+						plane.yAxis = Base::Vector3d{ 0,0,1 };
+						plane.normal = Base::Vector3d{ 1,0,0 };
+						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
 					}
 					mSelf->setActive(false);
 					mSelectPlane = NO_Plane;

@@ -498,54 +498,24 @@ namespace MOON
 		drawLine(_a, _b, sizeStack.back());
 	}
 
-	void Gizmo::drawPoint2D(const Eigen::Vector2f& a, float size, Plane2D plane)
+	void Gizmo::drawPoint2D(const Eigen::Vector2f& a, float size, const Plane2D& plane)
 	{
-		if (plane == Plane2D::ZPlane)
-		{
-			drawPoint(Eigen::Vector3f(a.x(), a.y(), 0.0f), size, colorStack.back());
-		}
-
-		else if (plane == Plane2D::XPlane) {
-			drawPoint(Eigen::Vector3f(0.0f,a.x(), a.y() ), size, colorStack.back());
-		}
-		else if (plane == Plane2D::YPlane) {
-			drawPoint(Eigen::Vector3f(a.x(),0.0f,a.y()), size, colorStack.back());
-		}
+		drawPoint(plane.value(a).cast<float>(), size, colorStack.back());
 	}
 
-	void Gizmo::drawPoint2D(const Eigen::Vector2f&a, const Eigen::Vector4<uint8_t>& color, float size, Plane2D plane)
+	void Gizmo::drawPoint2D(const Eigen::Vector2f&a, const Eigen::Vector4<uint8_t>& color, float size, const Plane2D& plane)
 	{
-		if (plane == Plane2D::ZPlane)
-		{
-			drawPoint(Eigen::Vector3f(a.x(), a.y(), 0.0f), size, color);
-		}
-		else if (plane == Plane2D::XPlane) {
-			drawPoint(Eigen::Vector3f(0.0f, a.x(), a.y()), size, color);
-		}
-		else if (plane == Plane2D::YPlane) {
-			drawPoint(Eigen::Vector3f(a.x(), 0.0f, a.y()), size, color);
-		}
+		drawPoint(plane.value(a).cast<float>(), size, color);
 	}
 
-	void Gizmo::drawLine2D(const Vec2& a, const Vec2& b, Plane2D plane)
+	void Gizmo::drawLine2D(const Vec2& a, const Vec2& b, const Plane2D& plane)
 	{
-		if (plane == Plane2D::ZPlane)
-		{
-			drawLine(Eigen::Vector3f(a.x(), a.y(), 0.0f), Eigen::Vector3f(b.x(), b.y(), 0.0f));
-		}
-			
-		else if (plane == Plane2D::XPlane) {
-			drawLine(Eigen::Vector3f(0.0f, a.x(), a.y()), Eigen::Vector3f(0.0f, b.x(), b.y()));
-		}
-		else if (plane == Plane2D::YPlane) {
-			drawLine(Eigen::Vector3f(a.x(), 0.0f, a.y()), Eigen::Vector3f(b.x(), 0.0f, b.y()));
-		}
+		drawLine(plane.value(a).cast<float>(), plane.value(b).cast<float>());
 	}
 
 
 	void Gizmo::drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n)
 	{
-
 		auto& matrix = matrixStack.back();
 		Eigen::Vector3f mn = MatrixMulDir(matrix, n);
 		litVertexArray.push_back({ MatrixMulPoint(matrix, a), colorStack.back(), mn });
@@ -841,16 +811,7 @@ namespace MOON
 
 	void Gizmo::drawCircle2D(const Vec2& _origin, float _radius, int _detail, Plane2D plane)
 	{
-		if (plane==Plane2D::ZPlane) {
-			drawCircle(Eigen::Vector3f(_origin.x(), _origin.y(), 0), { 0,0,1 }, _radius, _detail);
-		}
-		else if (plane == Plane2D::YPlane) {
-			drawCircle(Eigen::Vector3f(_origin.x(),0 , _origin.y()), { 0,1,0 }, _radius, _detail);
-		}
-		else
-		{
-			drawCircle(Eigen::Vector3f(0,_origin.x(),  _origin.y()), { 1,0,0 }, _radius, _detail);
-		}
+		drawCircle(plane.origin.cast<float>(), plane.normal.cast<float>(), _radius, _detail);
 	}
 
 	void Gizmo::drawConeFilled(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height,

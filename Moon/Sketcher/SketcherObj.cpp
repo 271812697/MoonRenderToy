@@ -99,7 +99,6 @@ namespace MOON {
 			    clickMoveState = MoveGeo;
 		    }
         }
-
     }
     void SketcherObj::onLeftMouseReleased()
     {
@@ -141,61 +140,46 @@ namespace MOON {
              selectIds.clear();
         }
     }
-    void SketcherObj::setPlane(int p)
+    void SketcherObj::setPlane(const SketcherPlane2D& plane)
     {
-        mPlane = p;        
+        mPlane = plane;     
+		gizmoPlane.normal = { mPlane.normal.x,mPlane.normal.y,mPlane.normal.z };
+		gizmoPlane.origin = { mPlane.origin.x,mPlane.origin.y,mPlane.origin.z };
+		gizmoPlane.xAxis = { mPlane.xAxis.x,mPlane.xAxis.y,mPlane.xAxis.z };
+		gizmoPlane.yAxis = { mPlane.yAxis.x,mPlane.yAxis.y,mPlane.yAxis.z };
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(false);
         view.GetCamera()->SetSize(100);
         view.GetCamera()->SetProjectionMode(Rendering::Settings::EProjectionMode::ORTHOGRAPHIC);
         float pos=view.GetCamera()->GetFar()/2.0;
-        if (mPlane == 0) {
-            view.LookAt({0,0,0},{1,0,0}, pos);
-        }
-        if (mPlane == 1) {
-            view.LookAt({ 0,0,0 }, { 0,1,0 }, pos);
-        }
-        if (mPlane == 2) {
-            view.LookAt({ 0,0,0 }, { 0,0,1 }, pos);
-        }
+		Maths::FVector3 normal(mPlane.normal.x, mPlane.normal.y, mPlane.normal.z); 
+        view.LookAt(Maths::FVector3(mPlane.origin.x, mPlane.origin.y, mPlane.origin.z),normal, pos);
         planeTransform = updateTransform();
     }
-    int SketcherObj::getPlane()
+    SketcherPlane2D SketcherObj::getPlane()
     {
         return mPlane;
     }
     void SketcherObj::getPlaneNormal(double* p)
-    {
-        if (mPlane == 0) {
-            p[0] = 1;
-			p[1] = 0;
-            p[2] = 0;
-        }
-        if (mPlane == 1) {
-            p[0] = 0;
-            p[1] = 1;
-            p[2] = 0;
-        }
-        if (mPlane == 2) {
-            p[0] = 0;
-            p[1] = 0;
-            p[2] = 1;
-        }
+    {       
+        p[0] = mPlane.normal.x;
+		p[1] = mPlane.normal.y;
+        p[2] = mPlane.normal.z;
     }
     void SketcherObj::draw() {
         
         if (InEdit()) {
             renderer->pushSize(3);
             renderer->pushColor({ 255,0,0,255 });
-            renderer->drawLine2D({ 100,0 }, { -100,0 },static_cast<Plane2D>(mPlane));
+            renderer->drawLine2D({ 100,0 }, { -100,0 },gizmoPlane);
             renderer->popColor();
             renderer->pushColor({255,0,255,0});
-            renderer->drawLine2D({ 0,100 }, { 0,-100 }, static_cast<Plane2D>(mPlane));
+            renderer->drawLine2D({ 0,100 }, { 0,-100 },gizmoPlane);
             renderer->popColor();
             //renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
             renderer->popSize();
             renderer->pushColor({ 255,255,255,0 });
-            renderer->drawPoint2D({ 0,0 }, 10, static_cast<Plane2D>(mPlane));
+            renderer->drawPoint2D({ 0,0 }, 10, gizmoPlane);
             renderer->popColor();
         }
         renderer->pushSize(3);
@@ -207,7 +191,7 @@ namespace MOON {
         for (auto& it: mGeoSegment) {
             auto& sePoints = it.second.sepoints;
             for (int i = 0;i < sePoints.size();i++) {
-                renderer->drawPoint2D({ sePoints[i].x,sePoints[i].y }, pointColor, pointSize, static_cast<Plane2D>(mPlane));
+                renderer->drawPoint2D({ sePoints[i].x,sePoints[i].y }, pointColor, pointSize,gizmoPlane);
             }
         }  
         for (int i = 0;i < mGeoList.size();i++) {
@@ -231,7 +215,7 @@ namespace MOON {
 			if (geo->isDerivedFrom<Part::GeomCurve>()) {
                 auto& seg = mGeoSegment[geo.get()];
                 for (int i = 0;i < seg.point.size() - 1;i++) {
-                    renderer->drawLine2D({ seg.point[i].x,seg.point[i].y }, { seg.point[i + 1].x,seg.point[i + 1].y }, static_cast<Plane2D>(mPlane));
+                    renderer->drawLine2D({ seg.point[i].x,seg.point[i].y }, { seg.point[i + 1].x,seg.point[i + 1].y }, gizmoPlane);
                 }
             }
 			renderer->popColor();
@@ -1116,30 +1100,12 @@ namespace MOON {
     Base::Matrix4D SketcherObj::updateTransform() const
     {
         Base::Matrix4D ret;
-        if (mPlane == 0) {
-           ret=Base::Matrix4D(
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 1.0
-            );
-        }
-        if (mPlane == 1) {
-           ret=Base::Matrix4D(
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 1.0
-            );
-        }
-        if (mPlane == 2) {
-           ret=Base::Matrix4D(
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0
-            );
-        }
+        ret = Base::Matrix4D(
+            mPlane.xAxis.x, mPlane.yAxis.x, mPlane.normal.x, mPlane.origin.x,
+            mPlane.xAxis.y, mPlane.yAxis.y, mPlane.normal.y, mPlane.origin.y,
+            mPlane.xAxis.z, mPlane.yAxis.z, mPlane.normal.z, mPlane.origin.z,
+            0.0, 0.0, 0.0, 1.0
+        );
         return ret;
     }
     Base::Vector2d SketcherObj::getMouseHitSketchPlanePoint()
@@ -1147,20 +1113,11 @@ namespace MOON {
         auto ray = m_sceneView->GetMouseRay();
         Maths::FVector3 out;
         Base::Vector2d onSketchPos;
-
-        if (mPlane == 2) {
-            ray.hitPlane(Maths::FVector3(0, 0, 1), 0, out);
-            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.y * 100) / 100.0);
-        }
-        else if (mPlane == 0) {
-            ray.hitPlane(Maths::FVector3(1, 0, 0), 0, out);
-            onSketchPos = Base::Vector2d(int(out.y * 100) / 100.0, int(out.z * 100) / 100.0);
-        }
-        else {
-            ray.hitPlane(Maths::FVector3(0, 1, 0), 0, out);
-            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
-        }
-
+        ray.hitPlane(Maths::FVector3(mPlane.normal.x, mPlane.normal.y, mPlane.normal.z), mPlane.normal.Dot(mPlane.origin), out);
+        Eigen::Vector3d hitPos{out.x,out.y,out.z};
+        double x= (hitPos - gizmoPlane.origin).dot(gizmoPlane.xAxis);
+        double y=(hitPos - gizmoPlane.origin).dot(gizmoPlane.yAxis); 
+        onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         return onSketchPos;
     }
     SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 

@@ -312,7 +312,7 @@ namespace MOON
         {            
 
             setActive(false);
-            makePlane(2);
+            makePlane(SketcherPlane2D());
         }
         ~DrawSketchDefaultHandler() override
         {
