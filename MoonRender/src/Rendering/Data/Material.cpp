@@ -149,8 +149,9 @@ void Rendering::Data::Material::Bind(
 		{
 			if (std::holds_alternative<Maths::FVector3>(prop.value)) {
 				program.SetUniform<FVector3>(name, std::get<FVector3>(value));
+			}else if (std::holds_alternative<Maths::FVector4>(prop.value)) {
+				program.SetUniform<FVector4>(name, std::get<FVector4>(value));
 			}
-			
 			continue;
 		}
 

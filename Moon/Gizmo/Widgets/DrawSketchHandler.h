@@ -1,9 +1,8 @@
 ﻿#pragma once
 #include "Gizmo/GizmoWidget.h"
-
 #include "Geometry.h"
 #include "Maths/FVector3.h"
-#include "base/Tools2D.h"
+#include "Sketcher/SketchePlane2D.h"
 #include <type_traits>
 #include <optional>
 namespace MOON
@@ -18,7 +17,7 @@ namespace MOON
 		}
         virtual void quit();
         void clearEdit() ;
-        void makePlane(int v);
+        void makePlane(const SketcherPlane2D& v);
         virtual void onUpdate()override;
         virtual void onMouseMove()override;
     protected:
@@ -38,7 +37,6 @@ namespace MOON
         bool drawSketchPos = false;
         Base::Vector2d drawPos;
         Base::Vector2d onSketchPos;
-        int plane = 2;//0->X,1->Y,2->Z;
-        Maths::FVector3 planeNormal;
+        SketcherPlane2D plane ;//0->X,1->Y,2->Z;
     };
 }

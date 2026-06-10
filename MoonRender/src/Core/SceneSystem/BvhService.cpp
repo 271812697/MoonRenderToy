@@ -187,7 +187,8 @@ namespace Core::SceneSystem
 		}
 		tempMat.roughness = 0.05;
 		tempMat.metallic = 0.8;
-		tempMat.baseColor = { 136 / 255.0f,139 / 255.0f,141 / 255.0f };
+		//tempMat.baseColor = { 136 / 255.0f,139 / 255.0f,141 / 255.0f };
+		tempMat.baseColor = { 1.0,1.0f,1.0f };
 		materials.push_back(tempMat);
 	}
 	int	 BvhService::AddTexture(::Rendering::HAL::Texture* tex)
@@ -436,7 +437,6 @@ namespace Core::SceneSystem
 		curTriIndex = 0;
 		topLevelIndex = 0;
 		// Collect all model renderers' bounds
-			
 	}
 	bool BvhService::DirtyFlag()
 	{

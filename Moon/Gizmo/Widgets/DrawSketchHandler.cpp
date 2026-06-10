@@ -16,20 +16,9 @@ namespace MOON
     {
         lines.clear();
     }
-    void DrawSketchHandler::makePlane(int v)
+    void DrawSketchHandler::makePlane(const SketcherPlane2D& v)
     {
         plane = v;
-        if (plane == 2) {
-            planeNormal = { 0,0,1 };
-        }
-        else if (plane == 0)
-        {
-            planeNormal = { 1,0,0 };
-        }
-        else
-        {
-            planeNormal = { 0,1,0 };
-        }
     }
     void DrawSketchHandler::onUpdate()
     {
@@ -38,7 +27,8 @@ namespace MOON
            makePlane(sketchobj->getPlane());
        }
        if (isSnapedSketchPos) {
-           renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16, static_cast<MOON::Plane2D>(plane));
+           renderer->drawPoint(plane.valueEigen(onSketchPos), 16,Eigen::Vector4<uint8_t>(255, 0, 255, 0));
+           //renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16,gizmoPlane);
        }
        if (drawSketchPos) {
             auto drawList=ImGui::GetForegroundDrawList();
@@ -50,9 +40,7 @@ namespace MOON
        }
        renderer->pushSize(3);
        for (int i = 0; i < lines.size();i += 2) {
-           renderer->drawLine2D({ lines[i].x
-               ,lines[i].y }, { lines[i + 1].x
-               ,lines[i + 1].y }, static_cast<MOON::Plane2D>(plane));
+		   renderer->drawLine(plane.valueEigen(lines[i]), plane.valueEigen(lines[i + 1]));
        }
        renderer->popSize();
     }
@@ -61,16 +49,12 @@ namespace MOON
         //need to make sure which plane
         auto ray = m_sceneView->GetMouseRay();
         Maths::FVector3 out;
-        ray.hitPlane(planeNormal, 0, out);
-        if (plane == 2) {
-            onSketchPos = Base::Vector2d(int(out.x*100)/100.0, int(out.y*100)/100.0);
-        }
-        else if (plane == 0) {
-            onSketchPos = Base::Vector2d(int(out.y * 100) / 100.0, int(out.z * 100) / 100.0);
-        }
-        else {
-            onSketchPos = Base::Vector2d(int(out.x * 100) / 100.0, int(out.z * 100) / 100.0);
-        }
+       
+        ray.hitPlane(Maths::FVector3(plane.normal.x, plane.normal.y, plane.normal.z), plane.normal.Dot(plane.origin), out);
+        Base::Vector3d hitPos = Base::Vector3d (out.x,out.y,out.z );
+        double x = (hitPos - plane.origin).Dot(plane.xAxis);
+        double y = (hitPos - plane.origin).Dot(plane.yAxis);
+        onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         auto sketchobj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 		isSnapedSketchPos = false;
         if (sketchobj) {
@@ -137,21 +121,7 @@ namespace MOON
     Maths::FVector3 DrawSketchHandler::getWorldPosFromSketchPos(Base::Vector2d sketchPos)
     {
 		Maths::FVector3 v;
-        if (plane == 2) {
-            v.x = static_cast<float>(sketchPos.x);
-            v.y = static_cast<float>(sketchPos.y);
-            v.z = 0;
-        }
-        else if (plane == 0) {
-            v.x = 0;
-            v.y = static_cast<float>(sketchPos.x);
-            v.z = static_cast<float>(sketchPos.y);
-        }
-        else {
-            v.x = static_cast<float>(sketchPos.x);
-            v.y = 0;
-            v.z = static_cast<float>(sketchPos.y);
-        }
-        return v;
+		Base::Vector3d res=plane.value(sketchPos.x, sketchPos.y);
+        return Maths::FVector3(res.x,res.y,res.z);
     }
 }

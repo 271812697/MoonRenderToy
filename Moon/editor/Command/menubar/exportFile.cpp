@@ -66,7 +66,7 @@ namespace MOON {
 		if (!viewer.IsSelectActor())
 			return;
 
-		auto& selectActor = viewer.GetSelectedActor();
+		auto& selectActor = *viewer.GetSelectedActor();
 		if (!selectActor.HasComponent("CTopoShape"))
 			return;
 

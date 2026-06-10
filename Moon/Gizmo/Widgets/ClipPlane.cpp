@@ -130,7 +130,7 @@ namespace MOON {
 		
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
-				auto acptr=&mSelf->m_sceneView->GetSelectedActor();
+				auto acptr=mSelf->m_sceneView->GetSelectedActor();
 				if (acptr!=ac) {
 					ac = acptr;
 					auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
@@ -385,7 +385,7 @@ namespace MOON {
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
 			if (m_sceneView->IsSelectActor()) {
-				auto selectActor = &m_sceneView->GetSelectedActor();
+				auto selectActor = m_sceneView->GetSelectedActor();
 			
 				//if (selectActor->HasComponent("CTopoShape"))
 				{

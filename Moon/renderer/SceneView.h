@@ -27,12 +27,17 @@ namespace Editor::Panels
 		bool MouseClipHit(Maths::FVector3& out,const Maths::FVector4& clipPlane);
 		Editor::Rendering::PickingRenderPass::PickingResult GetPickResult();
 		::Rendering::Geometry::Ray GetMouseRay();
+		virtual ::Core::ECS::Actor* GetSelectedActor()override;
+		virtual void SelectActor(::Core::ECS::Actor& actor)override;
+		virtual void UnselectActor()override;
+		virtual bool IsSelectActor()override;
 	protected:
 		virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor() override;
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
 	private:
+		int64_t mTargetActorId = -1;
 		::Core::SceneSystem::SceneManager& m_sceneManager;
 		Editor::Core::GizmoBehaviour m_gizmoOperations;
 		Editor::Core::EGizmoOperation m_currentOperation = Editor::Core::EGizmoOperation::TRANSLATE;

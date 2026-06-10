@@ -70,7 +70,7 @@ namespace Core::ECS::Components
 	{
         if (mInternal->hoverLine) {
             auto& instance=MOON::Gizmo::instance();
-            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             auto& view = GetService(::Editor::Panels::SceneView);
@@ -286,6 +286,11 @@ namespace Core::ECS::Components
 	{
 		return mInternal->mTopoShape;
 	}
+
+    Part::TopoShape CTopoShape::GetTopoFace(int childFaceId)
+    {
+        return mInternal->mTopoShape.getSubTopoShape(TopAbs_FACE,childFaceId+1);
+    }
 
     void CTopoShape::hoverChild(int childId)
     {

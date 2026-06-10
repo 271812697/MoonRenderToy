@@ -25,15 +25,15 @@ namespace MOON
         Eigen::Vector4<uint8_t> tangentColor = { 255,255,255,255 };
         renderer->pushColor({255,255,255,0});
         for (int i = 0;i < points.size();i++) {
-            renderer->drawPoint2D({ points[i].x,points[i].y }, i == hotPointId?(isPointActive? activeColor:hotColor) : normalColor, 15, static_cast<Plane2D>(plane));
+            renderer->drawPoint(plane.valueEigen(points[i]), 15, i == hotPointId ? (isPointActive ? activeColor : hotColor) : normalColor);
         }
         if (constructionMethod() == ConstructionMethod::Knots) {
             for (int i = 0;i < tangents.size();i++) {
 			    Base::Vector2d tangentE = points[i] + tangents[i];
                 Base::Vector2d tangentS = points[i] - tangents[i];
-			    renderer->drawPoint2D({ tangentE.x,tangentE.y }, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor, 15, static_cast<Plane2D>(plane));
-                renderer->drawPoint2D({ tangentS.x,tangentS.y }, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor, 15, static_cast<Plane2D>(plane));
-                renderer->drawLine2D({ tangentS.x,tangentS.y }, { tangentE.x,tangentE.y }, static_cast<Plane2D>(plane));
+                renderer->drawPoint(plane.valueEigen(tangentE), 15, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor);
+                renderer->drawPoint(plane.valueEigen(tangentS), 15, i == hotTangentId ? (isTangentActive ? activeColor : hotColor) : tangentColor);
+                renderer->drawLine(plane.valueEigen(tangentS), plane.valueEigen(tangentE));
             }
         }
         renderer->popColor();

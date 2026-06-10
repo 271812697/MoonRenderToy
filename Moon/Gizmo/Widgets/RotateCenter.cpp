@@ -91,7 +91,7 @@ namespace MOON {
 	void RotateCenter::onLeftMouseReleased()
 	{
 		drawRect = false;
-		auto [w, h] = m_sceneView->GetSafeSize();
+	/*	auto [w, h] = m_sceneView->GetSafeSize();
 		float su = 2 * (sx) / (float)w - 1;
 		float sv = 2 * (h - sy) / (float)h - 1;
 		float eu = 2 * (ex) / (float)w - 1;
@@ -118,7 +118,7 @@ namespace MOON {
 					}
 				}
 			}
-		}
+		}*/
 	}
 	void RotateCenter::onRightMousePressed()
 	{		
@@ -154,9 +154,9 @@ namespace MOON {
 		{
 			MOON::SelectionManager::instance().clearPreselect();
 		}
-		//auto it = m_sceneView->getInutState().GetMousePosition();
-		//ex = it.first;
-		//ey = it.second;
+		auto it = m_sceneView->getInutState().GetMousePosition();
+		ex = it.first;
+		ey = it.second;
 		//auto ray=m_sceneView->GetMouseRay();
 		//::Core::SceneSystem::HitRes res;
 		//if (m_sceneView->GetScene()->RayHit(ray, res)) {

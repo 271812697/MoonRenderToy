@@ -34,7 +34,9 @@ void main()
     
     int r = actorId & 0xFF;
     int g = (actorId >> 8) & 0xFF;
-    int b = (actorId >> 16) & 0xFF;
-
+    int b = (actorId >> 16) & 0xFF; 
     FRAGMENT_COLOR = vec4(r / 255.0, g / 255.0, b / 255.0, 1.0);
+    //if(actorId==272){
+    //FRAGMENT_COLOR = vec4(1.0, 1.0, 1.0, 1.0);
+    //}
 }

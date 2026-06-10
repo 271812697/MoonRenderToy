@@ -67,15 +67,15 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 	}
 	headLight->transform.SetWorldPosition(m_camera.GetPosition());
 	if (IsSelectActor()) {
-		auto& ac = GetSelectedActor();
-		auto name=ac.GetName();
+		auto ac = GetSelectedActor();
+		auto name=ac->GetName();
 		if (name== "PointLight1"|| name == "PointLight2"|| name == "PointLight3"|| name == "PointLight4") {
 			return;
 		}
 		float pi = 3.14159265359f;
 		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
 		//ac.GetComponent<:Core::ECS::Components::>();
-		auto target = ac.transform.GetWorldPosition();
+		auto target = ac->transform.GetWorldPosition();
 		auto cp = m_camera.GetPosition();
 		float radius = Maths::FVector3::Length(target - cp) ;
 		Maths::FMatrix4 transMat = Maths::FMatrix4::Translation(target - cp);
@@ -105,7 +105,7 @@ void Editor::Panels::SceneView::InitFrame()
 
 	Tools::Utils::OptRef<::Core::ECS::Actor> selectedActor;
 
-	if (mTargetActor != nullptr) {
+	if (IsSelectActor()) {
 		selectedActor = GetSelectedActor();
 	}
 
@@ -130,12 +130,13 @@ Core::SceneSystem::Scene* Editor::Panels::SceneView::GetScene()
 
 void Editor::Panels::SceneView::FitToSelectedActor(const Maths::FVector3& dir)
 {
-	if (mTargetActor) {
-		auto modelRenderer = mTargetActor->GetComponent<::Core::ECS::Components::CModelRenderer>();
+	if (IsSelectActor()) {
+		auto ac = GetSelectedActor();
+		auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
 		if (modelRenderer) {
 			auto model=modelRenderer->GetModel();
 			if (model) {
-				auto transform=mTargetActor->GetComponent<::Core::ECS::Components::CTransform>();
+				auto transform=ac->GetComponent<::Core::ECS::Components::CTransform>();
 				auto sphere=modelRenderer->GetModel()->GetBoundingSphere();
 				sphere.position=Maths::FMatrix4::MulPoint(transform->GetWorldMatrix(), sphere.position);
 				
@@ -305,6 +306,26 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Panels::SceneView::G
 	return GetCamera()->GetMouseRay(x, y);
 }
 
+::Core::ECS::Actor* Editor::Panels::SceneView::GetSelectedActor()
+{
+	return GetScene()->FindActorByID(mTargetActorId);
+}
+
+void Editor::Panels::SceneView::SelectActor(::Core::ECS::Actor& actor)
+{
+	mTargetActorId = actor.GetID();
+}
+
+void Editor::Panels::SceneView::UnselectActor()
+{
+	mTargetActorId = -1;
+}
+
+bool Editor::Panels::SceneView::IsSelectActor()
+{
+	return GetScene()->FindActorByID(mTargetActorId);
+}
+
 
 Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::SceneView::CreateSceneDescriptor()
 {
@@ -387,7 +408,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 			if (m_highlightedGizmoDirection)
 			{
 				m_gizmoOperations.StartPicking(
-					GetSelectedActor(),
+					*GetSelectedActor(),
 					m_camera.GetPosition(),
 					m_currentOperation,
 					m_highlightedGizmoDirection.value());

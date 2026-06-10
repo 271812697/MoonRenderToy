@@ -17,6 +17,8 @@ namespace Rendering::Settings
 		static constexpr PassType Opaque			= 20000U;
 		static constexpr PassType Transparent		= 30000U;
 		static constexpr PassType PostProcessing	= 40000U;
+		static constexpr PassType PathTrace	        = 40001U;
+		static constexpr PassType LineAfterPathTrace	    = 40002U;
 		static constexpr PassType UI				= 50000U;
 		static constexpr PassType Debug				= 60000U;
 		static constexpr PassType Last				= ~First;

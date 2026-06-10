@@ -26,20 +26,19 @@ namespace Editor {
 			virtual ::Core::SceneSystem::Scene* GetScene() = 0;
 			std::pair<uint16_t, uint16_t> GetSafeSize() const;
 		    ::Core::Rendering::SceneRenderer& GetRenderer() ;
-			::Core::ECS::Actor& GetSelectedActor();
-			void SelectActor(::Core::ECS::Actor& actor);
 			void Resize(int width, int height);
-			void UnselectActor();
-			bool IsSelectActor();
 			InputState& getInutState();
 			void ClearEvents();
 			Maths::FVector3 GetRoaterCenter();
 			void SetRotaterCenter(const Maths::FVector3&center);
+			virtual ::Core::ECS::Actor* GetSelectedActor();
+			virtual void SelectActor(::Core::ECS::Actor& actor);
+			virtual void UnselectActor();
+			virtual bool IsSelectActor();
 		protected:
 			virtual ::Core::Rendering::SceneRenderer::SceneDescriptor CreateSceneDescriptor();
 
 		protected:
-			::Core::ECS::Actor* mTargetActor = nullptr;;
 			Maths::FVector3 m_roaterCenter = {0,0,0};
 			Maths::FVector3 m_gridColor = Maths::FVector3{ 0.176f, 0.176f, 0.176f };
 

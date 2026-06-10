@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "Gizmo/GizmoWidget.h"
 #include "TopoShape.h"
-#include "base/Tools2D.h"
+#include "Sketcher/SketchePlane2D.h"
 namespace Part {
 	class  Geometry;
 }
@@ -19,8 +19,8 @@ namespace MOON {
 		virtual void onLeftMousePressed()override;
 		virtual void onLeftMouseReleased()override;
 		virtual void onKeyPress(const std::string& key)override;
-		void setPlane(int p);
-		int getPlane();
+		void setPlane(const SketcherPlane2D&plane);
+		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
 		void draw();
@@ -69,7 +69,7 @@ namespace MOON {
 		Base::Matrix4D updateTransform()const;
 		Base::Vector2d getMouseHitSketchPlanePoint();
 		CurveSegement getCurveSegment( Part::Geometry* geo) ;
-		int mPlane = 0;
+		SketcherPlane2D mPlane ;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;

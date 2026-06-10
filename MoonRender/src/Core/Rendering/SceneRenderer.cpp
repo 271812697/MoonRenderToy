@@ -76,7 +76,30 @@ namespace
 			}
 		}
 	};
+	class LineRenderPass : public SceneRenderPass
+	{
+	public:
+		LineRenderPass(Rendering::Core::CompositeRenderer& p_renderer, bool p_stencilWrite = false) :
+			SceneRenderPass(p_renderer, p_stencilWrite)
+		{
+		}
 
+	protected:
+		virtual void Draw(Rendering::Data::PipelineState p_pso) override
+		{
+			ZoneScoped;
+			TracyGpuZone("LineRenderPass");
+
+			PrepareStencilBuffer(p_pso);
+
+			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
+
+			for (const auto& drawable : drawables.lines | std::views::values)
+			{
+				m_renderer.DrawEntity(p_pso, drawable);
+			}
+		}
+	};
 	class TransparentRenderPass : public SceneRenderPass
 	{
 	public:
@@ -373,11 +396,11 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 		.Include<UIRenderPass>();
 
 	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
-	AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
+	//AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
 	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque-1);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
-	
+	AddPass<LineRenderPass>("Lines", ERenderPassOrder::LineAfterPathTrace, p_stencilWrite);
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);
 	AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
@@ -617,6 +640,12 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		if (drawableCopy.material->IsUserInterface())
 		{
 			output.ui.emplace(decltype(decltype(output.ui)::value_type::first){
+				.order = drawableCopy.material->GetDrawOrder(),
+					.distance = distanceToCamera
+			}, drawableCopy);
+		}
+		else if (drawableCopy.primitiveMode == ::Rendering::Settings::EPrimitiveMode::LINES) {
+			output.lines.emplace(decltype(decltype(output.lines)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
 					.distance = distanceToCamera
 			}, drawableCopy);

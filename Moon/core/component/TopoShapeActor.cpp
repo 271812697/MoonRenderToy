@@ -111,6 +111,7 @@ namespace Core::ECS {
 
 	TopoActor::~TopoActor()
 	{
+		//m_scene->
 
 	}
 

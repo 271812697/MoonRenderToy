@@ -25,6 +25,7 @@ namespace MOON {
 		void highlightByActor(Core::ECS::Actor* actor);
 		// 清空高亮
 		void clearHighlight();	
+		void clearLastHoverIndex();
 	public:
 		QModelIndex m_highlightIndex; // 用来保存当前高亮index
 
