@@ -181,8 +181,14 @@ int64_t Core::ECS::Actor::GetParentID() const
 
 int Core::ECS::Actor::GetChildId( Actor* child) const
 {
-	if (m_childrenId.find(child) != m_childrenId.end()) {
-		return m_childrenId.at(child);
+	//this method is wrong because when we remove an actor from m_children
+	//if (m_childrenId.find(child) != m_childrenId.end()) {
+	//	return m_childrenId.at(child);
+	//}	
+	for (int i = 0; i < m_children.size(); i++) {
+		if (m_children[i] == child) {
+			return i;
+		}
 	}
 	return -1;
 }

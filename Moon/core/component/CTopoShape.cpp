@@ -39,6 +39,7 @@ namespace Core::ECS::Components
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
+        //switchHighLightMode(HighLightOption::Mode mode)
 	}
 
 	CTopoShape::~CTopoShape()
@@ -100,10 +101,16 @@ namespace Core::ECS::Components
                 std::vector<Core::ECS::Actor*>domainActors;
                 std::vector<::Rendering::Geometry::bbox>domainBoxs;
                 std::vector<uint32_t>domainRange;
+                auto faceChild = owner.GetChild("Face");
+                std::vector<Core::ECS::Actor*> faceChildList=faceChild->GetChildren();
+                for (int i = 0; i < faceChildList.size(); i++) {
+                    scene->DelayDestroyActor(*faceChildList[i]);
+                }
                 int domainIndex = -1;
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
+                        
                         domainActors.push_back(&actor);
                         domainIndex++;
                         domainColor.push_back(colors[cnt]);
@@ -144,7 +151,8 @@ namespace Core::ECS::Components
                 //add this for transparent
                 faceMesh->AddSubRangeBuffer();
                 faceMesh->AddMaterial(1,1);
-                auto faceChild=owner.GetChild("Face");
+                
+
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
@@ -182,6 +190,12 @@ namespace Core::ECS::Components
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
                 std::vector<Core::ECS::Actor*>sublineActors(LineRanges.size());
+                auto edgeChild = owner.GetChild("Edge");
+                
+                std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
+                for (int i = 0; i < edgeChildList.size(); i++) {
+                    scene->DelayDestroyActor(*edgeChildList[i]);
+                }
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
@@ -211,7 +225,7 @@ namespace Core::ECS::Components
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
                 }
-                auto edgeChild = owner.GetChild("Edge");
+               
                 for (int i = 0; i < sublineActors.size();i++) {
                     sublineActors[i]->SetParent(*edgeChild);
                 }

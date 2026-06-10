@@ -25,32 +25,37 @@ namespace MOON {
 	}
 	void SelectionManager::setPreselect(SelectID id)
 	{
-		clearPreselect();
-		mInternal->preSelect = id;
-		if (mInternal->preSelect.isValid()) {
-			auto actor = GetMainScene->FindActorByID(mInternal->preSelect);
-			if (actor->HasParent()) {
-				auto parent = actor->GetParent();
-				if (parent->HasParent()) {
-					auto grandParent = parent->GetParent();
-					if (grandParent->HasComponent("CTopoShape")) {
-						auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-						int childId=parent->GetChildId(actor);
-						if (parent->HasComponent("CBatchMeshTriangle")) {
-							if (childId != -1) {
-								topoComp->hoverChild(childId);
+		if (mInternal->preSelect != id) {
+			clearPreselect();
+			mInternal->preSelect = id;
+			if (mInternal->preSelect.isValid()) {
+				auto actor = GetMainScene->FindActorByID(mInternal->preSelect);
+				if (actor->HasParent()) {
+					auto parent = actor->GetParent();
+					if (parent->HasParent()) {
+						auto grandParent = parent->GetParent();
+						if (grandParent->HasComponent("CTopoShape")) {
+							auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
+							//int childId=parent->GetChildId(actor);
+							std::string idString=actor->GetName().substr(5);
+							int childId = std::stoi(idString);
+							if (parent->HasComponent("CBatchMeshTriangle")) {
+								if (childId != -1) {
+									topoComp->hoverChild(childId);
+								}
 							}
+							else if (parent->HasComponent("CBatchMeshLine")) {
+								if (childId != -1) {
+									topoComp->hoverChildLine(childId);
+									//topoComp->hoverChild(childId);
+								}
+							}					
 						}
-						else if (parent->HasComponent("CBatchMeshLine")) {
-							if (childId != -1) {
-								topoComp->hoverChildLine(childId);
-								//topoComp->hoverChild(childId);
-							}
-						}					
 					}
 				}
 			}
 		}
+	
 	}
 	void SelectionManager::addSelect(const std::vector<SelectID>& selectIdLists)
 	{

@@ -14,7 +14,7 @@ namespace Core::ECS::Components
 			Color=0,
 			Transparent=1
 		};
-		Mode mode{ Transparent };
+		Mode mode{ Color };
 		Maths::FVector4 hoverColor = { 1,1,0,1 };
 		Maths::FVector4 selectColor = {1,1,1.0,1};
 	};

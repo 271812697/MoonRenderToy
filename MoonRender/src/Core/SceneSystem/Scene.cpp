@@ -123,6 +123,10 @@ void Core::SceneSystem::Scene::Update(float p_deltaTime)
 	ZoneScoped;
 	auto actors = m_actors;
 	std::for_each(actors.begin(), actors.end(), std::bind(std::mem_fn(&ECS::Actor::OnUpdate), std::placeholders::_1, p_deltaTime));
+	for (int i = 0; i < m_delayActors.size(); i++) {
+		DestroyActor(*m_delayActors[i]);
+	}
+	m_delayActors.clear();
 	bvhService->UpdateTriangleInfo();
 }
 
@@ -226,6 +230,12 @@ bool Core::SceneSystem::Scene::DestroyActor(ECS::Actor& p_target)
 	{
 		return false;
 	}
+}
+
+bool Core::SceneSystem::Scene::DelayDestroyActor(ECS::Actor& p_target)
+{
+	m_delayActors.push_back(&p_target);
+	return true;
 }
 
 void Core::SceneSystem::Scene::CollectGarbages()
