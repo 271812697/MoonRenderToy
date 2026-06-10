@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Gizmo/GizmoWidget.h"
-#include "Gizmo/Gizmo.h"
 #include "Geometry.h"
 #include "Maths/FVector3.h"
 #include "Sketcher/SketchePlane2D.h"
@@ -39,6 +38,5 @@ namespace MOON
         Base::Vector2d drawPos;
         Base::Vector2d onSketchPos;
         SketcherPlane2D plane ;//0->X,1->Y,2->Z;
-        Plane2D gizmoPlane;
     };
 }

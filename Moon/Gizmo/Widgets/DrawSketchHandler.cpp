@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "DrawSketchHandler.h"
-
+#include "Gizmo/Gizmo.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "Qtimgui/imgui/imgui.h"
@@ -19,10 +19,6 @@ namespace MOON
     void DrawSketchHandler::makePlane(const SketcherPlane2D& v)
     {
         plane = v;
-        gizmoPlane.normal = Eigen::Vector3d( plane.normal.x,plane.normal.y,plane.normal.z );
-        gizmoPlane.origin = Eigen::Vector3d( plane.origin.x,plane.origin.y,plane.origin.z );
-        gizmoPlane.xAxis = Eigen::Vector3d(plane.xAxis.x,plane.xAxis.y,plane.xAxis.z );
-        gizmoPlane.yAxis = Eigen::Vector3d( plane.yAxis.x,plane.yAxis.y,plane.yAxis.z );
     }
     void DrawSketchHandler::onUpdate()
     {
@@ -31,7 +27,8 @@ namespace MOON
            makePlane(sketchobj->getPlane());
        }
        if (isSnapedSketchPos) {
-           renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16,gizmoPlane);
+           renderer->drawPoint(plane.valueEigen(onSketchPos), 16,Eigen::Vector4<uint8_t>(255, 0, 255, 0));
+           //renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16,gizmoPlane);
        }
        if (drawSketchPos) {
             auto drawList=ImGui::GetForegroundDrawList();
@@ -43,9 +40,7 @@ namespace MOON
        }
        renderer->pushSize(3);
        for (int i = 0; i < lines.size();i += 2) {
-           renderer->drawLine2D({ lines[i].x
-               ,lines[i].y }, { lines[i + 1].x
-               ,lines[i + 1].y }, gizmoPlane);
+		   renderer->drawLine(plane.valueEigen(lines[i]), plane.valueEigen(lines[i + 1]));
        }
        renderer->popSize();
     }
@@ -56,9 +51,9 @@ namespace MOON
         Maths::FVector3 out;
        
         ray.hitPlane(Maths::FVector3(plane.normal.x, plane.normal.y, plane.normal.z), plane.normal.Dot(plane.origin), out);
-        Eigen::Vector3d hitPos = Eigen::Vector3d (out.x,out.y,out.z );
-        double x = (hitPos - gizmoPlane.origin).dot(gizmoPlane.xAxis);
-        double y = (hitPos - gizmoPlane.origin).dot(gizmoPlane.yAxis);
+        Base::Vector3d hitPos = Base::Vector3d (out.x,out.y,out.z );
+        double x = (hitPos - plane.origin).Dot(plane.xAxis);
+        double y = (hitPos - plane.origin).Dot(plane.yAxis);
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         auto sketchobj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 		isSnapedSketchPos = false;

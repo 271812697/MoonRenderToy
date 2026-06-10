@@ -41,7 +41,8 @@ namespace MOON {
 	void DrawSketchHandlerLine::onUpdate()
 	{
         DrawSketchHandler::onUpdate();
-		renderer->drawPoint2D(Eigen::Vector2f(m_internal->editPoint.x, m_internal->editPoint.y),12,gizmoPlane);
+
+		renderer->drawPoint(plane.valueEigen(m_internal->editPoint), 12);
 	}
 
 	void DrawSketchHandlerLine::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)

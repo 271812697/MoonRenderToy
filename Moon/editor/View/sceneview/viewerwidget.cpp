@@ -238,6 +238,7 @@ namespace MOON {
 		if (actor != nullptr) {
 			
 			mInternal->mSceneView->SelectActor(*actor);
+			GetSelection.addSelect({ actor->GetID() });
 		}
 	}
 }

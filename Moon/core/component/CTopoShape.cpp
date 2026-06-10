@@ -287,6 +287,11 @@ namespace Core::ECS::Components
 		return mInternal->mTopoShape;
 	}
 
+    Part::TopoShape CTopoShape::GetTopoFace(int childFaceId)
+    {
+        return mInternal->mTopoShape.getSubTopoShape(TopAbs_FACE,childFaceId+1);
+    }
+
     void CTopoShape::hoverChild(int childId)
     {
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {

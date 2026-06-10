@@ -32,13 +32,13 @@ namespace MOON {
 					}
 					if (mSelectPlane == XZ_Plane) {
 						plane.xAxis = Base::Vector3d{ 1,0,0 };
-						plane.yAxis = Base::Vector3d{ 0,0,1 };
+						plane.yAxis = Base::Vector3d{ 0,0,-1 };
 						plane.normal = Base::Vector3d{ 0,1,0 };
 						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
 					}
 					if (mSelectPlane == YZ_Plane) {
-						plane.xAxis = Base::Vector3d{ 0,1,0 };
-						plane.yAxis = Base::Vector3d{ 0,0,1 };
+						plane.xAxis = Base::Vector3d{ 0,0,-1 };
+						plane.yAxis = Base::Vector3d{ 0,1,0 };
 						plane.normal = Base::Vector3d{ 1,0,0 };
 						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
 					}

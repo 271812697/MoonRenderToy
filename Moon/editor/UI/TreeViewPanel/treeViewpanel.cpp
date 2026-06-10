@@ -146,6 +146,11 @@ namespace MOON {
 		}
 	}
 
+	void TreeViewPanel::clearLastHoverIndex()
+	{
+		mInternal->m_lastIndex = QModelIndex();
+	}
+
 	void TreeViewPanel::mousePressEvent(QMouseEvent* event)
 	{
 		QPoint mousePos = event->pos();

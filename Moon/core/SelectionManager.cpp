@@ -1,5 +1,4 @@
 ﻿#include "core/SelectionManager.h"
-
 #include "renderer/SceneView.h"
 #include "core/Global/ServiceLocator.h"
 #include "core/component/CTopoShape.h"
@@ -17,6 +16,7 @@ namespace MOON {
 		friend SelectionManager;
 		SelectionManager* self = nullptr;
 		SelectID preSelect;
+		std::vector<SelectID>selectIDs;
 	};
 	SelectionManager& SelectionManager::instance()
 	{
@@ -54,18 +54,20 @@ namespace MOON {
 	}
 	void SelectionManager::addSelect(const std::vector<SelectID>& selectIdLists)
 	{
+		mInternal->selectIDs.insert(mInternal->selectIDs.end(), selectIdLists.begin(), selectIdLists.end());
 	}
 	void SelectionManager::setSelect(const std::vector<SelectID>& selectIdLists)
 	{
+		mInternal->selectIDs = selectIdLists;
 	}
 	void SelectionManager::clearSelect()
 	{
+		mInternal->selectIDs.clear();
 	}
 	void SelectionManager::clearPreselect()
 	{
 		if (mInternal->preSelect.isValid()) {
 			auto actor=GetMainScene->FindActorByID(mInternal->preSelect);
-			
 			if (actor->HasParent()) {
 				auto parent=actor->GetParent();
 				if (parent->HasParent()) {
@@ -73,7 +75,6 @@ namespace MOON {
 					if (grandParent->HasComponent("CTopoShape")) {
 						auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
 						if (parent->HasComponent("CBatchMeshTriangle")) {
-							
 							topoComp->clearHover();
 						}
 						else if (parent->HasComponent("CBatchMeshLine")) {
@@ -91,7 +92,7 @@ namespace MOON {
 	}
 	std::vector<SelectID> SelectionManager::getSelect()
 	{
-		return std::vector<SelectID>();
+		return mInternal->selectIDs;
 	}
 	SelectionManager::~SelectionManager()
 	{

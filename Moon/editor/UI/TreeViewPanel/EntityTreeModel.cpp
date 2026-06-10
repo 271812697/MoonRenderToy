@@ -82,6 +82,8 @@ namespace MOON {
 		if (scene == nullptr) {
 			return;
 		}
+		mInternl->mTreeView->clearHighlight();
+		mInternl->mTreeView->clearLastHoverIndex();
 		mInternl->manaulCheck = false;
 		mInternl->sceneRoot->removeRows(0, mInternl->sceneRoot->rowCount());
 		mInternl->actorToItem.clear();

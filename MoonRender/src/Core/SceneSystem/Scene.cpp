@@ -147,7 +147,9 @@ Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor()
 
 Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor(const std::string& p_name, const std::string& p_tag)
 {
-	m_actors.push_back(new Core::ECS::Actor(m_availableID++, p_name!=""?p_name:std::to_string(m_availableID), p_tag, m_isPlaying));
+	Core::ECS::Actor* actor = new Core::ECS::Actor(m_availableID++, p_name != "" ? p_name : std::to_string(m_availableID), p_tag, m_isPlaying);
+	m_actors.push_back(actor);
+	m_actorIdMap[actor->GetID()] = actor;
 	ECS::Actor& instance = *m_actors.back();
 	instance.ComponentAddedEvent	+= std::bind(&Scene::OnComponentAdded, this, std::placeholders::_1);
 	instance.ComponentRemovedEvent	+= std::bind(&Scene::OnComponentRemoved, this, std::placeholders::_1);
@@ -182,12 +184,14 @@ void Core::SceneSystem::Scene::RemoveActor(ECS::Actor* p_target)
 			}
 			childs.clear();
 		}
+		m_actorIdMap.erase(p_target->GetID());
 	}
 }
 void Core::SceneSystem::Scene::AddActor(ECS::Actor* p_target)
 {
 	if (p_target != nullptr) {
 		m_actors.push_back(p_target);
+		m_actorIdMap[p_target->GetID()] = p_target;
 		ECS::Actor& instance = *m_actors.back();
 		instance.ComponentAddedEvent += std::bind(&Scene::OnComponentAdded, this, std::placeholders::_1);
 		instance.ComponentRemovedEvent += std::bind(&Scene::OnComponentRemoved, this, std::placeholders::_1);
@@ -215,6 +219,7 @@ bool Core::SceneSystem::Scene::DestroyActor(ECS::Actor& p_target)
 	{
 		delete *found;
 		m_actors.erase(found);
+		m_actorIdMap.erase(p_target.GetID());
 		return true;
 	}
 	else
@@ -264,15 +269,10 @@ Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByTag(const std::string & p
 
 Core::ECS::Actor* Core::SceneSystem::Scene::FindActorByID(int64_t p_id) const
 {
-	auto result = std::find_if(m_actors.begin(), m_actors.end(), [p_id](Core::ECS::Actor* element)
-	{
-		return element->GetID() == p_id;
-	});
-
-	if (result != m_actors.end())
-		return *result;
-	else
-		return nullptr;
+	if (m_actorIdMap.find(p_id) != m_actorIdMap.end()) {
+		return m_actorIdMap.at(p_id);
+	}
+    return nullptr;
 }
 
 int64_t Core::SceneSystem::Scene::GetAvailableID() 

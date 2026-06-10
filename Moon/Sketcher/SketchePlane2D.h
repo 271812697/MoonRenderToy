@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <vector>
+#include <Eigen/Core>
 #include "base/Tools2D.h"
 #include "base/Vector3D.h"
 namespace MOON {
@@ -14,6 +14,14 @@ namespace MOON {
 		}
 		Base::Vector3d value(double x, double y) {
 			return origin + x * xAxis + y * yAxis;
+		}
+		Eigen::Vector3f valueEigen(double x, double y) {
+			Base::Vector3d ret=origin + x * xAxis + y * yAxis;
+			return Eigen::Vector3f(ret.x,ret.y,ret.z);
+		}
+		Eigen::Vector3f valueEigen(const Base::Vector2d& coord) {
+			Base::Vector3d ret = origin + coord.x * xAxis + coord.y * yAxis;
+			return Eigen::Vector3f(ret.x, ret.y, ret.z);
 		}
 		SketcherPlane2D() = default;
 

@@ -74,6 +74,7 @@ namespace Core::SceneSystem
 		int64_t m_availableID = 1;
 		bool m_isPlaying = false;
 		std::vector<ECS::Actor*> m_actors;
+		std::unordered_map<int64_t, ECS::Actor*> m_actorIdMap;
 		FastAccessComponents m_fastAccessComponents;
 		BvhService*bvhService=nullptr;
 		::Rendering::Geometry::bbox m_sceneBoundingBox;

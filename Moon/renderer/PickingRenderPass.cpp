@@ -138,19 +138,19 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	auto& gizmoInstance = MOON::Gizmo::instance();
 	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
-	m_renderer.Clear(false, true, false);
+	//m_renderer.Clear(false, true, false);
 
-	if (debugSceneDescriptor.selectedActor)
-	{
-		auto& selectedActor = debugSceneDescriptor.selectedActor.value();
+	//if (debugSceneDescriptor.selectedActor)
+	//{
+	//	auto& selectedActor = debugSceneDescriptor.selectedActor.value();
 
-		DrawPickableGizmo(
-			pso,
-			selectedActor.transform.GetWorldPosition(),
-			selectedActor.transform.GetWorldRotation(),
-			debugSceneDescriptor.gizmoOperation
-		);
-	}
+	//	DrawPickableGizmo(
+	//		pso,
+	//		selectedActor.transform.GetWorldPosition(),
+	//		selectedActor.transform.GetWorldRotation(),
+	//		debugSceneDescriptor.gizmoOperation
+	//	);
+	//}
 
 	m_actorPickingFramebuffer.Unbind();
 	

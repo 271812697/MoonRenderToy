@@ -109,13 +109,13 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 
 		if (input.IsKeyPressed(Editor::Panels::KEYF))
 		{
-			auto& target = m_view.GetSelectedActor();
+			auto& target = *m_view.GetSelectedActor();
 			MoveToTarget(target);
 		}
 
 		auto focusObjectFromAngle = [this](const Maths::FVector3& offset)
 			{
-				auto& target = m_view.GetSelectedActor();
+				auto& target = *m_view.GetSelectedActor();
 				auto targetPos = target.transform.GetWorldPosition();
 				float dist = GetActorFocusDist(target);
 				auto camPos = targetPos + offset * dist;

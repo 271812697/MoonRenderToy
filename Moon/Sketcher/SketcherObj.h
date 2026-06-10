@@ -2,7 +2,6 @@
 #include<memory>
 #include <unordered_map>
 #include "Gizmo/GizmoWidget.h"
-#include "Gizmo/Gizmo.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
 namespace Part {
@@ -71,7 +70,6 @@ namespace MOON {
 		Base::Vector2d getMouseHitSketchPlanePoint();
 		CurveSegement getCurveSegment( Part::Geometry* geo) ;
 		SketcherPlane2D mPlane ;
-		Plane2D gizmoPlane ;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;

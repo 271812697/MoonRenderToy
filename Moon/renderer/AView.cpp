@@ -102,31 +102,13 @@ Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::AView::CreateSce
 	};
 }
 
-Core::ECS::Actor& Editor::Panels::AView::GetSelectedActor()
-{
-	return *mTargetActor;
-}
 
-void Editor::Panels::AView::SelectActor(::Core::ECS::Actor& actor)
-{
-	mTargetActor = &actor;
-}
 
 void Editor::Panels::AView::Resize(int width, int height)
 {
 	mWidth = width;
 	mHeight = height;
 	m_renderer->Resize(width, height);
-}
-
-void Editor::Panels::AView::UnselectActor()
-{
-	mTargetActor = nullptr;
-}
-
-bool Editor::Panels::AView::IsSelectActor()
-{
-	return mTargetActor != nullptr;
 }
 
 namespace Editor::Panels {
@@ -147,6 +129,20 @@ namespace Editor::Panels {
 	void AView::SetRotaterCenter(const Maths::FVector3& center)
 	{
 		m_roaterCenter = center;
+	}
+	::Core::ECS::Actor* AView::GetSelectedActor()
+	{
+		return nullptr;
+	}
+	void AView::SelectActor(::Core::ECS::Actor& actor)
+	{
+	}
+	void AView::UnselectActor()
+	{
+	}
+	bool AView::IsSelectActor()
+	{
+		return false;
 	}
 }
 

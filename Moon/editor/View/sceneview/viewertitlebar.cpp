@@ -27,7 +27,7 @@ namespace MOON {
 			bool value=action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
 			if (view.IsSelectActor()) {
-				auto matList=view.GetSelectedActor().GetComponent<Core::ECS::Components::CMaterialRenderer>();
+				auto matList=view.GetSelectedActor()->GetComponent<Core::ECS::Components::CMaterialRenderer>();
 				if (matList) {
 					auto mat = matList->GetMaterialAtIndex(0);
 					if (mat&&mat->SupportsFeature("WITH_EDGE")) {
@@ -95,7 +95,7 @@ namespace MOON {
 			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("ClipPlane", value);
 			
 			if (view.IsSelectActor()) {
-				auto& selectActor=view.GetSelectedActor();
+				auto& selectActor=*view.GetSelectedActor();
 				auto matList = selectActor.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 				if (matList) {
 					auto mat = matList->GetMaterialAtIndex(0);
