@@ -1073,6 +1073,10 @@ namespace MOON {
         //return result.makeFace();
         return result;
     }
+    void SketcherObj::setBasedTopoShape(Part::TopoShape topoShape)
+    {
+        basedTopoShape = topoShape;
+    }
     Base::Matrix4D SketcherObj::getplaneTransform()
     {
         return planeTransform;

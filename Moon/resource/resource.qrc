@@ -83,6 +83,9 @@
 		    <file>icons/parametric/Part_Cylinder_Parametric.svg</file>
 		    <file>icons/partdesign/PartDesign_Pad.svg</file>
 
+		<file>icons/partdesign/PartDesign_Thickness.svg</file>
+
+
 
 	</qresource>
     <qresource prefix="/entityTree">
