@@ -22,27 +22,29 @@
  *                                                                         *
  **************************************************************************/
 
-/**
- * FCBRepAlgoAPI provides a wrapper for various OCCT functions.
- */
+#include <FuzzyHelper.h>
 
-#pragma once
-#include <BRepAlgoAPI_Fuse.hxx>
-#include <FCBRepAlgoAPI_BooleanOperation.h>
+using namespace Part;
 
-
-class FCBRepAlgoAPI_Fuse: public FCBRepAlgoAPI_BooleanOperation
+namespace
 {
-public:
-    DEFINE_STANDARD_ALLOC
+double BooleanFuzzy = 1.0;
+}
 
+double FuzzyHelper::getBooleanFuzzy()
+{
+    return BooleanFuzzy;
+}
 
-    //! Empty constructor
-    Standard_EXPORT FCBRepAlgoAPI_Fuse();
+void FuzzyHelper::setBooleanFuzzy(const double base)
+{
+    BooleanFuzzy = base;
+}
 
-    //! Constructor with two shapes
-    //! <S1>  -argument
-    //! <S2>  -tool
-    //! <anOperation> - the type of the operation
-    Standard_EXPORT FCBRepAlgoAPI_Fuse(const TopoDS_Shape& S1, const TopoDS_Shape& S2);
-};
+void FuzzyHelper::withBooleanFuzzy(double base, std::function<void()> func)
+{
+    double oldValue = getBooleanFuzzy();
+    setBooleanFuzzy(base);
+    func();
+    setBooleanFuzzy(oldValue);
+}

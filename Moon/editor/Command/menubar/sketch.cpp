@@ -35,7 +35,8 @@ namespace MOON {
 	{
 		auto& task = GetService(TaskViewWidget);
 		if (!task.hasTask()) {
-			task.setTaskDialog(new SketchTaskDialog());
+			SketchTaskDialog* sketchTask=new SketchTaskDialog();
+			task.setTaskDialog(sketchTask);
 			std::vector<SelectID> selectIds = SelectionManager::instance().getSelect();
 			bool enableSelectXYZPlane = true;
 			if (!selectIds.empty()) {
@@ -51,12 +52,9 @@ namespace MOON {
 							int childId = parent->GetChildId(actor);
 							if (parent->HasComponent("CBatchMeshTriangle")) {
 								if (childId != -1) {
-
-
 									Part::TopoShape shape = topoComp->GetTopoFace(childId);
 									gp_Pln pln;
 									shape.findPlane(pln);
-
 									auto sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 									SketcherPlane2D plane;
 									plane.normal = Base::Vector3d{ pln.Axis().Direction().X(),pln.Axis().Direction().Y(),pln.Axis().Direction().Z() };
@@ -64,6 +62,7 @@ namespace MOON {
 									plane.xAxis = Base::Vector3d{ pln.XAxis().Direction().X(),pln.XAxis().Direction().Y(),pln.XAxis().Direction().Z() };
 									plane.yAxis = Base::Vector3d{ pln.YAxis().Direction().X(),pln.YAxis().Direction().Y(),pln.YAxis().Direction().Z() };
 									sketchObj->setPlane(plane);
+									sketchObj->setBasedTopoShape(topoComp->GetTopoShape());
 									enableSelectXYZPlane = false;
 								}
 							}

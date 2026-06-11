@@ -118,7 +118,14 @@ namespace MOON {
                     nullptr,
                     Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
                 );
+                Part::TopoShape baseShape= sketchObj->getBasedTopoShape();
+                if (!baseShape.isNull()) {
+                        //prism.fuse({ *basedTopoShape });
+                    //prism.fuse(baseShape.getShape());
+                    prism=prism.makeElementFuse(baseShape);
+                }
                 m_previewShape = prism;
+               
                 return true;
             }
             catch (Base::ValueError e) {
@@ -161,6 +168,7 @@ namespace MOON {
         }
 
     private:
+        Part::TopoShape* basedTopoShape = nullptr;
         PadTaskDialog* self;
         friend PadTaskDialog;
         // 在 PadTaskDialog.h 中添加
@@ -200,6 +208,11 @@ namespace MOON {
         CORE_INFO("previewShape");
         mInternal->previewShape();
         mInternal->updateDirectionUI(mInternal->cboDir->currentIndex());
+    }
+
+    void PadTaskDialog::setBasedTopoShape(Part::TopoShape* topoShape)
+    {
+        mInternal->basedTopoShape = topoShape;
     }
 
     void PadTaskDialog::buildUi()
