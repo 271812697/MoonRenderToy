@@ -1,5 +1,9 @@
 ﻿#pragma once
 #include "editor/UI/TaskPanel/BaseTaskDialog.h"
+namespace Part
+{
+	class TopoShape;
+};
 namespace MOON {
 	class SketcherObj;
 	class PadTaskDialog : public BaseTaskDialog
@@ -9,6 +13,7 @@ namespace MOON {
 		explicit PadTaskDialog(QWidget* parent = nullptr);
 		~PadTaskDialog();
 		void previewShape();
+		void setBasedTopoShape( Part::TopoShape* topoShape);
 		virtual void buildUi() override;
 		virtual void clickOk() override;
 		virtual void clickApply() override;

@@ -42,6 +42,7 @@ namespace Core::SceneSystem
 		void RemoveActor(ECS::Actor* p_target);
 		void AddActor(ECS::Actor* p_target);
 		bool DestroyActor(ECS::Actor& p_target);
+		bool DelayDestroyActor(ECS::Actor& p_target);
 		void CollectGarbages();
 		ECS::Actor* FindActorByName(const std::string& p_name) const;
 		ECS::Actor* FindActorByTag(const std::string& p_tag) const;
@@ -74,6 +75,7 @@ namespace Core::SceneSystem
 		int64_t m_availableID = 1;
 		bool m_isPlaying = false;
 		std::vector<ECS::Actor*> m_actors;
+		std::vector<ECS::Actor*> m_delayActors;
 		std::unordered_map<int64_t, ECS::Actor*> m_actorIdMap;
 		FastAccessComponents m_fastAccessComponents;
 		BvhService*bvhService=nullptr;

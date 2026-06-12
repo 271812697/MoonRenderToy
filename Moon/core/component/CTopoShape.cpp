@@ -27,6 +27,12 @@ namespace Core::ECS::Components
 		CTopoShape* mSelf = nullptr;
 		Part::TopoShape mTopoShape;
         std::vector<std::pair<int, int>>childMeshInfos;
+        /*
+        use these two vectors because we may skip some empty domains
+         when we generate childMeshInfos       
+        */
+        std::vector<int>domainIndexToFaceChildIndex;
+        //std::vector<int>domainIndexToEdgeChildIndex;
         bool updateFace = false;
         bool updateEdge = false;
         bool updateChildMesh = false;
@@ -39,6 +45,7 @@ namespace Core::ECS::Components
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
+        //switchHighLightMode(HighLightOption::Mode mode)
 	}
 
 	CTopoShape::~CTopoShape()
@@ -100,12 +107,21 @@ namespace Core::ECS::Components
                 std::vector<Core::ECS::Actor*>domainActors;
                 std::vector<::Rendering::Geometry::bbox>domainBoxs;
                 std::vector<uint32_t>domainRange;
+                auto faceChild = owner.GetChild("Face");
+                std::vector<Core::ECS::Actor*> faceChildList=faceChild->GetChildren();
+                for (int i = 0; i < faceChildList.size(); i++) {
+                    scene->DelayDestroyActor(*faceChildList[i]);
+                }
                 int domainIndex = -1;
+                mInternal->domainIndexToFaceChildIndex.resize(domains.size(),-1);
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
-                        auto& actor = scene->CreateActor("face_" + std::to_string(i));
-                        domainActors.push_back(&actor);
                         domainIndex++;
+                        mInternal->domainIndexToFaceChildIndex[i] = domainIndex;
+                        auto& actor = scene->CreateActor("face_" + std::to_string(i));
+                        
+                        domainActors.push_back(&actor);
+                        
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
                         Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,actor.GetID() * 1.0f };
@@ -144,7 +160,8 @@ namespace Core::ECS::Components
                 //add this for transparent
                 faceMesh->AddSubRangeBuffer();
                 faceMesh->AddMaterial(1,1);
-                auto faceChild=owner.GetChild("Face");
+                
+
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->AddMesh(faceMesh);
@@ -170,6 +187,8 @@ namespace Core::ECS::Components
                 auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
                 bacthMesh.BuildBvh(domainBoxs, domainRange);
+
+                setChildsMeshTransParent({});
             }
             if (mInternal->updateEdge)
             {
@@ -182,6 +201,12 @@ namespace Core::ECS::Components
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
                 std::vector<Core::ECS::Actor*>sublineActors(LineRanges.size());
+                auto edgeChild = owner.GetChild("Edge");
+                
+                std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
+                for (int i = 0; i < edgeChildList.size(); i++) {
+                    scene->DelayDestroyActor(*edgeChildList[i]);
+                }
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
@@ -211,7 +236,7 @@ namespace Core::ECS::Components
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
                 }
-                auto edgeChild = owner.GetChild("Edge");
+               
                 for (int i = 0; i < sublineActors.size();i++) {
                     sublineActors[i]->SetParent(*edgeChild);
                 }
@@ -248,12 +273,8 @@ namespace Core::ECS::Components
     void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
     {
         updateChildBuffer();
-        //std::vector<std::pair<int, int>>listTransparent;
-        //std::vector<std::pair<int, int>>listOpaque;
         std::vector<int>listTransparentIndex;
         std::vector<int>listOpaqueIndex;
-        //listTransparent.resize(childs.size());
-        //listOpaque.resize(mInternal->childMeshInfos.size()- childs.size());
         listTransparentIndex.resize(childs.size());
         listOpaqueIndex.resize(mInternal->childMeshInfos.size() - childs.size());
         std::vector<int>table(mInternal->childMeshInfos.size(),0);
@@ -263,23 +284,16 @@ namespace Core::ECS::Components
             table[childs[i]] = 1;
         }
         for (int i = 0;i < table.size();i++) {
-            //if (children[i]->IsActive())
+            if (table[i] == 1) {
+                listTransparentIndex[indexTransparent++] = i;
+            }
+            else
             {
-                if (table[i] == 1) {
-                    listTransparentIndex[indexTransparent++] = i;
-                    //listTransparent[indexTransparent++] = mInternal->childMeshInfos[i];
-                }
-                else
-                {
-                    listOpaqueIndex[indexOpaque++] = i;
-                   // listOpaque[indexOpaque++]= mInternal->childMeshInfos[i];
-                }
+                listOpaqueIndex[indexOpaque++] = i;
             }
         }
 		mInternal->curTransparentChildMeshIndex = listTransparentIndex;
 		mInternal->curOpaqueChildMeshIndex = listOpaqueIndex;
-        //mInternal->curTransparentChildMesh = listTransparent;
-        //mInternal->curOpaqueChildMesh = listOpaque;
     }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -292,15 +306,21 @@ namespace Core::ECS::Components
         return mInternal->mTopoShape.getSubTopoShape(TopAbs_FACE,childFaceId+1);
     }
 
+    Part::TopoShape CTopoShape::GetTopoEdge(int childFaceId)
+    {
+        return mInternal->mTopoShape.getSubTopoShape(TopAbs_EDGE, childFaceId + 1);
+    }
+
     void CTopoShape::hoverChild(int childId)
     {
+        
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
             auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
-            bacthMesh.SetHoverColor(childId, mInternal->highOption.hoverColor);
+            bacthMesh.SetHoverColor(mInternal->domainIndexToFaceChildIndex[childId], mInternal->highOption.hoverColor);
         }
         else if(mInternal->highOption.mode == HighLightOption::Mode::Transparent)
         {
-            setChildsMeshTransParent({ childId });
+            setChildsMeshTransParent({ mInternal->domainIndexToFaceChildIndex[childId] });
         }
     }
 
