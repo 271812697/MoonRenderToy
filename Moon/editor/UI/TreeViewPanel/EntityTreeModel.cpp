@@ -207,20 +207,25 @@ namespace MOON {
 				if (currentState == Qt::Checked) {
 					actor->SetActive(true);
 				}
-				else if (currentState == Qt::Unchecked) {
+				else //if (currentState == Qt::Unchecked)
+				{
 					actor->SetActive(false);
 				}
 				if (mInternl->manaulCheck) {
-					if (actor->HasParent()) {
+					if (actor->HasComponent("CTopoShape")) {
+						auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
+						topoComp->updateChildBuffer();
+					}
+					else if (actor->HasParent()) {
 						auto parent = actor->GetParent();
-						if (parent->HasParent()) {
+						if (parent->HasComponent("CTopoShape")&&actor->GetName()=="Face") {
+							auto topoComp =parent->GetComponent<::Core::ECS::Components::CTopoShape>();
+							topoComp->updateChildBuffer();
+						}else if (parent->HasParent()) {
 							auto grandParent = parent->GetParent();
-							if (grandParent->HasComponent("CTopoShape")) {
+							if (grandParent->HasComponent("CTopoShape")&&parent->GetName()=="Face") {
 								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-								int childId = parent->GetChildId(actor);
-								if (childId != -1) {
-									topoComp->updateChildBuffer();
-								}
+								topoComp->updateChildBuffer();
 							}
 						}
 					}

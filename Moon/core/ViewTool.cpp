@@ -9,7 +9,6 @@ namespace MOON {
 	Core::ECS::Actor* ViewTool::getLastestActorSelected()
 	{
 		std::vector<SelectID> selectIds = SelectionManager::instance().getSelect();
-		
 		if (!selectIds.empty()) {
 			auto& view = GetService(Editor::Panels::SceneView);
 			auto scene = view.GetScene();
@@ -43,13 +42,10 @@ namespace MOON {
 	{
 		auto& view = GetService(Editor::Panels::SceneView);
 		auto scene = view.GetScene();
-	
 		auto topoActor = new Core::ECS::TopoActor(scene, std::string(name), "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 		topo = topoShape;
-		//topo.setShape(topoShape,false);
-		//topo.setShape(topoShape, false);
 		topoComp->discretizationShape();
 		return true;
 	}

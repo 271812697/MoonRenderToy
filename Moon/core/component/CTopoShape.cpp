@@ -27,6 +27,12 @@ namespace Core::ECS::Components
 		CTopoShape* mSelf = nullptr;
 		Part::TopoShape mTopoShape;
         std::vector<std::pair<int, int>>childMeshInfos;
+        /*
+        use these two vectors because we may skip some empty domains
+         when we generate childMeshInfos       
+        */
+        std::vector<int>domainIndexToFaceChildIndex;
+        //std::vector<int>domainIndexToEdgeChildIndex;
         bool updateFace = false;
         bool updateEdge = false;
         bool updateChildMesh = false;
@@ -107,12 +113,15 @@ namespace Core::ECS::Components
                     scene->DelayDestroyActor(*faceChildList[i]);
                 }
                 int domainIndex = -1;
+                mInternal->domainIndexToFaceChildIndex.resize(domains.size(),-1);
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
+                        domainIndex++;
+                        mInternal->domainIndexToFaceChildIndex[i] = domainIndex;
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
                         
                         domainActors.push_back(&actor);
-                        domainIndex++;
+                        
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
                         Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,actor.GetID() * 1.0f };
@@ -178,6 +187,8 @@ namespace Core::ECS::Components
                 auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
                 bacthMesh.BuildBvh(domainBoxs, domainRange);
+
+                setChildsMeshTransParent({});
             }
             if (mInternal->updateEdge)
             {
@@ -262,12 +273,8 @@ namespace Core::ECS::Components
     void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
     {
         updateChildBuffer();
-        //std::vector<std::pair<int, int>>listTransparent;
-        //std::vector<std::pair<int, int>>listOpaque;
         std::vector<int>listTransparentIndex;
         std::vector<int>listOpaqueIndex;
-        //listTransparent.resize(childs.size());
-        //listOpaque.resize(mInternal->childMeshInfos.size()- childs.size());
         listTransparentIndex.resize(childs.size());
         listOpaqueIndex.resize(mInternal->childMeshInfos.size() - childs.size());
         std::vector<int>table(mInternal->childMeshInfos.size(),0);
@@ -277,23 +284,16 @@ namespace Core::ECS::Components
             table[childs[i]] = 1;
         }
         for (int i = 0;i < table.size();i++) {
-            //if (children[i]->IsActive())
+            if (table[i] == 1) {
+                listTransparentIndex[indexTransparent++] = i;
+            }
+            else
             {
-                if (table[i] == 1) {
-                    listTransparentIndex[indexTransparent++] = i;
-                    //listTransparent[indexTransparent++] = mInternal->childMeshInfos[i];
-                }
-                else
-                {
-                    listOpaqueIndex[indexOpaque++] = i;
-                   // listOpaque[indexOpaque++]= mInternal->childMeshInfos[i];
-                }
+                listOpaqueIndex[indexOpaque++] = i;
             }
         }
 		mInternal->curTransparentChildMeshIndex = listTransparentIndex;
 		mInternal->curOpaqueChildMeshIndex = listOpaqueIndex;
-        //mInternal->curTransparentChildMesh = listTransparent;
-        //mInternal->curOpaqueChildMesh = listOpaque;
     }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -313,13 +313,14 @@ namespace Core::ECS::Components
 
     void CTopoShape::hoverChild(int childId)
     {
+        
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
             auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
-            bacthMesh.SetHoverColor(childId, mInternal->highOption.hoverColor);
+            bacthMesh.SetHoverColor(mInternal->domainIndexToFaceChildIndex[childId], mInternal->highOption.hoverColor);
         }
         else if(mInternal->highOption.mode == HighLightOption::Mode::Transparent)
         {
-            setChildsMeshTransParent({ childId });
+            setChildsMeshTransParent({ mInternal->domainIndexToFaceChildIndex[childId] });
         }
     }
 

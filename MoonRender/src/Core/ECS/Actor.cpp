@@ -84,6 +84,7 @@ void Core::ECS::Actor::SetActive(bool p_active)
 		m_active = p_active;
 		RecursiveActiveUpdate();
 	}
+	RecursiveSetActive(p_active);
 }
 
 bool Core::ECS::Actor::IsSelfActive() const
@@ -380,6 +381,14 @@ void Core::ECS::Actor::OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XML
 				currentComponent = currentComponent->NextSiblingElement("component");
 			}
 		}
+	}
+}
+
+void Core::ECS::Actor::RecursiveSetActive(bool flag)
+{
+	m_active = flag;
+	for (int i = 0;i < m_children.size();i++) {
+		m_children[i]->RecursiveSetActive(flag);
 	}
 }
 

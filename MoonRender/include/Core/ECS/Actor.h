@@ -59,7 +59,7 @@ namespace Core::ECS
 
 	private:
 		Actor(const Actor& p_actor) = delete;
-
+		void RecursiveSetActive(bool flag);
 		void RecursiveActiveUpdate();
 		void RecursiveWasActiveUpdate();
 
