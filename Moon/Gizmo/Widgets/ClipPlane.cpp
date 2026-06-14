@@ -131,7 +131,11 @@ namespace MOON {
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
 				auto acptr=mSelf->m_sceneView->GetSelectedActor();
-				if (acptr!=ac) {
+				while (!acptr->HasComponent("Model Renderer")&&acptr->HasParent()) {
+					acptr = acptr->GetParent();
+				}
+
+				if (acptr&&acptr!=ac) {
 					ac = acptr;
 					auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
 					if (modelRenderer) {
@@ -335,18 +339,18 @@ namespace MOON {
 
 		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
 		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
-		renderer->pushAlpha(0.2);
-		renderer->pushColor({255,0,255,0});
-		renderer->pushEnableSorting(true);
-		renderer->drawCircleFilled(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		renderer->popEnableSorting();
-		renderer->pushSize(3.0);;
+		//renderer->pushAlpha(0.2);
+		//renderer->pushColor({255,0,255,0});
+		//renderer->pushEnableSorting(true);
+		//renderer->drawCircleFilled(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
+		//renderer->popEnableSorting();
+		//renderer->pushSize(3.0);;
 	
 
-		renderer->drawCircle(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		renderer->popSize();
-		renderer->popColor();
-		renderer->popAlpha();
+		//renderer->drawCircle(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
+		//renderer->popSize();
+		//renderer->popColor();
+		//renderer->popAlpha();
 		auto& normal = m_internal->zAxis;
 		auto& planeOrigin = m_internal->center;
 		
@@ -385,30 +389,38 @@ namespace MOON {
 		}
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
-			
+			Core::ECS::Actor* selectActor = nullptr;
 			if (m_sceneView->IsSelectActor()) {
-				auto selectActor = m_sceneView->GetSelectedActor();
-
-			
-				//if (selectActor->HasComponent("CTopoShape"))
+				selectActor = m_sceneView->GetSelectedActor();
+				while (!selectActor->HasComponent("CTopoShape")&& selectActor->HasParent())
 				{
-					const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-					if (topoComp) {
-						auto& topoShape= topoComp->GetTopoShape();
-						double offset = m_internal->zAxis.dot(m_internal->center);
-						Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-						auto wires=topoShape.slice(dir,offset);
-						m_internal->sectionFace=DiscretizeSectionFace(wires);
-						
-						m_internal->slicelines.clear();
-						for (auto& w : wires) {
-							auto tempLine=DiscretizeWire(w);
-							m_internal->slicelines.insert(m_internal->slicelines.end(),
-								tempLine.begin(),tempLine.end()
-								);
-						}
+					selectActor = selectActor->GetParent();
+				}
+			}
+			else
+			{
+				selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+			}
+			
+			if (selectActor)
+			{	
+				//Core::ECS::Components::CTopoShape*
+				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+
+				if (topoComp) {
+					auto& topoShape= topoComp->GetTopoShape();
+					double offset = m_internal->zAxis.dot(m_internal->center);
+					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+					auto wires=topoShape.slice(dir,offset);
+					m_internal->sectionFace=DiscretizeSectionFace(wires);
+					m_internal->slicelines.clear();
+					for (auto& w : wires) {
+						auto tempLine=DiscretizeWire(w);
+						m_internal->slicelines.insert(m_internal->slicelines.end(),
+							tempLine.begin(),tempLine.end()
+							);
 					}
-				}	
+				}
 			}
 		}
 		if (ret) {
