@@ -8,7 +8,7 @@
 
 namespace Core::Rendering
 {
-
+	struct LateUboData;
 	class EngineBufferRenderFeature : public ::Rendering::Features::ARenderFeature
 	{
 	public:
@@ -17,12 +17,15 @@ namespace Core::Rendering
 			::Rendering::Core::CompositeRenderer& p_renderer,
 			::Rendering::Features::EFeatureExecutionPolicy p_executionPolicy
 		);
+		~EngineBufferRenderFeature(
+		)override;
 		void SetViewPos(const Maths::FVector3& viewPos);
 		void SetCamera(const ::Rendering::Entities::Camera& p_camera);
 		void SetClipPlane(float x,float y,float z,float w);
 		void SetMirrorPlane(float x, float y, float z, float w);
 		void SetMirrorPlane(const Maths::FMatrix4& matrix);
 		void SetViewMatrix(const Maths::FMatrix4& matrix);
+		void EnableClip(bool flag);
 
 	protected:
 		virtual void OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor) override;
@@ -31,5 +34,7 @@ namespace Core::Rendering
 	protected:
 		std::chrono::high_resolution_clock::time_point m_startTime;
 		std::unique_ptr<::Rendering::HAL::UniformBuffer> m_engineBuffer;
+		
+		LateUboData* m_LateUboData;
 	};
 }

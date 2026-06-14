@@ -43,7 +43,7 @@ namespace MOON {
 		return faceMaker.Face();
 	}
 
-	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.01)
+	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.1)
 	{
 		std::vector<Eigen::Vector3f> points;
 		BRepAdaptor_CompCurve curve(wire, Standard_True);
@@ -131,7 +131,11 @@ namespace MOON {
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
 				auto acptr=mSelf->m_sceneView->GetSelectedActor();
-				if (acptr!=ac) {
+				while (!acptr->HasComponent("Model Renderer")&&acptr->HasParent()) {
+					acptr = acptr->GetParent();
+				}
+
+				if (acptr&&acptr!=ac) {
 					ac = acptr;
 					auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
 					if (modelRenderer) {
@@ -197,8 +201,8 @@ namespace MOON {
 		
 		Eigen::Vector3f scenter = m_internal->center + m_internal->yAxis* worldHeight;
 		float sRadius = renderer->pixelsToWorldSize(scenter, 10);
-        renderer->drawSphereFilled(scenter, sRadius);
-		if (renderer->isHot(renderer->makeId("planeEditz"))) {
+       
+		if (renderer->isSelectPolygon("GizmoAxis", "YAxis")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YAxis"), { 1,1,0,1 });
 		}
 		else
@@ -217,8 +221,8 @@ namespace MOON {
 
 		scenter = m_internal->center + m_internal->xAxis* worldHeight;
 		sRadius = renderer->pixelsToWorldSize(scenter, 10);
-		renderer->drawSphereFilled(scenter, sRadius);
-		if (renderer->isHot(renderer->makeId("planeEdity"))) {
+		//renderer->drawSphereFilled(scenter, sRadius);
+		if (renderer->isSelectPolygon("GizmoAxis", "XAxis")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XAxis"), { 1,1,0,1 });
 		}
 		else
@@ -237,8 +241,8 @@ namespace MOON {
 
 		scenter = m_internal->center + m_internal->zAxis * worldHeight;
 		sRadius=renderer->pixelsToWorldSize(scenter, 10);
-		renderer->drawSphereFilled(scenter, sRadius);
-		if (renderer->isHot(renderer->makeId("planeEditx"))) {
+		//renderer->drawSphereFilled(scenter, sRadius);
+		if (renderer->isSelectPolygon("GizmoAxis", "ZAxis")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZAxis"), { 1,1,0,1 });
 		}
 		else
@@ -254,7 +258,7 @@ namespace MOON {
 			m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
 		}
 
-		if (renderer->isHot(renderer->makeId("xz"))) {
+		if (renderer->isSelectPolygon("GizmoAxis", "YPlane")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YPlane"), { 1,1,0,0.7 });
 		}
 		else
@@ -262,15 +266,15 @@ namespace MOON {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YPlane"), { 0,1,0,0.2 });
 		}
 		Eigen::Vector3f po = m_internal->center + m_internal->xAxis * radius + m_internal->zAxis * radius;
-		renderer->drawPoint(po, 10);
+		//renderer->drawPoint(po, 10);
 		ret|=renderer->gizmoPlaneTranslationBehavior(
 			renderer->makeId("xz"), 
 			po,
 			m_internal->yAxis,0,dis, &m_internal->center);
 
 		po = m_internal->center + m_internal->yAxis * radius + m_internal->zAxis * radius;
-		renderer->drawPoint(po, 10);
-		if (renderer->isHot(renderer->makeId("yz"))) {
+		//renderer->drawPoint(po, 10);
+		if (renderer->isSelectPolygon("GizmoAxis", "XPlane")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XPlane"), { 1,1,0,0.7 });
 		}
 		else
@@ -283,8 +287,8 @@ namespace MOON {
 			m_internal->xAxis, 0,dis, &m_internal->center);
 
 		po = m_internal->center + m_internal->xAxis * radius + m_internal->yAxis * radius;
-		renderer->drawPoint(po, 10);
-		if (renderer->isHot(renderer->makeId("xy"))) {
+		//renderer->drawPoint(po, 10);
+		if (renderer->isSelectPolygon("GizmoAxis", "ZPlane")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZPlane"), { 1,1,0,0.7 });
 		}
 		else
@@ -298,8 +302,9 @@ namespace MOON {
 		
 		//bool Gizmo::gizmoAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f & _origin,
 			//const Eigen::Vector3f & _axis, float _snap, float _worldHeight, float _worldSize, Eigen::Vector3f * _out_)
-		renderer->drawPoint(po, 10);
-		if (renderer->isHot(renderer->makeId("xAxis"))) {
+		//renderer->drawPoint(po, 10);
+		
+		if (renderer->isSelectPolygon("GizmoAxis", "XArrow")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XArrow"), { 1,1,0,1 });
 		}
 		else
@@ -309,7 +314,7 @@ namespace MOON {
 		renderer->gizmoAxisTranslationBehavior(renderer->makeId("xAxis"),m_internal->center,
 			m_internal->xAxis,0,renderer->pixelsToWorldSize(m_internal->center,140), 
 			renderer->pixelsToWorldSize(m_internal->center, 5),&m_internal->center);
-		if (renderer->isHot(renderer->makeId("yAxis"))) {
+		if (renderer->isSelectPolygon("GizmoAxis", "YArrow")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YArrow"), { 1,1,0,1 });
 		}
 		else
@@ -319,7 +324,7 @@ namespace MOON {
 		renderer->gizmoAxisTranslationBehavior(renderer->makeId("yAxis"), m_internal->center,
 			m_internal->yAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
 			renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
-		if (renderer->isHot(renderer->makeId("zAxis"))) {
+		if (renderer->isSelectPolygon("GizmoAxis", "ZArrow")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZArrow"), { 1,1,0,1 });
 		}
 		else
@@ -334,18 +339,18 @@ namespace MOON {
 
 		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
 		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
-		renderer->pushAlpha(0.2);
-		renderer->pushColor({255,0,255,0});
-		renderer->pushEnableSorting(true);
-		renderer->drawCircleFilled(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		renderer->popEnableSorting();
-		renderer->pushSize(3.0);;
+		//renderer->pushAlpha(0.2);
+		//renderer->pushColor({255,0,255,0});
+		//renderer->pushEnableSorting(true);
+		//renderer->drawCircleFilled(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
+		//renderer->popEnableSorting();
+		//renderer->pushSize(3.0);;
 	
 
-		renderer->drawCircle(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		renderer->popSize();
-		renderer->popColor();
-		renderer->popAlpha();
+		//renderer->drawCircle(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
+		//renderer->popSize();
+		//renderer->popColor();
+		//renderer->popAlpha();
 		auto& normal = m_internal->zAxis;
 		auto& planeOrigin = m_internal->center;
 		
@@ -374,7 +379,7 @@ namespace MOON {
 		Eigen::Vector3f pointDir[4] = { xaxis, -xaxis, zaxis, -zaxis };
 		for (int i = 0; i < 4; i++)
 		{
-			renderer->drawPoint(pointPos[i], 10, renderer->isHot(pointId[i]) ? Eigen::Vector4<uint8_t>{255,0,255,255} : Eigen::Vector4<uint8_t>{255,255,255,0});
+			//renderer->drawPoint(pointPos[i], 10, renderer->isHot(pointId[i]) ? Eigen::Vector4<uint8_t>{255,0,255,255} : Eigen::Vector4<uint8_t>{255,255,255,0});
 			Eigen::Vector3f outFace = pointPos[i];
 			float size = renderer->pixelsToWorldSize(pointPos[i], 10);
 			if (renderer->gizmoSphereAxisTranslationBehavior(pointId[i], pointPos[i], size, pointDir[i], 0, &outFace))
@@ -384,28 +389,38 @@ namespace MOON {
 		}
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
+			Core::ECS::Actor* selectActor = nullptr;
 			if (m_sceneView->IsSelectActor()) {
-				auto selectActor = m_sceneView->GetSelectedActor();
-			
-				//if (selectActor->HasComponent("CTopoShape"))
+				selectActor = m_sceneView->GetSelectedActor();
+				while (!selectActor->HasComponent("CTopoShape")&& selectActor->HasParent())
 				{
-					const auto& topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-					if (topoComp) {
-						auto& topoShape= topoComp->GetTopoShape();
-						double offset = m_internal->zAxis.dot(m_internal->center);
-						Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-						auto wires=topoShape.slice(dir,offset);
-						m_internal->sectionFace=DiscretizeSectionFace(wires);
-						
-						m_internal->slicelines.clear();
-						for (auto& w : wires) {
-							auto tempLine=DiscretizeWire(w);
-							m_internal->slicelines.insert(m_internal->slicelines.end(),
-								tempLine.begin(),tempLine.end()
-								);
-						}
+					selectActor = selectActor->GetParent();
+				}
+			}
+			else
+			{
+				selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+			}
+			
+			if (selectActor)
+			{	
+				//Core::ECS::Components::CTopoShape*
+				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+
+				if (topoComp) {
+					auto& topoShape= topoComp->GetTopoShape();
+					double offset = m_internal->zAxis.dot(m_internal->center);
+					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+					auto wires=topoShape.slice(dir,offset);
+					m_internal->sectionFace=DiscretizeSectionFace(wires);
+					m_internal->slicelines.clear();
+					for (auto& w : wires) {
+						auto tempLine=DiscretizeWire(w);
+						m_internal->slicelines.insert(m_internal->slicelines.end(),
+							tempLine.begin(),tempLine.end()
+							);
 					}
-				}	
+				}
 			}
 		}
 		if (ret) {

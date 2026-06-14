@@ -1,5 +1,6 @@
 ﻿#include "viewertitlebar.h"
 #include "Core/Global/ServiceLocator.h"
+#include <Core/Rendering/EngineBufferRenderFeature.h>
 #include "renderer/SceneView.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "editor/Command/viewer/CameraFitCommand.h"
@@ -93,18 +94,8 @@ namespace MOON {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
 			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("ClipPlane", value);
-			
-			if (view.IsSelectActor()) {
-				auto& selectActor=*view.GetSelectedActor();
-				auto matList = selectActor.GetComponent<Core::ECS::Components::CMaterialRenderer>();
-				if (matList) {
-					auto mat = matList->GetMaterialAtIndex(0);
-					if (mat && mat->SupportsFeature("CLIP_PLANE")) {
-						mat->EnableFeature("CLIP_PLANE", value);
-					}
-				}
-			
-			}
+			auto& feature = view.GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+			feature.EnableClip(value);
 		}
 	};
 	class ViewerWindowTitleBar::ViewerWindowTitleBarInternal {

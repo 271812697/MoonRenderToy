@@ -4,7 +4,7 @@
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Rendering/Core/CompositeRenderer.h>
 
-namespace
+namespace Core::Rendering
 {
 	struct CameraInfo
 	{
@@ -18,7 +18,7 @@ namespace
 		float   ubo_Time;
 		int		ubo_screenWidth;
 		int		ubo_screenHeigh;
-		float	ubo_pad;
+		int	    ubo_enableClip;
 	};
 	struct PlaneInfo
 	{
@@ -36,7 +36,9 @@ namespace
 
 	};
 	constexpr size_t kUBOSize = sizeof(EngineUBO);
-
+	struct LateUboData {
+		bool enableClip = false;
+	};
 }
 
 Core::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
@@ -48,6 +50,14 @@ Core::Rendering::EngineBufferRenderFeature::EngineBufferRenderFeature(
 	m_engineBuffer = std::make_unique<::Rendering::HAL::UniformBuffer>();
 	m_engineBuffer->Allocate(kUBOSize, ::Rendering::Settings::EAccessSpecifier::STREAM_DRAW);
 	m_startTime = std::chrono::high_resolution_clock::now();
+	m_LateUboData = new LateUboData();
+}
+
+Core::Rendering::EngineBufferRenderFeature::~EngineBufferRenderFeature()
+{
+	if (m_LateUboData) {
+		delete m_LateUboData;
+	}
 }
 
 void Core::Rendering::EngineBufferRenderFeature::SetViewPos(const Maths::FVector3& viewPos)
@@ -106,6 +116,11 @@ void Core::Rendering::EngineBufferRenderFeature::SetViewMatrix(const Maths::FMat
 		});
 }
 
+void Core::Rendering::EngineBufferRenderFeature::EnableClip(bool flag)
+{
+	m_LateUboData->enableClip = flag?1:0;
+}
+
 void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
 {
 	assert(p_frameDescriptor.camera.has_value()&&"Camera is not set in the frame descriptor");
@@ -118,7 +133,7 @@ void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering:
 		CameraInfo cameraInfo;
 		ViewInfo viewInfo;
 	} uboDataPage;
-	
+	//m_EngineUbo->ubo_CameraInfo.
 	uboDataPage.cameraInfo.ubo_View = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetViewMatrix());
 	uboDataPage.cameraInfo.ubo_Projection = Maths::FMatrix4::Transpose(p_frameDescriptor.camera->GetProjectionMatrix());
 	uboDataPage.cameraInfo.ubo_ViewPos = p_frameDescriptor.camera->GetPosition();
@@ -126,6 +141,7 @@ void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering:
 	uboDataPage.viewInfo.ubo_Time = elapsedTime.count();
 	uboDataPage.viewInfo.ubo_screenWidth = p_frameDescriptor.renderWidth;
 	uboDataPage.viewInfo.ubo_screenHeigh = p_frameDescriptor.renderHeight;
+	uboDataPage.viewInfo.ubo_enableClip = m_LateUboData->enableClip;
 
 	
 	m_engineBuffer->Upload(&uboDataPage, ::Rendering::HAL::BufferMemoryRange{

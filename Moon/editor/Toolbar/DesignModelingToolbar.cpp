@@ -44,7 +44,7 @@ namespace MOON {
 			std::vector<Part::TopoShape>shapes;
 			if (ViewTool::getSelectedTopoShape(shapes)) {
 				double tol = Precision::Confusion();
-				double thickness = 1.0;
+				double thickness = 0.05;
 				Part::TopoShape res=shapes[0].makeElementThickSolid({shapes[1]},thickness, tol);
 				ViewTool::createTopoActor(res,"ThickNessTopoShape");
 			}
