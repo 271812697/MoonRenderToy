@@ -43,7 +43,7 @@ namespace MOON {
 		return faceMaker.Face();
 	}
 
-	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.01)
+	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.1)
 	{
 		std::vector<Eigen::Vector3f> points;
 		BRepAdaptor_CompCurve curve(wire, Standard_True);
@@ -197,7 +197,7 @@ namespace MOON {
 		
 		Eigen::Vector3f scenter = m_internal->center + m_internal->yAxis* worldHeight;
 		float sRadius = renderer->pixelsToWorldSize(scenter, 10);
-        //renderer->drawSphereFilled(scenter, sRadius);
+       
 		if (renderer->isSelectPolygon("GizmoAxis", "YAxis")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YAxis"), { 1,1,0,1 });
 		}
