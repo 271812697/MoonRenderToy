@@ -103,6 +103,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	m_mirroFbo.Bind();
 	m_renderer.Clear(true, true, false, Maths::FVector4(0.7, 0.7, 0.7 ,0.2));
 	drawMirroModels(filteredDrawables.opaques | std::views::values,false);
+	drawMirroModels(filteredDrawables.lines | std::views::values, false);
 	drawMirroModels(filteredDrawables.transparents | std::views::values,true);
 	m_mirroFbo.Unbind();
 	/*

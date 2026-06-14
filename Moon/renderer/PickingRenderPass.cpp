@@ -62,7 +62,7 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRenderPass::ReadbackPickingResult(
 	const ::Core::SceneSystem::Scene& p_scene,
 	uint32_t p_x,
-	uint32_t p_y
+	uint32_t p_y,bool& isSelected
 )
 {
 	uint8_t pixel[4];
@@ -92,18 +92,21 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 		{
 			return static_cast<Editor::Core::GizmoBehaviour::EDirection>(pixel[2] - 252);
 		}
+		isSelected = true;
 	}
 	else if(pixel[3]==254)
 	{
 		uint32_t polygonID = pixel[2];
 		uint32_t blockID = pixel[1];
 		gizmoInstance.selectPolygon(polygonID,blockID);
+		isSelected = true;
 	}
 	else
 	{
 		gizmoInstance.resetSelectPolygon();
+		isSelected = false;
 	}
-
+	
 	return std::nullopt;
 }
 

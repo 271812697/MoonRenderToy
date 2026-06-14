@@ -32,7 +32,7 @@ namespace Editor::Rendering
 		PickingResult ReadbackPickingResult(
 			const ::Core::SceneSystem::Scene& p_scene,
 			uint32_t p_x,
-			uint32_t p_y
+			uint32_t p_y,bool& isSelected
 		);
 		PickPassOption& GetPickPassOption();
 	private:

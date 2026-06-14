@@ -375,11 +375,12 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	auto& scene = *GetScene();
 	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
 	//may be we can read by event
+	bool isSeletedSomething = false;
 	pickingResult = actorPickingPass.ReadbackPickingResult(
 			scene,
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
-		);
+		,isSeletedSomething);
 
 	if (!m_gizmoOperations.IsPicking())
 	{
@@ -397,11 +398,6 @@ void Editor::Panels::SceneView::HandleActorPicking()
 				m_highlightedGizmoDirection = *pval;
 			}
 		}
-		else
-		{
-			m_highlightedActor = {};
-			m_highlightedGizmoDirection = {};
-		}
 
 		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) )
 		{
@@ -417,7 +413,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 			{
 				SelectActor(m_highlightedActor.value());
 			}
-			else
+			else if(!isSeletedSomething)
 			{
 				UnselectActor();
 			}

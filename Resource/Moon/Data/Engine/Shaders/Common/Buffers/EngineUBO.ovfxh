@@ -8,7 +8,7 @@ layout (std140, binding = 0) uniform EngineUBO
     float   ubo_Time;
     int     ubo_ScreenWidth;
     int     ubo_ScreenHeight;
-    float   ubo_pad;
+    int     ubo_enableClip; //1 enable 0 disable
     vec4    ubo_plane;
     mat4    ubo_MirroPlaneMatrix;
     mat4    ubo_UserMatrix;
