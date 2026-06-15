@@ -13,7 +13,8 @@ namespace MOON {
 	public:
 		PropertyComponent();
 		virtual ~PropertyComponent();
-		std::vector<WidgetProperty*>getProperties();
+		void addProperty(WidgetProperty* prop);
+		std::vector<WidgetProperty*>&getProperties();
 		
 		virtual QVariant getPropertyValue(const QString& propertyName);
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value);

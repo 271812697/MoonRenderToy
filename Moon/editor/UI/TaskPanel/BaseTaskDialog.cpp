@@ -1,4 +1,5 @@
 ﻿#include "editor/UI/TaskPanel/BaseTaskDialog.h"
+
 namespace MOON {
 	BaseTaskDialog::BaseTaskDialog(QWidget* parent) : QWidget(parent)
 	{
@@ -6,6 +7,5 @@ namespace MOON {
 		m_layout->setContentsMargins(5, 5, 5, 5);
 		m_layout->setSpacing(6);
 	}
-	
 
 }

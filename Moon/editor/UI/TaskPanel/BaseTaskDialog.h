@@ -13,7 +13,6 @@ namespace MOON {
         virtual void clickApply()=0;
         virtual void clickCancel()=0;
         QVBoxLayout* mainLayout() { return m_layout; }
-
     protected:
         QVBoxLayout* m_layout;
     };

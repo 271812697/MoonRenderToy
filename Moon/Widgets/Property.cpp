@@ -13,6 +13,10 @@ namespace MOON {
 	{
 		return mName;
 	}
+	QString WidgetProperty::getOwnerName()
+	{
+		return owner->getComponentName();
+	}
 	void WidgetProperty::setOwnerPropertyValue(const QVariant& value) {
 		owner->setPropertyValue(mName,value);
 	}

@@ -10,7 +10,9 @@ This is a renderer written based on Qt+Opengl
 
 ![image-20260521203930108](README.assets/image-20260521203930108.png)
 
-![image-20260530091405678](README.assets/image-20260530091405678.png)
+![image-20260614223107815](README.assets/image-20260614223107815.png)
+
+![](README.assets/image-20260530091405678.png)
 
 ![image-20260607084702171](README.assets/image-20260607084702171.png)
 

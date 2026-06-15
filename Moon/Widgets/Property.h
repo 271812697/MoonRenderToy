@@ -14,6 +14,7 @@ namespace MOON {
 		void setOwnerPropertyValue(const QVariant& value);
 		void onWidgetValueChange();
 		QString getPropertyName();
+		QString getOwnerName();
 	protected:
 		PropertyComponent* owner = nullptr;
 		PropertyQtWidget* mWidget = nullptr;
