@@ -2,6 +2,7 @@
 #include "editor/Command/command.h"
 #include "editor/UI/TaskPanel/TaskViewWidget.h"
 #include "editor/UI/TaskPanel/PadTaskDialog.h"
+#include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/ViewTool.h"
@@ -20,12 +21,10 @@ namespace MOON {
 		}
 	protected:
 		virtual void execute()override {
-			bool value = action()->isChecked();
 			auto& task = GetService(TaskViewWidget);
 			if (!task.hasTask()) {
 				task.setTaskDialog(new PadTaskDialog());
 			}
-	
 		}
 	private:
 		std::string handlerName = "";
@@ -40,15 +39,10 @@ namespace MOON {
 		}
 	protected:
 		virtual void execute()override {
-			bool value = action()->isChecked();
-			std::vector<Part::TopoShape>shapes;
-			if (ViewTool::getSelectedTopoShape(shapes)) {
-				double tol = Precision::Confusion();
-				double thickness = 0.05;
-				Part::TopoShape res=shapes[0].makeElementThickSolid({shapes[1]},thickness, tol);
-				ViewTool::createTopoActor(res,"ThickNessTopoShape");
+			auto& task = GetService(TaskViewWidget);
+			if (!task.hasTask()) {
+				task.setTaskDialog(new ThicknessTaskDialog());
 			}
-
 		}
 	private:
 		std::string handlerName = "";

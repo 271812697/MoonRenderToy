@@ -283,6 +283,9 @@ namespace MOON {
 			layout_->addStretch();
 		}
 		~RenderPassSettingWidgetInternal() {
+			for (auto p : m_comps) {
+				delete p.second;
+			}
 		}
 	private:
 		friend class RenderPassSettingWidget;

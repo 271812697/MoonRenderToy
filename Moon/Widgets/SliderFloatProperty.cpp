@@ -12,8 +12,11 @@ namespace MOON {
 
 	}
 	void SliderFloatProperty::setMinMax(float a, float b)
-	{
+	{	
+		minA = a;
+		maxB = b;
 		if (mWidget) {
+
 			auto widget = dynamic_cast<FloatSliderWidgetQt*>(mWidget);
 			widget->setMinValue(a);
 			widget->setMaxValue(b);

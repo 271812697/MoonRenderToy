@@ -20,6 +20,9 @@ namespace MOON {
 	bool ViewTool::getSelectedTopoShape(std::vector<Part::TopoShape>& topo)
 	{
 		Core::ECS::Actor* actor =getLastestActorSelected();
+		if (!actor) {
+			return false;
+		}
 		if (actor->HasParent()) {
 			auto parent = actor->GetParent();
 			if (parent->HasParent()) {
@@ -29,7 +32,6 @@ namespace MOON {
 					std::string idString = actor->GetName().substr(5);
 					std::string type = actor->GetName().substr(0, 4);
 					int childId = std::stoi(idString);
-					
 					topo.push_back( topoComp->GetTopoShape());
 					topo.push_back(type == "face"?topoComp->GetTopoFace(childId):topoComp->GetTopoEdge(childId));
 					return true;
