@@ -30,7 +30,7 @@ namespace MOON {
 	}
 	void RotateCenter::onUpdate()
 	{
-		if (drawCenter) {
+		if (drawCenter&&false) {
 			auto rc = m_sceneView->GetRoaterCenter();
 			Eigen::Vector3f center = { rc.x,rc.y,rc.z };
 			renderer->drawOneMesh(

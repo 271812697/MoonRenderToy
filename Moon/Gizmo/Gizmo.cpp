@@ -1604,7 +1604,7 @@ namespace MOON
 		}
 		color(0) = color(0) * aligned; // .setA(color.getA() * aligned);
 		colorStack.push_back(color);
-		sizeStack.push_back(gizmoSizePixels);
+		sizeStack.push_back(gizmoSizePixels*3);
 
 		drawArrow(_origin + _axis * (0.2f * _worldHeight), _origin + _axis * _worldHeight);
 		sizeStack.pop_back();

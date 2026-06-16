@@ -19,15 +19,25 @@
 #include <QGroupBox>
 #include <QRadioButton>
 #include <numbers>
+#include <gp_Pln.hxx>
 namespace MOON {
 
     class PadTaskDialog::Internal {
     public:
         Internal(PadTaskDialog* pad) :self(pad) {
             behaviour = new PadTaskWidget("pad");
+            // 1. 获取当前激活的草图
+            SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+            if (sketchObj) {
+                 Part::TopoShape sketchShape = sketchObj->getDoneFaceShape();
+                 gp_Pln pln;
+                 sketchShape.findPlane(pln);
+                 behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
+                 behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &PadTaskDialog::onWidgetInvoke);
+            }           
         }
         ~Internal() {
-
             delete behaviour;
         }
         void updateDirectionUI(int dirType) {
@@ -291,7 +301,13 @@ namespace MOON {
     }
     void PadTaskDialog::onValueChange()
     {
+        mInternal->behaviour->setLength(mInternal->spinLenForward->value());
         previewShape();
         mInternal->updateDirectionUI(mInternal->cboDir->currentIndex());
+    }
+    void PadTaskDialog::onWidgetInvoke()
+    {
+        //previewShape();
+        mInternal->spinLenForward->setValue(mInternal->behaviour->getLength());
     }
 }

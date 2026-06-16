@@ -59,8 +59,6 @@ namespace MOON {
 				}
 				mInternal->m_previewActor = new Core::ECS::TopoActor(scene, "TopoShapePrismPreview", "TopoShape", true);
 			}
-			mInternal->m_previewActor->ClearModel();
-
 			const auto& topoComp = mInternal->m_previewActor->GetComponent<Core::ECS::Components::CTopoShape>();
 			Part::TopoShape& topo = topoComp->GetTopoShape();
 			topo.setShape(mInternal->m_previewShape);
