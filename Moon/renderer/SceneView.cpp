@@ -73,8 +73,6 @@ void Editor::Panels::SceneView::Update(float p_deltaTime)
 			return;
 		}
 		float pi = 3.14159265359f;
-		//auto bs = ac.GetComponent<::Core::ECS::Components::CPhysicalSphere>();
-		//ac.GetComponent<:Core::ECS::Components::>();
 		auto target = ac->transform.GetWorldPosition();
 		auto cp = m_camera.GetPosition();
 		float radius = Maths::FVector3::Length(target - cp) ;

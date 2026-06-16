@@ -9,6 +9,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/SceneView.h"
 #include "core/log.h"
+#include "Gizmo/Widgets/PadTaskWidget.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <QLabel>
 #include <QLineEdit>
@@ -23,10 +24,11 @@ namespace MOON {
     class PadTaskDialog::Internal {
     public:
         Internal(PadTaskDialog* pad) :self(pad) {
+            behaviour = new PadTaskWidget("pad");
         }
         ~Internal() {
 
-
+            delete behaviour;
         }
         void updateDirectionUI(int dirType) {
             if (dirType == 0) { // 正向
@@ -49,6 +51,7 @@ namespace MOON {
             }
         }
     private:
+        PadTaskWidget* behaviour = nullptr;
         Part::TopoShape* basedTopoShape = nullptr;
         PadTaskDialog* self;
         friend PadTaskDialog;
@@ -137,7 +140,7 @@ namespace MOON {
         }
 
         // 6. 生成拉伸体（核心）
-        Part::TopoShape sketchShape = sketchObj->toShape();
+        Part::TopoShape sketchShape = sketchObj->getDoneFaceShape();
         Part::TopoShape prism;
         try {
             std::vector<Part::TopoShape> drafts;

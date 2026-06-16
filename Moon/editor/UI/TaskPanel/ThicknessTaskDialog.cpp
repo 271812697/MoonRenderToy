@@ -121,6 +121,7 @@ namespace MOON {
             if (fabs(thickness) > 2 * tol) {
                 try
                 {
+                    //CORE_INFO("the num of solid is {}", shapes[0].countSubShapes(TopAbs_SOLID));
                     getPreviewShape() = shapes[0].makeElementThickSolid({ shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
                     return true;
                 }

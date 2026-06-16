@@ -4,8 +4,8 @@
 #include "core/component/CTopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/ViewTool.h"
+#include "core/log.h"
 #include "renderer/SceneView.h"
-
 #include <Core/ECS/Components/CMaterialRenderer.h>
 namespace MOON {
 	class ShapeHelper::Internal
@@ -17,7 +17,6 @@ namespace MOON {
 		~Internal() {
 
 		}
-
 	private:
 		friend ShapeHelper;
 		ShapeHelper* self = nullptr;
@@ -39,6 +38,18 @@ namespace MOON {
 	void ShapeHelper::previewShape()
 	{
 		if (generatePreviewShape()) {
+
+			Part::TopoShape shape(mInternal->m_previewShape);
+
+			try
+			{
+				mInternal->m_previewShape = shape.makeElementRefine();
+			}
+			catch (Standard_Failure& err)
+			{
+				CORE_ERROR("Refine failed:{}",err.GetMessageString());
+			}
+
 			if (mInternal->m_previewActor == nullptr) {
 				auto& view = GetService(Editor::Panels::SceneView);
 				auto scene = view.GetScene();

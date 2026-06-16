@@ -65,9 +65,13 @@ namespace MOON {
 		Part::TopoShape getBasedTopoShape() {
 			return basedTopoShape;
 		}
+		Part::TopoShape getDoneFaceShape() {
+			return doneFaceShape;
+		}
 		Base::Matrix4D getplaneTransform();
 	private:
-		Part::TopoShape basedTopoShape ;
+		Part::TopoShape basedTopoShape;
+		Part::TopoShape doneFaceShape;
 		struct CurveSegement;
 		void updateGeoSegment(int id);
 		void pickGeo();

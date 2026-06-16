@@ -229,6 +229,7 @@ namespace MOON {
         isInEdit = false;
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
+        doneFaceShape = toShape();
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
@@ -1071,6 +1072,7 @@ namespace MOON {
         }
         result.setTransform(planeTransform);
         //return result.makeFace();
+        
         return result;
     }
     void SketcherObj::setBasedTopoShape(Part::TopoShape topoShape)
