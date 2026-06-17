@@ -117,6 +117,42 @@ namespace MOON {
 
 		return vertices;
 	}
+	class GizmoAxisTranslate {
+	public:
+		GizmoAxisTranslate() = default;
+		GizmoAxisTranslate(const Eigen::Vector3f&Axis, const Eigen::Vector3f& pos):axis(Axis),origin(pos) {}
+		void apply(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye,Eigen::Vector3f&pos) {
+			 Eigen::Vector3f planeTangent=axis.cross(pos-eye);
+			 Eigen::Vector3f planeNormal = axis.cross(planeTangent);
+			 Eigen::Vector3f planePoint = origin;
+			 float denom = ray.dot(planeNormal);
+			 if (std::abs(denom) <= 0.001f)
+				 return;
+			 float t = (planePoint - eye).dot(planeNormal) / denom;
+			 if (t <= 0.001f)
+				 return;
+			 Eigen::Vector3f point = eye + ray * t;
+
+			 if (firstPick)
+			 {
+				 mInitialOffset = origin - point;
+				 firstPick = false;
+			 }
+			 Eigen::Vector3f translationVector = point - planePoint + mInitialOffset;
+			 pos = planePoint + axis*translationVector.dot(axis);
+		}
+		void startPick(const Eigen::Vector3f& Axis, const Eigen::Vector3f& pos) {
+			axis = Axis;
+			origin = pos;
+			firstPick = true;
+		
+		}
+	private:
+		Eigen::Vector3f axis = { 1,0,0 };
+		Eigen::Vector3f origin = { 0,0,0 };
+		Eigen::Vector3f mInitialOffset = { 0,0,0 };
+		bool firstPick = true;
+	};
 	class ClipPlane::ClipPlaneInternal {
 	public:
 		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
@@ -174,6 +210,8 @@ namespace MOON {
 		ExecuteCommandPair moveObserver;
 		std::vector<Eigen::Vector3f>slicelines;
 		std::vector<Eigen::Vector3f>sectionFace;
+
+		GizmoAxisTranslate transLatePick;
 	};
 	
 	ClipPlane::ClipPlane(const std::string& name) :GizmoWidget(name)
@@ -209,15 +247,15 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YAxis"), { 0,1,0,1 });
 		}
-		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditz"),
-			m_internal->center, sRadius, m_internal->zAxis,
-			&scenter
-		)) {
-			
-			ret = true;
-			m_internal->yAxis = (scenter - m_internal->center).normalized();
-			m_internal->xAxis = m_internal->yAxis.cross(m_internal->zAxis);
-		}
+		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditz"),
+		//	m_internal->center, sRadius, m_internal->zAxis,
+		//	&scenter
+		//)) {
+		//	
+		//	ret = true;
+		//	m_internal->yAxis = (scenter - m_internal->center).normalized();
+		//	m_internal->xAxis = m_internal->yAxis.cross(m_internal->zAxis);
+		//}
 
 		scenter = m_internal->center + m_internal->xAxis* worldHeight;
 		sRadius = renderer->pixelsToWorldSize(scenter, 10);
@@ -229,15 +267,15 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XAxis"), { 1,0,0,1 });
 		}
-		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEdity"),
-			m_internal->center, sRadius, m_internal->yAxis,
-			&scenter
-		)) {
-			
-			ret = true;
-			m_internal->xAxis = (scenter - m_internal->center).normalized();
-			m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
-		}
+		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEdity"),
+		//	m_internal->center, sRadius, m_internal->yAxis,
+		//	&scenter
+		//)) {
+		//	
+		//	ret = true;
+		//	m_internal->xAxis = (scenter - m_internal->center).normalized();
+		//	m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
+		//}
 
 		scenter = m_internal->center + m_internal->zAxis * worldHeight;
 		sRadius=renderer->pixelsToWorldSize(scenter, 10);
@@ -249,14 +287,14 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZAxis"), { 0,0,1,1 });
 		}
-		if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditx"),
-			m_internal->center, sRadius, m_internal->xAxis,
-			&scenter
-		)) {
-			ret = true;
-			m_internal->zAxis = (scenter - m_internal->center).normalized();
-			m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
-		}
+		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditx"),
+		//	m_internal->center, sRadius, m_internal->xAxis,
+		//	&scenter
+		//)) {
+		//	ret = true;
+		//	m_internal->zAxis = (scenter - m_internal->center).normalized();
+		//	m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
+		//}
 
 		if (renderer->isSelectPolygon("GizmoAxis", "YPlane")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YPlane"), { 1,1,0,0.7 });
@@ -267,10 +305,10 @@ namespace MOON {
 		}
 		Eigen::Vector3f po = m_internal->center + m_internal->xAxis * radius + m_internal->zAxis * radius;
 		//renderer->drawPoint(po, 10);
-		ret|=renderer->gizmoPlaneTranslationBehavior(
-			renderer->makeId("xz"), 
-			po,
-			m_internal->yAxis,0,dis, &m_internal->center);
+		//ret|=renderer->gizmoPlaneTranslationBehavior(
+		//	renderer->makeId("xz"), 
+		//	po,
+		//	m_internal->yAxis,0,dis, &m_internal->center);
 
 		po = m_internal->center + m_internal->yAxis * radius + m_internal->zAxis * radius;
 		//renderer->drawPoint(po, 10);
@@ -281,10 +319,10 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XPlane"), { 1,0,0,0.2 });
 		}
-		ret|=renderer->gizmoPlaneTranslationBehavior(
-			renderer->makeId("yz"),
-			po,
-			m_internal->xAxis, 0,dis, &m_internal->center);
+		//ret|=renderer->gizmoPlaneTranslationBehavior(
+		//	renderer->makeId("yz"),
+		//	po,
+		//	m_internal->xAxis, 0,dis, &m_internal->center);
 
 		po = m_internal->center + m_internal->xAxis * radius + m_internal->yAxis * radius;
 		//renderer->drawPoint(po, 10);
@@ -295,10 +333,10 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZPlane"), { 0,0,1,0.2 });
 		}
-		renderer->gizmoPlaneTranslationBehavior(
-			renderer->makeId("xy"),
-			po,
-			m_internal->zAxis, 0, dis, &m_internal->center);
+		//renderer->gizmoPlaneTranslationBehavior(
+		//	renderer->makeId("xy"),
+		//	po,
+		//	m_internal->zAxis, 0, dis, &m_internal->center);
 		
 		//bool Gizmo::gizmoAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f & _origin,
 			//const Eigen::Vector3f & _axis, float _snap, float _worldHeight, float _worldSize, Eigen::Vector3f * _out_)
@@ -311,9 +349,9 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XArrow"), { 1,0,0,1 });
 		}
-		renderer->gizmoAxisTranslationBehavior(renderer->makeId("xAxis"),m_internal->center,
-			m_internal->xAxis,0,renderer->pixelsToWorldSize(m_internal->center,140), 
-			renderer->pixelsToWorldSize(m_internal->center, 5),&m_internal->center);
+		//renderer->gizmoAxisTranslationBehavior(renderer->makeId("xAxis"),m_internal->center,
+		//	m_internal->xAxis,0,renderer->pixelsToWorldSize(m_internal->center,140), 
+		//	renderer->pixelsToWorldSize(m_internal->center, 5),&m_internal->center);
 		if (renderer->isSelectPolygon("GizmoAxis", "YArrow")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YArrow"), { 1,1,0,1 });
 		}
@@ -321,9 +359,9 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YArrow"), { 0,1,0,1 });
 		}
-		renderer->gizmoAxisTranslationBehavior(renderer->makeId("yAxis"), m_internal->center,
-			m_internal->yAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
-			renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
+		//renderer->gizmoAxisTranslationBehavior(renderer->makeId("yAxis"), m_internal->center,
+		//	m_internal->yAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
+		//	renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
 		if (renderer->isSelectPolygon("GizmoAxis", "ZArrow")) {
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZArrow"), { 1,1,0,1 });
 		}
@@ -331,9 +369,9 @@ namespace MOON {
 		{
 			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZArrow"), { 0,0,1,1 });
 		}
-		ret|=renderer->gizmoAxisTranslationBehavior(renderer->makeId("zAxis"), m_internal->center,
-			m_internal->zAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
-			renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
+		//ret|=renderer->gizmoAxisTranslationBehavior(renderer->makeId("zAxis"), m_internal->center,
+		//	m_internal->zAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
+		//	renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
 
 
 
@@ -382,10 +420,10 @@ namespace MOON {
 			//renderer->drawPoint(pointPos[i], 10, renderer->isHot(pointId[i]) ? Eigen::Vector4<uint8_t>{255,0,255,255} : Eigen::Vector4<uint8_t>{255,255,255,0});
 			Eigen::Vector3f outFace = pointPos[i];
 			float size = renderer->pixelsToWorldSize(pointPos[i], 10);
-			if (renderer->gizmoSphereAxisTranslationBehavior(pointId[i], pointPos[i], size, pointDir[i], 0, &outFace))
-			{
-				cirleDetectRadius = (outFace - planeOrigin).norm();
-			}
+			//if (renderer->gizmoSphereAxisTranslationBehavior(pointId[i], pointPos[i], size, pointDir[i], 0, &outFace))
+			//{
+			//	cirleDetectRadius = (outFace - planeOrigin).norm();
+			//}
 		}
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
@@ -450,12 +488,18 @@ namespace MOON {
 		if (mState == Hot) {
 			if (mPickMesh == PickMeshId::YAxis|| mPickMesh == PickMeshId::XAxis||mPickMesh == PickMeshId::ZAxis) {
 				mState = AxisT;
+				Eigen::Vector3f axis = mPickMesh == PickMeshId::YAxis ?
+					m_internal->yAxis : (mPickMesh == PickMeshId::XAxis ? m_internal->xAxis : m_internal->zAxis);
+				m_internal->transLatePick.startPick(axis,m_internal->center);
 			}
 		}
 	}
 
 	void ClipPlane::onLeftMouseReleased()
 	{
+		if (mState == AxisT) {
+			mState = Hot;
+		}
 	}
 
 	void ClipPlane::onMouseMove()
@@ -463,15 +507,15 @@ namespace MOON {
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;
-			if (renderer->isSelectPolygon("GizmoAxis", "YAxis")) {
+			if (renderer->isSelectPolygon("GizmoAxis", "YArrow")) {
 				mPickMesh = PickMeshId::YAxis;
 				selectFlag = true;
 			}
-			if (renderer->isSelectPolygon("GizmoAxis", "XAxis")) {
+			if (renderer->isSelectPolygon("GizmoAxis", "XArrow")) {
 				mPickMesh = PickMeshId::XAxis;
 				selectFlag = true;
 			}
-			if (renderer->isSelectPolygon("GizmoAxis", "ZAxis")) {
+			if (renderer->isSelectPolygon("GizmoAxis", "ZArrow")) {
 				mPickMesh = PickMeshId::ZAxis;
 				selectFlag = true;
 			}
@@ -480,14 +524,16 @@ namespace MOON {
 			}
 		}
 		else if (mState == Hot) {
-			bool selectFlag =renderer->isSelectPolygon("GizmoAxis", "YAxis") ||renderer->isSelectPolygon("GizmoAxis", "XAxis")||renderer->isSelectPolygon("GizmoAxis", "ZAxis");
+			bool selectFlag =renderer->isSelectPolygon("GizmoAxis", "YArrow") ||renderer->isSelectPolygon("GizmoAxis", "XArrow")||renderer->isSelectPolygon("GizmoAxis", "ZArrow");
 			if (!selectFlag) {
 				mState = Stop;
 				mPickMesh = PickMeshId::None;
 			}
 		}
 		else if (mState == AxisT) {
-
+			auto&param=renderer->getCameraParam();
+			
+			m_internal->transLatePick.apply(param.rayDirection,param.rayOrigin,m_internal->center);
 		}
 	}
 
