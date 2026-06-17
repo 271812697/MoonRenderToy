@@ -175,9 +175,9 @@ namespace MOON {
 		std::vector<Eigen::Vector3f>slicelines;
 		std::vector<Eigen::Vector3f>sectionFace;
 	};
-
+	
 	ClipPlane::ClipPlane(const std::string& name) :GizmoWidget(name)
-	, m_internal(new ClipPlaneInternal(this)){
+	, m_internal(new ClipPlaneInternal(this)),mState(Stop){
 	
 	}
 	ClipPlane::~ClipPlane()
@@ -443,6 +443,52 @@ namespace MOON {
 			m_internal->zAxis.z(),
 			m_internal->zAxis.dot(m_internal->center)
 		);
+	}
+
+	void ClipPlane::onLeftMousePressed()
+	{
+		if (mState == Hot) {
+			if (mPickMesh == PickMeshId::YAxis|| mPickMesh == PickMeshId::XAxis||mPickMesh == PickMeshId::ZAxis) {
+				mState = AxisT;
+			}
+		}
+	}
+
+	void ClipPlane::onLeftMouseReleased()
+	{
+	}
+
+	void ClipPlane::onMouseMove()
+	{
+		if (mState == Stop) {
+			bool selectFlag = false;
+			mPickMesh = PickMeshId::None;
+			if (renderer->isSelectPolygon("GizmoAxis", "YAxis")) {
+				mPickMesh = PickMeshId::YAxis;
+				selectFlag = true;
+			}
+			if (renderer->isSelectPolygon("GizmoAxis", "XAxis")) {
+				mPickMesh = PickMeshId::XAxis;
+				selectFlag = true;
+			}
+			if (renderer->isSelectPolygon("GizmoAxis", "ZAxis")) {
+				mPickMesh = PickMeshId::ZAxis;
+				selectFlag = true;
+			}
+			if (selectFlag) {
+				mState = Hot;
+			}
+		}
+		else if (mState == Hot) {
+			bool selectFlag =renderer->isSelectPolygon("GizmoAxis", "YAxis") ||renderer->isSelectPolygon("GizmoAxis", "XAxis")||renderer->isSelectPolygon("GizmoAxis", "ZAxis");
+			if (!selectFlag) {
+				mState = Stop;
+				mPickMesh = PickMeshId::None;
+			}
+		}
+		else if (mState == AxisT) {
+
+		}
 	}
 
 }

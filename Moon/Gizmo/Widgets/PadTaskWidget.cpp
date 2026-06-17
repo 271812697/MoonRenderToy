@@ -33,7 +33,6 @@ namespace MOON {
 		if (mPreflag && !mCurflag) {
 			this->InvokeEvent(PadTaskEvent::LengthChange);
 		}
-		
 	}
 	void PadTaskWidget::setUpOrigin(float x, float y, float z)
 	{
