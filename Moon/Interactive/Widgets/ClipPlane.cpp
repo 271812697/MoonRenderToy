@@ -137,137 +137,157 @@ namespace MOON {
 	static int meshInfoCnt = 9;
 	Maths::FVector4 hotColor = { 0.1,1.0,1.0,1 };
 	Maths::FVector4 activeColor = { 1,1,0,1 };
-	class GizmoAxisRotate {
+	class GizmoAxisRotate
+	{
 	public:
+		static constexpr float PLANE_DOT_EPS = 0.001f;
+		static constexpr float RAY_T_MIN = 0.001f;
+		static constexpr float PROJ_LEN_EPS = 1e-6f;
+		static constexpr float ANGLE_EPS = 1e-6f;
+		static constexpr int   DEFAULT_SEG = 32;
+
 		GizmoAxisRotate() = default;
 		GizmoAxisRotate(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center)
-			: axis(Axis), origin(center) {
+			: m_axis(Axis.normalized()), m_origin(center)
+		{
 		}
 
-		// 鼠标按下初始化，同时传入当前原始方向、原始位置
 		void startPick(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center,
 			const Eigen::Vector3f& srcDir, const Eigen::Vector3f& srcPos)
 		{
-			axis = Axis.normalized();
-			origin = center;
-			mRefDir = srcDir;
-			mRefPos = srcPos;
-			mCurAngle = 0.f;
-			firstPick = true;
+			m_axis = Axis.normalized();
+			m_origin = center;
+			m_refDir = srcDir;
+			m_refPos = srcPos;
+
+			m_totalAngle = 0.f;
+			m_firstPick = true;
+			m_mouseStart.setZero();
+			m_lastProj.setZero();
 		}
 
-		// 版本1：旋转方向向量
-		void applyDir(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outDir)
+		bool applyDir(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outDir)
 		{
-			const Eigen::Vector3f n = axis;
-			const Eigen::Vector3f planePt = origin;
+			Eigen::Vector3f currProj;
+			Eigen::Vector3f currHit;
+			if (!computePlaneProj(ray, eye, currProj, currHit))
+				return false;
 
-			float denom = ray.dot(n);
-			if (std::abs(denom) <= 0.001f)
-				return;
-			float t = (planePt - eye).dot(n) / denom;
-			if (t <= 0.001f)
-				return;
-			Eigen::Vector3f hit = eye + ray * t;
-			Eigen::Vector3f hitRel = hit - planePt;
-
-			Eigen::Vector3f currProj = hitRel - n * (hitRel.dot(n));
-			float projLen = currProj.norm();
-			if (projLen < 1e-6f)
-				return;
-			currProj /= projLen;
-
-			if (firstPick)
+			if (m_firstPick)
 			{
-				mMouseStart = currProj;
-				firstPick = false;
-				outDir = mRefDir;
-				mCurAngle = 0.f;
-				mRefPos=hit;
-				return;
+				m_mouseStart = currProj;
+				m_lastProj = currProj;
+				
+				m_firstPick = false;
+				m_refPos = currHit;
+				outDir = m_refDir;
+				m_totalAngle = 0.f;
+				return true;
 			}
 
-			float dot = mMouseStart.dot(currProj);
-			float crossSign = n.dot(mMouseStart.cross(currProj));
-			float angle = std::atan2(crossSign, dot);
-			Eigen::AngleAxisf rot(angle, n);
-			mCurAngle = angle;
+			// 计算单帧增量（相邻两帧夹角，永远不会超过半圈）
+			float delta = computeAngle(m_lastProj, currProj);
+			m_totalAngle += delta;
+			m_totalAngle = fmod(m_totalAngle, 3.14159265358979323846f *2);
+			m_lastProj = currProj;
 
-			outDir = rot * mRefDir;
+			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
+			outDir = rot * m_refDir;
+			return true;
 		}
 
-		// 版本2：旋转物体位置（绕origin中心点旋转）
-		void applyPos(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outPos)
+		bool applyPos(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outPos)
 		{
-			const Eigen::Vector3f n = axis;
-			const Eigen::Vector3f planePt = origin;
+			Eigen::Vector3f currProj;
+			Eigen::Vector3f currHit;
+			if (!computePlaneProj(ray, eye, currProj,currHit))
+				return false;
 
-			float denom = ray.dot(n);
-			if (std::abs(denom) <= 0.001f)
-				return;
-			float t = (planePt - eye).dot(n) / denom;
-			if (t <= 0.001f)
-				return;
-			Eigen::Vector3f hit = eye + ray * t;
-			Eigen::Vector3f hitRel = hit - planePt;
-
-			Eigen::Vector3f currProj = hitRel - n * (hitRel.dot(n));
-			float projLen = currProj.norm();
-			if (projLen < 1e-6f)
-				return;
-			currProj /= projLen;
-
-			if (firstPick)
+			if (m_firstPick)
 			{
-				mMouseStart = currProj;
-				mCurAngle = 0.f;
-				firstPick = false;
-				outPos = mRefPos;
-				return;
+				m_mouseStart = currProj;
+				m_lastProj = currProj;
+				m_firstPick = false;
+				m_refPos = currHit;
+				outPos = m_refPos;
+				m_totalAngle = 0.f;
+				return true;
 			}
 
-			float dot = mMouseStart.dot(currProj);
-			float crossSign = n.dot(mMouseStart.cross(currProj));
-			mCurAngle = std::atan2(crossSign, dot);
-			Eigen::AngleAxisf rot(mCurAngle, n);
+			float delta = computeAngle(m_lastProj, currProj);
+			m_totalAngle += delta;
+			m_lastProj = currProj;
 
-			// 绕中心点origin旋转原始位置
-			Eigen::Vector3f offset = mRefPos - origin;
-			outPos = origin + rot * offset;
+			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
+			Eigen::Vector3f offset = m_refPos - m_origin;
+			outPos = m_origin + rot * offset;
+			return true;
 		}
 
-		// 获取从初始位置旋转到当前位置的圆弧采样点，用于绘制轨迹
-		std::vector<Eigen::Vector3f> getRotationArc(int segCount = 32) const
+		std::vector<Eigen::Vector3f> getRotationArc(int segCount = DEFAULT_SEG) const
 		{
 			std::vector<Eigen::Vector3f> arcPoints;
-			if (segCount < 2 || std::fabs(mCurAngle) < 1e-6f)
+			if (segCount < 2 || std::fabs(m_totalAngle) < ANGLE_EPS)
 				return arcPoints;
 
-			const Eigen::Vector3f rotAxis = axis;
-			const Eigen::Vector3f baseOffset = mRefPos - origin;
-			float stepAngle = mCurAngle / static_cast<float>(segCount);
-
+			Eigen::Vector3f baseOffset = m_refPos - m_origin;
+			float step = m_totalAngle / static_cast<float>(segCount);
 			for (int i = 0; i <= segCount; ++i)
 			{
-				float ang = stepAngle * static_cast<float>(i);
-				Eigen::AngleAxisf rotStep(ang, rotAxis);
-				Eigen::Vector3f point = origin + rotStep * baseOffset;
-				arcPoints.push_back(point);
+				float ang = step * static_cast<float>(i);
+				Eigen::AngleAxisf rotStep(ang, m_axis);
+				arcPoints.push_back(m_origin + rotStep * baseOffset);
 			}
 			return arcPoints;
 		}
-		float getRotationAngle()const  {
-			return mCurAngle;
-		}
-	private:
-		Eigen::Vector3f axis = { 1,0,0 };
-		Eigen::Vector3f origin = { 0,0,0 };
 
-		Eigen::Vector3f mRefDir;      // 初始参考方向
-		Eigen::Vector3f mRefPos;       // 初始参考位置
-		Eigen::Vector3f mMouseStart;   // 按下时鼠标投影向量
-		float mCurAngle = 0.f;         // 当前总旋转角度
-		bool firstPick = true;
+		float getRotationAngle() const { return m_totalAngle; }
+
+	private:
+		bool computePlaneProj(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outProj,Eigen::Vector3f& hitPos) const
+		{
+			const Eigen::Vector3f n = m_axis;
+			const Eigen::Vector3f planePt = m_origin;
+
+			float denom = ray.dot(n);
+			if (std::abs(denom) <= PLANE_DOT_EPS)
+				return false;
+
+			float t = (planePt - eye).dot(n) / denom;
+			if (t <= RAY_T_MIN)
+				return false;
+
+			Eigen::Vector3f hit = eye + ray * t;
+			Eigen::Vector3f hitRel = hit - planePt;
+
+			outProj = hitRel - n * (hitRel.dot(n));
+			float projLen = outProj.norm();
+			if (projLen < PROJ_LEN_EPS)
+				return false;
+			outProj /= projLen;
+			hitPos = hit;
+			
+			return true;
+		}
+
+		float computeAngle(const Eigen::Vector3f& a, const Eigen::Vector3f& b) const
+		{
+			float dot = a.dot(b);
+			float crossSign = m_axis.dot(a.cross(b));
+			return std::atan2(crossSign, dot);
+		}
+
+	private:
+		Eigen::Vector3f m_axis = Eigen::Vector3f::UnitX();
+		Eigen::Vector3f m_origin = Eigen::Vector3f::Zero();
+
+		Eigen::Vector3f m_refDir;
+		Eigen::Vector3f m_refPos;
+		Eigen::Vector3f m_mouseStart;
+		Eigen::Vector3f m_lastProj; // 新增：缓存上一帧鼠标投影
+
+		float m_totalAngle = 0.f;   // 累积总角，范围无限制
+		bool m_firstPick = true;
 	};
 	class GizmoPlaneTranslate
 	{
@@ -420,10 +440,25 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
-		if (mState == AxisR) {
+		if (mState == AxisR)
+		{
 			float angle=m_internal->axisRPick.getRotationAngle();
-			ImGui::Text("%f",angle);
-			renderer->drawLineList(m_internal->axisRPick.getRotationArc(), 10, {255,0,255,255});
+			float degree = -angle * 180 / 3.14159265358979323846f;
+			std::string text = std::to_string(degree) + " degree\n";
+			auto pos=renderer->getFrameParam().cursor;
+			ImGui::GetForegroundDrawList()->AddText({ pos.x(),pos.y()-20 }, IM_COL32(255, 255, 0, 255), text.c_str());
+			auto seg = m_internal->axisRPick.getRotationArc();
+			if (seg.size() > 0) {
+				for (int i = 0; i < seg.size()-1; i++) {
+					renderer->drawLine(seg[i],seg[i+1],3);
+				}
+				renderer->pushColor({255,0,255,255});
+				renderer->drawLine(seg[0], m_internal->center, 4);
+				renderer->drawLine(seg.back(), m_internal->center, 4);
+				renderer->popColor();
+			}
+
+			//renderer->drawLineList(m_internal->axisRPick.getRotationArc(), 10, {255,0,255,255});
 		}
 		
 		mPreflag = mCurflag;
