@@ -18,7 +18,7 @@ namespace MOON {
 		virtual void execute()override {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
-			auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo");
+			auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
 			gizmoPass.enableGizmoWidget(handlerName, value);
 			//if (value) {
 			//	for (int i = 0;i < blackList.size();i++) {

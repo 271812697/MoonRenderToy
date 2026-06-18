@@ -6,27 +6,27 @@
 #include "core/SceneSystem/BvhService.h"
 #include "renderer/DebugSceneRenderer.h"
 #include "renderer/SceneView.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Im3DRenderer.h"
 #include "Settings/DebugSetting.h"
-#include "Gizmo/Widgets/RotateCenter.h"
-#include "Gizmo/Widgets/Measurement.h"
-#include "Gizmo/Widgets/ClipPlane.h"
-#include "Gizmo/Widgets/SketchPlane.h"
-#include "Gizmo/Widgets/SplitScreen.h"
-#include "Gizmo/Widgets/DrawSketchHandlerPoint.h"
-#include "Gizmo/Widgets/DrawSketchHandlerLine.h"
-#include "Gizmo/Widgets/DrawSketchHandlerCircle.h"
-#include "Gizmo/Widgets/DrawSketchHandlerRotate.h"
-#include "Gizmo/Widgets/DrawSketchHandlerArc.h"
-#include "Gizmo/Widgets/DrawSketchHandlerBSpline.h"
-#include "Gizmo/Widgets/DrawSketchHandlerRectangle.h"
-#include "Gizmo/Widgets/DrawSketchHandlerTrimming.h"
-#include "Gizmo/Widgets/DrawSketchHandlerSymmetry.h"
-#include "Gizmo/Widgets/DrawSketchHandlerFillet.h"
-#include "Gizmo/Widgets/PrimitiveBox.h"
-#include "Gizmo/Widgets/PrimitiveSphere.h"
-#include "Gizmo/Widgets/PrimitiveCylinder.h"
-#include "Gizmo/Widgets/PrimitiveCone.h"
+#include "Interactive/Widgets/RotateCenter.h"
+#include "Interactive/Widgets/Measurement.h"
+#include "Interactive/Widgets/ClipPlane.h"
+#include "Interactive/Widgets/SketchPlane.h"
+#include "Interactive/Widgets/SplitScreen.h"
+#include "Interactive/Widgets/DrawSketchHandlerPoint.h"
+#include "Interactive/Widgets/DrawSketchHandlerLine.h"
+#include "Interactive/Widgets/DrawSketchHandlerCircle.h"
+#include "Interactive/Widgets/DrawSketchHandlerRotate.h"
+#include "Interactive/Widgets/DrawSketchHandlerArc.h"
+#include "Interactive/Widgets/DrawSketchHandlerBSpline.h"
+#include "Interactive/Widgets/DrawSketchHandlerRectangle.h"
+#include "Interactive/Widgets/DrawSketchHandlerTrimming.h"
+#include "Interactive/Widgets/DrawSketchHandlerSymmetry.h"
+#include "Interactive/Widgets/DrawSketchHandlerFillet.h"
+#include "Interactive/Widgets/PrimitiveBox.h"
+#include "Interactive/Widgets/PrimitiveSphere.h"
+#include "Interactive/Widgets/PrimitiveCylinder.h"
+#include "Interactive/Widgets/PrimitiveCone.h"
 #include "Qtimgui/imgui/imgui.h"
 
 struct GizmoRenderSettings
@@ -80,7 +80,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			}
 			return false;
 		}
-		MOON::GizmoWidget* getGizmoWidget(const std::string& name) {
+		MOON::EventWidget* getGizmoWidget(const std::string& name) {
 			if (mWidgets.find(name) != mWidgets.end()) {
 				return mWidgets[name];
 			}
@@ -91,7 +91,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 		Editor::Rendering::GizmoRenderPass* mSelf = nullptr;
 		MOON::RotateCenter* mRotateCenterWidget = nullptr;
 		MOON::Measurement* mMeasurementWidget = nullptr;
-		std::unordered_map<std::string, MOON::GizmoWidget*>mWidgets;
+		std::unordered_map<std::string, MOON::EventWidget*>mWidgets;
 };
 Editor::Rendering::GizmoRenderPass::GizmoRenderPass(::Rendering::Core::CompositeRenderer& p_renderer)
 	: ::Rendering::Core::ARenderPass(p_renderer),mInternal(new Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal(this))
@@ -119,12 +119,12 @@ bool Editor::Rendering::GizmoRenderPass::isEnableGizmoWidget(const std::string& 
 	return mInternal->isEnableGizmoWidget(name);
 }
 
-MOON::GizmoWidget* Editor::Rendering::GizmoRenderPass::getGizmoWidget(const std::string& name)
+MOON::EventWidget* Editor::Rendering::GizmoRenderPass::getGizmoWidget(const std::string& name)
 {
 	return mInternal->getGizmoWidget(name);
 }
 
-std::unordered_map<std::string, MOON::GizmoWidget*>& Editor::Rendering::GizmoRenderPass::getGizmoWidgets()
+std::unordered_map<std::string, MOON::EventWidget*>& Editor::Rendering::GizmoRenderPass::getGizmoWidgets()
 {
 	return mInternal->mWidgets;
 }
@@ -134,7 +134,7 @@ std::unordered_map<std::string, MOON::GizmoWidget*>& Editor::Rendering::GizmoRen
 void Editor::Rendering::GizmoRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
 	auto& view = GetService(Editor::Panels::SceneView);;
-	auto& renderer = MOON::Gizmo::instance();
+	auto& renderer = MOON::ImRenderer::instance();
 	//renderer.newFrame(&view);
 	if (gizmoRenderSetting.drawBvh) {
 		auto sceneBvh = view.GetScene()->GetBvh();

@@ -11,7 +11,7 @@
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "core/component/CTopoShape.h"
 #include "Core/ResourceManagement/ModelManager.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Im3DRenderer.h"
 #include <TopoDS_Shape.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Face.hxx>

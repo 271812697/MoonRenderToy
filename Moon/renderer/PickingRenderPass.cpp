@@ -6,7 +6,7 @@
 #include "DebugModelRenderFeature.h"
 #include "DebugSceneRenderer.h"
 #include "PickingRenderPass.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Im3DRenderer.h"
 #include "Qtimgui/imgui/imgui.h"
 #include <Rendering/HAL/Profiling.h>
 
@@ -42,8 +42,8 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 	m_lightMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Billboard"));
 	m_lightMaterial.SetDepthTest(false);
 
-	/* Gizmo Pickable Material */
-	m_gizmoPickingMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Gizmo"));
+	/* ImRenderer Pickable Material */
+	m_gizmoPickingMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("ImRenderer"));
 	m_gizmoPickingMaterial.SetGPUInstances(3);
 	m_gizmoPickingMaterial.SetProperty("u_IsBall", false);
 	m_gizmoPickingMaterial.SetProperty("u_IsPickable", true);
@@ -66,7 +66,7 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 )
 {
 	uint8_t pixel[4];
-	auto& gizmoInstance = MOON::Gizmo::instance();
+	auto& gizmoInstance = MOON::ImRenderer::instance();
 	bool resetPloygon = false;
 	m_actorPickingFramebuffer.ReadPixels(
 		p_x, p_y, 1, 1,
@@ -138,7 +138,7 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	//DrawPickableCameras(pso, scene);
 	//DrawPickableReflectionProbes(pso, scene);
 	//DrawPickableLights(pso, scene);
-	auto& gizmoInstance = MOON::Gizmo::instance();
+	auto& gizmoInstance = MOON::ImRenderer::instance();
 	gizmoInstance.drawMeshPick();
 	// Clear depth, gizmos are rendered on top of everything else
 	//m_renderer.Clear(false, true, false);

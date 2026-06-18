@@ -19,14 +19,14 @@ Editor::Rendering::GizmoRenderFeature::GizmoRenderFeature(
 ) :
 	::Rendering::Features::ARenderFeature(p_renderer, p_executionPolicy)
 {
-	/* Gizmo Arrow Material */
-	m_gizmoArrowMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Gizmo"));
+	/* ImRenderer Arrow Material */
+	m_gizmoArrowMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("ImRenderer"));
 	m_gizmoArrowMaterial.SetGPUInstances(3);
 	m_gizmoArrowMaterial.SetProperty("u_IsBall", false);
 	m_gizmoArrowMaterial.SetProperty("u_IsPickable", false);
 
-	/* Gizmo Ball Material */
-	m_gizmoBallMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Gizmo"));
+	/* ImRenderer Ball Material */
+	m_gizmoBallMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("ImRenderer"));
 	m_gizmoBallMaterial.SetProperty("u_IsBall", true);
 	m_gizmoBallMaterial.SetProperty("u_IsPickable", false);
 }

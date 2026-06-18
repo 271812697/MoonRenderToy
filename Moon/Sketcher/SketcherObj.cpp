@@ -1,8 +1,8 @@
 ﻿#include "Sketcher/SketcherObj.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
-#include "Gizmo/Gizmo.h"
-#include "Gizmo/Widgets/DrawSketchHandler.h"
+#include "Interactive/Im3DRenderer.h"
+#include "Interactive/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "base/Tools.h"
@@ -44,7 +44,7 @@ namespace MOON {
         // calculated with seekTrimPoints
         return ((point1 - point2).Length() < 500 * Precision::Confusion());
     }
-	SketcherObj::SketcherObj() :GizmoWidget("SketcherObj")
+	SketcherObj::SketcherObj() :EventWidget("SketcherObj")
     {
         setActive(true);
     }

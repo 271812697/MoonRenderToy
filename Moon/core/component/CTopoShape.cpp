@@ -9,7 +9,7 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Im3DRenderer.h"
 
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
@@ -76,7 +76,7 @@ namespace Core::ECS::Components
 	void CTopoShape::OnUpdate(float p_deltaTime)
 	{
         if (mInternal->hoverLine) {
-            auto& instance=MOON::Gizmo::instance();
+            auto& instance=MOON::ImRenderer::instance();
             instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {

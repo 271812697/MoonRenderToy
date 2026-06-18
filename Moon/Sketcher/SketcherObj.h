@@ -1,14 +1,14 @@
 ﻿#pragma once
 #include<memory>
 #include <unordered_map>
-#include "Gizmo/GizmoWidget.h"
+#include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
 namespace Part {
 	class  Geometry;
 }
 namespace MOON {
-	class SketcherObj :public GizmoWidget
+	class SketcherObj :public EventWidget
 	{
 	public:
 		SketcherObj();

@@ -9,7 +9,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/SceneView.h"
 #include "core/log.h"
-#include "Gizmo/Widgets/PadTaskWidget.h"
+#include "Interactive/Widgets/PadTaskWidget.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <QLabel>
 #include <QLineEdit>

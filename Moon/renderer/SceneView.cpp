@@ -7,7 +7,7 @@
 #include "SceneView.h"
 #include "Settings/DebugSetting.h"
 #include "renderer/GizmoRenderPass.h"
-#include "Gizmo/Widgets/ClipPlane.h"
+#include "Interactive/Widgets/ClipPlane.h"
 #include "core/component/CTopoShape.h"
 #include <iostream>
 #include <QMouseEvent>
@@ -227,7 +227,7 @@ void Editor::Panels::SceneView::ReceiveEvent(QEvent* e)
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
 		if(e2->button()== Qt::RightButton)
 		{ 
-			MOON::GizmoWidget* gizmoWidget=GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").getGizmoWidget("ClipPlane");
+			MOON::EventWidget* gizmoWidget=GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").getGizmoWidget("ClipPlane");
 			
 			bool clipFlag = gizmoWidget->isActived();
 			if (clipFlag) {

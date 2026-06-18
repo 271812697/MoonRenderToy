@@ -72,7 +72,7 @@ namespace MOON {
 		virtual void execute()override {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
-			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("Measure",value);
+			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").enableGizmoWidget("Measure",value);
 		}
 	};
 	class  ClipCommand : public Command
@@ -93,7 +93,7 @@ namespace MOON {
 		virtual void execute()override {
 			bool value = action()->isChecked();
 			auto& view = GetService(Editor::Panels::SceneView);
-			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").enableGizmoWidget("ClipPlane", value);
+			view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").enableGizmoWidget("ClipPlane", value);
 			auto& feature = view.GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
 			feature.EnableClip(value);
 		}

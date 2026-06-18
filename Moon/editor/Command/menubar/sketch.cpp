@@ -79,7 +79,7 @@ namespace MOON {
 			if(enableSelectXYZPlane)
 			{
 				auto& view = GetService(Editor::Panels::SceneView);
-				auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo");
+				auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
 				gizmoPass.enableGizmoWidget("GizmoSketchPlane", true);
 			}
 		}
