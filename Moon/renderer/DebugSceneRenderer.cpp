@@ -684,7 +684,7 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddPass<PointRenderPass>("PointDraw", ::Rendering::Settings::ERenderPassOrder::Opaque).SetEnabled(false);	
 	AddPass<GridRenderPass>("Grid", ::Rendering::Settings::ERenderPassOrder::Opaque);
 	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::PathTrace).SetEnabled(false);
-	AddPass<GizmoRenderPass>("Gizmo", ::Rendering::Settings::ERenderPassOrder::Last);
+	AddPass<GizmoRenderPass>("ImRenderer", ::Rendering::Settings::ERenderPassOrder::Last);
 	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Last);
     //AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last).SetEnabled(false);
 

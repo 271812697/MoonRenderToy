@@ -10,8 +10,9 @@
 #include "editor/parsescene.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "editor/UI/SettingPanel/PassSettingWidget.h"
-#include "Gizmo/Gizmo.h"
-#include "Gizmo/Interactive/RenderWindowInteractor.h"
+
+#include "Interactive/Im3DRenderer.h"
+#include "Interactive/Interactive/RenderWindowInteractor.h"
 #include "core/log.h"
 #include "Core/Rendering/GbufferPass.h"
 #include "Qtimgui/imgui/imgui.h"
@@ -46,7 +47,7 @@ namespace MOON {
 			GetService(RenderPassSettingWidget).Refresh();
 			parser->ParsePathTraceScene(mScenePath.toStdString());
 			emit mSelf->sceneChange();
-			Gizmo::instance().init();
+			ImRenderer::instance().init();
 
 		}
 		~ViewerWindowInternal() {
@@ -68,9 +69,9 @@ namespace MOON {
 		}
 
 		void paintGL() {
-			Gizmo::instance().newImgui();
-			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("Gizmo").IsEnabled()) {
-				Gizmo::instance().newFrame(mSceneView);
+			ImRenderer::instance().newImgui();
+			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").IsEnabled()) {
+				ImRenderer::instance().newFrame(mSceneView);
 			}
 			mSceneView->Update(0.01);
 			if (mSwitchScene) {
@@ -89,7 +90,7 @@ namespace MOON {
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			debugImgui();
-			Gizmo::instance().endImgui();
+			ImRenderer::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
 		}
 		bool event(QEvent* evt)

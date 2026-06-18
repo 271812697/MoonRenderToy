@@ -1,8 +1,8 @@
 ﻿#include "Sketcher/SketcherObj.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
-#include "Gizmo/Gizmo.h"
-#include "Gizmo/Widgets/DrawSketchHandler.h"
+#include "Interactive/Im3DRenderer.h"
+#include "Interactive/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "base/Tools.h"
@@ -19,7 +19,6 @@ namespace MOON {
         Base::Vector3d se = e - s;
         Base::Vector3d sp = p - s;
         double t = sp.Dot(se) / se.Dot(se);
-
         if (t < 0.0) {
             u = 0.0;
             return sp.Length();
@@ -29,7 +28,6 @@ namespace MOON {
             u = 1.0;
             return (p - e).Length();
         }
-
         u = t;
         Base::Vector3d proj = s + t * se;
         return (p - proj).Length();
@@ -46,7 +44,7 @@ namespace MOON {
         // calculated with seekTrimPoints
         return ((point1 - point2).Length() < 500 * Precision::Confusion());
     }
-	SketcherObj::SketcherObj() :GizmoWidget("SketcherObj")
+	SketcherObj::SketcherObj() :EventWidget("SketcherObj")
     {
         setActive(true);
     }
@@ -174,7 +172,6 @@ namespace MOON {
             renderer->pushColor({255,0,255,0});
             renderer->drawLine(mPlane.valueEigen(0, 100), mPlane.valueEigen(0, -100));
             renderer->popColor();
-            //renderer->drawCircle2D(m_internal->centerPoint,m_internal->radius);
             renderer->popSize();
             renderer->pushColor({ 255,255,255,0 });
             renderer->drawPoint(mPlane.valueEigen(0,0));
@@ -185,7 +182,6 @@ namespace MOON {
         Eigen::Vector4<uint8_t> preselectColor(255, 0, 255, 255);
         Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
         float pointSize = 12;
-        
         for (auto& it: mGeoSegment) {
             auto& sePoints = it.second.sepoints;
             for (int i = 0;i < sePoints.size();i++) {
@@ -229,6 +225,7 @@ namespace MOON {
         isInEdit = false;
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
+        doneFaceShape = toShape();
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
@@ -269,22 +266,18 @@ namespace MOON {
         int ret = -1;
         double deltaTole = 15.0;
         double minDist = 10000.0;
-
         // 遍历所有几何图元
         for (int i = 0; i < mGeoList.size(); i++) {
             Part::Geometry* geo = mGeoList[i].get();
             if (geo->isDerivedFrom<Part::GeomCurve>()) {
                 auto& segment = mGeoSegment[geo];
                 int segCount = segment.point.size();
-
                 if (segCount < 2)
                     continue;
-
                 // 遍历每一段线段 [k] → [k+1]
                 for (int k = 0; k < segCount - 1; k++) {
                     Base::Vector3d s = segment.point[k];
                     Base::Vector3d e = segment.point[k + 1];
-
                     // ✅ 使用 Lambda 计算真正的点到线段距离
                     double u;
                     double dist = pointToSegmentDist(p1, trans*s, trans*e,u);
@@ -362,19 +355,18 @@ namespace MOON {
     }
     bool SketcherObj::snapPoint(Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
     {
-
         Base::Matrix4D trans= viewPortMat*getplaneTransform();
-        Base::Vector3d p1 = trans*Base::Vector3d{pos.x,pos.y,0.0};
-        double deltaTole = 15.0;
+        //get the screen pos
+        Base::Vector3d screenpPos = trans*Base::Vector3d{pos.x,pos.y,0.0};
+        double deltaTole = 10.0;
         double minDist = 10000.0;
-   
         bool ret = false;
         // 遍历所有几何图元
         for (int i = 0; i < mGeoList.size(); i++) {
             Part::Geometry* geo = mGeoList[i].get();  
             auto& segment = mGeoSegment[geo];
             for (int j = 0;j < segment.sepoints.size();j++) {
-				double dist = (p1 -trans*segment.sepoints[j]).Length();
+				double dist = (screenpPos -trans*segment.sepoints[j]).Length();
 				if (dist < deltaTole && dist < minDist) {
 					minDist = dist;
 					ret = true;
@@ -383,7 +375,24 @@ namespace MOON {
             }
         }
         if (!ret) {
-      
+            //snap to orgin or XAxis or YAxis
+            Base::Vector3d screenOrigin = trans * Base::Vector3d(0, 0, 0);
+            double dist = (screenpPos - screenOrigin).Length();
+            if (dist < deltaTole) {
+                pos = { 0.0, 0.0 };
+                return true;
+            }
+            double deltaX = abs(screenpPos.x - screenOrigin.x);
+            double deltaY = abs(screenpPos.y - screenOrigin.y);
+            if (deltaX < deltaTole && deltaX < deltaY) {
+                pos.x = 0.0;
+                return true;
+            }
+            if (deltaY < deltaTole && deltaY < deltaX) {
+                pos.y = 0.0;
+                return true;
+            }
+            //snap to curve
             for (int i = 0; i < mGeoList.size(); i++) {
                 Part::Geometry* geo = mGeoList[i].get();
                 auto& segment = mGeoSegment[geo];
@@ -391,11 +400,10 @@ namespace MOON {
                     for (int j = 0;j < segment.point.size()-1;j++) {
                         double u = 0.0;
                         double dist = pointToSegmentDist(
-                            p1,
+                            screenpPos,
                             trans * segment.point[j],
                             trans * segment.point[j+1],
                             u);
-                        
                         if (dist < deltaTole && dist < minDist) {
                             minDist = dist;
                             ret = true;
@@ -1001,12 +1009,10 @@ namespace MOON {
                 CORE_ERROR("Unsupported Geometry!! Just copying it.\n");
                 isStartEndInverted.insert(std::make_pair(geoId, false));
             }
-
             symmetricVals.push_back(geosym);
             geoIdMap.insert(std::make_pair(geoId, cgeoid));
             cgeoid++;
         }
-
         return symmetricVals;
     }
     Part::TopoShape SketcherObj::toShape() const
@@ -1027,9 +1033,7 @@ namespace MOON {
             // add and erase first edge
             mkWire.Add(edge_list.front());
             edge_list.pop_front();
-
             TopoDS_Wire new_wire = mkWire.Wire();  // current new wire
-
             // try to connect each edge to the wire, the wire is complete if no more edges are
             // connectible
             bool found = false;
@@ -1070,7 +1074,6 @@ namespace MOON {
             result.setShape(comp);
         }
         result.setTransform(planeTransform);
-        //return result.makeFace();
         return result;
     }
     void SketcherObj::setBasedTopoShape(Part::TopoShape topoShape)

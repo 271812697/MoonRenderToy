@@ -172,6 +172,7 @@ Core::ECS::Actor& Core::SceneSystem::Scene::CreateActor(const std::string& p_nam
 void Core::SceneSystem::Scene::RemoveActor(ECS::Actor* p_target)
 {
 	if (p_target) {
+		m_actorIdMap.erase(p_target->GetID());
 		auto found = std::find_if(m_actors.begin(), m_actors.end(), [&p_target](Core::ECS::Actor* element)
 			{
 				return element == p_target;
@@ -188,7 +189,6 @@ void Core::SceneSystem::Scene::RemoveActor(ECS::Actor* p_target)
 			}
 			childs.clear();
 		}
-		m_actorIdMap.erase(p_target->GetID());
 	}
 }
 void Core::SceneSystem::Scene::AddActor(ECS::Actor* p_target)
@@ -220,10 +220,10 @@ bool Core::SceneSystem::Scene::DestroyActor(ECS::Actor& p_target)
 	});
 
 	if (found != m_actors.end())
-	{
+	{		
+		m_actorIdMap.erase(p_target.GetID());
 		delete *found;
 		m_actors.erase(found);
-		m_actorIdMap.erase(p_target.GetID());
 		return true;
 	}
 	else

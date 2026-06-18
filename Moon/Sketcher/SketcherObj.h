@@ -1,14 +1,14 @@
 ﻿#pragma once
 #include<memory>
 #include <unordered_map>
-#include "Gizmo/GizmoWidget.h"
+#include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
 namespace Part {
 	class  Geometry;
 }
 namespace MOON {
-	class SketcherObj :public GizmoWidget
+	class SketcherObj :public EventWidget
 	{
 	public:
 		SketcherObj();
@@ -65,9 +65,13 @@ namespace MOON {
 		Part::TopoShape getBasedTopoShape() {
 			return basedTopoShape;
 		}
+		Part::TopoShape getDoneFaceShape() {
+			return doneFaceShape;
+		}
 		Base::Matrix4D getplaneTransform();
 	private:
-		Part::TopoShape basedTopoShape ;
+		Part::TopoShape basedTopoShape;
+		Part::TopoShape doneFaceShape;
 		struct CurveSegement;
 		void updateGeoSegment(int id);
 		void pickGeo();

@@ -15,8 +15,8 @@
 #include <Rendering/Settings/EPixelDataFormat.h>
 #include <Rendering/Settings/ETextureType.h>
 #include "Settings/DebugSetting.h"
-#include "Gizmo/Widgets/SplitScreen.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Widgets/SplitScreen.h"
+#include "Interactive/Im3DRenderer.h"
 #include "OpenImageDenoise/oidn.hpp"
 #include <stb_Image/stb_image.h>
 #include <fstream>
@@ -1097,7 +1097,7 @@ void main()
 		auto& mssaaframebuffer = m_renderer.GetFrameDescriptor().outputMsaaBuffer.value();
 		mssaaframebuffer.Bind();
 		Maths::FVector3 equ = {0,1,-200};
-		auto splitScreenWidget=MOON::Gizmo::instance().getGizmoWidgetAS<MOON::SplitScreen>("SplitScreen");
+		auto splitScreenWidget=MOON::ImRenderer::instance().getGizmoWidgetAS<MOON::SplitScreen>("SplitScreen");
 		if (splitScreenWidget) {
 			splitScreenWidget->getLineEquation(&equ.x);
 			lineOutputMat.SetProperty("uLineEquation",equ);

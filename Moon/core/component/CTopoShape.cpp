@@ -9,7 +9,7 @@
 #include "Core/ECS/Components/CBatchMeshTriangle.h"
 #include "Core/ECS/Components/CBatchMeshLine.h"
 #include "Core/ResourceManagement/ModelManager.h"
-#include "Gizmo/Gizmo.h"
+#include "Interactive/Im3DRenderer.h"
 
 #include "renderer/SceneView.h"
 namespace Core::ECS::Components
@@ -76,10 +76,11 @@ namespace Core::ECS::Components
 	void CTopoShape::OnUpdate(float p_deltaTime)
 	{
         if (mInternal->hoverLine) {
-            auto& instance=MOON::Gizmo::instance();
+            auto& instance=MOON::ImRenderer::instance();
             instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
+           
             auto& view = GetService(::Editor::Panels::SceneView);
             auto& renderer = view.GetRenderer();
             auto scene = view.GetScene();
@@ -164,6 +165,7 @@ namespace Core::ECS::Components
 
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
+                model->ClearMeshes();
                 model->AddMesh(faceMesh);
 
                 for (auto* acptr : domainActors) {
@@ -248,6 +250,7 @@ namespace Core::ECS::Components
                
                 auto lineModel = edgeChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
+                lineModel->ClearMeshes();
                 lineModel->AddMesh(lineMesh);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);

@@ -12,10 +12,6 @@ namespace MOON {
 	ExportFileCommand::ExportFileCommand(QObject* parentObject)
 		: Command(parentObject)
 	{
-		
-
-		
-		
 		auto openfile=new QAction(this);
 		setAction(openfile);
 		openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
@@ -29,39 +25,14 @@ namespace MOON {
 
 	void ExportFileCommand::execute()
 	{
-		/*
-		QWidget* mainwidget = nullptr;
-		Q_FOREACH(QWidget * widget, QApplication::topLevelWidgets())
-		{
-			if (widget->isWindow() && widget->isVisible() && qobject_cast<QMainWindow*>(widget))
-			{
-				mainwidget = widget;
-				break;
-			}
-		}
-		QString filtersString = "";
-		std::cout << "Open file" << std::endl;
-		pqFileDialog fileDialog(
-			mainwidget, tr("Open File:"), QString(), filtersString, false);
-		fileDialog.setObjectName("FileOpenDialog");
-		fileDialog.setFileMode(pqFileDialog::ExistingFilesAndDirectories);
-		if (fileDialog.exec() == QDialog::Accepted) {
-
-		}
-
-		*/
 		QString selectedFilter;
 		QString fileName = QFileDialog::getSaveFileName(nullptr,
 			tr("Export File"),
 			QDir::homePath(),
 			tr("STL File (*.stl);;STEP File (*.step)"), // 格式分开写
 			&selectedFilter);
-
 		if (fileName.isEmpty())
 			return;
-
-		
-
 		auto& viewer = GetService(Editor::Panels::SceneView);
 		if (!viewer.IsSelectActor())
 			return;
@@ -86,7 +57,6 @@ namespace MOON {
 
 		// 重新获取后缀
 		ext = QFileInfo(fileName).suffix().toLower();
-
 		// ======================
 		// 根据后缀导出不同格式
 		// ======================
@@ -96,13 +66,8 @@ namespace MOON {
 		else if (ext == "step" || ext == "stp") {
 			topoShape.exportStep(fileName.toStdString().c_str()); // 你必须有这个接口
 		}
-
 		CORE_INFO("Exported file {0}", fileName.toStdString());
-
-		
 	}
-
-
 }
 
 
