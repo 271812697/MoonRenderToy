@@ -37,7 +37,7 @@ namespace MOON {
 				center,
 				Eigen::Matrix3f::Identity(),
 				Eigen::Vector3f{ 0.1f,0.1f,0.1f },
-				"Axis");
+				"CoordAxis");
 		}
 		if (drawRect&&false) {
 			static ImU32 c1 = ImGui::ColorConvertFloat4ToU32({ 1, 1, 0, 0.3 });

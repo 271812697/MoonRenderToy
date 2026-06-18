@@ -13,23 +13,31 @@ namespace MOON
 		Maths::FVector4 getClipPlane();
 		virtual void onLeftMousePressed()override;
 		virtual void onLeftMouseReleased()override;
-		virtual void onMouseMove()override;
-	private:
-		enum IntersectiveState
-		{
-			Stop,
-			Hot,
-			AxisT
-		};
+		virtual void onMouseMove()override;	
 		enum PickMeshId
 		{
 			XAxis,
 			YAxis,
 			ZAxis,
+			XNormalPlane,
+			YNormalPlane,
+			ZNormalPlane,
+			XNormalRotate,
+			YNormalRotate,
+			ZNormalRotate,
 			None
+		};	
+		enum IntersectiveState
+		{
+			Stop,
+			Hot,
+			AxisT,
+			PlaneT,
+			AxisR
 		};
+	private:
 		IntersectiveState mState;
-		PickMeshId mPickMesh;
+		int mPickMesh=None;
 		class ClipPlaneInternal;
 		ClipPlaneInternal* m_internal = nullptr;
 	};

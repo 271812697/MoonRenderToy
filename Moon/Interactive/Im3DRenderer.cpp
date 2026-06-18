@@ -124,16 +124,16 @@ namespace MOON
 	}
 	void ImRenderer::preStoreMesh()
 	{
-		mPreStorePolygon["Axis"] = &ViewAxis();
-		mPreStorePolygon["GizmoAxis"] = &GizmoAxis();
+		mPreStorePolygon["CoordAxis"] = &CoordAxis();
+		mPreStorePolygon["TransformAxis"] = &TransformAxis();
 		mPreStorePolygon["NavigateCube"] = &NavigateCube();
 		mPreStorePolygon["GizmoSketchPlane"] = &GizmoSketchPlane();
-		mPreStorePolygon["Axis"]->id=0;
-		mPreStorePolygon["GizmoAxis"]->id = 1;;
+		mPreStorePolygon["CoordAxis"]->id=0;
+		mPreStorePolygon["TransformAxis"]->id = 1;;
 		mPreStorePolygon["NavigateCube"]->id = 2;
 		mPreStorePolygon["GizmoSketchPlane"]->id = 3;;
-		mPreStorePolygonId[0] = "Axis";
-		mPreStorePolygonId[1] = "GizmoAxis";
+		mPreStorePolygonId[0] = "CoordAxis";
+		mPreStorePolygonId[1] = "TransformAxis";
 		mPreStorePolygonId[2] = "ViewCube";
 		mPreStorePolygonId[3] = "GizmoSketchPlane";
 	}
@@ -1020,10 +1020,6 @@ namespace MOON
 	{
 		return drawManpulate(makeId(_id), model);
 	}
-	void ImRenderer::drawViewCube()
-	{
-	}
-
 	void ImRenderer::drawRayHitScreenPoint()
 	{
 		// Draw Ray hit point
@@ -3915,20 +3911,6 @@ namespace MOON
 
 	void ImRenderer::test()
 	{
-		drawViewCube();
-		//colorStack.push_back(Color_Gold);
-		//drawPoint({ 0,0,0 }, 40);
-		//colorStack.push_back(Color_Red);
-		//drawPoint({ 1,1,1 }, 40);
-		//colorStack.pop_back();
-		//colorStack.pop_back();
-		//drawAlignedBox({ -1,-1,-1 }, { 1,1,1 });
-		//drawSphere({ 2,2,2 }, 2);
-		//static Eigen::Vector3f t = { 0,0,0 };
-		//static Eigen::Matrix3f rotation = Eigen::Matrix3f::Identity();
-		//static Eigen::Vector3f scale = { 1,1,1 };
-
-		//boxEdit(makeId("box edit"), t, rotation, scale);
 	}
 
 	void ImRenderer::drawUnsort()
@@ -4141,7 +4123,7 @@ namespace MOON
 			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
-			auto& viewAxis = ViewAxis();
+			auto& viewAxis = CoordAxis();
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewAxis.model));
 			mCellMaterial->SetProperty("edgeTexture", viewAxis.edgeTexture);
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);

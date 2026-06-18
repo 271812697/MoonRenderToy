@@ -327,7 +327,7 @@ namespace MOON {
 		}
 		return viewCube;
 	}
-	PolyonMesh& ViewAxis()
+	PolyonMesh& CoordAxis()
 	{
 		static PolyonMesh viewAxis;
 		if (viewAxis.cellArray.size() == 0) {
@@ -357,7 +357,7 @@ namespace MOON {
 		}
 		return viewAxis;
 	}
-	PolyonMesh& GizmoAxis()
+	PolyonMesh& TransformAxis()
 	{
 		static PolyonMesh poly;
 		if (poly.cellArray.size() == 0) {
@@ -371,7 +371,7 @@ namespace MOON {
 			auto sphere = GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/Sphere.fbx");
 			auto cil= GetService(Core::ResourceManagement::ModelManager).LoadResource(":Models/res.obj");
 			poly.addModel(cil, Maths::FMatrix4::Identity, { 255,255,255,255 });
-			poly.switchNextBlock({ 1,1,0,1 },"XAxis");
+			poly.switchNextBlock({ 1,0,0,1 },"XAxis");
 			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisX(90), {255,255,255,255});
 			poly.switchNextBlock({ 0,0,1,1 },"YAxis");
 			poly.addModel(cil, Maths::FMatrix4::Identity.RotateOnAxisZ(90.0f).RotateOnAxisY(90), {255,255,255,255});

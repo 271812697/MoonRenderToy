@@ -51,7 +51,6 @@ namespace MOON
 		void resetSelectPolygon();
 		void begin(PrimitiveMode _mode);
 		void end();
-
 		void vertex(const Eigen::Vector3f& p, const Eigen::Vector4f& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex);
 		void vertex(const Eigen::Vector3f& p, const Eigen::Vector4<uint8_t>& c, const Eigen::Vector3f& n, const Eigen::Vector2f& tex);
 		void vertex(const Eigen::Vector3f& _position, float _size, const Eigen::Vector4<uint8_t>& _color);
@@ -123,7 +122,6 @@ namespace MOON
 		bool drawManpulate(unsigned _id, Eigen::Matrix4f& model);
 		bool drawManpulate(const char* _id, Eigen::Matrix4f& model);
 
-		void drawViewCube();
 		void drawRayHitScreenPoint();
 		bool lineEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color);
 		bool scaleEdit(unsigned int id, std::vector<Eigen::Vector3f>& line, Eigen::Vector4<uint8_t> _color, int& index);
@@ -169,10 +167,7 @@ namespace MOON
 		bool drawTranslate2D(unsigned int id, Eigen::Vector2f& pos);
 		bool drawLineSplit(unsigned int id, Eigen::Vector2f& a, Eigen::Vector2f& b);
 		Eigen::Vector2f worldToScreen(const Eigen::Vector3f& pos);
-
-
 		FrameParam& getFrameParam();
-		
 		void test();
 		void drawUnsort();
 		void drawSort();

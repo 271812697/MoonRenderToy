@@ -20,6 +20,7 @@
 #include <TopoDS.hxx>
 #include <TopExp_Explorer.hxx>
 #include <BRepLib_FindSurface.hxx>
+#include "Qtimgui/imgui/imgui.h"
 namespace MOON {
 	// 1. 从Wire列表构建截面面（无Compound，无编译错误）
 	TopoDS_Face BuildSectionFace(const std::list<TopoDS_Wire>& wireList)
@@ -117,6 +118,200 @@ namespace MOON {
 
 		return vertices;
 	}
+	struct PickMeshInfo {
+		std::string blockName;
+		ClipPlane::PickMeshId meshId;
+		Maths::FVector4 blockColor;
+	};
+	static PickMeshInfo table[9] = {
+		{"YArrow",ClipPlane::PickMeshId::YAxis,{ 0,1,0,1 }},
+		{"XArrow",ClipPlane::PickMeshId::XAxis,{ 1,0,0,1 }},
+		{"ZArrow",ClipPlane::PickMeshId::ZAxis,{ 0,0,1,1 }},
+		{"XPlane",ClipPlane::PickMeshId::XNormalPlane,{ 1,0,0,1 }},
+		{"YPlane",ClipPlane::PickMeshId::YNormalPlane,{ 0,1,0,1 }},
+		{"ZPlane",ClipPlane::PickMeshId::ZNormalPlane,{ 0,0,1,1 }},
+		{"XAxis",ClipPlane::PickMeshId::XNormalRotate ,{ 1,0,0,1 }},
+		{"YAxis",ClipPlane::PickMeshId::YNormalRotate,{ 0,1,0,1 }},
+		{"ZAxis",ClipPlane::PickMeshId::ZNormalRotate,{ 1,0,1,1 }}
+	};
+	static int meshInfoCnt = 9;
+	Maths::FVector4 hotColor = { 0.1,1.0,1.0,1 };
+	Maths::FVector4 activeColor = { 1,1,0,1 };
+	class GizmoAxisRotate {
+	public:
+		GizmoAxisRotate() = default;
+		GizmoAxisRotate(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center)
+			: axis(Axis), origin(center) {
+		}
+
+		// 鼠标按下初始化，同时传入当前原始方向、原始位置
+		void startPick(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center,
+			const Eigen::Vector3f& srcDir, const Eigen::Vector3f& srcPos)
+		{
+			axis = Axis.normalized();
+			origin = center;
+			mRefDir = srcDir;
+			mRefPos = srcPos;
+			mCurAngle = 0.f;
+			firstPick = true;
+		}
+
+		// 版本1：旋转方向向量
+		void applyDir(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outDir)
+		{
+			const Eigen::Vector3f n = axis;
+			const Eigen::Vector3f planePt = origin;
+
+			float denom = ray.dot(n);
+			if (std::abs(denom) <= 0.001f)
+				return;
+			float t = (planePt - eye).dot(n) / denom;
+			if (t <= 0.001f)
+				return;
+			Eigen::Vector3f hit = eye + ray * t;
+			Eigen::Vector3f hitRel = hit - planePt;
+
+			Eigen::Vector3f currProj = hitRel - n * (hitRel.dot(n));
+			float projLen = currProj.norm();
+			if (projLen < 1e-6f)
+				return;
+			currProj /= projLen;
+
+			if (firstPick)
+			{
+				mMouseStart = currProj;
+				firstPick = false;
+				outDir = mRefDir;
+				mCurAngle = 0.f;
+				mRefPos=hit;
+				return;
+			}
+
+			float dot = mMouseStart.dot(currProj);
+			float crossSign = n.dot(mMouseStart.cross(currProj));
+			float angle = std::atan2(crossSign, dot);
+			Eigen::AngleAxisf rot(angle, n);
+			mCurAngle = angle;
+
+			outDir = rot * mRefDir;
+		}
+
+		// 版本2：旋转物体位置（绕origin中心点旋转）
+		void applyPos(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outPos)
+		{
+			const Eigen::Vector3f n = axis;
+			const Eigen::Vector3f planePt = origin;
+
+			float denom = ray.dot(n);
+			if (std::abs(denom) <= 0.001f)
+				return;
+			float t = (planePt - eye).dot(n) / denom;
+			if (t <= 0.001f)
+				return;
+			Eigen::Vector3f hit = eye + ray * t;
+			Eigen::Vector3f hitRel = hit - planePt;
+
+			Eigen::Vector3f currProj = hitRel - n * (hitRel.dot(n));
+			float projLen = currProj.norm();
+			if (projLen < 1e-6f)
+				return;
+			currProj /= projLen;
+
+			if (firstPick)
+			{
+				mMouseStart = currProj;
+				mCurAngle = 0.f;
+				firstPick = false;
+				outPos = mRefPos;
+				return;
+			}
+
+			float dot = mMouseStart.dot(currProj);
+			float crossSign = n.dot(mMouseStart.cross(currProj));
+			mCurAngle = std::atan2(crossSign, dot);
+			Eigen::AngleAxisf rot(mCurAngle, n);
+
+			// 绕中心点origin旋转原始位置
+			Eigen::Vector3f offset = mRefPos - origin;
+			outPos = origin + rot * offset;
+		}
+
+		// 获取从初始位置旋转到当前位置的圆弧采样点，用于绘制轨迹
+		std::vector<Eigen::Vector3f> getRotationArc(int segCount = 32) const
+		{
+			std::vector<Eigen::Vector3f> arcPoints;
+			if (segCount < 2 || std::fabs(mCurAngle) < 1e-6f)
+				return arcPoints;
+
+			const Eigen::Vector3f rotAxis = axis;
+			const Eigen::Vector3f baseOffset = mRefPos - origin;
+			float stepAngle = mCurAngle / static_cast<float>(segCount);
+
+			for (int i = 0; i <= segCount; ++i)
+			{
+				float ang = stepAngle * static_cast<float>(i);
+				Eigen::AngleAxisf rotStep(ang, rotAxis);
+				Eigen::Vector3f point = origin + rotStep * baseOffset;
+				arcPoints.push_back(point);
+			}
+			return arcPoints;
+		}
+		float getRotationAngle()const  {
+			return mCurAngle;
+		}
+	private:
+		Eigen::Vector3f axis = { 1,0,0 };
+		Eigen::Vector3f origin = { 0,0,0 };
+
+		Eigen::Vector3f mRefDir;      // 初始参考方向
+		Eigen::Vector3f mRefPos;       // 初始参考位置
+		Eigen::Vector3f mMouseStart;   // 按下时鼠标投影向量
+		float mCurAngle = 0.f;         // 当前总旋转角度
+		bool firstPick = true;
+	};
+	class GizmoPlaneTranslate
+	{
+	public:
+		GizmoPlaneTranslate() = default;
+		GizmoPlaneTranslate(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos)
+			: plane(planeEq), origin(pos) {
+		}
+
+		void startPick(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos)
+		{
+			plane = planeEq;
+			origin = pos;
+			firstPick = true;
+		}
+
+		void apply(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& pos)
+		{
+			Eigen::Vector3f n(plane.x(), plane.y(), plane.z());
+			float d = plane.w();
+
+			float denom = ray.dot(n);
+			if (std::abs(denom) <= 0.001f)
+				return;
+
+			float t = -(eye.dot(n) + d) / denom;
+			if (t <= 0.001f)
+				return;
+
+			Eigen::Vector3f hit = eye + ray * t;
+			if (firstPick)
+			{
+				mOffset = origin - hit;
+				firstPick = false;
+			}
+			pos = hit + mOffset;
+		}
+
+	private:
+		Eigen::Vector4f plane = Eigen::Vector4f(0, 0, 1, 0);
+		Eigen::Vector3f origin = Eigen::Vector3f::Zero();
+		Eigen::Vector3f mOffset = Eigen::Vector3f::Zero();
+		bool firstPick = true;
+	};
 	class GizmoAxisTranslate {
 	public:
 		GizmoAxisTranslate() = default;
@@ -145,7 +340,6 @@ namespace MOON {
 			axis = Axis;
 			origin = pos;
 			firstPick = true;
-		
 		}
 	private:
 		Eigen::Vector3f axis = { 1,0,0 };
@@ -212,6 +406,8 @@ namespace MOON {
 		std::vector<Eigen::Vector3f>sectionFace;
 
 		GizmoAxisTranslate transLatePick;
+		GizmoPlaneTranslate planeTPick;
+		GizmoAxisRotate axisRPick;
 	};
 	
 	ClipPlane::ClipPlane(const std::string& name) :EventWidget(name)
@@ -224,6 +420,12 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
+		if (mState == AxisR) {
+			float angle=m_internal->axisRPick.getRotationAngle();
+			ImGui::Text("%f",angle);
+			renderer->drawLineList(m_internal->axisRPick.getRotationArc(), 10, {255,0,255,255});
+		}
+		
 		mPreflag = mCurflag;
 		bool ret = false;
 		Eigen::Vector3f pos= m_internal->center;
@@ -235,160 +437,15 @@ namespace MOON {
 			m_internal->center,
 			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
-			"GizmoAxis");
+			"TransformAxis");
 		
-		Eigen::Vector3f scenter = m_internal->center + m_internal->yAxis* worldHeight;
-		float sRadius = renderer->pixelsToWorldSize(scenter, 10);
-       
-		if (renderer->isSelectPolygon("GizmoAxis", "YAxis")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YAxis"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YAxis"), { 0,1,0,1 });
-		}
-		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditz"),
-		//	m_internal->center, sRadius, m_internal->zAxis,
-		//	&scenter
-		//)) {
-		//	
-		//	ret = true;
-		//	m_internal->yAxis = (scenter - m_internal->center).normalized();
-		//	m_internal->xAxis = m_internal->yAxis.cross(m_internal->zAxis);
-		//}
 
-		scenter = m_internal->center + m_internal->xAxis* worldHeight;
-		sRadius = renderer->pixelsToWorldSize(scenter, 10);
-		//renderer->drawSphereFilled(scenter, sRadius);
-		if (renderer->isSelectPolygon("GizmoAxis", "XAxis")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XAxis"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XAxis"), { 1,0,0,1 });
-		}
-		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEdity"),
-		//	m_internal->center, sRadius, m_internal->yAxis,
-		//	&scenter
-		//)) {
-		//	
-		//	ret = true;
-		//	m_internal->xAxis = (scenter - m_internal->center).normalized();
-		//	m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
-		//}
-
-		scenter = m_internal->center + m_internal->zAxis * worldHeight;
-		sRadius=renderer->pixelsToWorldSize(scenter, 10);
-		//renderer->drawSphereFilled(scenter, sRadius);
-		if (renderer->isSelectPolygon("GizmoAxis", "ZAxis")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZAxis"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZAxis"), { 0,0,1,1 });
-		}
-		//if (renderer->gizmoSphereRotateInCircleBehavior(renderer->makeId("planeEditx"),
-		//	m_internal->center, sRadius, m_internal->xAxis,
-		//	&scenter
-		//)) {
-		//	ret = true;
-		//	m_internal->zAxis = (scenter - m_internal->center).normalized();
-		//	m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
-		//}
-
-		if (renderer->isSelectPolygon("GizmoAxis", "YPlane")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YPlane"), { 1,1,0,0.7 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YPlane"), { 0,1,0,0.2 });
-		}
-		Eigen::Vector3f po = m_internal->center + m_internal->xAxis * radius + m_internal->zAxis * radius;
-		//renderer->drawPoint(po, 10);
-		//ret|=renderer->gizmoPlaneTranslationBehavior(
-		//	renderer->makeId("xz"), 
-		//	po,
-		//	m_internal->yAxis,0,dis, &m_internal->center);
-
-		po = m_internal->center + m_internal->yAxis * radius + m_internal->zAxis * radius;
-		//renderer->drawPoint(po, 10);
-		if (renderer->isSelectPolygon("GizmoAxis", "XPlane")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XPlane"), { 1,1,0,0.7 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XPlane"), { 1,0,0,0.2 });
-		}
-		//ret|=renderer->gizmoPlaneTranslationBehavior(
-		//	renderer->makeId("yz"),
-		//	po,
-		//	m_internal->xAxis, 0,dis, &m_internal->center);
-
-		po = m_internal->center + m_internal->xAxis * radius + m_internal->yAxis * radius;
-		//renderer->drawPoint(po, 10);
-		if (renderer->isSelectPolygon("GizmoAxis", "ZPlane")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZPlane"), { 1,1,0,0.7 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZPlane"), { 0,0,1,0.2 });
-		}
-		//renderer->gizmoPlaneTranslationBehavior(
-		//	renderer->makeId("xy"),
-		//	po,
-		//	m_internal->zAxis, 0, dis, &m_internal->center);
-		
-		//bool ImRenderer::gizmoAxisTranslationBehavior(unsigned int _id, const Eigen::Vector3f & _origin,
-			//const Eigen::Vector3f & _axis, float _snap, float _worldHeight, float _worldSize, Eigen::Vector3f * _out_)
-		//renderer->drawPoint(po, 10);
-		
-		if (renderer->isSelectPolygon("GizmoAxis", "XArrow")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XArrow"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("XArrow"), { 1,0,0,1 });
-		}
-		//renderer->gizmoAxisTranslationBehavior(renderer->makeId("xAxis"),m_internal->center,
-		//	m_internal->xAxis,0,renderer->pixelsToWorldSize(m_internal->center,140), 
-		//	renderer->pixelsToWorldSize(m_internal->center, 5),&m_internal->center);
-		if (renderer->isSelectPolygon("GizmoAxis", "YArrow")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YArrow"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("YArrow"), { 0,1,0,1 });
-		}
-		//renderer->gizmoAxisTranslationBehavior(renderer->makeId("yAxis"), m_internal->center,
-		//	m_internal->yAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
-		//	renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
-		if (renderer->isSelectPolygon("GizmoAxis", "ZArrow")) {
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZArrow"), { 1,1,0,1 });
-		}
-		else
-		{
-			GizmoAxis().setBlockColor(GizmoAxis().getBlockId("ZArrow"), { 0,0,1,1 });
-		}
-		//ret|=renderer->gizmoAxisTranslationBehavior(renderer->makeId("zAxis"), m_internal->center,
-		//	m_internal->zAxis, 0, renderer->pixelsToWorldSize(m_internal->center, 140),
-		//	renderer->pixelsToWorldSize(m_internal->center, 5), &m_internal->center);
 
 
 
 		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
 		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
-		//renderer->pushAlpha(0.2);
-		//renderer->pushColor({255,0,255,0});
-		//renderer->pushEnableSorting(true);
-		//renderer->drawCircleFilled(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		//renderer->popEnableSorting();
-		//renderer->pushSize(3.0);;
-	
 
-		//renderer->drawCircle(m_internal->center, m_internal->zAxis, cirleDetectRadius, 40);
-		//renderer->popSize();
-		//renderer->popColor();
-		//renderer->popAlpha();
 		auto& normal = m_internal->zAxis;
 		auto& planeOrigin = m_internal->center;
 		
@@ -415,16 +472,7 @@ namespace MOON {
 		unsigned int pointId[4]{ renderer->makeId("p1"), renderer->makeId("p2"), renderer->makeId("p3"), renderer->makeId("p4") };
 		Eigen::Vector3f pointPos[4] = { planeOrigin + xaxis * 1.0 * cirleDetectRadius,planeOrigin - xaxis * 1.0 * cirleDetectRadius, planeOrigin + zaxis * 1.0 * cirleDetectRadius,planeOrigin - zaxis * 1.0 * cirleDetectRadius };
 		Eigen::Vector3f pointDir[4] = { xaxis, -xaxis, zaxis, -zaxis };
-		for (int i = 0; i < 4; i++)
-		{
-			//renderer->drawPoint(pointPos[i], 10, renderer->isHot(pointId[i]) ? Eigen::Vector4<uint8_t>{255,0,255,255} : Eigen::Vector4<uint8_t>{255,255,255,0});
-			Eigen::Vector3f outFace = pointPos[i];
-			float size = renderer->pixelsToWorldSize(pointPos[i], 10);
-			//if (renderer->gizmoSphereAxisTranslationBehavior(pointId[i], pointPos[i], size, pointDir[i], 0, &outFace))
-			//{
-			//	cirleDetectRadius = (outFace - planeOrigin).norm();
-			//}
-		}
+
 		mCurflag = ret;
 		if (mPreflag&&!mCurflag) {
 			Core::ECS::Actor* selectActor = nullptr;
@@ -486,54 +534,106 @@ namespace MOON {
 	void ClipPlane::onLeftMousePressed()
 	{
 		if (mState == Hot) {
-			if (mPickMesh == PickMeshId::YAxis|| mPickMesh == PickMeshId::XAxis||mPickMesh == PickMeshId::ZAxis) {
+			
+			bool active = false;
+			if (table[mPickMesh].meshId == PickMeshId::YAxis|| table[mPickMesh].meshId == PickMeshId::XAxis|| table[mPickMesh].meshId == PickMeshId::ZAxis) {
 				mState = AxisT;
-				Eigen::Vector3f axis = mPickMesh == PickMeshId::YAxis ?
-					m_internal->yAxis : (mPickMesh == PickMeshId::XAxis ? m_internal->xAxis : m_internal->zAxis);
+				Eigen::Vector3f axis = table[mPickMesh].meshId == PickMeshId::YAxis ?
+					m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::XAxis ? m_internal->xAxis : m_internal->zAxis);
 				m_internal->transLatePick.startPick(axis,m_internal->center);
+				active = true;
+			}
+			else if (table[mPickMesh].meshId == PickMeshId::XNormalPlane || table[mPickMesh].meshId == PickMeshId::YNormalPlane || table[mPickMesh].meshId == PickMeshId::ZNormalPlane) {
+				mState = PlaneT;
+				Eigen::Vector3f normal= table[mPickMesh].meshId == PickMeshId::XNormalPlane ?
+					m_internal->xAxis : (table[mPickMesh].meshId == PickMeshId::YNormalPlane ? m_internal->yAxis : m_internal->zAxis);
+				float w=-m_internal->center.dot(normal);
+				Eigen::Vector4f planeEqu = { normal.x(),normal.y(),normal.z(),w };
+				m_internal->planeTPick.startPick(planeEqu,m_internal->center);
+				active = true;
+			}
+			else if (table[mPickMesh].meshId == PickMeshId::XNormalRotate || table[mPickMesh].meshId == PickMeshId::YNormalRotate || mPickMesh == PickMeshId::ZNormalRotate) {
+				mState = AxisR;
+				Eigen::Vector3f normal = table[mPickMesh].meshId == PickMeshId::XNormalRotate?
+					m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate? m_internal->zAxis : m_internal->xAxis);
+				Eigen::Vector3f refDir = table[mPickMesh].meshId == PickMeshId::XNormalRotate ?
+					m_internal->xAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate ? m_internal->yAxis : m_internal->zAxis);
+				
+				m_internal->axisRPick.startPick(normal,m_internal->center,refDir, m_internal->center+refDir);
+				active = true;
+			}
+			if (active) {
+				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), activeColor);
 			}
 		}
 	}
 
 	void ClipPlane::onLeftMouseReleased()
 	{
-		if (mState == AxisT) {
+		if (mState == AxisT||mState==PlaneT||mState==AxisR) {
 			mState = Hot;
+			TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
 		}
 	}
 
 	void ClipPlane::onMouseMove()
 	{
+		
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;
-			if (renderer->isSelectPolygon("GizmoAxis", "YArrow")) {
-				mPickMesh = PickMeshId::YAxis;
-				selectFlag = true;
-			}
-			if (renderer->isSelectPolygon("GizmoAxis", "XArrow")) {
-				mPickMesh = PickMeshId::XAxis;
-				selectFlag = true;
-			}
-			if (renderer->isSelectPolygon("GizmoAxis", "ZArrow")) {
-				mPickMesh = PickMeshId::ZAxis;
-				selectFlag = true;
+			for (int i = 0;i < meshInfoCnt;i++) {
+				if (renderer->isSelectPolygon("TransformAxis", table[i].blockName)) {
+					mPickMesh = i;
+					selectFlag = true;
+					break;
+				}
 			}
 			if (selectFlag) {
 				mState = Hot;
+				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
 			}
 		}
 		else if (mState == Hot) {
-			bool selectFlag =renderer->isSelectPolygon("GizmoAxis", "YArrow") ||renderer->isSelectPolygon("GizmoAxis", "XArrow")||renderer->isSelectPolygon("GizmoAxis", "ZArrow");
+			bool selectFlag = false;
+			for (int i = 0;i < meshInfoCnt;i++) {
+				if (renderer->isSelectPolygon("TransformAxis", table[i].blockName)) {
+					selectFlag = true;
+					break;
+				}
+			}
 			if (!selectFlag) {
 				mState = Stop;
-				mPickMesh = PickMeshId::None;
+				
+				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), table[mPickMesh].blockColor);
+			    mPickMesh = PickMeshId::None;
 			}
 		}
 		else if (mState == AxisT) {
 			auto&param=renderer->getFrameParam();
-			
 			m_internal->transLatePick.apply(param.rayDirection,param.rayOrigin,m_internal->center);
+		}
+		else if (mState==PlaneT) {
+			auto& param = renderer->getFrameParam();
+			m_internal->planeTPick.apply(param.rayDirection, param.rayOrigin, m_internal->center);
+		}
+		else if (mState==AxisR) {
+			auto& param = renderer->getFrameParam();
+			Eigen::Vector3f dir = table[mPickMesh].meshId == PickMeshId::XNormalRotate ?
+				m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate ? m_internal->zAxis : m_internal->xAxis);
+			m_internal->axisRPick.applyDir(param.rayDirection, param.rayOrigin,dir);
+			if (table[mPickMesh].meshId == PickMeshId::XNormalRotate) {
+				m_internal->xAxis = dir;
+				m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
+			}
+			else if (table[mPickMesh].meshId == PickMeshId::YNormalRotate) {
+				m_internal->yAxis = dir;
+				m_internal->xAxis = m_internal->yAxis.cross(m_internal->zAxis);
+			}
+			else if (table[mPickMesh].meshId == PickMeshId::ZNormalRotate) {
+				m_internal->zAxis = dir;
+				m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
+			}
 		}
 	}
 

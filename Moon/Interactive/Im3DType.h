@@ -239,7 +239,7 @@ namespace MOON
 		int hit(const Eigen::Matrix4f& viewProj, float u, float v);
 	};
 	PolyonMesh& NavigateCube();
-	PolyonMesh& ViewAxis();
-	PolyonMesh& GizmoAxis();
+	PolyonMesh& CoordAxis();
+	PolyonMesh& TransformAxis();
 	PolyonMesh& GizmoSketchPlane();
 }
