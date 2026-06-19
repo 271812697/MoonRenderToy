@@ -189,9 +189,18 @@ namespace MOON {
 			float delta = computeAngle(m_lastProj, currProj);
 			m_totalAngle += delta;
 			m_totalAngle = fmod(m_totalAngle, 3.14159265358979323846f *2);
+
+			float snapAngle = m_totalAngle;
+			//degree snap
+			if (m_enableSnap) {
+				int degree=m_totalAngle * 180 / 3.14159265358979323846f;
+				snapAngle = degree * 3.14159265358979323846f / 180.0f;
+			}
+
+
 			m_lastProj = currProj;
 
-			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
+			Eigen::AngleAxisf rot(snapAngle, m_axis);
 			outDir = rot * m_refDir;
 			return true;
 		}
@@ -218,7 +227,14 @@ namespace MOON {
 			m_totalAngle += delta;
 			m_lastProj = currProj;
 
-			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
+			float snapAngle = m_totalAngle;
+			//degree snap
+			if (m_enableSnap) {
+				int degree = m_totalAngle * 180 / 3.14159265358979323846f;
+				snapAngle = degree * 3.14159265358979323846f / 180.0f;
+			}
+
+			Eigen::AngleAxisf rot(snapAngle, m_axis);
 			Eigen::Vector3f offset = m_refPos - m_origin;
 			outPos = m_origin + rot * offset;
 			return true;
@@ -230,8 +246,15 @@ namespace MOON {
 			if (segCount < 2 || std::fabs(m_totalAngle) < ANGLE_EPS)
 				return arcPoints;
 
+			float snapAngle = m_totalAngle;
+			//degree snap
+			if (m_enableSnap) {
+				int degree = m_totalAngle * 180 / 3.14159265358979323846f;
+				snapAngle = degree * 3.14159265358979323846f / 180.0f;
+			}
+
 			Eigen::Vector3f baseOffset = m_refPos - m_origin;
-			float step = m_totalAngle / static_cast<float>(segCount);
+			float step = snapAngle / static_cast<float>(segCount);
 			for (int i = 0; i <= segCount; ++i)
 			{
 				float ang = step * static_cast<float>(i);
@@ -241,8 +264,17 @@ namespace MOON {
 			return arcPoints;
 		}
 
-		float getRotationAngle() const { return m_totalAngle; }
-
+		float getRotationAngle() const {
+			//degree snap
+			if (m_enableSnap) {
+				int degree = m_totalAngle * 180 / 3.14159265358979323846f;
+				return  degree * 3.14159265358979323846f / 180.0f;
+			}
+			return m_totalAngle; 
+		}
+		void enableSnap(bool flag) {
+			m_enableSnap = flag;
+		}
 	private:
 		bool computePlaneProj(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outProj,Eigen::Vector3f& hitPos) const
 		{
@@ -288,6 +320,7 @@ namespace MOON {
 
 		float m_totalAngle = 0.f;   // 累积总角，范围无限制
 		bool m_firstPick = true;
+		bool m_enableSnap = true;
 	};
 	class GizmoPlaneTranslate
 	{
@@ -425,6 +458,7 @@ namespace MOON {
 		std::vector<Eigen::Vector3f>slicelines;
 		std::vector<Eigen::Vector3f>sectionFace;
 
+		bool updateEngineUbo = false;
 		GizmoAxisTranslate transLatePick;
 		GizmoPlaneTranslate planeTPick;
 		GizmoAxisRotate axisRPick;
@@ -449,35 +483,28 @@ namespace MOON {
 			ImGui::GetForegroundDrawList()->AddText({ pos.x(),pos.y()-20 }, IM_COL32(255, 255, 0, 255), text.c_str());
 			auto seg = m_internal->axisRPick.getRotationArc();
 			if (seg.size() > 0) {
+				renderer->pushColor({ 255,255,255,0 });
+			
 				for (int i = 0; i < seg.size()-1; i++) {
-					renderer->drawLine(seg[i],seg[i+1],3);
+					renderer->drawLine(seg[i],seg[i+1],5);
 				}
+				renderer->popColor();
 				renderer->pushColor({255,0,255,255});
 				renderer->drawLine(seg[0], m_internal->center, 4);
 				renderer->drawLine(seg.back(), m_internal->center, 4);
 				renderer->popColor();
 			}
-
-			//renderer->drawLineList(m_internal->axisRPick.getRotationArc(), 10, {255,0,255,255});
 		}
-		
-		mPreflag = mCurflag;
-		bool ret = false;
+		bool ret = true;
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,48);
 		float worldHeight = renderer->pixelsToWorldSize(m_internal->center, 170);
 		float dis=renderer->pixelsToWorldSize(m_internal->center, 30);
-
 		renderer->drawOneMesh(
 			m_internal->center,
 			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"TransformAxis");
-		
-
-
-
-
 		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
 		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
 
@@ -501,52 +528,11 @@ namespace MOON {
 		renderer->drawTriangleList(m_internal->sectionFace,4,{ 255,255,215,255 });
 		renderer->popAlpha();
 		renderer->popEnableSorting();
-		Eigen::Vector3f up = abs(normal.y()) > 0.99 ? Eigen::Vector3f(1, 0, 0) : Eigen::Vector3f(0, 1, 0);
-		Eigen::Vector3f xaxis = normal.cross(up).normalized();
-		Eigen::Vector3f zaxis = xaxis.cross(normal).normalized();
-		unsigned int pointId[4]{ renderer->makeId("p1"), renderer->makeId("p2"), renderer->makeId("p3"), renderer->makeId("p4") };
-		Eigen::Vector3f pointPos[4] = { planeOrigin + xaxis * 1.0 * cirleDetectRadius,planeOrigin - xaxis * 1.0 * cirleDetectRadius, planeOrigin + zaxis * 1.0 * cirleDetectRadius,planeOrigin - zaxis * 1.0 * cirleDetectRadius };
-		Eigen::Vector3f pointDir[4] = { xaxis, -xaxis, zaxis, -zaxis };
 
-		mCurflag = ret;
-		if (mPreflag&&!mCurflag) {
-			Core::ECS::Actor* selectActor = nullptr;
-			if (m_sceneView->IsSelectActor()) {
-				selectActor = m_sceneView->GetSelectedActor();
-				while (!selectActor->HasComponent("CTopoShape")&& selectActor->HasParent())
-				{
-					selectActor = selectActor->GetParent();
-				}
-			}
-			else
-			{
-				selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
-			}
-			
-			if (selectActor)
-			{	
-				//Core::ECS::Components::CTopoShape*
-				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-
-				if (topoComp) {
-					auto& topoShape= topoComp->GetTopoShape();
-					double offset = m_internal->zAxis.dot(m_internal->center);
-					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-					auto wires=topoShape.slice(dir,offset);
-					m_internal->sectionFace=DiscretizeSectionFace(wires);
-					m_internal->slicelines.clear();
-					for (auto& w : wires) {
-						auto tempLine=DiscretizeWire(w);
-						m_internal->slicelines.insert(m_internal->slicelines.end(),
-							tempLine.begin(),tempLine.end()
-							);
-					}
-				}
-			}
-		}
-		if (ret) {
+		if (m_internal->updateEngineUbo)
+		{
+			m_internal->updateEngineUbo = false;
 			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
-			
 			feature.SetClipPlane(
 				m_internal->zAxis.x(),
 				m_internal->zAxis.y(),
@@ -608,12 +594,17 @@ namespace MOON {
 		if (mState == AxisT||mState==PlaneT||mState==AxisR) {
 			mState = Hot;
 			TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
+			PickMeshId id=table[mPickMesh].meshId;
+			bool updateFlag = (id != PickMeshId::XAxis)&& (id != PickMeshId::YAxis)&&
+				(id != PickMeshId::ZNormalPlane)&&(id != PickMeshId::YNormalRotate);
+			if (updateFlag) {
+				updateSection();			
+			}
 		}
 	}
 
 	void ClipPlane::onMouseMove()
 	{
-		
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;
@@ -639,7 +630,6 @@ namespace MOON {
 			}
 			if (!selectFlag) {
 				mState = Stop;
-				
 				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), table[mPickMesh].blockColor);
 			    mPickMesh = PickMeshId::None;
 			}
@@ -672,4 +662,40 @@ namespace MOON {
 		}
 	}
 
+	void ClipPlane::updateSection()
+	{
+		m_internal->updateEngineUbo = true;
+		Core::ECS::Actor* selectActor = nullptr;
+		if (m_sceneView->IsSelectActor()) {
+			selectActor = m_sceneView->GetSelectedActor();
+			while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
+			{
+				selectActor = selectActor->GetParent();
+			}
+		}
+		else
+		{
+			selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+		}
+
+		if (selectActor)
+		{
+			Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+
+			if (topoComp) {
+				auto& topoShape = topoComp->GetTopoShape();
+				double offset = m_internal->zAxis.dot(m_internal->center);
+				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+				auto wires = topoShape.slice(dir, offset);
+				m_internal->sectionFace = DiscretizeSectionFace(wires);
+				m_internal->slicelines.clear();
+				for (auto& w : wires) {
+					auto tempLine = DiscretizeWire(w);
+					m_internal->slicelines.insert(m_internal->slicelines.end(),
+						tempLine.begin(), tempLine.end()
+					);
+				}
+			}
+		}
+	}
 }

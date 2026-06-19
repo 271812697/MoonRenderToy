@@ -36,6 +36,8 @@ namespace MOON
 			AxisR
 		};
 	private:
+		void updateSection();
+	private:
 		IntersectiveState mState;
 		int mPickMesh=None;
 		class ClipPlaneInternal;
