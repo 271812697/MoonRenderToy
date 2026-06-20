@@ -34,6 +34,8 @@ namespace MOON {
                  sketchShape.findPlane(pln);
                  behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
                  behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                 behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                 behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
                  behaviour->AddObserver(PadTaskEvent::LengthChange, self, &PadTaskDialog::onWidgetInvoke);
             }           
         }

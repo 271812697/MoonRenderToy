@@ -257,6 +257,8 @@ namespace MOON
 		void popColor();
 		void pushSize(float value);
 		void popSize();
+		void pushMatrix(const Eigen::Matrix4f& mat);
+		void popMatrix();
 	private:
 		 Editor::Panels::SceneView* renderView = nullptr;
 

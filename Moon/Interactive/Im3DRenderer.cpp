@@ -3885,6 +3885,8 @@ namespace MOON
 		cameraParam.rayDirection = rayDirection;
 		cameraParam.cursor.x() = x;
 		cameraParam.cursor.y() = y;
+		cameraParam.viewPortCursor.x() = x;
+		cameraParam.viewPortCursor.y() = h - y;
 		cameraParam.view = view;
 		cameraParam.inverseView = view.inverse();
 		cameraParam.proj = proj;
@@ -4459,6 +4461,16 @@ namespace MOON
 	void ImRenderer::popSize()
 	{
 		sizeStack.pop_back();
+	}
+
+	void ImRenderer::pushMatrix(const Eigen::Matrix4f& mat)
+	{
+		matrixStack.push_back(mat);
+	}
+
+	void ImRenderer::popMatrix()
+	{
+		matrixStack.pop_back();
 	}
 
 	int ImRenderer::findLayerIndex(unsigned int _id) const
