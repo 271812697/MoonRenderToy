@@ -120,6 +120,15 @@ namespace MOON {
 		}
 		return m_totalAngle;
 	}
+	float GizmoAxisRotate::getRotationAngleDegree() const
+	{		
+		float de=m_totalAngle * 180 / 3.14159265358979323846f;
+		if (m_enableSnap) {
+			int degree =de;
+			return degree;
+		}
+		return de;
+	}
 	void GizmoAxisRotate::enableSnap(bool flag) {
 		m_enableSnap = flag;
 	}

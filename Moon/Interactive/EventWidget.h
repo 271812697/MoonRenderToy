@@ -19,6 +19,7 @@ namespace MOON
 		bool isActived() const { return mActive; }
 		void setActive(bool flag);
 		void setVisible(bool flag);
+		void setImmediateInvoke(bool flag);
 		void update();
 		virtual void onUpdate();
 		virtual void onSetActive(bool flag);
@@ -46,6 +47,7 @@ namespace MOON
 		bool mVisible = true;
 		bool mPreflag = false;
 		bool mCurflag = false;
+		bool mImInvoke = true;
 		ImRenderer* renderer= nullptr;
 		Editor::Panels::SceneView* m_sceneView = nullptr;
 	};

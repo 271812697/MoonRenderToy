@@ -28,6 +28,7 @@ namespace MOON {
 		std::vector<Eigen::Vector3f> getRotationArc(int segCount = DEFAULT_SEG) const;
 
 		float getRotationAngle() const;
+		float getRotationAngleDegree() const;
 		void enableSnap(bool flag);
 	private:
 		bool computePlaneProj(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outProj, Eigen::Vector3f& hitPos) const;

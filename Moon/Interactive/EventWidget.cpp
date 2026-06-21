@@ -49,6 +49,10 @@ namespace MOON {
 	{
 		mVisible = flag;
 	}
+	void EventWidget::setImmediateInvoke(bool flag)
+	{
+		mImInvoke = flag;
+	}
 	void EventWidget::update()
 	{
 		if (mActive&&mVisible) {

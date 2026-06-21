@@ -7,281 +7,8 @@
 #include "renderer/Context.h"
 #include "Interactive/GizmoBehaviour.h"
 #include "renderer/SceneView.h"
-
+#include "Interactive/ViewData.h"
 namespace MOON {
-	struct TriangleFace
-	{
-		TriangleFace(std::vector<Eigen::Vector3f>f,
-			Eigen::Vector4<uint8_t> c):faces(f),color(c) {
-
-		}
-		TriangleFace(std::vector<Eigen::Vector3f>f,
-			Eigen::Vector4<uint8_t> c,const Eigen::Matrix4f& m) :model(m),faces(f), color(c) {
-
-		}
-		std::vector<Eigen::Vector3f>faces;
-		Eigen::Vector4<uint8_t> color;
-		Eigen::Matrix4f model=Eigen::Matrix4f::Identity();
-	};
-	struct VertexPoint
-	{
-		VertexPoint(const Eigen::Vector3f& p, float s, const Eigen::Vector4<uint8_t>& c):pos(p),size(s), color(c)
-		{
-		
-		}
-		Eigen::Vector3f pos;
-		float size;
-		Eigen::Vector4<uint8_t> color;
-	};
-	struct Edge {
-		Edge(const std::vector<Eigen::Vector3f>&l,const Eigen::Vector4<uint8_t>& c):lines(l),color(c) {}
-		Edge( const std::vector<Eigen::Vector3f>& l, const Eigen::Vector4<uint8_t>& c,const Eigen::Matrix4f& m ) :model(m), lines(l), color(c) {}
-		std::vector<Eigen::Vector3f>lines;
-		Eigen::Vector4<uint8_t> color;
-		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-	};
-	class  WidgetViewData {
-	public:
-		WidgetViewData() = default;
-		~WidgetViewData() {
-
-		}
-		int addPoint(const Eigen::Vector3f& pos, float size, const Eigen::Vector4<uint8_t>& color) {
-			points.emplace_back(pos,size,color);
-			return points.size();
-		}
-		int addPoint(const std::vector<Eigen::Vector3f>& pos, float size, const Eigen::Vector4<uint8_t>& color) {
-			for (int i = 0; i < pos.size(); i++) {
-				points.emplace_back(pos[i], size, color);
-			}
-			return points.size();
-		}
-		int addEdge(const std::vector<Eigen::Vector3f>& l, const Eigen::Vector4<uint8_t>& c, const Eigen::Matrix4f& m = Eigen::Matrix4f::Identity()) {
-			lines.emplace_back(l,c,m);
-			return lines.size();
-		}
-		int addTriangleFace(const std::vector<Eigen::Vector3f>&f,const Eigen::Vector4<uint8_t>& c,const Eigen::Matrix4f& m= Eigen::Matrix4f::Identity()) {
-			faces.emplace_back(f,c,m);
-			return faces.size();
-		}
-		void setPoint(int id, const Eigen::Vector4<uint8_t>& color) {
-			if (id < points.size()) {
-				points[id].color= color;
-			}
-		}
-		void setPoint(int id, float size) {
-			if (id < points.size()) {
-				points[id].size = size;
-			}
-		}
-		void setPoint(int id, const Eigen::Vector3f& pos) {
-			if (id < points.size()) {
-				points[id].pos = pos;
-			}
-		}
-		void setEdge(const std::string& name, const std::vector<Eigen::Vector3f>& l, const Eigen::Vector4<uint8_t>& c, const Eigen::Matrix4f& m = Eigen::Matrix4f::Identity()) {
-			auto it = edgesIdMap.find(name);
-			if (it != edgesIdMap.end()) {
-				int id = it->second;
-				lines[id].lines= l;
-				lines[id].color = c;
-				lines[id].model = m;
-				return;
-			}
-			int id = addEdge(l, c, m);
-			edgesIdMap[name] = id - 1;
-			edgesStrMap[id - 1] = name;
-		}
-		void setEdge(const std::string& name, const std::vector<Eigen::Vector3f>& l) {
-			auto it = edgesIdMap.find(name);
-			if (it != edgesIdMap.end()) {
-				int id = it->second;
-				lines[id].lines = l;
-				return;
-			}
-		}
-		void setEdge(const std::string& name, const Eigen::Vector4<uint8_t>& c) {
-			auto it = edgesIdMap.find(name);
-			if (it != edgesIdMap.end()) {
-				int id = it->second;
-				lines[id].color = c;
-				return;
-			}
-		}
-		void setEdge(const std::string& name, const Eigen::Matrix4f& m ) {
-			auto it = edgesIdMap.find(name);
-			if (it != edgesIdMap.end()) {
-				int id = it->second;
-				lines[id].model = m;
-				return;
-			}
-		}
-		void setTriangleFace(const std::string& name, const std::vector<Eigen::Vector3f>&f,const Eigen::Vector4<uint8_t>& c, const Eigen::Matrix4f& m = Eigen::Matrix4f::Identity()) {
-			auto it = facesIdMap.find(name);
-			if (it != facesIdMap.end()) {
-				int id = it->second;
-				faces[id].faces = f;
-				faces[id].color = c;
-				faces[id].model = m;
-				return ;
-			}
-			int id=addTriangleFace(f,c,m);
-			facesIdMap[name] = id - 1;
-			facesStrMap[id - 1] = name;
-		}
-		void setTriangleFace(const std::string& name,const Eigen::Matrix4f& m) {
-			auto it = facesIdMap.find(name);
-			if (it != facesIdMap.end()) {
-				int id = it->second;
-				faces[id].model=m;
-			}
-		}
-		void setTriangleFace(const std::string& name, const std::vector<Eigen::Vector3f>& f) {
-			auto it = facesIdMap.find(name);
-			if (it != facesIdMap.end()) {
-				int id = it->second;
-				faces[id].faces = f;
-			}
-		}
-		void setTriangleFace(const std::string& name,  const Eigen::Vector4<uint8_t>& c) {
-			auto it = facesIdMap.find(name);
-			if (it != facesIdMap.end()) {
-				int id = it->second;
-				faces[id].color = c;
-			}
-		}
-		std::vector<Edge>& getEdge() {
-			return lines;
-		}
-		std::vector<VertexPoint>& getPoints() {
-			return points;
-		}
-		std::vector<TriangleFace>& getFaces() {
-			return faces;
-		}
-		bool getTriangleFace(const std::string& name, TriangleFace*& f) {
-			auto it = facesIdMap.find(name);
-			if (it != facesIdMap.end()) {
-				f = &faces[it->second];
-				return true;
-			}
-			return false;
-		}
-		bool getEdgeLine(const std::string& name, Edge*& e) {
-			auto it = edgesIdMap.find(name);
-			if (it!=edgesIdMap.end()) {
-				e = &lines[it->second];
-				return true;
-			}
-			return false;
-		}
-		void clearPoints() {
-			points.clear();
-		}
-		void clearLines() {
-			lines.clear();
-			edgesIdMap.clear();
-			edgesStrMap.clear();
-		}
-		void clearFaces() {
-			faces.clear();
-			facesIdMap.clear();
-			facesStrMap.clear();
-		}
-		void clear() {
-			lines.clear();
-			points.clear();
-			faces.clear();
-			facesIdMap.clear();
-			edgesIdMap.clear();
-			facesStrMap.clear();
-			edgesStrMap.clear();
-		}
-		std::string hitFace(const Ray& ray) {
-			int res = -1;
-			float minDist = 100000.0f;
-			for (int i = 0; i < faces.size(); i++) {
-				std::vector<Eigen::Vector3f>& tris = faces[i].faces;
-				Eigen::Matrix4f& mat = faces[i].model;
-				for (int j = 0; j < tris.size(); j += 3) {
-					float tr;
-					if (Intersect(ray, MatrixMulPoint(mat, tris[j]), MatrixMulPoint(mat, tris[j+1]), MatrixMulPoint(mat, tris[j+2]), tr)) {
-						if (tr < minDist) {
-							minDist = tr;
-							res = i;
-						}
-					}
-				}
-			}
-			if (res == -1) {
-				return "";
-			}
-			return facesStrMap[res];
-		}
-		std::string hitEdge(const Eigen::Matrix4f& viewPortMat,const Eigen::Vector2f& pos) {
-			int res = -1;
-			float minDist = 100000.0f;
-			float error = 3;
-			for (int i = 0; i < lines.size(); i++) {
-				std::vector<Eigen::Vector3f>& edges = lines[i].lines;
-				Eigen::Matrix4f& mat = lines[i].model;
-				std::vector<Eigen::Vector3f>screenPos(edges.size());
-				for (int j = 0; j < screenPos.size(); j++) {
-					screenPos[j] = MatrixMulPoint(viewPortMat, MatrixMulPoint(mat, edges[j]));
-				}
-				for (int j = 0; j < screenPos.size()-1; j ++) {
-
-					float curDis=pointToSegmentDist(pos, screenPos[j].head<2>(), screenPos[j + 1].head<2>());
-					if (curDis < error && curDis < minDist) {
-						minDist = curDis;
-						res = i;
-					}
-				}
-			}
-			if (res == -1) {
-				return "";
-			}
-			return edgesStrMap[res];
-		}
-		int hitPoint(const Eigen::Matrix4f& viewPortMat, const Eigen::Vector2f& pos) {
-			int res = -1;
-			float minDist = 100000.0f;
-			for (int i = 0; i <points.size(); i++) {
-				Eigen::Vector3f p = points[i].pos;
-				float size = points[i].size/2.0;
-				Eigen::Vector2f screenPos= MatrixMulPoint(viewPortMat,p).head<2>();
-				float curDis = (screenPos - pos).norm();
-				if (curDis < size && curDis < minDist) {
-					minDist = curDis;
-					res = i;
-				}
-			}
-			return res;
-		}
-	private:
-		float pointToSegmentDist(const Eigen::Vector2f& p, const Eigen::Vector2f& s, const Eigen::Vector2f& e) {
-			Eigen::Vector2f se = e - s;
-			Eigen::Vector2f sp = p - s;
-			float t = sp.dot(se) / se.dot(se);
-			if (t < 0.0) {
-				return sp.norm();
-			}
-			if (t > 1.0) {
-				return (p - e).norm();
-			}
-			Eigen::Vector2f proj = s + t * se;
-			return (p - proj).norm();
-		};
-	private:
-		std::vector<Edge>lines;
-		std::vector<VertexPoint>points;
-		std::vector<TriangleFace>faces;
-		std::unordered_map<std::string, int>facesIdMap;
-		std::unordered_map<int, std::string>facesStrMap;
-		std::unordered_map<std::string, int>edgesIdMap;
-		std::unordered_map<int, std::string>edgesStrMap;
-	};
-
 	class PadTaskWidget::Internal {
 	public:
 		Internal(PadTaskWidget*s):self(s){}
@@ -334,13 +61,11 @@ namespace MOON {
 		for (int i = 0; i < points.size(); i++) {
 			renderer->drawPoint(points[i].pos, points[i].size,points[i].color);
 		}
-		
 		for (int i = 0; i < faces.size(); i++) {
 			renderer->pushMatrix(faces[i].model);
 			renderer->drawTriangleList(faces[i].faces, 1.0, faces[i].color);
 			renderer->popMatrix();
 		}
-		
 		int segCount = 30;
 		std::vector<Eigen::Vector3f>seg(segCount+1);
 		float step = 2*3.14159265358979323846f / static_cast<float>(segCount);
@@ -397,9 +122,31 @@ namespace MOON {
 	{
 		return (mInternal->originCenter - mInternal->center).norm();
 	}
+	float PadTaskWidget::getAngle()
+	{
+		float crossSign = std::acos(mInternal->normal.dot(mInternal->rotDir));
+		int degree = crossSign * 180 / 3.14159265358979323846f;
+		if (mInternal->rotDir.dot(mInternal->yAxis) < 0) {
+			return -degree;
+		}
+		return degree;
+	}
 	void PadTaskWidget::setLength(float len)
 	{
 		mInternal->center = len * mInternal->normal + mInternal->originCenter;
+		TriangleFace* face;
+		if (mInternal->viewData.getTriangleFace("Arrow", face)) {
+			face->model.block(0, 3, 3, 1) = mInternal->center;
+		}
+		mInternal->viewData.clearPoints();
+		mInternal->viewData.addPoint(mInternal->rotDir * mInternal->radius + mInternal->center, 30, { 255,255,255,255 });
+	}
+	void PadTaskWidget::setAngle(float degree)
+	{
+		float angle=degree / 180.0f * 3.14159265358979323846f;
+		mInternal->rotDir= cos(angle) * mInternal->normal + sin(angle) * mInternal->yAxis;
+		mInternal->viewData.clearPoints();
+		mInternal->viewData.addPoint(mInternal->rotDir * mInternal->radius + mInternal->center, 30, { 255,255,255,255 });
 	}
 	void PadTaskWidget::onLeftMousePressed()
 	{
@@ -421,10 +168,16 @@ namespace MOON {
 		if (mState == AxisT ) {
 			mState = Hot;
 			mInternal->viewData.setTriangleFace("Arrow", Eigen::Vector4<uint8_t>(255, 255, 255, 0));
+			if (!mImInvoke) {
+				this->InvokeEvent(PadTaskEvent::LengthChange);
+			}
 		}
 		if (mState == Rotate) {
 			mState = Hot;
 			mInternal->viewData.setPoint(0, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+			if (!mImInvoke) {
+				this->InvokeEvent(PadTaskEvent::AngleChange);
+			}
 		}
 	}
 	void PadTaskWidget::onMouseMove()
@@ -483,12 +236,18 @@ namespace MOON {
 			}
 			Eigen::Vector3f pos = mInternal->radius * mInternal->rotDir + mInternal->center;
 			mInternal->viewData.setPoint(0, pos);
+			if (mImInvoke) {
+				this->InvokeEvent(PadTaskEvent::LengthChange);
+			}
 		}
 		else if (mState==Rotate) {
 			auto& param = renderer->getFrameParam();
 			mInternal->rotatePick.applyDir(param.rayDirection, param.rayOrigin, mInternal->rotDir);
 			Eigen::Vector3f pos= mInternal->radius * mInternal->rotDir + mInternal->center;
 			mInternal->viewData.setPoint(0,pos);
+			if (mImInvoke) {
+				this->InvokeEvent(PadTaskEvent::AngleChange);
+			}
 		}
 	}
 }

@@ -3,7 +3,8 @@
 namespace MOON
 {
 	enum PadTaskEvent{
-		LengthChange,
+		LengthChange=1001,
+		AngleChange,
 		None
 	};
 	class PadTaskWidget: public EventWidget
@@ -17,7 +18,9 @@ namespace MOON
 		void setUpXAxis(float x,float y,float z);
 		void setUpYAxis(float x, float y, float z);
 		float getLength();
+		float getAngle();
 		void setLength(float len);
+		void setAngle(float degree);
 		enum IntersectiveState
 		{
 			Stop,
