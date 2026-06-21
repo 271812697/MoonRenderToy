@@ -15,8 +15,12 @@ namespace MOON {
 		virtual void clickApply() override;
 		virtual void clickCancel() override;
 		void onValueChange();
-		void onWidgetInvoke();
+		void onAngleChange();
+		void onLengthChange();
+		
 	private:
+		void onWidgetLengthInvoke();
+		void onWidgetAngleInvoke();
 		class Internal;
 		Internal* mInternal = nullptr;
 	};

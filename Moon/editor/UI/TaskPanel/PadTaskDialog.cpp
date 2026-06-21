@@ -34,7 +34,11 @@ namespace MOON {
                  sketchShape.findPlane(pln);
                  behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
                  behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
-                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &PadTaskDialog::onWidgetInvoke);
+                 behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                 behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
+                 behaviour->setLength(10);
+                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &PadTaskDialog::onWidgetLengthInvoke);
+                 behaviour->AddObserver(PadTaskEvent::AngleChange, self, &PadTaskDialog::onWidgetAngleInvoke);
             }           
         }
         ~Internal() {
@@ -262,6 +266,8 @@ namespace MOON {
         // ==========================
         connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
         connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
+        connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onLengthChange);
+        connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onAngleChange);
         connect(mInternal->spinLenRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
         connect(mInternal->spinAngleRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
         connect(mInternal->cboDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PadTaskDialog::onValueChange);
@@ -301,13 +307,23 @@ namespace MOON {
     }
     void PadTaskDialog::onValueChange()
     {
-        mInternal->behaviour->setLength(mInternal->spinLenForward->value());
         previewShape();
         mInternal->updateDirectionUI(mInternal->cboDir->currentIndex());
     }
-    void PadTaskDialog::onWidgetInvoke()
+    void PadTaskDialog::onAngleChange()
     {
-        //previewShape();
+        mInternal->behaviour->setAngle(mInternal->spinAngleForward->value());
+    }
+    void PadTaskDialog::onLengthChange()
+    {
+        mInternal->behaviour->setLength(mInternal->spinLenForward->value());
+    }
+    void PadTaskDialog::onWidgetLengthInvoke()
+    {
         mInternal->spinLenForward->setValue(mInternal->behaviour->getLength());
+    }
+    void PadTaskDialog::onWidgetAngleInvoke()
+    {
+        mInternal->spinAngleForward->setValue(mInternal->behaviour->getAngle());
     }
 }

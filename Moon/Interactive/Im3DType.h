@@ -7,7 +7,6 @@ namespace Rendering {
 		class Mesh;
 		class Model;
 	}
-
 }
 
 namespace MOON
@@ -130,6 +129,7 @@ namespace MOON
 		Eigen::Vector3f rayOrigin;
 		Eigen::Vector3f rayDirection;
 		Eigen::Vector2<float> cursor;
+		Eigen::Vector2<float> viewPortCursor;
 		Eigen::Matrix4f view;
 		Eigen::Matrix4f inverseView;
 		Eigen::Matrix4f proj;

@@ -20,6 +20,7 @@
 #include <TopoDS.hxx>
 #include <TopExp_Explorer.hxx>
 #include <BRepLib_FindSurface.hxx>
+#include "Interactive/GizmoBehaviour.h"
 #include "Qtimgui/imgui/imgui.h"
 namespace MOON {
 	// 1. 从Wire列表构建截面面（无Compound，无编译错误）
@@ -137,236 +138,7 @@ namespace MOON {
 	static int meshInfoCnt = 9;
 	Maths::FVector4 hotColor = { 0.1,1.0,1.0,1 };
 	Maths::FVector4 activeColor = { 1,1,0,1 };
-	class GizmoAxisRotate
-	{
-	public:
-		static constexpr float PLANE_DOT_EPS = 0.001f;
-		static constexpr float RAY_T_MIN = 0.001f;
-		static constexpr float PROJ_LEN_EPS = 1e-6f;
-		static constexpr float ANGLE_EPS = 1e-6f;
-		static constexpr int   DEFAULT_SEG = 32;
 
-		GizmoAxisRotate() = default;
-		GizmoAxisRotate(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center)
-			: m_axis(Axis.normalized()), m_origin(center)
-		{
-		}
-
-		void startPick(const Eigen::Vector3f& Axis, const Eigen::Vector3f& center,
-			const Eigen::Vector3f& srcDir, const Eigen::Vector3f& srcPos)
-		{
-			m_axis = Axis.normalized();
-			m_origin = center;
-			m_refDir = srcDir;
-			m_refPos = srcPos;
-
-			m_totalAngle = 0.f;
-			m_firstPick = true;
-			m_mouseStart.setZero();
-			m_lastProj.setZero();
-		}
-
-		bool applyDir(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outDir)
-		{
-			Eigen::Vector3f currProj;
-			Eigen::Vector3f currHit;
-			if (!computePlaneProj(ray, eye, currProj, currHit))
-				return false;
-
-			if (m_firstPick)
-			{
-				m_mouseStart = currProj;
-				m_lastProj = currProj;
-				
-				m_firstPick = false;
-				m_refPos = currHit;
-				outDir = m_refDir;
-				m_totalAngle = 0.f;
-				return true;
-			}
-
-			// 计算单帧增量（相邻两帧夹角，永远不会超过半圈）
-			float delta = computeAngle(m_lastProj, currProj);
-			m_totalAngle += delta;
-			m_totalAngle = fmod(m_totalAngle, 3.14159265358979323846f *2);
-			m_lastProj = currProj;
-
-			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
-			outDir = rot * m_refDir;
-			return true;
-		}
-
-		bool applyPos(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outPos)
-		{
-			Eigen::Vector3f currProj;
-			Eigen::Vector3f currHit;
-			if (!computePlaneProj(ray, eye, currProj,currHit))
-				return false;
-
-			if (m_firstPick)
-			{
-				m_mouseStart = currProj;
-				m_lastProj = currProj;
-				m_firstPick = false;
-				m_refPos = currHit;
-				outPos = m_refPos;
-				m_totalAngle = 0.f;
-				return true;
-			}
-
-			float delta = computeAngle(m_lastProj, currProj);
-			m_totalAngle += delta;
-			m_lastProj = currProj;
-
-			Eigen::AngleAxisf rot(m_totalAngle, m_axis);
-			Eigen::Vector3f offset = m_refPos - m_origin;
-			outPos = m_origin + rot * offset;
-			return true;
-		}
-
-		std::vector<Eigen::Vector3f> getRotationArc(int segCount = DEFAULT_SEG) const
-		{
-			std::vector<Eigen::Vector3f> arcPoints;
-			if (segCount < 2 || std::fabs(m_totalAngle) < ANGLE_EPS)
-				return arcPoints;
-
-			Eigen::Vector3f baseOffset = m_refPos - m_origin;
-			float step = m_totalAngle / static_cast<float>(segCount);
-			for (int i = 0; i <= segCount; ++i)
-			{
-				float ang = step * static_cast<float>(i);
-				Eigen::AngleAxisf rotStep(ang, m_axis);
-				arcPoints.push_back(m_origin + rotStep * baseOffset);
-			}
-			return arcPoints;
-		}
-
-		float getRotationAngle() const { return m_totalAngle; }
-
-	private:
-		bool computePlaneProj(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& outProj,Eigen::Vector3f& hitPos) const
-		{
-			const Eigen::Vector3f n = m_axis;
-			const Eigen::Vector3f planePt = m_origin;
-
-			float denom = ray.dot(n);
-			if (std::abs(denom) <= PLANE_DOT_EPS)
-				return false;
-
-			float t = (planePt - eye).dot(n) / denom;
-			if (t <= RAY_T_MIN)
-				return false;
-
-			Eigen::Vector3f hit = eye + ray * t;
-			Eigen::Vector3f hitRel = hit - planePt;
-
-			outProj = hitRel - n * (hitRel.dot(n));
-			float projLen = outProj.norm();
-			if (projLen < PROJ_LEN_EPS)
-				return false;
-			outProj /= projLen;
-			hitPos = hit;
-			
-			return true;
-		}
-
-		float computeAngle(const Eigen::Vector3f& a, const Eigen::Vector3f& b) const
-		{
-			float dot = a.dot(b);
-			float crossSign = m_axis.dot(a.cross(b));
-			return std::atan2(crossSign, dot);
-		}
-
-	private:
-		Eigen::Vector3f m_axis = Eigen::Vector3f::UnitX();
-		Eigen::Vector3f m_origin = Eigen::Vector3f::Zero();
-
-		Eigen::Vector3f m_refDir;
-		Eigen::Vector3f m_refPos;
-		Eigen::Vector3f m_mouseStart;
-		Eigen::Vector3f m_lastProj; // 新增：缓存上一帧鼠标投影
-
-		float m_totalAngle = 0.f;   // 累积总角，范围无限制
-		bool m_firstPick = true;
-	};
-	class GizmoPlaneTranslate
-	{
-	public:
-		GizmoPlaneTranslate() = default;
-		GizmoPlaneTranslate(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos)
-			: plane(planeEq), origin(pos) {
-		}
-
-		void startPick(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos)
-		{
-			plane = planeEq;
-			origin = pos;
-			firstPick = true;
-		}
-
-		void apply(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& pos)
-		{
-			Eigen::Vector3f n(plane.x(), plane.y(), plane.z());
-			float d = plane.w();
-
-			float denom = ray.dot(n);
-			if (std::abs(denom) <= 0.001f)
-				return;
-
-			float t = -(eye.dot(n) + d) / denom;
-			if (t <= 0.001f)
-				return;
-
-			Eigen::Vector3f hit = eye + ray * t;
-			if (firstPick)
-			{
-				mOffset = origin - hit;
-				firstPick = false;
-			}
-			pos = hit + mOffset;
-		}
-
-	private:
-		Eigen::Vector4f plane = Eigen::Vector4f(0, 0, 1, 0);
-		Eigen::Vector3f origin = Eigen::Vector3f::Zero();
-		Eigen::Vector3f mOffset = Eigen::Vector3f::Zero();
-		bool firstPick = true;
-	};
-	class GizmoAxisTranslate {
-	public:
-		GizmoAxisTranslate() = default;
-		GizmoAxisTranslate(const Eigen::Vector3f&Axis, const Eigen::Vector3f& pos):axis(Axis),origin(pos) {}
-		void apply(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye,Eigen::Vector3f&pos) {
-			 Eigen::Vector3f planeTangent=axis.cross(pos-eye);
-			 Eigen::Vector3f planeNormal = axis.cross(planeTangent);
-			 Eigen::Vector3f planePoint = origin;
-			 float denom = ray.dot(planeNormal);
-			 if (std::abs(denom) <= 0.001f)
-				 return;
-			 float t = (planePoint - eye).dot(planeNormal) / denom;
-			 if (t <= 0.001f)
-				 return;
-			 Eigen::Vector3f point = eye + ray * t;
-
-			 if (firstPick)
-			 {
-				 mInitialOffset = origin - point;
-				 firstPick = false;
-			 }
-			 Eigen::Vector3f translationVector = point - planePoint + mInitialOffset;
-			 pos = planePoint + axis*translationVector.dot(axis);
-		}
-		void startPick(const Eigen::Vector3f& Axis, const Eigen::Vector3f& pos) {
-			axis = Axis;
-			origin = pos;
-			firstPick = true;
-		}
-	private:
-		Eigen::Vector3f axis = { 1,0,0 };
-		Eigen::Vector3f origin = { 0,0,0 };
-		Eigen::Vector3f mInitialOffset = { 0,0,0 };
-		bool firstPick = true;
-	};
 	class ClipPlane::ClipPlaneInternal {
 	public:
 		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
@@ -425,6 +197,7 @@ namespace MOON {
 		std::vector<Eigen::Vector3f>slicelines;
 		std::vector<Eigen::Vector3f>sectionFace;
 
+		bool updateEngineUbo = false;
 		GizmoAxisTranslate transLatePick;
 		GizmoPlaneTranslate planeTPick;
 		GizmoAxisRotate axisRPick;
@@ -449,35 +222,28 @@ namespace MOON {
 			ImGui::GetForegroundDrawList()->AddText({ pos.x(),pos.y()-20 }, IM_COL32(255, 255, 0, 255), text.c_str());
 			auto seg = m_internal->axisRPick.getRotationArc();
 			if (seg.size() > 0) {
+				renderer->pushColor({ 255,255,255,0 });
+			
 				for (int i = 0; i < seg.size()-1; i++) {
-					renderer->drawLine(seg[i],seg[i+1],3);
+					renderer->drawLine(seg[i],seg[i+1],5);
 				}
+				renderer->popColor();
 				renderer->pushColor({255,0,255,255});
 				renderer->drawLine(seg[0], m_internal->center, 4);
 				renderer->drawLine(seg.back(), m_internal->center, 4);
 				renderer->popColor();
 			}
-
-			//renderer->drawLineList(m_internal->axisRPick.getRotationArc(), 10, {255,0,255,255});
 		}
-		
-		mPreflag = mCurflag;
-		bool ret = false;
+		bool ret = true;
 		Eigen::Vector3f pos= m_internal->center;
 		float radius=renderer->pixelsToWorldSize(m_internal->center,48);
 		float worldHeight = renderer->pixelsToWorldSize(m_internal->center, 170);
 		float dis=renderer->pixelsToWorldSize(m_internal->center, 30);
-
 		renderer->drawOneMesh(
 			m_internal->center,
 			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"TransformAxis");
-		
-
-
-
-
 		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
 		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
 
@@ -501,52 +267,11 @@ namespace MOON {
 		renderer->drawTriangleList(m_internal->sectionFace,4,{ 255,255,215,255 });
 		renderer->popAlpha();
 		renderer->popEnableSorting();
-		Eigen::Vector3f up = abs(normal.y()) > 0.99 ? Eigen::Vector3f(1, 0, 0) : Eigen::Vector3f(0, 1, 0);
-		Eigen::Vector3f xaxis = normal.cross(up).normalized();
-		Eigen::Vector3f zaxis = xaxis.cross(normal).normalized();
-		unsigned int pointId[4]{ renderer->makeId("p1"), renderer->makeId("p2"), renderer->makeId("p3"), renderer->makeId("p4") };
-		Eigen::Vector3f pointPos[4] = { planeOrigin + xaxis * 1.0 * cirleDetectRadius,planeOrigin - xaxis * 1.0 * cirleDetectRadius, planeOrigin + zaxis * 1.0 * cirleDetectRadius,planeOrigin - zaxis * 1.0 * cirleDetectRadius };
-		Eigen::Vector3f pointDir[4] = { xaxis, -xaxis, zaxis, -zaxis };
 
-		mCurflag = ret;
-		if (mPreflag&&!mCurflag) {
-			Core::ECS::Actor* selectActor = nullptr;
-			if (m_sceneView->IsSelectActor()) {
-				selectActor = m_sceneView->GetSelectedActor();
-				while (!selectActor->HasComponent("CTopoShape")&& selectActor->HasParent())
-				{
-					selectActor = selectActor->GetParent();
-				}
-			}
-			else
-			{
-				selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
-			}
-			
-			if (selectActor)
-			{	
-				//Core::ECS::Components::CTopoShape*
-				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-
-				if (topoComp) {
-					auto& topoShape= topoComp->GetTopoShape();
-					double offset = m_internal->zAxis.dot(m_internal->center);
-					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-					auto wires=topoShape.slice(dir,offset);
-					m_internal->sectionFace=DiscretizeSectionFace(wires);
-					m_internal->slicelines.clear();
-					for (auto& w : wires) {
-						auto tempLine=DiscretizeWire(w);
-						m_internal->slicelines.insert(m_internal->slicelines.end(),
-							tempLine.begin(),tempLine.end()
-							);
-					}
-				}
-			}
-		}
-		if (ret) {
+		if (m_internal->updateEngineUbo)
+		{
+			m_internal->updateEngineUbo = false;
 			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
-			
 			feature.SetClipPlane(
 				m_internal->zAxis.x(),
 				m_internal->zAxis.y(),
@@ -608,12 +333,17 @@ namespace MOON {
 		if (mState == AxisT||mState==PlaneT||mState==AxisR) {
 			mState = Hot;
 			TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
+			PickMeshId id=table[mPickMesh].meshId;
+			bool updateFlag = (id != PickMeshId::XAxis)&& (id != PickMeshId::YAxis)&&
+				(id != PickMeshId::ZNormalPlane)&&(id != PickMeshId::YNormalRotate);
+			if (updateFlag) {
+				updateSection();			
+			}
 		}
 	}
 
 	void ClipPlane::onMouseMove()
 	{
-		
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;
@@ -639,7 +369,6 @@ namespace MOON {
 			}
 			if (!selectFlag) {
 				mState = Stop;
-				
 				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), table[mPickMesh].blockColor);
 			    mPickMesh = PickMeshId::None;
 			}
@@ -672,4 +401,40 @@ namespace MOON {
 		}
 	}
 
+	void ClipPlane::updateSection()
+	{
+		m_internal->updateEngineUbo = true;
+		Core::ECS::Actor* selectActor = nullptr;
+		if (m_sceneView->IsSelectActor()) {
+			selectActor = m_sceneView->GetSelectedActor();
+			while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
+			{
+				selectActor = selectActor->GetParent();
+			}
+		}
+		else
+		{
+			selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+		}
+
+		if (selectActor)
+		{
+			Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+
+			if (topoComp) {
+				auto& topoShape = topoComp->GetTopoShape();
+				double offset = m_internal->zAxis.dot(m_internal->center);
+				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+				auto wires = topoShape.slice(dir, offset);
+				m_internal->sectionFace = DiscretizeSectionFace(wires);
+				m_internal->slicelines.clear();
+				for (auto& w : wires) {
+					auto tempLine = DiscretizeWire(w);
+					m_internal->slicelines.insert(m_internal->slicelines.end(),
+						tempLine.begin(), tempLine.end()
+					);
+				}
+			}
+		}
+	}
 }
