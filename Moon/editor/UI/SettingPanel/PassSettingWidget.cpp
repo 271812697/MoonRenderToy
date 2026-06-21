@@ -117,7 +117,7 @@ namespace MOON {
 				return QVariant::fromValue(pass->IsEnabled());
 			}
 			else if (propertyName == "BackGround mode") {
-				QList<QString>list = { "SkyBox","PureColor","Gradient" };
+				QList<QString>list = {"Gradient"  ,"SkyBox","PureColor"};
 				return QVariant::fromValue(list);
 			}
 			else if (propertyName == "Top Color") {

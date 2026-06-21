@@ -15,6 +15,7 @@ namespace MOON {
 		virtual void clickCancel() override;
 		virtual bool generatePreviewShape()override;
 	private:
+		void onWidgetLengthInvoke();
 		class Internal;
 		Internal* mInternal = nullptr;
 	};

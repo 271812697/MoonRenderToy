@@ -6,14 +6,53 @@
 #include "TopoShape.h"
 #include "core/ViewTool.h"
 #include "core/log.h"
+#include "Interactive/Widgets/AxisTranslationWidget.h"
+#include "Geometry.h"
+
+#include <gp_Pln.hxx>
 namespace MOON {
 
     class ThicknessTaskDialog::Internal {
     public:
-        Internal(ThicknessTaskDialog*s):self(s){}
+        Internal(ThicknessTaskDialog*s):self(s){
+            axisBehaviour = new AxisTranslationWidget("thickness");
+            ViewTool::getSelectedTopoShape(shapes);
+            if (shapes.size() > 0) {
+             
+                Part::TopoShape outWire=shapes[1].splitWires();
+                //outWire.isLinearEdge
+                Part::TopoShape edge=outWire.getOrderedEdges().front();
+                std::unique_ptr<Part::Geometry>curve=Part::Geometry::fromShape(edge.getShape());
+                Part::GeomCurve* geoCurve=dynamic_cast<Part::GeomCurve*>(curve.get());
+                double u0 = geoCurve->getFirstParameter();
+                double u1 = geoCurve->getLastParameter();
+                double u=(u0+u1)*0.5;
+               
+                Base::Vector3d origin = geoCurve->value(u);
+                dir=geoCurve->firstDerivativeAtParameter(u);
+                gp_Pln pln;
+                shapes[1].findPlane(pln);
+                Base::Vector3d nor{ pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
+                dir = dir.Cross(nor);
+                axisBehaviour->setUpOrigin(origin.x,origin.y,origin.z); 
+                if (reverse) {
+                    axisBehaviour->setUpDir(-dir.x,-dir.y,-dir.z);
+                }
+                else {
+                    axisBehaviour->setUpDir(dir.x, dir.y, dir.z);
+                }
+               
+                axisBehaviour->setImmediateInvoke(false);
+                axisBehaviour->setLength(thickNessValue);
+                axisBehaviour->AddObserver(AxisTranslationEvent::LengthChange, self, &ThicknessTaskDialog::onWidgetLengthInvoke);
+
+            }
+        }
         ~Internal() {
+            delete axisBehaviour;
         }
     private:
+        SliderFloatProperty* thickNessProp;
         friend ThicknessTaskDialog;
         ThicknessTaskDialog* self = nullptr;
         float thickNessValue = 0.5;
@@ -21,15 +60,19 @@ namespace MOON {
         int joinType = 0;
         bool reverse = false;
         bool intersection = false;
+        Base::Vector3d dir;
+        AxisTranslationWidget* axisBehaviour = nullptr;
+       
+        std::vector<Part::TopoShape>shapes;
     };
 
     ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent)
         : ParamTaskDialog(parent),mInternal(new Internal(this))
     {
         PropertyComponent* p=addGroupParam("Thickness");
-        SliderFloatProperty* thickNessValue = new SliderFloatProperty("Thickness value", p);
-        thickNessValue->setMinMax(0.1,10);
-        addParam( thickNessValue);
+        mInternal->thickNessProp = new SliderFloatProperty("Thickness value", p);
+        mInternal->thickNessProp->setMinMax(0.1,10);
+        addParam(mInternal->thickNessProp);
         EnumProperty* mode=new EnumProperty("Mode", p);
         addParam(mode);
         EnumProperty* join = new EnumProperty("Join Type", p);
@@ -73,6 +116,7 @@ namespace MOON {
         bool updatePreView = false;
         if (propertyName == "Thickness:Thickness value") {
             mInternal->thickNessValue=value.toFloat();
+            mInternal->axisBehaviour->setLength(mInternal->thickNessValue);
             updatePreView = true;
         }
         else if (propertyName == "Thickness:Mode") {
@@ -85,6 +129,13 @@ namespace MOON {
         }
         else if (propertyName == "Thickness:Reverse") {
             mInternal->reverse = value.value<bool>();
+            if (mInternal->reverse) {
+                mInternal->axisBehaviour->setUpDir(-mInternal->dir.x, -mInternal->dir.y, -mInternal->dir.z);
+            }
+            else {
+                mInternal->axisBehaviour->setUpDir(mInternal->dir.x, mInternal->dir.y, mInternal->dir.z);
+            }
+            mInternal->axisBehaviour->setLength(mInternal->thickNessValue);
             updatePreView = true;
         }
         else if (propertyName == "Thickness:Intersection") {
@@ -109,8 +160,7 @@ namespace MOON {
     }
     bool ThicknessTaskDialog::generatePreviewShape()
     {
-        std::vector<Part::TopoShape>shapes;
-        if (ViewTool::getSelectedTopoShape(shapes)) {
+        if (mInternal->shapes.size() > 0) {
             double tol = Precision::Confusion();
             double thickness = (mInternal->reverse ? -1. : 1.) * mInternal->thickNessValue;
             int join = mInternal->joinType;
@@ -121,8 +171,7 @@ namespace MOON {
             if (fabs(thickness) > 2 * tol) {
                 try
                 {
-                    //CORE_INFO("the num of solid is {}", shapes[0].countSubShapes(TopAbs_SOLID));
-                    getPreviewShape() = shapes[0].makeElementThickSolid({ shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
+                    getPreviewShape() = mInternal->shapes[0].makeElementThickSolid({ mInternal->shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
                     return true;
                 }
                 catch (Standard_Failure& e)
@@ -130,10 +179,14 @@ namespace MOON {
                     CORE_ERROR(e.GetMessageString());
                     return false;
                 }
-                //ViewTool::createTopoActor(res,"ThickNessTopoShape"); 
                 return false;
             }
         }
         return false;
+    }
+    void ThicknessTaskDialog::onWidgetLengthInvoke() {
+        mInternal->thickNessValue = mInternal->axisBehaviour->getLength();
+        mInternal->thickNessProp->updateWidgetValue(mInternal->thickNessValue);
+        previewShape();
     }
 }
