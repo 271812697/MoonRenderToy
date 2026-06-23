@@ -158,7 +158,7 @@ namespace MOON {
     void ThicknessTaskDialog::clickCancel()
     {
     }
-    bool ThicknessTaskDialog::generatePreviewShape()
+    bool ThicknessTaskDialog::generateShape()
     {
         if (mInternal->shapes.size() > 0) {
             double tol = Precision::Confusion();
@@ -171,7 +171,9 @@ namespace MOON {
             if (fabs(thickness) > 2 * tol) {
                 try
                 {
-                    getPreviewShape() = mInternal->shapes[0].makeElementThickSolid({ mInternal->shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
+                    Part::TopoShape shape=mInternal->shapes[0].makeElementThickSolid({ mInternal->shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
+                    getPreviewShape() = shape;
+                    getGenerateShape() = shape;
                     return true;
                 }
                 catch (Standard_Failure& e)

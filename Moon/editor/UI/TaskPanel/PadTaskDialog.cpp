@@ -101,7 +101,7 @@ namespace MOON {
         delete mInternal;
     }
 
-    bool PadTaskDialog::generatePreviewShape()
+    bool PadTaskDialog::generateShape()
     {
         // 1. 获取当前激活的草图
         SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
@@ -176,7 +176,7 @@ namespace MOON {
                 prism = prism.makeElementFuse(baseShape);
             }
             getPreviewShape()= prism;
-
+            getGenerateShape() = prism;
             return true;
         }
         catch (Base::ValueError e) {

@@ -650,7 +650,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 					.distance = distanceToCamera
 			}, drawableCopy);
 		}
-		else if (drawableCopy.material->IsBlendable())
+		else if (drawableCopy.material->IsTransparent())
 		{
 			drawableCopy.pass = "Transparents";
 			output.transparents.emplace(decltype(decltype(output.transparents)::value_type::first){

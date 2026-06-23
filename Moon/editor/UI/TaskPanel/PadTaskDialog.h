@@ -9,7 +9,7 @@ namespace MOON {
 	public:
 		explicit PadTaskDialog(QWidget* parent = nullptr);
 		virtual ~PadTaskDialog()override;
-		virtual bool generatePreviewShape()override;
+		virtual bool generateShape()override;
 		virtual void buildUi() override;
 		virtual void clickOk() override;
 		virtual void clickApply() override;

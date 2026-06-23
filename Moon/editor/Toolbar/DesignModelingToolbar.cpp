@@ -3,6 +3,7 @@
 #include "editor/UI/TaskPanel/TaskViewWidget.h"
 #include "editor/UI/TaskPanel/PadTaskDialog.h"
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
+#include "editor/UI/TaskPanel/FilletTask.h"
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/ViewTool.h"
@@ -11,10 +12,22 @@
 #include <QCoreApplication>
 namespace MOON {
 
-	class PadCommand : public Command
+	BaseTaskDialog* createTaskDialog(const std::string name) {
+		if (name == "Pad") {
+			return new PadTaskDialog();
+		}
+		if (name == "Thickness") {
+			return new ThicknessTaskDialog();
+		}
+		if (name == "Fillet") {
+			return new FilletTask();
+		}
+		return nullptr;
+	}
+	class DesignModelCommand : public Command
 	{
 	public:
-		PadCommand(QObject* parent,const std::string& handler) :Command(parent),handlerName(handler) {
+		DesignModelCommand(QObject* parent,const std::string& name) :Command(parent),taskName(name) {
 			auto action = new QAction(this);
 			action->setCheckable(true);
 			setAction(action);
@@ -23,29 +36,11 @@ namespace MOON {
 		virtual void execute()override {
 			auto& task = GetService(TaskViewWidget);
 			if (!task.hasTask()) {
-				task.setTaskDialog(new PadTaskDialog());
+				task.setTaskDialog(createTaskDialog(taskName));
 			}
 		}
 	private:
-		std::string handlerName = "";
-	};
-	class ThicknessCommand : public Command
-	{
-	public:
-		ThicknessCommand(QObject* parent) :Command(parent){
-			auto action = new QAction(this);
-			action->setCheckable(true);
-			setAction(action);
-		}
-	protected:
-		virtual void execute()override {
-			auto& task = GetService(TaskViewWidget);
-			if (!task.hasTask()) {
-				task.setTaskDialog(new ThicknessTaskDialog());
-			}
-		}
-	private:
-		std::string handlerName = "";
+		std::string taskName = "";
 	};
 	class DesignModelingToolbar::DesignModelingToolbarInternal {
 	public:
@@ -55,23 +50,28 @@ namespace MOON {
 			setup();
 		}
 		void setup() {
-			padCommand = new PadCommand(self, "DesignModelingToolbar_Pad");
+			padCommand = new DesignModelCommand(self, "Pad");
 			padCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Pad.svg");
-			thicknessCommand = new ThicknessCommand(self);
+			thicknessCommand = new DesignModelCommand(self,"Thickness");
 			thicknessCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Thickness.svg");
+			filletCommand = new DesignModelCommand(self,"Fillet");
+			filletCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Fillet.svg");
 			self->addAction(padCommand->action());
 			self->addAction(thicknessCommand->action());
+			self->addAction(filletCommand->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
 			padCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pad", nullptr));
 			thicknessCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Thickness", nullptr));
+			filletCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Fillet", nullptr));
 		}
 	private:
 		friend class DesignModelingToolbarToolbar;
 		DesignModelingToolbar* self = nullptr;
-		PadCommand* padCommand = nullptr;
-		ThicknessCommand* thicknessCommand = nullptr;
+		DesignModelCommand* padCommand = nullptr;
+		DesignModelCommand* thicknessCommand = nullptr;
+		DesignModelCommand* filletCommand = nullptr;
 	};
 
 	DesignModelingToolbar::DesignModelingToolbar(const QString& title, QWidget* parent)
