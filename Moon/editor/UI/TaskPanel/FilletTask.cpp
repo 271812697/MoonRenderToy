@@ -7,6 +7,7 @@
 #include "core/ViewTool.h"
 #include "core/log.h"
 #include "Interactive/Widgets/AxisTranslationWidget.h"
+#include "base/BoundBox.h"
 #include "Geometry.h"
 
 #include <BRepTools.hxx>
@@ -32,12 +33,16 @@ namespace MOON {
     class FilletTask::Internal {
     public:
         Internal(FilletTask*s):self(s){
-            axisBehaviour1 = new AxisTranslationWidget("fillet");
-            axisBehaviour2 = new AxisTranslationWidget("fillet");
+   
             ViewTool::getSelectedTopoShape(shapes);
             if (shapes.size() > 0) {
+                auto len = shapes[0].getBoundBoxOptimal().CalcDiagonalLength()*0.01;;
+                radius = shapes[0].getBoundBoxOptimal().CalcDiagonalLength() * 0.03;
 
-               
+                axisBehaviour1 = new AxisTranslationWidget("fillet");
+                axisBehaviour2 = new AxisTranslationWidget("fillet");
+                axisBehaviour1->setUpScale(len);
+                axisBehaviour2->setUpScale(len);
                 // 1. 获取边
                 TopoDS_Edge edge = TopoDS::Edge(shapes[1].getShape());
 
@@ -122,8 +127,11 @@ namespace MOON {
             }
         }
         ~Internal() {
-            delete axisBehaviour1;
-            delete axisBehaviour2;
+            if (axisBehaviour1) {
+                delete axisBehaviour1;
+                delete axisBehaviour2;
+            }
+
         }
     private:
         SliderFloatProperty* radiusProp;
@@ -141,6 +149,7 @@ namespace MOON {
     FilletTask::FilletTask(QWidget* parent)
         : ParamTaskDialog(parent),mInternal(new Internal(this))
     {       
+        setGenerateShapeName("FilletShape");
         mPreviewOption.isTransparent = false;
         mPreviewOption.isBlend = true;
         mPreviewOption.useDomainColor = false;

@@ -8,7 +8,7 @@
 #include "core/log.h"
 #include "Interactive/Widgets/AxisTranslationWidget.h"
 #include "Geometry.h"
-
+#include "base/BoundBox.h"
 #include <gp_Pln.hxx>
 namespace MOON {
 
@@ -18,7 +18,10 @@ namespace MOON {
             axisBehaviour = new AxisTranslationWidget("thickness");
             ViewTool::getSelectedTopoShape(shapes);
             if (shapes.size() > 0) {
-             
+                double boxLen = shapes[0].getBoundBoxOptimal().CalcDiagonalLength();
+                float len = boxLen* 0.01;;
+
+                thickNessValue = boxLen * 0.02;
                 Part::TopoShape outWire=shapes[1].splitWires();
                 //outWire.isLinearEdge
                 Part::TopoShape edge=outWire.getOrderedEdges().front();
@@ -45,7 +48,7 @@ namespace MOON {
                 axisBehaviour->setImmediateInvoke(false);
                 axisBehaviour->setLength(thickNessValue);
                 axisBehaviour->AddObserver(AxisTranslationEvent::LengthChange, self, &ThicknessTaskDialog::onWidgetLengthInvoke);
-
+                axisBehaviour->setUpScale(len);
             }
         }
         ~Internal() {
@@ -69,6 +72,7 @@ namespace MOON {
     ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent)
         : ParamTaskDialog(parent),mInternal(new Internal(this))
     {
+        setGenerateShapeName("ThickShape");
         PropertyComponent* p=addGroupParam("Thickness");
         mInternal->thickNessProp = new SliderFloatProperty("Thickness value", p);
         mInternal->thickNessProp->setMinMax(0.1,10);

@@ -92,6 +92,7 @@ namespace MOON {
     PadTaskDialog::PadTaskDialog(QWidget* parent)
         : BaseTaskDialog(parent), mInternal(new Internal(this))
     {
+        setGenerateShapeName("PadShape");
         buildUi();
         previewShape();
     }

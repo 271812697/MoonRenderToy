@@ -104,6 +104,16 @@ namespace MOON {
 			faces[id].color = c;
 		}
 	}
+	void WidgetViewData::setTriangleFaceScale(const std::string& name, float scale)
+	{
+		auto it = facesIdMap.find(name);
+		if (it != facesIdMap.end()) {
+			int id = it->second;
+			for (auto& it : faces[id].faces) {
+				it *= scale;
+			}
+		}
+	}
 	std::vector<Edge>& WidgetViewData::getEdge() {
 		return lines;
 	}
