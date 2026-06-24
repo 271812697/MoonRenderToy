@@ -7,15 +7,15 @@ namespace Core::Rendering
 {
 	enum class SkyMode
 	{
-		SkyBox=0,
+		Gradient=0,
 		PureColor = 1,
-		Gradient=2
+		SkyBox=2,
 	};
 	struct SkyBoxSetting
 	{
-		SkyMode mode = SkyMode::SkyBox;
-		Maths::FVector4 topColor{ 0.411f,0.411f,0.411f,1.0f };
-		Maths::FVector4 bottomColor{ 1.0f,1.0f,1.0f,1.0f };
+		SkyMode mode = SkyMode::Gradient;
+		Maths::FVector4 topColor{ 0.211f,0.211f,0.211f,1.0f };
+		Maths::FVector4 bottomColor{ 0.811f,0.811f,0.811f,1.0f };
 		Maths::FVector4 clearColor{1,1,1,1};
 	};
 	class SkyboxRenderPass : public ::Rendering::Core::ARenderPass

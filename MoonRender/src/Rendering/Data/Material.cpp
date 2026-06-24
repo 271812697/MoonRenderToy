@@ -360,6 +360,11 @@ bool Rendering::Data::Material::IsBlendable() const
 	return m_blendable;
 }
 
+bool Rendering::Data::Material::IsTransparent() const
+{
+	return m_transparent;
+}
+
 bool Rendering::Data::Material::IsUserInterface() const
 {
 	return m_userInterface;
@@ -502,4 +507,12 @@ bool Rendering::Data::Material::SupportsProjectionMode(Rendering::Settings::EPro
 void Rendering::Data::Material::SetLineWidth(float p_width)
 {
 	lineWitdh = p_width;
+}
+
+void Rendering::Data::Material::SetTransparent(bool transparent)
+{
+	m_transparent = transparent;
+	if (transparent) {
+		m_blendable = true;
+	}
 }

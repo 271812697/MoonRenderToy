@@ -87,7 +87,7 @@ namespace Core::ECS {
 				faceTransparentMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
 				faceTransparentMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
 				faceTransparentMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
-				faceTransparentMat->SetBlendable(true);
+				faceTransparentMat->SetTransparent(true);
 				faceTransparentMat->SetDepthWriting(true);
 			}
 			{

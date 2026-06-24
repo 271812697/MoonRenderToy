@@ -37,6 +37,16 @@ namespace MOON {
 	EventWidget::~EventWidget()
 	{
 		ImRenderer::instance().removeGizmoWidget(this);
+		
+		// don't listen for events any more
+		if (!this->Parent)
+		{
+			this->Interactor->RemoveObserver(this->KeyEventCallbackCommand);
+		}
+		else
+		{
+			this->Parent->RemoveObserver(this->KeyEventCallbackCommand);
+		}
 		delete KeyEventCallbackCommand;
 	}
 	void EventWidget::setActive(bool flag)

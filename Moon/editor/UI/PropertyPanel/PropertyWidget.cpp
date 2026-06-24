@@ -349,12 +349,13 @@ namespace MOON {
 					auto color = value.value<QColor>();
 					float alpha = color.alpha();
 					if (alpha < 255) {
-						mat->SetBlendable(true);
+						mat->SetTransparent(true);
 						mat->SetDepthWriting(true);
 					}
 					else
 					{
 						mat->SetBlendable(false);
+						mat->SetTransparent(false);
 						mat->SetDepthWriting(true);
 					}
 					mat->SetProperty(propName, Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f });

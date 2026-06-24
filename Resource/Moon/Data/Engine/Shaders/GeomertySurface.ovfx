@@ -3,6 +3,7 @@
 #feature SPECULAR_WORKFLOW
 #feature WITH_EDGE
 #feature TRIANGLE_INFO
+#feature DISABLE_DOMAIN_COLOR
 
 
 #shader vertex
@@ -1185,9 +1186,10 @@ void main()
     {
         discard;
     }
-    
+#if !defined(DISABLE_DOMAIN_COLOR) 
     int domainIndex=int(round(fs_in.TexCoords.x));
     albedo.rgb*=texelFetch(domainColorTex,domainIndex).rgb;
+#endif
 
 #if defined(TRIANGLE_INFO)
     for(int i=0;i<trifoLen;i++){
