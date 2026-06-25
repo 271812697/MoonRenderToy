@@ -8,6 +8,7 @@
 #include<Core/ECS/Components/CModelRenderer.h>
 #include <Rendering/Geometry/bvh.h>
 #include <Rendering/Geometry/split_bvh.h>
+#include <thread>
 namespace Core::ECS::Components
 {
 	class CBatchMeshTriangle::CBatchMeshTriangleInternal {
@@ -125,6 +126,8 @@ namespace Core::ECS::Components
 
 	void CBatchMeshTriangle::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
 	{
+		std::thread* th=new std::thread([this,boxs,subMeshRanges]() {
+			
 		if (mInternal->rootBvh) {
 			delete mInternal->rootBvh;
 		}
@@ -168,74 +171,80 @@ namespace Core::ECS::Components
 			{
 				mInternal->subMeshRanges[i] = subMeshRanges[i-1];
 			}
-		}
+		}			
+			
+			});
+		
+		
+	
 	}
 	std::vector<Core::SceneSystem::RectPickRes> CBatchMeshTriangle::RectPick(const Maths::FMatrix4& modelMatrix,const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev) {
-		auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
-		int actorId = owner.GetID();
-		auto mesh = model->GetModel()->GetMeshes()[0];
-		auto& indices = mesh->GetIndices();
-		auto& vertex = mesh->GetVerticesBVH();
-		std::vector<Core::SceneSystem::RectPickRes>res;
-		std::vector<::Rendering::Geometry::Bvh::Node*>stack;
-	    stack.push_back(mInternal->rootBvh->m_root);
-		while (!stack.empty()) {
-			auto cur = stack.back(); stack.pop_back();
-			if (!cur)continue;
-			auto tbox = cur->bounds.transform(modelMatrix).transform(viewProj);
-			bool flag1 = tbox.pmin.x > eu || tbox.pmax.x < su;
-			bool flag2 = tbox.pmin.y > ev || tbox.pmax.y < sv;
-			if (!flag1 && !flag2) {
-				if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
-					stack.push_back(cur->lc);
-					stack.push_back(cur->rc);
-				}
-				else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
-					for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
-						int index = mInternal->rootBvh->m_packed_indices[i];
-						uint32_t ioffset = mInternal->subMeshRanges[index];
-						auto meshBvh=mInternal->subMeshBvhs[index];
-						std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
-						meshBvhStack.push_back(meshBvh->m_root);
-						bool isHit = false;
-						while (!meshBvhStack.empty()) {
-							auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
-							if (!meshBvhCur)continue;
-							auto mbox = meshBvhCur->bounds.transform(modelMatrix).transform(viewProj);
-							if (!(mbox.pmin.x > eu || mbox.pmax.x < su) && !(mbox.pmin.y > ev || mbox.pmax.y < sv)) {
-								if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
-									meshBvhStack.push_back(meshBvhCur->lc);
-									meshBvhStack.push_back(meshBvhCur->rc);
-								}
-								else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
-									for (int j = meshBvhCur->startidx; j < meshBvhCur->startidx + meshBvhCur->numprims; j++) {
-										int triIndex = meshBvh->m_packed_indices[j];
-										::Rendering::Geometry::VertexBVH v0 = vertex[indices[triIndex * 3+ioffset]];
-										::Rendering::Geometry::VertexBVH v1 = vertex[indices[triIndex * 3 + 1+ioffset]];
-										::Rendering::Geometry::VertexBVH v2 = vertex[indices[triIndex * 3 + 2 + ioffset]];
-										Maths::FVector3 ndcV0 = viewProj.MulPoint(modelMatrix.MulPoint(v0.position));
-										Maths::FVector3 ndcV1 = viewProj.MulPoint(modelMatrix.MulPoint(v1.position));
-										Maths::FVector3 ndcV2 = viewProj.MulPoint(modelMatrix.MulPoint(v2.position));
-										//test intersection
-										if (::Core::SceneSystem::isTriangleAABBIntersect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y }, { ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
-											res.push_back({ actorId,(int)v0.texCoords.x,triIndex });
-											isHit = true;
-											break;
-										}
-										
-									}
-								}
-							}
-							if (isHit) {
-								break;
-							}
-						}
-					}
-				}
-			
-			}
-		}
-		return res;
+		//auto model = owner.GetComponent<Core::ECS::Components::CModelRenderer>();
+		//int actorId = owner.GetID();
+		//auto mesh = model->GetModel()->GetMeshes()[0];
+		//auto& indices = mesh->GetIndices();
+		//auto& vertex = mesh->GetVerticesBVH();
+		//std::vector<Core::SceneSystem::RectPickRes>res;
+		//std::vector<::Rendering::Geometry::Bvh::Node*>stack;
+	 //   stack.push_back(mInternal->rootBvh->m_root);
+		//while (!stack.empty()) {
+		//	auto cur = stack.back(); stack.pop_back();
+		//	if (!cur)continue;
+		//	auto tbox = cur->bounds.transform(modelMatrix).transform(viewProj);
+		//	bool flag1 = tbox.pmin.x > eu || tbox.pmax.x < su;
+		//	bool flag2 = tbox.pmin.y > ev || tbox.pmax.y < sv;
+		//	if (!flag1 && !flag2) {
+		//		if (cur->type == ::Rendering::Geometry::Bvh::kInternal) {
+		//			stack.push_back(cur->lc);
+		//			stack.push_back(cur->rc);
+		//		}
+		//		else if (cur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+		//			for (int i = cur->startidx; i < cur->startidx + cur->numprims; i++) {
+		//				int index = mInternal->rootBvh->m_packed_indices[i];
+		//				uint32_t ioffset = mInternal->subMeshRanges[index];
+		//				auto meshBvh=mInternal->subMeshBvhs[index];
+		//				std::vector<::Rendering::Geometry::Bvh::Node*>meshBvhStack;
+		//				meshBvhStack.push_back(meshBvh->m_root);
+		//				bool isHit = false;
+		//				while (!meshBvhStack.empty()) {
+		//					auto meshBvhCur = meshBvhStack.back(); meshBvhStack.pop_back();
+		//					if (!meshBvhCur)continue;
+		//					auto mbox = meshBvhCur->bounds.transform(modelMatrix).transform(viewProj);
+		//					if (!(mbox.pmin.x > eu || mbox.pmax.x < su) && !(mbox.pmin.y > ev || mbox.pmax.y < sv)) {
+		//						if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kInternal) {
+		//							meshBvhStack.push_back(meshBvhCur->lc);
+		//							meshBvhStack.push_back(meshBvhCur->rc);
+		//						}
+		//						else if (meshBvhCur->type == ::Rendering::Geometry::Bvh::kLeaf) {
+		//							for (int j = meshBvhCur->startidx; j < meshBvhCur->startidx + meshBvhCur->numprims; j++) {
+		//								int triIndex = meshBvh->m_packed_indices[j];
+		//								::Rendering::Geometry::VertexBVH v0 = vertex[indices[triIndex * 3+ioffset]];
+		//								::Rendering::Geometry::VertexBVH v1 = vertex[indices[triIndex * 3 + 1+ioffset]];
+		//								::Rendering::Geometry::VertexBVH v2 = vertex[indices[triIndex * 3 + 2 + ioffset]];
+		//								Maths::FVector3 ndcV0 = viewProj.MulPoint(modelMatrix.MulPoint(v0.position));
+		//								Maths::FVector3 ndcV1 = viewProj.MulPoint(modelMatrix.MulPoint(v1.position));
+		//								Maths::FVector3 ndcV2 = viewProj.MulPoint(modelMatrix.MulPoint(v2.position));
+		//								//test intersection
+		//								if (::Core::SceneSystem::isTriangleAABBIntersect({ ndcV0.x,ndcV0.y }, { ndcV1.x,ndcV1.y }, { ndcV2.x,ndcV2.y }, su, sv, eu, ev)) {
+		//									res.push_back({ actorId,(int)v0.texCoords.x,triIndex });
+		//									isHit = true;
+		//									break;
+		//								}
+		//								
+		//							}
+		//						}
+		//					}
+		//					if (isHit) {
+		//						break;
+		//					}
+		//				}
+		//			}
+		//		}
+		//	
+		//	}
+		//}
+		//return res;
+		return std::vector<Core::SceneSystem::RectPickRes>{};
 	}
 
 	void CBatchMeshTriangle::OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)

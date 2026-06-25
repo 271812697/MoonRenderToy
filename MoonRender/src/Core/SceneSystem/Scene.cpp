@@ -238,6 +238,12 @@ bool Core::SceneSystem::Scene::DelayDestroyActor(ECS::Actor& p_target)
 	return true;
 }
 
+bool Core::SceneSystem::Scene::DelayDestroyActor(const std::vector<ECS::Actor*>& p_target)
+{
+	m_delayActors.insert(m_delayActors.end(),p_target.begin(),p_target.end());
+	return true;
+}
+
 void Core::SceneSystem::Scene::CollectGarbages()
 {
 	m_actors.erase(std::remove_if(m_actors.begin(), m_actors.end(), [this](ECS::Actor* element)

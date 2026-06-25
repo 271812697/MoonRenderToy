@@ -1,6 +1,7 @@
 ﻿#include <array>
 #include <Rendering/Resources/Mesh.h>
 #include "Rendering/Geometry/split_bvh.h"
+#include <thread>
 
 Rendering::Resources::Mesh::Mesh(
 	const std::vector<Geometry::Vertex>& p_vertices,
@@ -60,7 +61,11 @@ m_indices(std::move(p_indices))
 
 	AddMaterial(p_materialIndex,0);
 	Upload(p_vertices, p_indices);
-	ComputeBoundingSphereAndBox(p_vertices);
+	std::thread* th = new std::thread([this]() {
+		
+	ComputeBoundingSphereAndBox(m_vertices);
+		});
+
 }
 Rendering::Resources::Mesh::~Mesh()
 {

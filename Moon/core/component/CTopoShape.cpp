@@ -1,4 +1,5 @@
 ﻿#include <tinyxml2.h>
+#include <tracy/Tracy.hpp>
 #include <Core/ECS/Actor.h>
 #include "core/component/CTopoShape.h"
 #include <Core/ECS/Components/CModelRenderer.h>
@@ -12,6 +13,7 @@
 #include "Interactive/Im3DRenderer.h"
 
 #include "renderer/SceneView.h"
+#include "core/JobSystem.h"
 namespace Core::ECS::Components
 {
 	class CTopoShape::CTopoShapeInternal {
@@ -80,12 +82,12 @@ namespace Core::ECS::Components
             instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
-           
+            ZoneScoped;
             auto& view = GetService(::Editor::Panels::SceneView);
             auto& renderer = view.GetRenderer();
             auto scene = view.GetScene();
             if (mInternal->updateFace) {
-			    mInternal->updateFace = false; 
+                mInternal->updateFace = false; 
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
                
@@ -105,72 +107,90 @@ namespace Core::ECS::Components
                 unsigned int vertexOffset = 0;
                 unsigned int indexOffset = 0;
                 int cnt = 0;
-                std::vector<Core::ECS::Actor*>domainActors;
+                
                 std::vector<::Rendering::Geometry::bbox>domainBoxs;
                 std::vector<uint32_t>domainRange;
                 auto faceChild = owner.GetChild("Face");
-                std::vector<Core::ECS::Actor*> faceChildList=faceChild->GetChildren();
-                for (int i = 0; i < faceChildList.size(); i++) {
-                    scene->DelayDestroyActor(*faceChildList[i]);
-                }
+                scene->DelayDestroyActor(faceChild->GetChildren());
                 int domainIndex = -1;
                 mInternal->domainIndexToFaceChildIndex.resize(domains.size(),-1);
+                std::vector<int>DomainIndexToi(domains.size(), -1);
+                std::vector<int>domainId;
+                std::vector<std::pair<int,int>>domainVertexNum;
+                std::vector<std::pair<int, int>>domainIndexNum; 
+                int numDomains =0 ;
+                //int vertexOffset = 0;
+                //int indexOffset = 0;
+                ZoneScopedN("Batch");
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
                         domainIndex++;
                         mInternal->domainIndexToFaceChildIndex[i] = domainIndex;
+                        DomainIndexToi[domainIndex] = i;
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
-                        
-                        domainActors.push_back(&actor);
-                        
+                        actor.SetParent(*faceChild);     
+                        domainId.push_back(actor.GetID());
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
-                        Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,actor.GetID() * 1.0f };
-                        faceVertices.reserve(faceVertices.size() + domains[i].points.size());
-
-                        indices.resize(indexOffset + domains[i].facets.size() * 3);                       
-                        mInternal->childMeshInfos.push_back(std::make_pair<int,int>(indexOffset,domains[i].facets.size() * 3 ));
-                        ::Rendering::Geometry::bbox subBox;
-                        for (int k = 0; k < domains[i].points.size(); k++) {
-                            faceVertices.emplace_back(
-                                Maths::FVector3{ static_cast<float>(domains[i].points[k].x),static_cast<float>(domains[i].points[k].y),static_cast<float>(domains[i].points[k].z) },
-                                indexId,
-                                Maths::FVector3{ static_cast<float>(domains[i].normals[k].x),static_cast<float>(domains[i].normals[k].y),static_cast<float>(domains[i].normals[k].z) }
-                            );
-                            subBox.grow(faceVertices.back().position);
-                        }
-                        for (int k = 0; k < domains[i].facets.size(); k++) {
-                            indices[indexOffset + 3 * k] = domains[i].facets[k].I1 + vertexOffset;
-                            indices[indexOffset + 3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
-                            indices[indexOffset + 3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
-                        }
-
-                        vertexOffset = faceVertices.size();
-                        indexOffset = indices.size();
-
-                        domainBoxs.push_back(subBox);
+                        mInternal->childMeshInfos.push_back(std::make_pair<int, int>(indexOffset, domains[i].facets.size() * 3));
+                        domainVertexNum.push_back({vertexOffset, domains[i].points.size() });
+                        domainIndexNum.push_back({indexOffset ,domains[i].facets.size() * 3 });
+                        vertexOffset += domains[i].points.size();
+                        indexOffset += domains[i].facets.size() * 3;
                         domainRange.push_back(indexOffset);
+                        numDomains++;
                     }
                 }
+                faceVertices.resize(vertexOffset);
+                indices.resize(indexOffset);
+                domainBoxs.resize(numDomains);
 
-                auto faceMesh = new ::Rendering::Resources::Mesh(
-                    faceVertices,
-                    indices,
-                    0,
-                    ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
-                //add this for transparent
-                faceMesh->AddSubRangeBuffer();
-                faceMesh->AddMaterial(1,1);
+                auto lamda = [&](JobDispatchArgs arg) {
+                    int domainIndex=arg.jobIndex;
+                    Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,domainId[domainIndex] * 1.0f };
+
+                    ::Rendering::Geometry::bbox subBox;
+                    int iIndex= DomainIndexToi[domainIndex];
+                    for (int k = 0; k < domains[iIndex].points.size(); k++) {
+                        faceVertices[domainVertexNum[domainIndex].first + k] = {
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].points[k].x),static_cast<float>(domains[iIndex].points[k].y),static_cast<float>(domains[iIndex].points[k].z) },
+                            indexId,
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z) }
+                   
+                        };
+                        subBox.grow(faceVertices[domainVertexNum[domainIndex].first + k].position);
+                    }
+                    domainBoxs[domainIndex]=subBox;
+                    for (int k = 0; k < domains[iIndex].facets.size(); k++) {
+                        indices[domainIndexNum[domainIndex].first + 3 * k] = domains[iIndex].facets[k].I1 + domainVertexNum[domainIndex].first;
+                        indices[domainIndexNum[domainIndex].first + 3 * k + 1] = domains[iIndex].facets[k].I2 + domainVertexNum[domainIndex].first;
+                        indices[domainIndexNum[domainIndex].first + 3 * k + 2] = domains[iIndex].facets[k].I3 + domainVertexNum[domainIndex].first;;
+                    }
+                };
+                MOON::System::JobSystem::Context ctx;
+                MOON::System::JobSystem::Dispatch(ctx, numDomains, 10, lamda);
+                MOON::System::JobSystem::Wait(ctx);
+
+                ::Rendering::Resources::Mesh* faceMesh = nullptr;
+                {
+                    ZoneScopedN("faceMesh");
+
+                    faceMesh = new ::Rendering::Resources::Mesh(
+                        faceVertices,
+                        indices,
+                        0,
+                        ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
+                    //add this for transparent
+                    faceMesh->AddSubRangeBuffer();
+                    faceMesh->AddMaterial(1,1);
+                }
+
                 
 
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->ClearMeshes();
                 model->AddMesh(faceMesh);
-
-                for (auto* acptr : domainActors) {
-                    acptr->SetParent(*faceChild);
-                }
                 //these two tex have leaks!!!!
                 //domain colors Tex
                 ::Rendering::Settings::TextureDesc desc;
@@ -188,8 +208,10 @@ namespace Core::ECS::Components
                 tempMat->SetProperty("domainColorTex", domainColorTex);
                 auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
-                bacthMesh.BuildBvh(domainBoxs, domainRange);
-
+                {
+                    ZoneScopedN("domainBoxs BuildBvh"); 
+                    bacthMesh.BuildBvh(domainBoxs, domainRange);
+                }
                 setChildsMeshTransParent({});
             }
             if (mInternal->updateEdge)
@@ -202,9 +224,7 @@ namespace Core::ECS::Components
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-                std::vector<Core::ECS::Actor*>sublineActors(LineRanges.size());
                 auto edgeChild = owner.GetChild("Edge");
-                
                 std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
                 for (int i = 0; i < edgeChildList.size(); i++) {
                     scene->DelayDestroyActor(*edgeChildList[i]);
@@ -212,10 +232,12 @@ namespace Core::ECS::Components
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
+                    ZoneScopedN("line");
                     auto& l = LineRanges[i];
                     auto& actor = scene->CreateActor("edge_" + std::to_string(i));
                     float subLineId=actor.GetID() * 1.0f;
-                    sublineActors[i] = &actor;
+                    
+                    actor.SetParent(*edgeChild);
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
                         v.position.x = static_cast<float>(linePoints[k].x);
@@ -239,9 +261,6 @@ namespace Core::ECS::Components
                     lineSegmentOffsets.emplace_back(lineIndex.size());
                 }
                
-                for (int i = 0; i < sublineActors.size();i++) {
-                    sublineActors[i]->SetParent(*edgeChild);
-                }
                 auto lineMesh = new ::Rendering::Resources::Mesh(
                     p_vertices,
                     lineIndex,

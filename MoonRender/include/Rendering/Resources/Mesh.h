@@ -69,7 +69,7 @@ namespace Rendering::Resources
 		
 		HAL::VertexBuffer m_vertexBuffer;
 		std::vector<std::unique_ptr<HAL::IndexBuffer>> m_IndexBuffers;
-		std::vector< std::unique_ptr<HAL::VertexArray>> m_vertexArrays;
+		std::vector<std::unique_ptr<HAL::VertexArray>> m_vertexArrays;
 		bool isIndex = false;
 		std::vector<Geometry::VertexBVH> m_vertices;
 		std::vector<uint32_t> m_indices;
