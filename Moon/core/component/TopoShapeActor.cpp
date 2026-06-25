@@ -100,7 +100,7 @@ namespace Core::ECS {
 			}
 
 		}
-		GetViewerWidget.updateTreeView();
+		//GetViewerWidget.updateTreeView();
 	}
 
 	void TopoActor::ClearModel()

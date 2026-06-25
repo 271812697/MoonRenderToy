@@ -14,6 +14,8 @@
 
 #include "renderer/SceneView.h"
 #include "core/JobSystem.h"
+#include "Tools.h"
+#include <TopoDS.hxx>
 namespace Core::ECS::Components
 {
 	class CTopoShape::CTopoShapeInternal {
@@ -90,8 +92,11 @@ namespace Core::ECS::Components
                 mInternal->updateFace = false; 
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
+                {
+                    ZoneScopedN("GetDomain");
+                    mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
+                }
                
-                mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
                 static Maths::FVector4 colors[] = {
                 { 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
                 { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
@@ -216,18 +221,122 @@ namespace Core::ECS::Components
             }
             if (mInternal->updateEdge)
             {
+                ZoneScopedN("updateEdge");
                 mInternal->updateEdge = false;
                 std::vector<Base::Vector3d>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
-                mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
+                {
+                    ZoneScopedN("getLines");
+                    //mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
+                    TopoDS_Shape shape=mInternal->mTopoShape.getShape();
+                    if (!shape.IsNull()) {
+                        // build up map edge->face
+                        TopTools_IndexedDataMapOfShapeListOfShape edge2Face;
+                        TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, edge2Face);
+                        TopTools_IndexedMapOfShape edgeMap;
+                        TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
+                        std::vector<std::vector<gp_Pnt>> pointArray(edgeMap.Extent(), std::vector<gp_Pnt>());
+                        auto lamda = [&](JobDispatchArgs arg) {
+                            int i = arg.jobIndex+1;
+                            const TopoDS_Edge& aEdge = TopoDS::Edge(edgeMap(i));
+                            std::vector<gp_Pnt> points;
+
+                            if (!Part::Tools::getPolygon3D(aEdge, points)) {
+                                // the edge has not its own triangulation, but then a face the edge is attached to
+                                // must provide this triangulation
+
+                                // Look for one face in our map (it doesn't care which one we take)
+                                int index = edge2Face.FindIndex(aEdge);
+                                if (index < 1) {
+                                  return;
+                                }
+                                const auto& faces = edge2Face.FindFromIndex(index);
+                                if (faces.IsEmpty()) {
+                                    return;
+                                }
+                                const TopoDS_Face& aFace = TopoDS::Face(faces.First());
+                                if (!Part::Tools::getPolygonOnTriangulation(aEdge, aFace, points)) {
+                                    return;
+                                }
+                            }
+                            pointArray[arg.jobIndex] = std::move(points);
+                        };
+                        MOON::System::JobSystem::Context ctx;
+                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 10, lamda);
+                        MOON::System::JobSystem::Wait(ctx);
+
+                        int validLineNums = 0;
+                        int vertexOffset = 0;
+                        int numVertex = 0;
+                        std::vector<int>lineIndexToi;
+                        for (int i = 0; i < pointArray.size(); i++) {
+                            if (pointArray[i].size() > 0) {
+                                lineIndexToi.push_back(i);
+                                validLineNums++;
+                                LineRanges.emplace_back();
+                                LineRanges.back().I1 = vertexOffset;
+                                LineRanges.back().I2 = vertexOffset+ pointArray[i].size() - 1;
+                                numVertex += pointArray[i].size();
+                                vertexOffset = LineRanges.back().I2 + 1;
+                            }
+                        }
+                        linePoints.resize(numVertex);
+                        auto mergeVertex = [&](JobDispatchArgs arg) {
+                            int i = lineIndexToi[arg.jobIndex];
+                            for (int k = LineRanges[arg.jobIndex].I1; k <= LineRanges[arg.jobIndex].I2; k++) {
+                                linePoints[k] = Base::convertTo<Base::Vector3d>(pointArray[i][k - LineRanges[arg.jobIndex].I1]);
+                            }
+                        };
+                        MOON::System::JobSystem::Dispatch(ctx, validLineNums, 10, mergeVertex);
+                        MOON::System::JobSystem::Wait(ctx);
+                        //for (int i = 1; i <= edgeMap.Extent(); ++i)
+                        //{
+
+                        //    const TopoDS_Edge& aEdge = TopoDS::Edge(edgeMap(i));
+                        //    std::vector<gp_Pnt> points;
+
+                        //    if (!Part::Tools::getPolygon3D(aEdge, points)) {
+                        //        // the edge has not its own triangulation, but then a face the edge is attached to
+                        //        // must provide this triangulation
+
+                        //        // Look for one face in our map (it doesn't care which one we take)
+                        //        int index = edge2Face.FindIndex(aEdge);
+                        //        if (index < 1) {
+                        //            continue;
+                        //        }
+                        //        const auto& faces = edge2Face.FindFromIndex(index);
+                        //        if (faces.IsEmpty()) {
+                        //            continue;
+                        //        }
+                        //        const TopoDS_Face& aFace = TopoDS::Face(faces.First());
+                        //        if (!Part::Tools::getPolygonOnTriangulation(aEdge, aFace, points)) {
+                        //            continue;
+                        //        }
+                        //    }
+                        //    auto line_start = linePoints.size();
+                        //    linePoints.reserve(linePoints.size() + points.size());
+                        //    std::for_each(points.begin(), points.end(), [&linePoints](const gp_Pnt& p) {
+                        //        linePoints.push_back(Base::convertTo<Base::Vector3d>(p));
+                        //        });
+
+                        //    if (line_start + 1 < linePoints.size()) {
+                        //        LineRanges.emplace_back();
+                        //        LineRanges.back().I1 = line_start;
+                        //        LineRanges.back().I2 = linePoints.size() - 1;
+                        //    }
+                        //}
+                    }
+                }
+
                 //build lines
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-                auto edgeChild = owner.GetChild("Edge");
-                std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
-                for (int i = 0; i < edgeChildList.size(); i++) {
-                    scene->DelayDestroyActor(*edgeChildList[i]);
+                auto edgeChild = owner.GetChild("Edge");    
+                {
+                    ZoneScopedN("destoryActors"); 
+                    std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
+                    scene->DelayDestroyActor(edgeChildList);
                 }
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
