@@ -262,7 +262,7 @@ namespace Core::ECS::Components
                             pointArray[arg.jobIndex] = std::move(points);
                         };
                         MOON::System::JobSystem::Context ctx;
-                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 10, lamda);
+                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 100, lamda);
                         MOON::System::JobSystem::Wait(ctx);
 
                         int validLineNums = 0;
@@ -289,42 +289,6 @@ namespace Core::ECS::Components
                         };
                         MOON::System::JobSystem::Dispatch(ctx, validLineNums, 10, mergeVertex);
                         MOON::System::JobSystem::Wait(ctx);
-                        //for (int i = 1; i <= edgeMap.Extent(); ++i)
-                        //{
-
-                        //    const TopoDS_Edge& aEdge = TopoDS::Edge(edgeMap(i));
-                        //    std::vector<gp_Pnt> points;
-
-                        //    if (!Part::Tools::getPolygon3D(aEdge, points)) {
-                        //        // the edge has not its own triangulation, but then a face the edge is attached to
-                        //        // must provide this triangulation
-
-                        //        // Look for one face in our map (it doesn't care which one we take)
-                        //        int index = edge2Face.FindIndex(aEdge);
-                        //        if (index < 1) {
-                        //            continue;
-                        //        }
-                        //        const auto& faces = edge2Face.FindFromIndex(index);
-                        //        if (faces.IsEmpty()) {
-                        //            continue;
-                        //        }
-                        //        const TopoDS_Face& aFace = TopoDS::Face(faces.First());
-                        //        if (!Part::Tools::getPolygonOnTriangulation(aEdge, aFace, points)) {
-                        //            continue;
-                        //        }
-                        //    }
-                        //    auto line_start = linePoints.size();
-                        //    linePoints.reserve(linePoints.size() + points.size());
-                        //    std::for_each(points.begin(), points.end(), [&linePoints](const gp_Pnt& p) {
-                        //        linePoints.push_back(Base::convertTo<Base::Vector3d>(p));
-                        //        });
-
-                        //    if (line_start + 1 < linePoints.size()) {
-                        //        LineRanges.emplace_back();
-                        //        LineRanges.back().I1 = line_start;
-                        //        LineRanges.back().I2 = linePoints.size() - 1;
-                        //    }
-                        //}
                     }
                 }
 

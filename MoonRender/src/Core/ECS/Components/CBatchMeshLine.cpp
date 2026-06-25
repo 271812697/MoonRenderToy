@@ -75,42 +75,42 @@ namespace Core::ECS::Components
 
 	void CBatchMeshLine::BuildBvh( const std::vector<uint32_t>& subMeshRanges)
 	{
-		if (mInternal->rootBvh) {
-			delete mInternal->rootBvh;
-			mInternal->rootBvh = nullptr;
-			for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
-				if(mInternal->subMeshBvhs[i])
-				delete mInternal->subMeshBvhs[i];
-			} 
-			mInternal->subMeshBvhs.clear();
-		}
-		mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
-		std::vector<::Rendering::Geometry::bbox> boxs;
-		//mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
-		auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();
-		auto mesh=model->GetModel()->GetMeshes()[0];
-		auto& indices =mesh->GetIndices();
-		auto& vertex=mesh->GetVerticesBVH();
-		uint32_t ioffset = 0;
-		boxs.reserve(subMeshRanges.size());
-		for (int i = 0; i < subMeshRanges.size(); i++) {
-			int numLines = (subMeshRanges[i] - ioffset) / 2;
-			auto bvh = new ::Rendering::Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
-			//为所有的线段构建包围盒，然后在对所有的包围盒构建bvh
-			std::vector<::Rendering::Geometry::bbox> bounds(numLines);
-			for (int k = 0; k < numLines; k++)
-			{
+		//if (mInternal->rootBvh) {
+		//	delete mInternal->rootBvh;
+		//	mInternal->rootBvh = nullptr;
+		//	for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
+		//		if(mInternal->subMeshBvhs[i])
+		//		delete mInternal->subMeshBvhs[i];
+		//	} 
+		//	mInternal->subMeshBvhs.clear();
+		//}
+		//mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
+		//std::vector<::Rendering::Geometry::bbox> boxs;
+		////mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
+		//auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();
+		//auto mesh=model->GetModel()->GetMeshes()[0];
+		//auto& indices =mesh->GetIndices();
+		//auto& vertex=mesh->GetVerticesBVH();
+		//uint32_t ioffset = 0;
+		//boxs.reserve(subMeshRanges.size());
+		//for (int i = 0; i < subMeshRanges.size(); i++) {
+		//	int numLines = (subMeshRanges[i] - ioffset) / 2;
+		//	auto bvh = new ::Rendering::Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+		//	//为所有的线段构建包围盒，然后在对所有的包围盒构建bvh
+		//	std::vector<::Rendering::Geometry::bbox> bounds(numLines);
+		//	for (int k = 0; k < numLines; k++)
+		//	{
 
-				bounds[k].grow(vertex[indices[2 * k+ ioffset]].position);
-				bounds[k].grow(vertex[indices[2 * k + 1 + ioffset]].position);
-				
-			}
-			
-			bvh->Build(&bounds[0], numLines);
-			boxs.emplace_back(bvh->m_bounds);
-			mInternal->subMeshBvhs.push_back(bvh);
-			ioffset = subMeshRanges[i];
-		}
+		//		bounds[k].grow(vertex[indices[2 * k+ ioffset]].position);
+		//		bounds[k].grow(vertex[indices[2 * k + 1 + ioffset]].position);
+		//		
+		//	}
+		//	
+		//	bvh->Build(&bounds[0], numLines);
+		//	boxs.emplace_back(bvh->m_bounds);
+		//	mInternal->subMeshBvhs.push_back(bvh);
+		//	ioffset = subMeshRanges[i];
+		//}
 		mInternal->subMeshRanges.resize(subMeshRanges.size());
 		for (int i = 0; i < subMeshRanges.size(); i++) {
 			if (i == 0) {
@@ -121,7 +121,7 @@ namespace Core::ECS::Components
 				mInternal->subMeshRanges[i] = subMeshRanges[i-1];
 			}
 		}
-		mInternal->rootBvh->Build(boxs.data(), boxs.size());
+		//mInternal->rootBvh->Build(boxs.data(), boxs.size());
 	}
 
 	bool CBatchMeshLine::PointPick(const Maths::FMatrix4& viewPortMatrix, int x, int y, float tolerance, Core::SceneSystem::PointPickRes& out)
