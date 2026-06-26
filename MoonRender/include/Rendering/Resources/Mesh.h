@@ -53,6 +53,7 @@ namespace Rendering::Resources
 		void UploadIndices(const std::vector<std::pair<int,int>>&childListt,int index=0);
 		void UploadIndices(const std::vector<uint32_t>& p_indices, int index = 0);
 		void AddSubRangeBuffer();
+		void ComputeBoundingSphereAndBox();
 	private:
 		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);

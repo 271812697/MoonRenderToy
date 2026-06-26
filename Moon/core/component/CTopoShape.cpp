@@ -172,7 +172,7 @@ namespace Core::ECS::Components
                         indices[domainIndexNum[domainIndex].first + 3 * k + 2] = domains[iIndex].facets[k].I3 + domainVertexNum[domainIndex].first;;
                     }
                 };
-                MOON::System::JobSystem::Context ctx;
+                static MOON::System::JobSystem::Context ctx;
                 MOON::System::JobSystem::Dispatch(ctx, numDomains, 10, lamda);
                 MOON::System::JobSystem::Wait(ctx);
 
@@ -189,13 +189,16 @@ namespace Core::ECS::Components
                     faceMesh->AddSubRangeBuffer();
                     faceMesh->AddMaterial(1,1);
                 }
-
-                
-
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->ClearMeshes();
                 model->AddMesh(faceMesh);
+                auto computeBox =[=](JobDispatchArgs arg) {
+                    faceMesh->ComputeBoundingSphereAndBox();
+                    model->computeBoxAndShpere();
+                    };
+                MOON::System::JobSystem::Execute(ctx,computeBox);
+
                 //these two tex have leaks!!!!
                 //domain colors Tex
                 ::Rendering::Settings::TextureDesc desc;
@@ -217,7 +220,7 @@ namespace Core::ECS::Components
                     ZoneScopedN("domainBoxs BuildBvh"); 
                     bacthMesh.BuildBvh(domainBoxs, domainRange);
                 }
-                setChildsMeshTransParent({});
+                //setChildsMeshTransParent({});
             }
             if (mInternal->updateEdge)
             {
