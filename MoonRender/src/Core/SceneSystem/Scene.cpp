@@ -447,13 +447,11 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 			auto model=modelRenderer->GetModel();
 			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 			if (model&&mat) {
-
-				bool isTriMesh = model->GetMeshes()[0]->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 				auto matrix = modelRenderer->owner.transform.GetWorldMatrix();	
 				for (auto& m: model->GetMeshes()) {
-					
+					bool isTriMesh = m->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 					auto meshInstaceBox=m->GetBoundingBox().transform(matrix);
-					if (meshInstaceBox.isValid()) {
+					if (isTriMesh&&meshInstaceBox.isValid()) {
 						bounds.push_back(meshInstaceBox);
 
 						//figure out  the matId

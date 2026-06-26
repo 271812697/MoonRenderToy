@@ -88,7 +88,9 @@ namespace Core::ECS::Components
             auto& view = GetService(::Editor::Panels::SceneView);
             auto& renderer = view.GetRenderer();
             auto scene = view.GetScene();
-            if (mInternal->updateFace) {
+           
+            if (mInternal->updateFace) { 
+                static MOON::System::JobSystem::Context ctx;
                 mInternal->updateFace = false; 
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
@@ -172,7 +174,7 @@ namespace Core::ECS::Components
                         indices[domainIndexNum[domainIndex].first + 3 * k + 2] = domains[iIndex].facets[k].I3 + domainVertexNum[domainIndex].first;;
                     }
                 };
-                static MOON::System::JobSystem::Context ctx;
+               
                 MOON::System::JobSystem::Dispatch(ctx, numDomains, 10, lamda);
                 MOON::System::JobSystem::Wait(ctx);
 
@@ -225,6 +227,7 @@ namespace Core::ECS::Components
             if (mInternal->updateEdge)
             {
                 ZoneScopedN("updateEdge");
+                static MOON::System::JobSystem::Context ctx;
                 mInternal->updateEdge = false;
                 std::vector<Base::Vector3d>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
@@ -265,7 +268,7 @@ namespace Core::ECS::Components
                             pointArray[arg.jobIndex] = std::move(points);
                         };
                         MOON::System::JobSystem::Context ctx;
-                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 100, lamda);
+                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 10, lamda);
                         MOON::System::JobSystem::Wait(ctx);
 
                         int validLineNums = 0;
@@ -342,11 +345,17 @@ namespace Core::ECS::Components
                     lineIndex,
                     0,
                     ::Rendering::Settings::EPrimitiveMode::LINES);
-               
+                //lineMesh->ComputeBoundingSphereAndBox();
                 auto lineModel = edgeChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->ClearMeshes();
                 lineModel->AddMesh(lineMesh);
+
+                auto computeBox = [=](JobDispatchArgs arg) {
+                    lineMesh->ComputeBoundingSphereAndBox();
+                    lineModel->computeBoxAndShpere();
+                    };
+                MOON::System::JobSystem::Execute(ctx, computeBox);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        

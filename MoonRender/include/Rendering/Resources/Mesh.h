@@ -65,6 +65,8 @@ namespace Rendering::Resources
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
 		std::vector<uint32_t> uploadIndicesCount;
+
+		//to sure which subRange to which material
 		std::vector<uint32_t> m_materialIndex;
 		std::vector<uint32_t> m_subRangeIndex;
 		
