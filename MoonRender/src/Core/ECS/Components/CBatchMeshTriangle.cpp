@@ -126,56 +126,57 @@ namespace Core::ECS::Components
 
 	void CBatchMeshTriangle::BuildBvh(const std::vector<::Rendering::Geometry::bbox>& boxs, const std::vector<uint32_t>& subMeshRanges)
 	{
-		std::thread* th=new std::thread([this,boxs,subMeshRanges]() {
-			
-		if (mInternal->rootBvh) {
-			delete mInternal->rootBvh;
-		}
-		if (mInternal->subMeshBvhs.size()) {
-			for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
-				if(mInternal->subMeshBvhs[i])
-				delete mInternal->subMeshBvhs[i];
-			}
-			mInternal->subMeshBvhs.clear();
-		}
+		return;
+		//std::thread* th=new std::thread([this,boxs,subMeshRanges]() {
+		//	
+		//if (mInternal->rootBvh) {
+		//	delete mInternal->rootBvh;
+		//}
+		//if (mInternal->subMeshBvhs.size()) {
+		//	for (int i = 0; i < mInternal->subMeshBvhs.size(); i++) {
+		//		if(mInternal->subMeshBvhs[i])
+		//		delete mInternal->subMeshBvhs[i];
+		//	}
+		//	mInternal->subMeshBvhs.clear();
+		//}
 
-		mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
-		mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
-		auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();
-		auto mesh=model->GetModel()->GetMeshes()[0];
-		auto& indices =mesh->GetIndices();
-		auto& vertex=mesh->GetVerticesBVH();
-		uint32_t ioffset = 0;
-		for (int i = 0; i < subMeshRanges.size(); i++) {
-			int numTris = (subMeshRanges[i] - ioffset) / 3;
-			auto bvh = new ::Rendering::Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
-			//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
-			std::vector<::Rendering::Geometry::bbox> bounds(numTris);
-			for (int k = 0; k < numTris; k++)
-			{
+		//mInternal->rootBvh = new ::Rendering::Geometry::Bvh(10.0f, 64, false);
+		//mInternal->rootBvh->Build(boxs.data(),boxs.size());//::Rendering::Geometry::Bvh rootBvh;
+		//auto model=owner.GetComponent<Core::ECS::Components::CModelRenderer>();
+		//auto mesh=model->GetModel()->GetMeshes()[0];
+		//auto& indices =mesh->GetIndices();
+		//auto& vertex=mesh->GetVerticesBVH();
+		//uint32_t ioffset = 0;
+		//for (int i = 0; i < subMeshRanges.size(); i++) {
+		//	int numTris = (subMeshRanges[i] - ioffset) / 3;
+		//	auto bvh = new ::Rendering::Geometry::SplitBvh(2.0f, 64, 0, 0.001f, 0);
+		//	//为所有的三角形构建包围盒，然后在对所有的包围盒构建bvh
+		//	std::vector<::Rendering::Geometry::bbox> bounds(numTris);
+		//	for (int k = 0; k < numTris; k++)
+		//	{
 
-				bounds[k].grow(vertex[indices[3 * k+ ioffset]].position);
-				bounds[k].grow(vertex[indices[3 * k + 1 + ioffset]].position);
-				bounds[k].grow(vertex[indices[3 * k + 2 + ioffset]].position);
-			}
-			bvh->Build(&bounds[0], numTris);
-			mInternal->subMeshBvhs.push_back(bvh);
-			ioffset = subMeshRanges[i];
-		}
-		mInternal->subMeshRanges.resize(subMeshRanges.size());
-		for (int i = 0; i < subMeshRanges.size(); i++) {
-			if (i == 0) {
-				mInternal->subMeshRanges[i] = 0;
-			}
-			else
-			{
-				mInternal->subMeshRanges[i] = subMeshRanges[i-1];
-			}
-		}			
-			
-			});
-		
-		
+		//		bounds[k].grow(vertex[indices[3 * k+ ioffset]].position);
+		//		bounds[k].grow(vertex[indices[3 * k + 1 + ioffset]].position);
+		//		bounds[k].grow(vertex[indices[3 * k + 2 + ioffset]].position);
+		//	}
+		//	bvh->Build(&bounds[0], numTris);
+		//	mInternal->subMeshBvhs.push_back(bvh);
+		//	ioffset = subMeshRanges[i];
+		//}
+		//mInternal->subMeshRanges.resize(subMeshRanges.size());
+		//for (int i = 0; i < subMeshRanges.size(); i++) {
+		//	if (i == 0) {
+		//		mInternal->subMeshRanges[i] = 0;
+		//	}
+		//	else
+		//	{
+		//		mInternal->subMeshRanges[i] = subMeshRanges[i-1];
+		//	}
+		//}			
+		//	
+		//	});
+		//
+		//
 	
 	}
 	std::vector<Core::SceneSystem::RectPickRes> CBatchMeshTriangle::RectPick(const Maths::FMatrix4& modelMatrix,const Maths::FMatrix4& viewProj, float su, float sv, float eu, float ev) {

@@ -16,6 +16,8 @@
 #include "core/JobSystem.h"
 #include "Tools.h"
 #include <TopoDS.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <TopExp_Explorer.hxx>
 namespace Core::ECS::Components
 {
 	class CTopoShape::CTopoShapeInternal {
@@ -95,8 +97,86 @@ namespace Core::ECS::Components
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
                 {
+                    
                     ZoneScopedN("GetDomain");
-                    mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
+                    mInternal->mTopoShape.getDomainfaces(domains, mInternal->mTopoShape.getAccuracy());
+                    //the follow code will crash in release mode
+                    /*
+                    
+                    static MOON::System::JobSystem::Context locctx;
+                    TopoDS_Shape shape=mInternal->mTopoShape.getShape();
+                    if (!shape.IsNull()) {
+                        auto defaultAngularDeflection = [](double linearTolerance)
+                            {
+                                // Default OCC angular deflection is 0.5 radians, or about 28.6 degrees.
+                                // That is a bit coarser than necessary for performance, so we default to at
+                                // most 0.1 radians, or 5.7 degrees. We also do not go finer than 0.005, or
+                                // roughly 0.28 degree angular resolution, to avoid performance tanking
+                                // completely at very fine resolutions.
+                                return std::min(0.1, linearTolerance * 5 + 0.005);
+                            };
+
+                         BRepMesh_IncrementalMesh aMesh(shape, mInternal->mTopoShape.getAccuracy(),
+                                                 Standard_False,
+                                                
+                                                defaultAngularDeflection(mInternal->mTopoShape.getAccuracy()),
+                                                 false);
+                        
+
+                         TopTools_IndexedMapOfShape faceMap;
+                         TopExp::MapShapes(shape, TopAbs_FACE, faceMap); 
+                         std::size_t countFaces = faceMap.Extent();
+                         domains.resize(countFaces);
+                         auto lamda = [&](JobDispatchArgs arg) {
+                             int i = arg.jobIndex + 1;
+                             const TopoDS_Face& face = TopoDS::Face(faceMap(i));
+                             std::vector<gp_Pnt> points;
+                             std::vector<gp_Vec> normals;
+                             std::vector<Poly_Triangle> facets;
+                             if (!Part::Tools::getTriangulation(face, points, normals, facets)) {
+                                 // For a face that cannot be meshed append an empty domain.
+                                 // It's important for some algorithms (e.g. color mapping) that the numbers of
+                                 // faces and domains match
+                                 Data::ComplexGeoData::Domain domain;
+                                 domains[arg.jobIndex]=domain;
+                             }
+                             else {
+                                 Data::ComplexGeoData::Domain domain;
+                                 // copy the points
+                                 domain.points.reserve(points.size());
+                                 domain.normals.reserve(points.size());
+                                 for (const auto& it : points) {
+                                     Standard_Real X, Y, Z;
+                                     it.Coord(X, Y, Z);
+                                     domain.points.emplace_back(X, Y, Z);
+                                 }
+                                 for (const auto& it : normals) {
+                                     Standard_Real X, Y, Z;
+                                     it.Coord(X, Y, Z);
+                                     domain.normals.emplace_back(X, Y, Z);
+                                 }
+                                 // copy the triangles
+                                 domain.facets.reserve(facets.size());
+                                 for (const auto& it : facets) {
+                                     Standard_Integer N1, N2, N3;
+                                     it.Get(N1, N2, N3);
+
+                                     Data::ComplexGeoData::Facet tria;
+                                     tria.I1 = N1;
+                                     tria.I2 = N2;
+                                     tria.I3 = N3;
+                                     domain.facets.push_back(tria);
+                                 }
+
+                                 domains[arg.jobIndex]=domain;
+                             }
+
+                          };
+                         MOON::System::JobSystem::Dispatch(locctx, countFaces, 10, lamda);
+                         MOON::System::JobSystem::Wait(locctx);
+                    }                    
+                    */
+
                 }
                
                 static Maths::FVector4 colors[] = {
@@ -229,7 +309,7 @@ namespace Core::ECS::Components
                 ZoneScopedN("updateEdge");
                 static MOON::System::JobSystem::Context ctx;
                 mInternal->updateEdge = false;
-                std::vector<Base::Vector3d>linePoints;
+                std::vector<Maths::FVector3>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
                 {
                     ZoneScopedN("getLines");
@@ -290,7 +370,8 @@ namespace Core::ECS::Components
                         auto mergeVertex = [&](JobDispatchArgs arg) {
                             int i = lineIndexToi[arg.jobIndex];
                             for (int k = LineRanges[arg.jobIndex].I1; k <= LineRanges[arg.jobIndex].I2; k++) {
-                                linePoints[k] = Base::convertTo<Base::Vector3d>(pointArray[i][k - LineRanges[arg.jobIndex].I1]);
+                                gp_Pnt& p=pointArray[i][k - LineRanges[arg.jobIndex].I1];
+                                linePoints[k] = {static_cast<float>(p.X()),static_cast<float>(p.Y()) ,static_cast<float>(p.Z()) };
                             }
                         };
                         MOON::System::JobSystem::Dispatch(ctx, validLineNums, 10, mergeVertex);
@@ -319,9 +400,7 @@ namespace Core::ECS::Components
                     actor.SetParent(*edgeChild);
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
-                        v.position.x = static_cast<float>(linePoints[k].x);
-                        v.position.y = static_cast<float>(linePoints[k].y);
-                        v.position.z = static_cast<float>(linePoints[k].z);
+                        v.position = linePoints[k];
                         v.texCoords.x = i * 1.0f;
                         v.texCoords.y = subLineId;
                         p_vertices.emplace_back(v);
@@ -330,9 +409,7 @@ namespace Core::ECS::Components
                         lineIndex.push_back(k + 1);
                     }
                     ::Rendering::Geometry::VertexBVH v;
-                    v.position.x = static_cast<float>(linePoints[l.I2].x);
-                    v.position.y = static_cast<float>(linePoints[l.I2].y);
-                    v.position.z = static_cast<float>(linePoints[l.I2].z);
+                    v.position = linePoints[l.I2];
                     v.texCoords.x = i * 1.0f;
                     v.texCoords.y = subLineId;
                     p_vertices.emplace_back(v);
