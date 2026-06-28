@@ -302,7 +302,7 @@ namespace Core::ECS::Components
                     ZoneScopedN("domainBoxs BuildBvh"); 
                     bacthMesh.BuildBvh(domainBoxs, domainRange);
                 }
-                //setChildsMeshTransParent({});
+                setChildsMeshTransParent({},false);
             }
             if (mInternal->updateEdge)
             {
@@ -454,9 +454,12 @@ namespace Core::ECS::Components
         
     }
 
-    void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
+    void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs, bool updateBuffer )
     {
-        updateChildBuffer();
+        if (updateBuffer) {
+            updateChildBuffer();
+        }
+
         std::vector<int>listTransparentIndex;
         std::vector<int>listOpaqueIndex;
         listTransparentIndex.resize(childs.size());

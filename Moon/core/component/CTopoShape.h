@@ -29,7 +29,7 @@ namespace Core::ECS::Components
 		virtual void OnUpdate(float p_deltaTime) override;
 		void updateChildBuffer();
 		std::vector<std::pair<int, int>>GetChildMeshInfo();
-		void setChildsMeshTransParent(const std::vector<int>& childs);
+		void setChildsMeshTransParent(const std::vector<int>& childs,bool updateBuffer=true);
 		Part::TopoShape& GetTopoShape();
 		Part::TopoShape GetTopoFace(int childFaceId);
 		Part::TopoShape GetTopoEdge(int childFaceId);
