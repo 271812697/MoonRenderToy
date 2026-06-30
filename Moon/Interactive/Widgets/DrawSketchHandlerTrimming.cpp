@@ -36,8 +36,8 @@ namespace MOON {
 		DrawSketchHandler::onUpdate();
 		if (m_internal->trimCurveId!=-1) {
 			renderer->pushColor({255,0,255,0});
-			renderer->drawPoint(plane.valueEigen(m_internal->a), 12);
-			renderer->drawPoint(plane.valueEigen(m_internal->b), 12);
+			renderer->drawPoint(plane.valueEigen(m_internal->a), 15);
+			renderer->drawPoint(plane.valueEigen(m_internal->b), 15);
 			renderer->popColor();		
 		}
 	}
