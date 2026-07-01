@@ -1,7 +1,7 @@
 ﻿#include "editor/Toolbar/DesignModelingToolbar.h"
 #include "editor/Command/command.h"
 #include "editor/UI/TaskPanel/TaskViewWidget.h"
-#include "editor/UI/TaskPanel/PadTaskDialog.h"
+#include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "editor/UI/TaskPanel/FilletTask.h"
 #include "TopoShape.h"
@@ -14,13 +14,16 @@ namespace MOON {
 
 	BaseTaskDialog* createTaskDialog(const std::string name) {
 		if (name == "Pad") {
-			return new PadTaskDialog();
+			return new ExtrudeTaskDialog();
 		}
 		if (name == "Thickness") {
 			return new ThicknessTaskDialog();
 		}
 		if (name == "Fillet") {
 			return new FilletTask();
+		}
+		if (name == "Pocket") {
+			return new ExtrudeTaskDialog(nullptr, ExtrudeType::Subtractive);
 		}
 		return nullptr;
 	}
@@ -56,15 +59,20 @@ namespace MOON {
 			thicknessCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Thickness.svg");
 			filletCommand = new DesignModelCommand(self,"Fillet");
 			filletCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Fillet.svg");
+			pocketCommand = new DesignModelCommand(self,"Pocket");
+			pocketCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Pocket.svg");
 			self->addAction(padCommand->action());
 			self->addAction(thicknessCommand->action());
 			self->addAction(filletCommand->action());
+			self->addAction(pocketCommand->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
 			padCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pad", nullptr));
 			thicknessCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Thickness", nullptr));
 			filletCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Fillet", nullptr));
+			pocketCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pocket", nullptr));
+		
 		}
 	private:
 		friend class DesignModelingToolbarToolbar;
@@ -72,6 +80,7 @@ namespace MOON {
 		DesignModelCommand* padCommand = nullptr;
 		DesignModelCommand* thicknessCommand = nullptr;
 		DesignModelCommand* filletCommand = nullptr;
+		DesignModelCommand* pocketCommand = nullptr;
 	};
 
 	DesignModelingToolbar::DesignModelingToolbar(const QString& title, QWidget* parent)
