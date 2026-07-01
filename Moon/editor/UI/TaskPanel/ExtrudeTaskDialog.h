@@ -2,13 +2,17 @@
 #include "editor/UI/TaskPanel/BaseTaskDialog.h"
 #include "editor/UI/TaskPanel/ShapeHelper.h"
 namespace MOON {
-	class SketcherObj;
-	class PadTaskDialog : public BaseTaskDialog,public ShapeHelper
+	enum ExtrudeType
+	{
+		Additive,
+		Subtractive
+	};
+	class ExtrudeTaskDialog : public BaseTaskDialog,public ShapeHelper
 	{
 		Q_OBJECT
 	public:
-		explicit PadTaskDialog(QWidget* parent = nullptr);
-		virtual ~PadTaskDialog()override;
+		explicit ExtrudeTaskDialog(QWidget* parent = nullptr, ExtrudeType type=Additive);
+		virtual ~ExtrudeTaskDialog()override;
 		virtual bool generateShape()override;
 		virtual void buildUi() override;
 		virtual void clickOk() override;
@@ -17,7 +21,6 @@ namespace MOON {
 		void onValueChange();
 		void onAngleChange();
 		void onLengthChange();
-		
 	private:
 		void onWidgetLengthInvoke();
 		void onWidgetAngleInvoke();

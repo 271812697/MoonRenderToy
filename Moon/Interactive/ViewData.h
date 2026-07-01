@@ -53,6 +53,7 @@ namespace MOON {
 		void setTriangleFace(const std::string& name, const Eigen::Matrix4f& m);
 		void setTriangleFace(const std::string& name, const std::vector<Eigen::Vector3f>& f);
 		void setTriangleFace(const std::string& name, const Eigen::Vector4<uint8_t>& c);
+		void setTriangleFaceScale(const std::string& name,float scale);
 		std::vector<Edge>& getEdge();
 		std::vector<VertexPoint>& getPoints();
 		std::vector<TriangleFace>& getFaces();

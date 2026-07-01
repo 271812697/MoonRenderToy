@@ -91,6 +91,11 @@ void Rendering::Resources::Model::ClearMeshes()
 void Rendering::Resources::Model::AddMesh(Mesh* mesh)
 {
 	m_meshes.push_back(mesh);
+	
+}
+
+void Rendering::Resources::Model::computeBoxAndShpere()
+{
 	ComputeBoundingSphere();
 	ComputeBoundingBox();
 }

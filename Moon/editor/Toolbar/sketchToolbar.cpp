@@ -57,6 +57,7 @@ namespace MOON {
 
 		SketchToolbarInternal(SketchToolbar* toolbar) :self(toolbar)
 		{
+			
 		}
 		void setup() {
 			point = new CreateCurveCommand(self, "DrawSketchHandlerPoint");
@@ -121,10 +122,12 @@ namespace MOON {
 	SketchToolbar::SketchToolbar(const QString& title, QWidget* parent)
 		:QToolBar(title, parent)
 	{
+		RegService(SketchToolbar,*this);
 		constructor();
 	}
 	SketchToolbar::SketchToolbar(QWidget* parentObject) :QToolBar(parentObject)
 	{
+		RegService(SketchToolbar, *this);
 		constructor();
 	}
 	SketchToolbar::~SketchToolbar()
@@ -133,6 +136,21 @@ namespace MOON {
 			delete mInternal;
 			mInternal = nullptr;
 		}
+	}
+	void SketchToolbar::disableAllHandlers()
+	{
+		auto& view = GetService(Editor::Panels::SceneView);
+
+		auto& gizmoPass = view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
+	
+		for (int i = 0; i < CreateCurveCommand::blackList.size(); i++) {
+			
+			gizmoPass.enableGizmoWidget(CreateCurveCommand::blackList[i], false);
+			if (CreateCurveCommand::commandMap.find(CreateCurveCommand::blackList[i]) != CreateCurveCommand::commandMap.end()) {
+				CreateCurveCommand::commandMap[CreateCurveCommand::blackList[i]]->action()->setChecked(false);
+			}
+		}
+		
 	}
 	void SketchToolbar::constructor()
 	{

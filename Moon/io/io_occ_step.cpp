@@ -1,4 +1,5 @@
-﻿#include "io_occ_step.h"
+﻿#include <tracy/Tracy.hpp>
+#include "io_occ_step.h"
 #include "TopoShape.h"
 #include "Core/SceneSystem/Scene.h"
 #include "core/component/TopoShapeActor.h"
@@ -30,15 +31,24 @@
 #include <fstream>
 #include <filesystem>
 
+#include "core/JobSystem.h"
 namespace MOON {
     // 读取 STEP 模型并返回其形状
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
+          
             auto topoActor = new Core::ECS::TopoActor(scene, "TopoShape", "TopoShape", false);
-            const auto& topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
-            Part::TopoShape& topo= topoComp->GetTopoShape();
-            topo.importStep(filePath);
-            topoComp->discretizationShape();
+            Core::ECS::Components::CTopoShape* topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
+            static MOON::System::JobSystem::Context ctx;
+            static std::string path;
+            path = filePath;
+	        auto lamda=[=](JobDispatchArgs arg) { 
+                ZoneScopedN("ReadSTEP");
+                Part::TopoShape& topo = topoComp->GetTopoShape();
+                topo.importStep(path.c_str());
+                topoComp->discretizationShape();
+		    };
+	        MOON::System::JobSystem::Execute(ctx,lamda);
         }
     }
 }

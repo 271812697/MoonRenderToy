@@ -60,7 +60,6 @@ m_indices(std::move(p_indices))
 
 	AddMaterial(p_materialIndex,0);
 	Upload(p_vertices, p_indices);
-	ComputeBoundingSphereAndBox(p_vertices);
 }
 Rendering::Resources::Mesh::~Mesh()
 {
@@ -263,6 +262,10 @@ void Rendering::Resources::Mesh::AddSubRangeBuffer()
 		{ Settings::EDataType::FLOAT, 2 }, // texCoords
 		{ Settings::EDataType::FLOAT, 3 } // normal
 		}), m_vertexBuffer, *m_IndexBuffers[index]);
+}
+void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox()
+{
+	ComputeBoundingSphereAndBox(m_vertices);
 }
 void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
 {

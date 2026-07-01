@@ -43,6 +43,7 @@ namespace Core::SceneSystem
 		void AddActor(ECS::Actor* p_target);
 		bool DestroyActor(ECS::Actor& p_target);
 		bool DelayDestroyActor(ECS::Actor& p_target);
+		bool DelayDestroyActor(const std::vector<ECS::Actor*>& p_target);
 		void CollectGarbages();
 		ECS::Actor* FindActorByName(const std::string& p_name) const;
 		ECS::Actor* FindActorByTag(const std::string& p_tag) const;

@@ -14,6 +14,7 @@ namespace MOON
 		virtual void onUpdate()override;
 		void setUpOrigin(float x,float y,float z );
 		void setUpDir(float x, float y, float z);
+		void setUpScale(float s);
 		float getLength();
 		void setLength(float len);
 		

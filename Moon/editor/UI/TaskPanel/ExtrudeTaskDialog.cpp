@@ -1,4 +1,4 @@
-﻿#include "editor/UI/TaskPanel/PadTaskDialog.h"
+﻿#include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
 #include "TaskBox.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
@@ -22,9 +22,9 @@
 #include <gp_Pln.hxx>
 namespace MOON {
 
-    class PadTaskDialog::Internal {
+    class ExtrudeTaskDialog::Internal {
     public:
-        Internal(PadTaskDialog* pad) :self(pad) {
+        Internal(ExtrudeTaskDialog* pad , ExtrudeType type) :self(pad), extrudeType(type){
             behaviour = new PadTaskWidget("pad");
             // 1. 获取当前激活的草图
             SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
@@ -33,12 +33,20 @@ namespace MOON {
                  gp_Pln pln;
                  sketchShape.findPlane(pln);
                  behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
-                 behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                 if (extrudeType == ExtrudeType::Additive)
+                 {
+                    behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+ 
+                 }
+                 else
+                 {
+                     behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
+                 }
                  behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
                  behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
                  behaviour->setLength(10);
-                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &PadTaskDialog::onWidgetLengthInvoke);
-                 behaviour->AddObserver(PadTaskEvent::AngleChange, self, &PadTaskDialog::onWidgetAngleInvoke);
+                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
+                 behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
             }           
         }
         ~Internal() {
@@ -67,9 +75,10 @@ namespace MOON {
     private:
         PadTaskWidget* behaviour = nullptr;
         Part::TopoShape* basedTopoShape = nullptr;
-        PadTaskDialog* self;
-        friend PadTaskDialog;
-        // 在 PadTaskDialog.h 中添加
+        ExtrudeType extrudeType;
+        ExtrudeTaskDialog* self;
+        friend ExtrudeTaskDialog;
+        // 在 ExtrudeTaskDialog.h 中添加
         QDoubleSpinBox* spinLenForward = nullptr;
         QDoubleSpinBox* spinAngleForward = nullptr;
         QDoubleSpinBox* spinLenRev = nullptr;
@@ -89,19 +98,26 @@ namespace MOON {
         // 预览用的Actor
         Core::ECS::TopoActor* m_previewActor = nullptr;
     };
-    PadTaskDialog::PadTaskDialog(QWidget* parent)
-        : BaseTaskDialog(parent), mInternal(new Internal(this))
+    ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type)
+        : BaseTaskDialog(parent), mInternal(new Internal(this,type))
     {
+
+        if (type == ExtrudeType::Subtractive) {
+            mPreviewOption.isTransparent = false;
+            mPreviewOption.isBlend = true;
+        }
+
+        setGenerateShapeName("PadShape");
         buildUi();
         previewShape();
     }
 
-    PadTaskDialog::~PadTaskDialog()
+    ExtrudeTaskDialog::~ExtrudeTaskDialog()
     {
         delete mInternal;
     }
 
-    bool PadTaskDialog::generateShape()
+    bool ExtrudeTaskDialog::generateShape()
     {
         // 1. 获取当前激活的草图
         SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
@@ -136,6 +152,9 @@ namespace MOON {
         params.dir = finalDir;
         params.solid = true;
         params.lengthFwd = lengthForward;
+        if (mInternal->extrudeType == ExtrudeType::Subtractive) {
+            params.lengthFwd *= -1;
+        }
 
         if (dirType == 0)      // 正向
         {
@@ -171,12 +190,23 @@ namespace MOON {
                 nullptr,
                 Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
             );
+            getPreviewShape() = prism;
             Part::TopoShape baseShape = sketchObj->getBasedTopoShape();
+            Part::TopoShape resShape;
             if (!baseShape.isNull()) {
-                prism = prism.makeElementFuse(baseShape);
+                if (mInternal->extrudeType == ExtrudeType::Additive) {
+                    resShape = prism.makeElementFuse(baseShape);
+                }
+                else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
+                    resShape = baseShape.makeElementCut(prism);
+                }
             }
-            getPreviewShape()= prism;
-            getGenerateShape() = prism;
+            else {
+                resShape = prism;
+            }
+            getGenerateShape() = resShape;
+           
+           
             return true;
         }
         catch (Base::ValueError e) {
@@ -187,7 +217,7 @@ namespace MOON {
         }
         return false;
     }
-    void PadTaskDialog::buildUi()
+    void ExtrudeTaskDialog::buildUi()
     {
         // 1. 拉伸类型
         TaskBox* boxType = new TaskBox(QStringLiteral("拉伸类型"));
@@ -210,9 +240,9 @@ namespace MOON {
         // ==========================
         // 拉伸类型变化 → 预览
         // ==========================
-        connect(mInternal->rbDim, &QRadioButton::toggled, this, &PadTaskDialog::onValueChange);
-        connect(mInternal->rbAll, &QRadioButton::toggled, this, &PadTaskDialog::onValueChange);
-        connect(mInternal->rbToFace, &QRadioButton::toggled, this, &PadTaskDialog::onValueChange);
+        connect(mInternal->rbDim, &QRadioButton::toggled, this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->rbAll, &QRadioButton::toggled, this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->rbToFace, &QRadioButton::toggled, this, &ExtrudeTaskDialog::onValueChange);
 
         // 2. 拉伸参数
         TaskBox* boxParam = new TaskBox(QStringLiteral("拉伸参数"));
@@ -227,7 +257,7 @@ namespace MOON {
             QStringLiteral("对称")
             });
         layParam->addWidget(mInternal->cboDir);
-        connect(mInternal->cboDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PadTaskDialog::onValueChange);
+        connect(mInternal->cboDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExtrudeTaskDialog::onValueChange);
         mInternal->labelLen1 = new QLabel(QStringLiteral("拉伸长度1"));
         layParam->addWidget(mInternal->labelLen1);
         mInternal->spinLenForward = new QDoubleSpinBox;
@@ -264,13 +294,13 @@ namespace MOON {
         // ==========================
         // 参数变化 → 预览
         // ==========================
-        connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
-        connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
-        connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onLengthChange);
-        connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onAngleChange);
-        connect(mInternal->spinLenRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
-        connect(mInternal->spinAngleRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &PadTaskDialog::onValueChange);
-        connect(mInternal->cboDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PadTaskDialog::onValueChange);
+        connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->spinLenForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onLengthChange);
+        connect(mInternal->spinAngleForward, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onAngleChange);
+        connect(mInternal->spinLenRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->spinAngleRev, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->cboDir, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExtrudeTaskDialog::onValueChange);
         // 3. 布尔运算
         TaskBox* boxBool = new TaskBox(QStringLiteral("布尔运算"));
         QWidget* wBool = new QWidget;
@@ -290,39 +320,39 @@ namespace MOON {
         // ==========================
         // 布尔/勾选框变化 → 预览
         // ==========================
-        connect(mInternal->cboBool, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PadTaskDialog::onValueChange);
-        connect(mInternal->cbMergeEdges, &QCheckBox::toggled, this, &PadTaskDialog::onValueChange);
+        connect(mInternal->cboBool, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ExtrudeTaskDialog::onValueChange);
+        connect(mInternal->cbMergeEdges, &QCheckBox::toggled, this, &ExtrudeTaskDialog::onValueChange);
 
         mainLayout()->addStretch();
     }
-    void PadTaskDialog::clickOk()
+    void ExtrudeTaskDialog::clickOk()
     {
         generateFinalShape();
     }
-    void PadTaskDialog::clickApply()
+    void ExtrudeTaskDialog::clickApply()
     {
     }
-    void PadTaskDialog::clickCancel()
+    void ExtrudeTaskDialog::clickCancel()
     {
     }
-    void PadTaskDialog::onValueChange()
+    void ExtrudeTaskDialog::onValueChange()
     {
         previewShape();
         mInternal->updateDirectionUI(mInternal->cboDir->currentIndex());
     }
-    void PadTaskDialog::onAngleChange()
+    void ExtrudeTaskDialog::onAngleChange()
     {
         mInternal->behaviour->setAngle(mInternal->spinAngleForward->value());
     }
-    void PadTaskDialog::onLengthChange()
+    void ExtrudeTaskDialog::onLengthChange()
     {
         mInternal->behaviour->setLength(mInternal->spinLenForward->value());
     }
-    void PadTaskDialog::onWidgetLengthInvoke()
+    void ExtrudeTaskDialog::onWidgetLengthInvoke()
     {
         mInternal->spinLenForward->setValue(mInternal->behaviour->getLength());
     }
-    void PadTaskDialog::onWidgetAngleInvoke()
+    void ExtrudeTaskDialog::onWidgetAngleInvoke()
     {
         mInternal->spinAngleForward->setValue(mInternal->behaviour->getAngle());
     }

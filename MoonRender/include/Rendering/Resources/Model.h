@@ -14,6 +14,7 @@ namespace Rendering::Resources
 		Mesh* GetMesh(int index);
 		void ClearMeshes();
 		void AddMesh(Mesh*mesh);
+		void computeBoxAndShpere();
 		std::vector<std::string>& GetMaterialNames() ;
 		const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const;
 		const Rendering::Geometry::bbox& GetBoundingBox() ;

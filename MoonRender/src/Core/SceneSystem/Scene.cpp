@@ -238,6 +238,12 @@ bool Core::SceneSystem::Scene::DelayDestroyActor(ECS::Actor& p_target)
 	return true;
 }
 
+bool Core::SceneSystem::Scene::DelayDestroyActor(const std::vector<ECS::Actor*>& p_target)
+{
+	m_delayActors.insert(m_delayActors.end(),p_target.begin(),p_target.end());
+	return true;
+}
+
 void Core::SceneSystem::Scene::CollectGarbages()
 {
 	m_actors.erase(std::remove_if(m_actors.begin(), m_actors.end(), [this](ECS::Actor* element)
@@ -441,13 +447,11 @@ void Core::SceneSystem::Scene::BuildSceneBvh()
 			auto model=modelRenderer->GetModel();
 			auto mat=modelRenderer->owner.GetComponent<Core::ECS::Components::CMaterialRenderer>();
 			if (model&&mat) {
-
-				bool isTriMesh = model->GetMeshes()[0]->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 				auto matrix = modelRenderer->owner.transform.GetWorldMatrix();	
 				for (auto& m: model->GetMeshes()) {
-					
+					bool isTriMesh = m->GetPrimitiveMode() == ::Rendering::Settings::EPrimitiveMode::TRIANGLES;
 					auto meshInstaceBox=m->GetBoundingBox().transform(matrix);
-					if (meshInstaceBox.isValid()) {
+					if (isTriMesh&&meshInstaceBox.isValid()) {
 						bounds.push_back(meshInstaceBox);
 
 						//figure out  the matId

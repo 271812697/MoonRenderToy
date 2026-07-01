@@ -53,6 +53,7 @@ namespace Rendering::Resources
 		void UploadIndices(const std::vector<std::pair<int,int>>&childListt,int index=0);
 		void UploadIndices(const std::vector<uint32_t>& p_indices, int index = 0);
 		void AddSubRangeBuffer();
+		void ComputeBoundingSphereAndBox();
 	private:
 		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);
@@ -64,12 +65,14 @@ namespace Rendering::Resources
 		const uint32_t m_vertexCount;
 		const uint32_t m_indicesCount;
 		std::vector<uint32_t> uploadIndicesCount;
+
+		//to sure which subRange to which material
 		std::vector<uint32_t> m_materialIndex;
 		std::vector<uint32_t> m_subRangeIndex;
 		
 		HAL::VertexBuffer m_vertexBuffer;
 		std::vector<std::unique_ptr<HAL::IndexBuffer>> m_IndexBuffers;
-		std::vector< std::unique_ptr<HAL::VertexArray>> m_vertexArrays;
+		std::vector<std::unique_ptr<HAL::VertexArray>> m_vertexArrays;
 		bool isIndex = false;
 		std::vector<Geometry::VertexBVH> m_vertices;
 		std::vector<uint32_t> m_indices;

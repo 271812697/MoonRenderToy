@@ -8,6 +8,7 @@ namespace MOON {
 		SketchToolbar(const QString& title, QWidget* parent = nullptr);
 		SketchToolbar(QWidget* parentObject = nullptr);
 		~SketchToolbar()override;
+		void disableAllHandlers();
 	private:
 		class SketchToolbarInternal;
 		SketchToolbarInternal* mInternal = nullptr;

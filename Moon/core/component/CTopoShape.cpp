@@ -1,4 +1,5 @@
 ﻿#include <tinyxml2.h>
+#include <tracy/Tracy.hpp>
 #include <Core/ECS/Actor.h>
 #include "core/component/CTopoShape.h"
 #include <Core/ECS/Components/CModelRenderer.h>
@@ -12,6 +13,11 @@
 #include "Interactive/Im3DRenderer.h"
 
 #include "renderer/SceneView.h"
+#include "core/JobSystem.h"
+#include "Tools.h"
+#include <TopoDS.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <TopExp_Explorer.hxx>
 namespace Core::ECS::Components
 {
 	class CTopoShape::CTopoShapeInternal {
@@ -80,16 +86,99 @@ namespace Core::ECS::Components
             instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
-           
+            ZoneScoped;
             auto& view = GetService(::Editor::Panels::SceneView);
             auto& renderer = view.GetRenderer();
             auto scene = view.GetScene();
-            if (mInternal->updateFace) {
-			    mInternal->updateFace = false; 
+           
+            if (mInternal->updateFace) { 
+                static MOON::System::JobSystem::Context ctx;
+                mInternal->updateFace = false; 
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
+                {
+                    
+                    ZoneScopedN("GetDomain");
+                    mInternal->mTopoShape.getDomainfaces(domains, mInternal->mTopoShape.getAccuracy());
+                    //the follow code will crash in release mode
+                    /*
+                    
+                    static MOON::System::JobSystem::Context locctx;
+                    TopoDS_Shape shape=mInternal->mTopoShape.getShape();
+                    if (!shape.IsNull()) {
+                        auto defaultAngularDeflection = [](double linearTolerance)
+                            {
+                                // Default OCC angular deflection is 0.5 radians, or about 28.6 degrees.
+                                // That is a bit coarser than necessary for performance, so we default to at
+                                // most 0.1 radians, or 5.7 degrees. We also do not go finer than 0.005, or
+                                // roughly 0.28 degree angular resolution, to avoid performance tanking
+                                // completely at very fine resolutions.
+                                return std::min(0.1, linearTolerance * 5 + 0.005);
+                            };
+
+                         BRepMesh_IncrementalMesh aMesh(shape, mInternal->mTopoShape.getAccuracy(),
+                                                 Standard_False,
+                                                
+                                                defaultAngularDeflection(mInternal->mTopoShape.getAccuracy()),
+                                                 false);
+                        
+
+                         TopTools_IndexedMapOfShape faceMap;
+                         TopExp::MapShapes(shape, TopAbs_FACE, faceMap); 
+                         std::size_t countFaces = faceMap.Extent();
+                         domains.resize(countFaces);
+                         auto lamda = [&](JobDispatchArgs arg) {
+                             int i = arg.jobIndex + 1;
+                             const TopoDS_Face& face = TopoDS::Face(faceMap(i));
+                             std::vector<gp_Pnt> points;
+                             std::vector<gp_Vec> normals;
+                             std::vector<Poly_Triangle> facets;
+                             if (!Part::Tools::getTriangulation(face, points, normals, facets)) {
+                                 // For a face that cannot be meshed append an empty domain.
+                                 // It's important for some algorithms (e.g. color mapping) that the numbers of
+                                 // faces and domains match
+                                 Data::ComplexGeoData::Domain domain;
+                                 domains[arg.jobIndex]=domain;
+                             }
+                             else {
+                                 Data::ComplexGeoData::Domain domain;
+                                 // copy the points
+                                 domain.points.reserve(points.size());
+                                 domain.normals.reserve(points.size());
+                                 for (const auto& it : points) {
+                                     Standard_Real X, Y, Z;
+                                     it.Coord(X, Y, Z);
+                                     domain.points.emplace_back(X, Y, Z);
+                                 }
+                                 for (const auto& it : normals) {
+                                     Standard_Real X, Y, Z;
+                                     it.Coord(X, Y, Z);
+                                     domain.normals.emplace_back(X, Y, Z);
+                                 }
+                                 // copy the triangles
+                                 domain.facets.reserve(facets.size());
+                                 for (const auto& it : facets) {
+                                     Standard_Integer N1, N2, N3;
+                                     it.Get(N1, N2, N3);
+
+                                     Data::ComplexGeoData::Facet tria;
+                                     tria.I1 = N1;
+                                     tria.I2 = N2;
+                                     tria.I3 = N3;
+                                     domain.facets.push_back(tria);
+                                 }
+
+                                 domains[arg.jobIndex]=domain;
+                             }
+
+                          };
+                         MOON::System::JobSystem::Dispatch(locctx, countFaces, 10, lamda);
+                         MOON::System::JobSystem::Wait(locctx);
+                    }                    
+                    */
+
+                }
                
-                mInternal->mTopoShape.getDomainfaces(domains,  mInternal->mTopoShape.getAccuracy());
                 static Maths::FVector4 colors[] = {
                 { 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
                 { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
@@ -105,72 +194,93 @@ namespace Core::ECS::Components
                 unsigned int vertexOffset = 0;
                 unsigned int indexOffset = 0;
                 int cnt = 0;
-                std::vector<Core::ECS::Actor*>domainActors;
+                
                 std::vector<::Rendering::Geometry::bbox>domainBoxs;
                 std::vector<uint32_t>domainRange;
                 auto faceChild = owner.GetChild("Face");
-                std::vector<Core::ECS::Actor*> faceChildList=faceChild->GetChildren();
-                for (int i = 0; i < faceChildList.size(); i++) {
-                    scene->DelayDestroyActor(*faceChildList[i]);
-                }
+                scene->DelayDestroyActor(faceChild->GetChildren());
                 int domainIndex = -1;
                 mInternal->domainIndexToFaceChildIndex.resize(domains.size(),-1);
+                std::vector<int>DomainIndexToi(domains.size(), -1);
+                std::vector<int>domainId;
+                std::vector<std::pair<int,int>>domainVertexNum;
+                std::vector<std::pair<int, int>>domainIndexNum; 
+                int numDomains =0 ;
+                //int vertexOffset = 0;
+                //int indexOffset = 0;
+                ZoneScopedN("Batch");
                 for (int i = 0; i < domains.size(); i++) {
                     if (domains[i].facets.size() > 0) {
                         domainIndex++;
                         mInternal->domainIndexToFaceChildIndex[i] = domainIndex;
+                        DomainIndexToi[domainIndex] = i;
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
-                        
-                        domainActors.push_back(&actor);
-                        
+                        actor.SetParent(*faceChild);     
+                        domainId.push_back(actor.GetID());
                         domainColor.push_back(colors[cnt]);
                         cnt = (cnt + 1) % 12;
-                        Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,actor.GetID() * 1.0f };
-                        faceVertices.reserve(faceVertices.size() + domains[i].points.size());
-
-                        indices.resize(indexOffset + domains[i].facets.size() * 3);                       
-                        mInternal->childMeshInfos.push_back(std::make_pair<int,int>(indexOffset,domains[i].facets.size() * 3 ));
-                        ::Rendering::Geometry::bbox subBox;
-                        for (int k = 0; k < domains[i].points.size(); k++) {
-                            faceVertices.emplace_back(
-                                Maths::FVector3{ static_cast<float>(domains[i].points[k].x),static_cast<float>(domains[i].points[k].y),static_cast<float>(domains[i].points[k].z) },
-                                indexId,
-                                Maths::FVector3{ static_cast<float>(domains[i].normals[k].x),static_cast<float>(domains[i].normals[k].y),static_cast<float>(domains[i].normals[k].z) }
-                            );
-                            subBox.grow(faceVertices.back().position);
-                        }
-                        for (int k = 0; k < domains[i].facets.size(); k++) {
-                            indices[indexOffset + 3 * k] = domains[i].facets[k].I1 + vertexOffset;
-                            indices[indexOffset + 3 * k + 1] = domains[i].facets[k].I2 + vertexOffset;
-                            indices[indexOffset + 3 * k + 2] = domains[i].facets[k].I3 + vertexOffset;;
-                        }
-
-                        vertexOffset = faceVertices.size();
-                        indexOffset = indices.size();
-
-                        domainBoxs.push_back(subBox);
+                        mInternal->childMeshInfos.push_back(std::make_pair<int, int>(indexOffset, domains[i].facets.size() * 3));
+                        domainVertexNum.push_back({vertexOffset, domains[i].points.size() });
+                        domainIndexNum.push_back({indexOffset ,domains[i].facets.size() * 3 });
+                        vertexOffset += domains[i].points.size();
+                        indexOffset += domains[i].facets.size() * 3;
                         domainRange.push_back(indexOffset);
+                        numDomains++;
                     }
                 }
+                faceVertices.resize(vertexOffset);
+                indices.resize(indexOffset);
+                domainBoxs.resize(numDomains);
 
-                auto faceMesh = new ::Rendering::Resources::Mesh(
-                    faceVertices,
-                    indices,
-                    0,
-                    ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
-                //add this for transparent
-                faceMesh->AddSubRangeBuffer();
-                faceMesh->AddMaterial(1,1);
-                
+                auto lamda = [&](JobDispatchArgs arg) {
+                    int domainIndex=arg.jobIndex;
+                    Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,domainId[domainIndex] * 1.0f };
 
+                    ::Rendering::Geometry::bbox subBox;
+                    int iIndex= DomainIndexToi[domainIndex];
+                    for (int k = 0; k < domains[iIndex].points.size(); k++) {
+                        faceVertices[domainVertexNum[domainIndex].first + k] = {
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].points[k].x),static_cast<float>(domains[iIndex].points[k].y),static_cast<float>(domains[iIndex].points[k].z) },
+                            indexId,
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z) }
+                   
+                        };
+                        subBox.grow(faceVertices[domainVertexNum[domainIndex].first + k].position);
+                    }
+                    domainBoxs[domainIndex]=subBox;
+                    for (int k = 0; k < domains[iIndex].facets.size(); k++) {
+                        indices[domainIndexNum[domainIndex].first + 3 * k] = domains[iIndex].facets[k].I1 + domainVertexNum[domainIndex].first;
+                        indices[domainIndexNum[domainIndex].first + 3 * k + 1] = domains[iIndex].facets[k].I2 + domainVertexNum[domainIndex].first;
+                        indices[domainIndexNum[domainIndex].first + 3 * k + 2] = domains[iIndex].facets[k].I3 + domainVertexNum[domainIndex].first;;
+                    }
+                };
+               
+                MOON::System::JobSystem::Dispatch(ctx, numDomains, 10, lamda);
+                MOON::System::JobSystem::Wait(ctx);
+
+                ::Rendering::Resources::Mesh* faceMesh = nullptr;
+                {
+                    ZoneScopedN("faceMesh");
+
+                    faceMesh = new ::Rendering::Resources::Mesh(
+                        faceVertices,
+                        indices,
+                        0,
+                        ::Rendering::Settings::EPrimitiveMode::TRIANGLES);
+                    //add this for transparent
+                    faceMesh->AddSubRangeBuffer();
+                    faceMesh->AddMaterial(1,1);
+                }
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->ClearMeshes();
                 model->AddMesh(faceMesh);
+                auto computeBox =[=](JobDispatchArgs arg) {
+                    faceMesh->ComputeBoundingSphereAndBox();
+                    model->computeBoxAndShpere();
+                    };
+                MOON::System::JobSystem::Execute(ctx,computeBox);
 
-                for (auto* acptr : domainActors) {
-                    acptr->SetParent(*faceChild);
-                }
                 //these two tex have leaks!!!!
                 //domain colors Tex
                 ::Rendering::Settings::TextureDesc desc;
@@ -188,39 +298,109 @@ namespace Core::ECS::Components
                 tempMat->SetProperty("domainColorTex", domainColorTex);
                 auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
                 bacthMesh.SetColors(domainColor);
-                bacthMesh.BuildBvh(domainBoxs, domainRange);
-
-                setChildsMeshTransParent({});
+                {
+                    ZoneScopedN("domainBoxs BuildBvh"); 
+                    bacthMesh.BuildBvh(domainBoxs, domainRange);
+                }
+                setChildsMeshTransParent({},false);
             }
             if (mInternal->updateEdge)
             {
+                ZoneScopedN("updateEdge");
+                static MOON::System::JobSystem::Context ctx;
                 mInternal->updateEdge = false;
-                std::vector<Base::Vector3d>linePoints;
+                std::vector<Maths::FVector3>linePoints;
                 std::vector<Data::ComplexGeoData::Line>LineRanges;
-                mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
+                {
+                    ZoneScopedN("getLines");
+                    //mInternal->mTopoShape.getLines(linePoints, LineRanges, mInternal->mTopoShape.getAccuracy());
+                    TopoDS_Shape shape=mInternal->mTopoShape.getShape();
+                    if (!shape.IsNull()) {
+                        // build up map edge->face
+                        TopTools_IndexedDataMapOfShapeListOfShape edge2Face;
+                        TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, edge2Face);
+                        TopTools_IndexedMapOfShape edgeMap;
+                        TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
+                        std::vector<std::vector<gp_Pnt>> pointArray(edgeMap.Extent(), std::vector<gp_Pnt>());
+                        auto lamda = [&](JobDispatchArgs arg) {
+                            int i = arg.jobIndex+1;
+                            const TopoDS_Edge& aEdge = TopoDS::Edge(edgeMap(i));
+                            std::vector<gp_Pnt> points;
+
+                            if (!Part::Tools::getPolygon3D(aEdge, points)) {
+                                // the edge has not its own triangulation, but then a face the edge is attached to
+                                // must provide this triangulation
+
+                                // Look for one face in our map (it doesn't care which one we take)
+                                int index = edge2Face.FindIndex(aEdge);
+                                if (index < 1) {
+                                  return;
+                                }
+                                const auto& faces = edge2Face.FindFromIndex(index);
+                                if (faces.IsEmpty()) {
+                                    return;
+                                }
+                                const TopoDS_Face& aFace = TopoDS::Face(faces.First());
+                                if (!Part::Tools::getPolygonOnTriangulation(aEdge, aFace, points)) {
+                                    return;
+                                }
+                            }
+                            pointArray[arg.jobIndex] = std::move(points);
+                        };
+                        MOON::System::JobSystem::Context ctx;
+                        MOON::System::JobSystem::Dispatch(ctx, edgeMap.Extent(), 10, lamda);
+                        MOON::System::JobSystem::Wait(ctx);
+
+                        int validLineNums = 0;
+                        int vertexOffset = 0;
+                        int numVertex = 0;
+                        std::vector<int>lineIndexToi;
+                        for (int i = 0; i < pointArray.size(); i++) {
+                            if (pointArray[i].size() > 0) {
+                                lineIndexToi.push_back(i);
+                                validLineNums++;
+                                LineRanges.emplace_back();
+                                LineRanges.back().I1 = vertexOffset;
+                                LineRanges.back().I2 = vertexOffset+ pointArray[i].size() - 1;
+                                numVertex += pointArray[i].size();
+                                vertexOffset = LineRanges.back().I2 + 1;
+                            }
+                        }
+                        linePoints.resize(numVertex);
+                        auto mergeVertex = [&](JobDispatchArgs arg) {
+                            int i = lineIndexToi[arg.jobIndex];
+                            for (int k = LineRanges[arg.jobIndex].I1; k <= LineRanges[arg.jobIndex].I2; k++) {
+                                gp_Pnt& p=pointArray[i][k - LineRanges[arg.jobIndex].I1];
+                                linePoints[k] = {static_cast<float>(p.X()),static_cast<float>(p.Y()) ,static_cast<float>(p.Z()) };
+                            }
+                        };
+                        MOON::System::JobSystem::Dispatch(ctx, validLineNums, 10, mergeVertex);
+                        MOON::System::JobSystem::Wait(ctx);
+                    }
+                }
+
                 //build lines
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-                std::vector<Core::ECS::Actor*>sublineActors(LineRanges.size());
-                auto edgeChild = owner.GetChild("Edge");
-                
-                std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
-                for (int i = 0; i < edgeChildList.size(); i++) {
-                    scene->DelayDestroyActor(*edgeChildList[i]);
+                auto edgeChild = owner.GetChild("Edge");    
+                {
+                    ZoneScopedN("destoryActors"); 
+                    std::vector<Core::ECS::Actor*> edgeChildList = edgeChild->GetChildren();
+                    scene->DelayDestroyActor(edgeChildList);
                 }
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
+                    ZoneScopedN("line");
                     auto& l = LineRanges[i];
                     auto& actor = scene->CreateActor("edge_" + std::to_string(i));
                     float subLineId=actor.GetID() * 1.0f;
-                    sublineActors[i] = &actor;
+                    
+                    actor.SetParent(*edgeChild);
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
-                        v.position.x = static_cast<float>(linePoints[k].x);
-                        v.position.y = static_cast<float>(linePoints[k].y);
-                        v.position.z = static_cast<float>(linePoints[k].z);
+                        v.position = linePoints[k];
                         v.texCoords.x = i * 1.0f;
                         v.texCoords.y = subLineId;
                         p_vertices.emplace_back(v);
@@ -229,9 +409,7 @@ namespace Core::ECS::Components
                         lineIndex.push_back(k + 1);
                     }
                     ::Rendering::Geometry::VertexBVH v;
-                    v.position.x = static_cast<float>(linePoints[l.I2].x);
-                    v.position.y = static_cast<float>(linePoints[l.I2].y);
-                    v.position.z = static_cast<float>(linePoints[l.I2].z);
+                    v.position = linePoints[l.I2];
                     v.texCoords.x = i * 1.0f;
                     v.texCoords.y = subLineId;
                     p_vertices.emplace_back(v);
@@ -239,19 +417,22 @@ namespace Core::ECS::Components
                     lineSegmentOffsets.emplace_back(lineIndex.size());
                 }
                
-                for (int i = 0; i < sublineActors.size();i++) {
-                    sublineActors[i]->SetParent(*edgeChild);
-                }
                 auto lineMesh = new ::Rendering::Resources::Mesh(
                     p_vertices,
                     lineIndex,
                     0,
                     ::Rendering::Settings::EPrimitiveMode::LINES);
-               
+                //lineMesh->ComputeBoundingSphereAndBox();
                 auto lineModel = edgeChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
                 lineModel->ClearMeshes();
                 lineModel->AddMesh(lineMesh);
+
+                auto computeBox = [=](JobDispatchArgs arg) {
+                    lineMesh->ComputeBoundingSphereAndBox();
+                    lineModel->computeBoxAndShpere();
+                    };
+                MOON::System::JobSystem::Execute(ctx, computeBox);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        
@@ -273,9 +454,12 @@ namespace Core::ECS::Components
         
     }
 
-    void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs)
+    void CTopoShape::setChildsMeshTransParent(const std::vector<int>& childs, bool updateBuffer )
     {
-        updateChildBuffer();
+        if (updateBuffer) {
+            updateChildBuffer();
+        }
+
         std::vector<int>listTransparentIndex;
         std::vector<int>listOpaqueIndex;
         listTransparentIndex.resize(childs.size());

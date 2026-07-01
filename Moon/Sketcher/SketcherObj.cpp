@@ -1,4 +1,5 @@
 ﻿#include "Sketcher/SketcherObj.h"
+#include "editor/Toolbar/sketchToolbar.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
 #include "Interactive/Im3DRenderer.h"
@@ -226,6 +227,8 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
         doneFaceShape = toShape();
+        GetService(SketchToolbar).disableAllHandlers();
+        
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {

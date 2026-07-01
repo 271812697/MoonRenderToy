@@ -38,11 +38,13 @@ namespace MOON
 		    std::string posText = "(" + std::to_string(drawPos.x) + "," + std::to_string(drawPos.y) + ")";
             drawList->AddText(nullptr,0,ImVec2(screenPos.x,screenPos.y), IM_COL32(0, 0, 0, 255),posText.c_str());
        }
+       renderer->pushColor({255,255,0,255});
        renderer->pushSize(3);
        for (int i = 0; i < lines.size();i += 2) {
 		   renderer->drawLine(plane.valueEigen(lines[i]), plane.valueEigen(lines[i + 1]));
        }
        renderer->popSize();
+       renderer->popColor();
     }
     void DrawSketchHandler::onMouseMove()
     {

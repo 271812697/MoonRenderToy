@@ -8,8 +8,23 @@
 #include "core/log.h"
 #include "Interactive/Widgets/AxisTranslationWidget.h"
 #include "Geometry.h"
-
+#include "base/BoundBox.h"
 #include <gp_Pln.hxx>
+#include <BRepTools.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <gp_Vec.hxx>
+#include <gp_Dir.hxx>
+#include <GeomAbs_Shape.hxx>
+#include <ShapeFix_ShapeTolerance.hxx>
+#include <BRepAlgo.hxx>
+#include <ShapeAnalysis_Surface.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <Precision.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <BRep_Tool.hxx>
+#include <TopoDS.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
 namespace MOON {
 
     class ThicknessTaskDialog::Internal {
@@ -18,34 +33,80 @@ namespace MOON {
             axisBehaviour = new AxisTranslationWidget("thickness");
             ViewTool::getSelectedTopoShape(shapes);
             if (shapes.size() > 0) {
-             
+                double boxLen = shapes[1].getBoundBoxOptimal().CalcDiagonalLength();
+                float len = boxLen* 0.01;;
+
+                thickNessValue = boxLen * 0.02;
                 Part::TopoShape outWire=shapes[1].splitWires();
                 //outWire.isLinearEdge
-                Part::TopoShape edge=outWire.getOrderedEdges().front();
-                std::unique_ptr<Part::Geometry>curve=Part::Geometry::fromShape(edge.getShape());
-                Part::GeomCurve* geoCurve=dynamic_cast<Part::GeomCurve*>(curve.get());
-                double u0 = geoCurve->getFirstParameter();
-                double u1 = geoCurve->getLastParameter();
-                double u=(u0+u1)*0.5;
-               
-                Base::Vector3d origin = geoCurve->value(u);
-                dir=geoCurve->firstDerivativeAtParameter(u);
-                gp_Pln pln;
-                shapes[1].findPlane(pln);
-                Base::Vector3d nor{ pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
-                dir = dir.Cross(nor);
-                axisBehaviour->setUpOrigin(origin.x,origin.y,origin.z); 
+                auto solids = shapes[0].findAncestorsShapes(shapes[1].getShape(), TopAbs_SOLID);
+                TopoDS_Edge edge=TopoDS::Edge(outWire.getOrderedEdges().front().getShape());
+                TopoDS_Solid solid = TopoDS::Solid(solids[0]);
+                // 2. 获取边的中点坐标和切向量
+                double first, last;
+                Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+                double midParam = (first + last) * 0.5;
+                gp_Pnt midPoint;
+                gp_Vec tangent;
+                curve->D1(midParam, midPoint, tangent);
+                tangent.Normalize();
+                TopoDS_Face face=TopoDS::Face(shapes[1].getShape());
+                // 4. 计算某个面上、过边上一点、位于面内且垂直于边的方向
+                auto getInPlanePerpDir = [&](const TopoDS_Solid& solid, const TopoDS_Face& face, const gp_Pnt& point, const gp_Vec& tangent) -> gp_Vec {
+                    BRepAdaptor_Surface surf(face);
+
+                    gp_Vec normal;
+                    if (surf.GetType() == GeomAbs_Plane) {
+                        // 平面：直接用平面法向
+                        normal = surf.Plane().Axis().Direction();
+                    }
+                    else {
+                        // 曲面：将点投影到曲面，获取 uv 参数后计算法向
+                        Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+                        GeomAPI_ProjectPointOnSurf projector(point, surface);
+                        if (projector.NbPoints() == 0) {
+                            CORE_ERROR("Failed to project point onto surface");
+                            return gp_Vec(0, 0, 1); // 默认方向
+                        }
+                        double u, v;
+                        projector.Parameters(1, u, v);
+                        gp_Pnt P;
+                        gp_Vec dU, dV;
+                        surf.D1(u, v, P, dU, dV);
+                        normal = dU.Crossed(dV);
+                    }
+                    normal.Normalize();
+
+                    // 面内垂直于边的方向 = 切向量 × 法向量
+                    gp_Vec dir = tangent.Crossed(normal);
+                    dir.Normalize();
+
+                    // 沿 dir 方向偏移一点
+                    gp_Pnt testPoint = point.XYZ() + dir.XYZ() * 0.001;
+
+                    // 判断 testPoint 是否在实体内部
+
+                    BRepClass3d_SolidClassifier classifier(solid);
+                    classifier.Perform(testPoint, Precision::Confusion());
+                    if (classifier.State() == TopAbs_OUT) {
+                        // 如果在外部，反转方向
+                        dir.Reverse();
+                    }
+                    return dir;
+                    };
+                gp_Vec d = getInPlanePerpDir(solid, face, midPoint, tangent);
+                axisBehaviour->setUpOrigin(midPoint.X(), midPoint.Y(), midPoint.Z());
                 if (reverse) {
-                    axisBehaviour->setUpDir(-dir.x,-dir.y,-dir.z);
+                    axisBehaviour->setUpDir(d.X(), d.Y(), d.Z());
                 }
                 else {
-                    axisBehaviour->setUpDir(dir.x, dir.y, dir.z);
+                    axisBehaviour->setUpDir(-d.X(), -d.Y(), -d.Z());
                 }
-               
+                dir = Base::Vector3d{ -d.X(), -d.Y(), -d.Z() };
                 axisBehaviour->setImmediateInvoke(false);
                 axisBehaviour->setLength(thickNessValue);
                 axisBehaviour->AddObserver(AxisTranslationEvent::LengthChange, self, &ThicknessTaskDialog::onWidgetLengthInvoke);
-
+                axisBehaviour->setUpScale(len);
             }
         }
         ~Internal() {
@@ -69,6 +130,7 @@ namespace MOON {
     ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent)
         : ParamTaskDialog(parent),mInternal(new Internal(this))
     {
+        setGenerateShapeName("ThickShape");
         PropertyComponent* p=addGroupParam("Thickness");
         mInternal->thickNessProp = new SliderFloatProperty("Thickness value", p);
         mInternal->thickNessProp->setMinMax(0.1,10);

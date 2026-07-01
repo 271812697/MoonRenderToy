@@ -77,6 +77,11 @@ namespace MOON {
 		}
 	}
 
+	void AxisTranslationWidget::setUpScale(float s)
+	{
+		mInternal->viewData.setTriangleFaceScale("Arrow",s);
+	}
+
 
 	float AxisTranslationWidget::getLength()
 	{
