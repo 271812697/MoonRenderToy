@@ -23,6 +23,8 @@
 #include <gp_Pln.hxx>
 #include <TopoDS.hxx>
 #include <BRepAdaptor_Surface.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <BRepGProp_Face.hxx>
 namespace MOON {
 
     class ExtrudeTaskDialog::Internal {
@@ -31,15 +33,7 @@ namespace MOON {
             behaviour = new PadTaskWidget("pad");
 			std::vector<Part::TopoShape> shapes;
             ViewTool::getSelectedTopoShape(shapes);
-            bool useSelectedFace = false;
             if (shapes.size() > 0) {
-                TopoDS_Face face = TopoDS::Face(shapes[1].getShape());
-                BRepAdaptor_Surface surf(face);
-                if (surf.GetType() == GeomAbs_Plane) {
-                    useSelectedFace = true;
-                }
-            }
-            if (useSelectedFace) {
                 faceShape = shapes[1];
 				baseShape = shapes[0];
             }
@@ -55,7 +49,22 @@ namespace MOON {
             if(!faceShape.isNull())
             {
                 gp_Pln pln;
-                faceShape.findPlane(pln);
+                if (!faceShape.findPlane(pln)) {
+                    TopoDS_Face face = TopoDS::Face(faceShape.getShape());
+                    BRepAdaptor_Surface adapt(face);
+                    double u = adapt.FirstUParameter()
+                        + (adapt.LastUParameter() - adapt.FirstUParameter()) / 2.;
+                    double v = adapt.FirstVParameter()
+                        + (adapt.LastVParameter() - adapt.FirstVParameter()) / 2.;
+                    BRepLProp_SLProps prop(adapt, u, v, 2, Precision::Confusion());
+                    if (prop.IsNormalDefined()) {
+                        gp_Pnt pnt;
+                        gp_Vec vec;
+                        // handles the orientation state of the shape
+                        BRepGProp_Face(face).Normal(u, v, pnt, vec);
+                        pln = gp_Pln(pnt, gp_Dir(vec));
+                    }
+                }
                 behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
                 if (extrudeType == ExtrudeType::Additive)
                 {

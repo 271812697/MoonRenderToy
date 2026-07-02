@@ -91,16 +91,12 @@ namespace MOON {
                         normal = dU.Crossed(dV);
                     }
                     normal.Normalize();
-
                     // 面内垂直于边的方向 = 切向量 × 法向量
                     gp_Vec dir = tangent.Crossed(normal);
                     dir.Normalize();
-
                     // 沿 dir 方向偏移一点
                     gp_Pnt testPoint = point.XYZ() + dir.XYZ() * 0.001;
-
                     // 判断 testPoint 是否在实体内部
-                
                     BRepClass3d_SolidClassifier classifier(solid);
                     classifier.Perform(testPoint, Precision::Confusion());
                     if (classifier.State() == TopAbs_OUT) {
