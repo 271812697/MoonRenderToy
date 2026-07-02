@@ -8,6 +8,7 @@
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/SceneView.h"
+#include "core/ViewTool.h"
 #include "core/log.h"
 #include "Interactive/Widgets/PadTaskWidget.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
@@ -20,34 +21,58 @@
 #include <QRadioButton>
 #include <numbers>
 #include <gp_Pln.hxx>
+#include <TopoDS.hxx>
+#include <BRepAdaptor_Surface.hxx>
 namespace MOON {
 
     class ExtrudeTaskDialog::Internal {
     public:
         Internal(ExtrudeTaskDialog* pad , ExtrudeType type) :self(pad), extrudeType(type){
             behaviour = new PadTaskWidget("pad");
-            // 1. 获取当前激活的草图
-            SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-            if (sketchObj) {
-                 Part::TopoShape sketchShape = sketchObj->getDoneFaceShape();
-                 gp_Pln pln;
-                 sketchShape.findPlane(pln);
-                 behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
-                 if (extrudeType == ExtrudeType::Additive)
-                 {
+			std::vector<Part::TopoShape> shapes;
+            ViewTool::getSelectedTopoShape(shapes);
+            bool useSelectedFace = false;
+            if (shapes.size() > 0) {
+                TopoDS_Face face = TopoDS::Face(shapes[1].getShape());
+                BRepAdaptor_Surface surf(face);
+                if (surf.GetType() == GeomAbs_Plane) {
+                    useSelectedFace = true;
+                }
+            }
+            if (useSelectedFace) {
+                faceShape = shapes[1];
+				baseShape = shapes[0];
+            }
+            else
+            {
+                // 1. 获取当前激活的草图
+                SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+                if (sketchObj) {
+                     faceShape = sketchObj->getDoneFaceShape();
+                     baseShape = sketchObj->getBasedTopoShape();
+                }
+            }  
+            if(!faceShape.isNull())
+            {
+                gp_Pln pln;
+                faceShape.findPlane(pln);
+                behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
+                if (extrudeType == ExtrudeType::Additive)
+                {
                     behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
- 
-                 }
-                 else
-                 {
-                     behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
-                 }
-                 behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
-                 behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
-                 behaviour->setLength(10);
-                 behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
-                 behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
-            }           
+                    finalDir = { pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
+                }
+                else
+                {
+                    behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
+                    finalDir = { -pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z() };
+                }
+                behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
+                behaviour->setLength(10);
+                behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
+                behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
+            }
         }
         ~Internal() {
             delete behaviour;
@@ -73,8 +98,13 @@ namespace MOON {
             }
         }
     private:
+        //based which shape to extrude and use which shape to extrude
+        Part::TopoShape baseShape;
+        Part::TopoShape faceShape;
+        gp_Vec finalDir;
+
         PadTaskWidget* behaviour = nullptr;
-        Part::TopoShape* basedTopoShape = nullptr;
+       
         ExtrudeType extrudeType;
         ExtrudeTaskDialog* self;
         friend ExtrudeTaskDialog;
@@ -119,10 +149,10 @@ namespace MOON {
 
     bool ExtrudeTaskDialog::generateShape()
     {
-        // 1. 获取当前激活的草图
-        SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-        if (!sketchObj)
+		// 1. 检查是否有有效的拉伸面
+        if (mInternal->faceShape.isNull()) {
             return false;
+        }
 
         // 2. 获取界面控件（你需要把控件提升为成员变量，我下面会说明）
         //    先假设你已经把 spinLen, cboDir, cboBool, rbDim 等改成成员变量
@@ -141,20 +171,13 @@ namespace MOON {
         bool isToFace = mInternal->rbToFace->isChecked();
 
         // 4. 获取草图平面法向（拉伸方向基准）
-        double dir[3] = { 0,0,1 };
-        sketchObj->getPlaneNormal(dir);
-        gp_Vec baseDir(dir[0], dir[1], dir[2]);
-        gp_Vec finalDir = baseDir;
         // 5. 根据方向类型调整最终拉伸向量
         Part::ExtrusionParameters params;
         params.taperAngleFwd = angleForward * std::numbers::pi / 180.0;
         params.innerWireTaper = Part::InnerWireTaper::SameAsOuter;
-        params.dir = finalDir;
+        params.dir = mInternal->finalDir;
         params.solid = true;
         params.lengthFwd = lengthForward;
-        if (mInternal->extrudeType == ExtrudeType::Subtractive) {
-            params.lengthFwd *= -1;
-        }
 
         if (dirType == 0)      // 正向
         {
@@ -172,14 +195,13 @@ namespace MOON {
             params.taperAngleRev = params.taperAngleFwd * std::numbers::pi / 180.0;
         }
 
-        // 6. 生成拉伸体（核心）
-        Part::TopoShape sketchShape = sketchObj->getDoneFaceShape();
+        // 6. 生成拉伸体(核心)
         Part::TopoShape prism;
         try {
             std::vector<Part::TopoShape> drafts;
             Part::ExtrusionHelper::makeElementDraft(
                 params,
-                sketchShape,
+                mInternal->faceShape,
                 drafts, App::StringHasherRef()
             );
             if (drafts.empty()) {
@@ -191,14 +213,14 @@ namespace MOON {
                 Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
             );
             getPreviewShape() = prism;
-            Part::TopoShape baseShape = sketchObj->getBasedTopoShape();
+          
             Part::TopoShape resShape;
-            if (!baseShape.isNull()) {
+            if (!mInternal->baseShape.isNull()) {
                 if (mInternal->extrudeType == ExtrudeType::Additive) {
-                    resShape = prism.makeElementFuse(baseShape);
+                    resShape = prism.makeElementFuse(mInternal->baseShape);
                 }
                 else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
-                    resShape = baseShape.makeElementCut(prism);
+                    resShape = mInternal->baseShape.makeElementCut(prism);
                 }
             }
             else {
