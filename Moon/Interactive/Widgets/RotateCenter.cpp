@@ -84,7 +84,7 @@ namespace MOON {
 		}
 		else
 		{
-			MOON::SelectionManager::instance().clearPreselect();
+			MOON::SelectionManager::instance().clearSelect();
 			GetTreeView.clearHighlight();
 		}
 	}
