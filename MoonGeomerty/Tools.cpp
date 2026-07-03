@@ -255,7 +255,13 @@ bool Part::Tools::getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>&
     TopLoc_Location loc;
     Handle(Poly_Triangulation) hTria = BRep_Tool::Triangulation(face, loc);
     if (hTria.IsNull())
+    {
+        hTria=triangulationOfFace(face);
+    }
+    if (hTria.IsNull())
+    {
         return false;
+    }
     getPointNormals(face, hTria, normals);
     applyTransformationOnNormals(loc,normals);
     // getting the transformation of the face
