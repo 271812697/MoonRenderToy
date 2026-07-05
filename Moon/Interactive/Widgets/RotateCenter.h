@@ -2,6 +2,7 @@
 #include "Interactive/EventWidget.h"
 namespace MOON
 {
+
 	class RotateCenter: public EventWidget
 	{
 	public:

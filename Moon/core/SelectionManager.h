@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <limits> // 支持 numeric_limits
+#include <Interactive/Interactive/EventObject.h>
 #define GetSelection MOON::SelectionManager::instance()
 namespace MOON
 {
@@ -20,7 +21,13 @@ namespace MOON
 		size_t actorId = InvalidID;
 	};
 
-	class SelectionManager
+	enum SelectEvent {
+		SelectEdge = 1001,
+		SelectFace,
+		SelectAny,
+		None
+	};
+	class SelectionManager:public EventObject
 	{
 	public:
 		static SelectionManager& instance();

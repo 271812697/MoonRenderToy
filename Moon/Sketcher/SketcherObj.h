@@ -69,6 +69,15 @@ namespace MOON {
 			return doneFaceShape;
 		}
 		Base::Matrix4D getplaneTransform();
+		Base::Vector3d getPlaneOrigin() {
+			return mPlane.origin;
+		}
+		Base::Vector3d getPlaneXAxis() {
+			return mPlane.xAxis;
+		}
+		Base::Vector3d getPlaneYAxis() {
+			return mPlane.yAxis;
+		}
 	private:
 		Part::TopoShape basedTopoShape;
 		Part::TopoShape doneFaceShape;
