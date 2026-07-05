@@ -5,6 +5,7 @@
 #include "Interactive/Im3DRenderer.h"
 #include "Interactive/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
+#include "core/ViewTool.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "base/Tools.h"
 #include "core/log.h"
@@ -228,7 +229,7 @@ namespace MOON {
         view.GetCameraController().EnableRotate(true);
         doneFaceShape = toShape();
         GetService(SketchToolbar).disableAllHandlers();
-        
+        ViewTool::createTopoActor(doneFaceShape,"sketcher");
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
