@@ -65,6 +65,7 @@ namespace MOON {
 	void SelectionManager::setSelect(const std::vector<SelectID>& selectIdLists)
 	{
 		mInternal->selectIDs = selectIdLists;
+		InvokeEvent(SelectAny);
 	}
 	void SelectionManager::clearSelect()
 	{

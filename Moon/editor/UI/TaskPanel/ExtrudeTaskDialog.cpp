@@ -26,7 +26,6 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepGProp_Face.hxx>
 namespace MOON {
-
     class ExtrudeTaskDialog::Internal {
     public:
         Internal(ExtrudeTaskDialog* pad , ExtrudeType type) :self(pad), extrudeType(type){

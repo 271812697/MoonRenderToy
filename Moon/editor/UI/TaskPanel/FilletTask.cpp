@@ -36,6 +36,10 @@ namespace MOON {
    
             ViewTool::getSelectedTopoShape(shapes);
             if (shapes.size() > 0) {
+                if (shapes[1].getShape().ShapeType() != TopAbs_ShapeEnum::TopAbs_EDGE) {
+                    CORE_ERROR("is not a Edge to fillet");
+                    return;
+                }
                 auto len = shapes[0].getBoundBoxOptimal().CalcDiagonalLength()*0.01;;
                 radius = shapes[0].getBoundBoxOptimal().CalcDiagonalLength() * 0.03;
 

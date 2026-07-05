@@ -3413,16 +3413,27 @@ TopoDS_Shape TopoShape::removeSplitter() const
                 builder.Add(comp, xp.Current());
             }
         }
-
         return TopoDS_Shape(std::move(comp));
     }
-
     return _Shape;
 }
 void  TopoShape::getDomainfaces(std::vector<Domain>& domains, double accuracy)const {
     if (this->_Shape.IsNull())
         return;
-
+    // create or use the mesh on the data structure
+    Standard_Real AngDeflectionRads = Base::toRadians(defaultAngularDeflection(accuracy));
+    IMeshTools_Parameters meshParams;
+    meshParams.Deflection = accuracy;
+    meshParams.Relative = Standard_False;
+    meshParams.Angle = AngDeflectionRads;
+    meshParams.InParallel = Standard_True;
+    meshParams.AllowQualityDecrease = Standard_True;
+    // Clear triangulation and PCurves from geometry which can slow down the process
+#if OCC_VERSION_HEX < 0x070600
+    BRepTools::Clean(this->_Shape);
+#else
+    BRepTools::Clean(this->_Shape, Standard_True);
+#endif
     // get the meshes of all faces and then merge them
     BRepMesh_IncrementalMesh aMesh(this->_Shape, accuracy,
         /*isRelative*/ Standard_False,

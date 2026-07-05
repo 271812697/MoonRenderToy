@@ -4,10 +4,7 @@
 #include "EventData.h"
 #include "WidgetEventTranslator.h"
 #include <map>
-
-
 namespace MOON {
-
 	// Callbacks are stored as a pair of (Object,Method) in the map.
 	struct CallbackPair
 	{
@@ -70,10 +67,8 @@ namespace MOON {
 			{
 				//this->EventTranslator->Register(this);
 			}
-
 		}
 	}
-
 	//------------------------------------------------------------------------------
 	void WidgetCallbackMapper::SetCallbackMethod(
 		unsigned long GIZMOEvent, unsigned long widgetEvent, AbstractWidget* w, CallbackType f)
@@ -108,7 +103,6 @@ namespace MOON {
 	{
 		(*this->callbackMap)[widgetEvent] = CallbackPair(w, f);
 	}
-
 	//------------------------------------------------------------------------------
 	void WidgetCallbackMapper::InvokeCallback(unsigned long widgetEvent)
 	{
@@ -120,5 +114,4 @@ namespace MOON {
 			(*f)(w);
 		}
 	}
-
 }

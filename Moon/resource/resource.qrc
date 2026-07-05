@@ -83,9 +83,11 @@
 		    <file>icons/parametric/Part_Cylinder_Parametric.svg</file>
 		    <file>icons/partdesign/PartDesign_Pad.svg</file>
 
-		<file>icons/partdesign/PartDesign_Thickness.svg</file>
-		<file>icons/partdesign/PartDesign_Fillet.svg</file>
-      <file>icons/partdesign/PartDesign_Pocket.svg</file>
+		    <file>icons/partdesign/PartDesign_Thickness.svg</file>
+		    <file>icons/partdesign/PartDesign_Fillet.svg</file>
+        <file>icons/partdesign/PartDesign_Pocket.svg</file>
+        <file>icons/partdesign/PartDesign_Revolution.svg</file>
+        <file>icons/partdesign/PartDesign_Groove.svg</file>
 
 
 

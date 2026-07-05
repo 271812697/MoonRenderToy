@@ -4,7 +4,7 @@ namespace MOON
 {
 	enum AxisTranslationEvent{
 		LengthChange=1001,
-		None
+		AxisTranslationEventNone
 	};
 	class AxisTranslationWidget: public EventWidget
 	{
