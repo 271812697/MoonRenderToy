@@ -173,9 +173,13 @@ namespace MOON {
     }
     void RevolutionTask::clickCancel()
     {
+        clearPreviewShape();
     }
     bool RevolutionTask::generateShape()
     {
+        if (mInternal->faceShape.isNull()) {
+            return false;
+        }
         gp_Ax1 raxis=mInternal->axis;
         if (mInternal->reverse) {
             raxis.Reverse();

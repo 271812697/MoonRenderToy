@@ -70,7 +70,7 @@ namespace MOON {
 		Base::Vector2d preOnSketchPosMove = onSketchPosMove;
         pickGeo();
         if (!isHaveActiveHandler) {
-            if (clickMoveState == MoveGeo) {
+            if (clickMoveState == MoveGeo&& isInEdit) {
                 for (int i = 0;i < selectIds.size();i++) {
                     int geoId = selectIds[i];
                     mGeoList[geoId]->translate(Base::Vector3d(onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y, 0));

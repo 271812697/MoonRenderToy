@@ -207,6 +207,7 @@ namespace MOON {
     }
     void FilletTask::clickCancel()
     {
+        clearPreviewShape();
     }
     bool FilletTask::generateShape()
     {

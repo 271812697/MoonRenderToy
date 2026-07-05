@@ -219,6 +219,7 @@ namespace MOON {
     }
     void ThicknessTaskDialog::clickCancel()
     {
+        clearPreviewShape();
     }
     bool ThicknessTaskDialog::generateShape()
     {

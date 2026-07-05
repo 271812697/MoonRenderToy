@@ -133,6 +133,16 @@ namespace MOON {
 			delete preActor;
 		}
 	}
+	void ShapeHelper::clearPreviewShape()
+	{
+		auto& view = GetService(Editor::Panels::SceneView);
+		auto scene = view.GetScene();
+		auto preActor = scene->FindActorByName("TopoShapePreview");
+		if (preActor) {
+			scene->RemoveActor(preActor);
+			delete preActor;
+		}
+	}
 	Part::TopoShape& ShapeHelper::getPreviewShape()
 	{
 		return mInternal->m_previewShape;

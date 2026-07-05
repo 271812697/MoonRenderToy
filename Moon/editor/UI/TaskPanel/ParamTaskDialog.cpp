@@ -96,7 +96,7 @@ namespace MOON {
     {
     }
     void ParamTaskDialog::clickCancel()
-    {
+    { 
     }
     QVariant ParamTaskDialog::getParamValue(const QString& propertyName)
     {

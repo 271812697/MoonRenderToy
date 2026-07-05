@@ -364,6 +364,7 @@ namespace MOON {
     }
     void ExtrudeTaskDialog::clickCancel()
     {
+        clearPreviewShape();
     }
     void ExtrudeTaskDialog::onValueChange()
     {
