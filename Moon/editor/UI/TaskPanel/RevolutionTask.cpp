@@ -11,6 +11,7 @@
 #include "core/SelectionManager.h"
 #include "Interactive/Widgets/AxisTranslationWidget.h"
 #include "Interactive/Interactive/ExecuteCommand.h"
+#include "Interactive/Widgets/ArrowRotateWidget.h"
 #include "base/BoundBox.h"
 #include "Geometry.h"
 
@@ -32,6 +33,8 @@
 #include <TopoDS.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
 namespace MOON {
     class RevolutionTask::Internal {
     public:
@@ -51,6 +54,25 @@ namespace MOON {
                     baseShape = sketchObj->getBasedTopoShape();
                 }
             }
+            mBehaviour = new ArrowRotateWidget("rotate");
+            if (!faceShape.isNull()) {
+                Part::TopoShape tempShape = faceShape.makeElementFace(nullptr, "Part::FaceMakerCheese");
+                GProp_GProps props;
+                BRepGProp::SurfaceProperties(tempShape.getSubTopoShape(TopAbs_FACE, 1).getShape(), props);
+              
+                gp_Pnt cog = props.CentreOfMass();
+                mBehaviour->setUpOriginPos(cog.X(),cog.Y(),cog.Z());
+            }
+         
+           
+        }
+        void setAxis(const gp_Ax1& ax) {
+            axis = ax;
+            
+            mBehaviour->setUpRotateAxis(
+                ax.Direction().X(), ax.Direction().Y(), ax.Direction().Z());
+            mBehaviour->setUpRotateCenter(ax.Location().X(),
+                ax.Location().Y(), ax.Location().Z());
         }
         bool setSketcherAxis() {
             // 1. 获取当前激活的草图
@@ -62,8 +84,8 @@ namespace MOON {
                     saxis = sketchObj->getPlaneYAxis();
                 }
                 gp_Pnt b(origin.x, origin.y, origin.z);;
-                gp_Dir d(saxis.x, saxis.y, saxis.z);
-                axis = gp_Ax1(b, d);
+                gp_Dir d(saxis.x, saxis.y, saxis.z); 
+                setAxis(gp_Ax1(b, d));
                 return true;
             }        
             return false;
@@ -73,8 +95,10 @@ namespace MOON {
         ~Internal() {
             SelectionManager::instance().RemoveObserver(selectEdgeObserver.tag);
             delete selectEdgeObserver.command;
+            delete mBehaviour;
         }
     private:
+        ArrowRotateWidget* mBehaviour = nullptr;
         SliderFloatProperty* angleProp;
         friend RevolutionTask;
         RevolutionTask* self = nullptr;
@@ -231,7 +255,7 @@ namespace MOON {
                         adapt.D1(middle, b, v);
                         d = v;
                     }
-                    mInternal->axis=gp_Ax1 (b, d);
+                    mInternal->setAxis(gp_Ax1 (b, d));
                     previewShape();
                 }
                 else

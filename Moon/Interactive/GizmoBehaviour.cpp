@@ -27,7 +27,7 @@ namespace MOON {
 			m_lastProj = currProj;
 
 			m_firstPick = false;
-			m_refPos = currHit;
+			//m_refPos = currHit;
 			outDir = m_refDir;
 			m_totalAngle = 0.f;
 			return true;
@@ -65,7 +65,7 @@ namespace MOON {
 			m_mouseStart = currProj;
 			m_lastProj = currProj;
 			m_firstPick = false;
-			m_refPos = currHit;
+			//m_refPos = currHit;
 			outPos = m_refPos;
 			m_totalAngle = 0.f;
 			return true;
