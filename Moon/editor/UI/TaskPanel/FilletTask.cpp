@@ -114,11 +114,11 @@ namespace MOON {
                 gp_Vec dir2 = getInPlanePerpDir(solid,face2, midPoint, tangent);
 
 
-                axisBehaviour1->setImmediateInvoke(false);
+                //axisBehaviour1->setImmediateInvoke(false);
                 axisBehaviour1->setLength(radius);
                 axisBehaviour1->setUpOrigin(midPoint.X(), midPoint.Y(), midPoint.Z());
                 axisBehaviour1->setUpDir(dir1.X(), dir1.Y(), dir1.Z());
-                axisBehaviour2->setImmediateInvoke(false);
+                //axisBehaviour2->setImmediateInvoke(false);
                 axisBehaviour2->setLength(radius);
                 axisBehaviour2->setUpOrigin(midPoint.X(), midPoint.Y(), midPoint.Z());
                 axisBehaviour2->setUpDir(dir2.X(), dir2.Y(), dir2.Z());
@@ -183,8 +183,10 @@ namespace MOON {
         bool updatePreView = false;
         if (propertyName == "Fillet:Radius") {
             mInternal->radius=value.toFloat();
-            mInternal->axisBehaviour1->setLength(mInternal->radius);
-            mInternal->axisBehaviour2->setLength(mInternal->radius);
+            if (mInternal->axisBehaviour1) {
+                mInternal->axisBehaviour1->setLength(mInternal->radius);
+                mInternal->axisBehaviour2->setLength(mInternal->radius);            
+            }
             updatePreView = true;
         }
        
@@ -192,7 +194,7 @@ namespace MOON {
             mInternal->useAllEdges= value.value<bool>();
             updatePreView = true;
         }
-        if (updatePreView) {
+        if (updatePreView&& mInternal->axisBehaviour1) {
             previewShape();
         }
     }
@@ -207,6 +209,7 @@ namespace MOON {
     }
     void FilletTask::clickCancel()
     {
+        clearPreviewShape();
     }
     bool FilletTask::generateShape()
     {
@@ -246,11 +249,9 @@ namespace MOON {
     {        
         mInternal->radius= mInternal->axisBehaviour1->getLength();
         mInternal->radiusProp->updateWidgetValue(mInternal->radius);
-        previewShape();
     }
     void FilletTask::onWidgetLengthInvoke2() {
         mInternal->radius = mInternal->axisBehaviour2->getLength();
         mInternal->radiusProp->updateWidgetValue(mInternal->radius);
-        previewShape();
     }
 }

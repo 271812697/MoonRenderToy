@@ -69,6 +69,7 @@ namespace MOON {
         emit taskCancel();
         if (m_currentTask)
         {
+            
             m_currentTask->clickCancel();
         }
         clearTask();

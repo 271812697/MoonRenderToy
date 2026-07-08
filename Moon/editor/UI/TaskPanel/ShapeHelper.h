@@ -10,6 +10,7 @@ namespace MOON {
 		virtual bool generateShape();
 		void previewShape();
 		void generateFinalShape();
+		void clearPreviewShape();
 		Part::TopoShape& getPreviewShape();
 		Part::TopoShape& getGenerateShape();
 	protected:

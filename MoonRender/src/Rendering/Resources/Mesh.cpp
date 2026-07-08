@@ -87,9 +87,16 @@ uint32_t Rendering::Resources::Mesh::GetIndexCount(int index) const
 	return uploadIndicesCount[index];
 }
 
-const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere() const
+const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere()
 {
+
 	return m_boundingSphere;
+}
+
+const Rendering::Geometry::bbox& Rendering::Resources::Mesh::GetBoundingBox()
+{
+
+	return m_boundingBox;
 }
 
 std::vector<uint32_t> Rendering::Resources::Mesh::GetMaterialIndex() const

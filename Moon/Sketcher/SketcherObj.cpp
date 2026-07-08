@@ -5,6 +5,7 @@
 #include "Interactive/Im3DRenderer.h"
 #include "Interactive/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
+#include "core/ViewTool.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "base/Tools.h"
 #include "core/log.h"
@@ -70,7 +71,7 @@ namespace MOON {
 		Base::Vector2d preOnSketchPosMove = onSketchPosMove;
         pickGeo();
         if (!isHaveActiveHandler) {
-            if (clickMoveState == MoveGeo) {
+            if (clickMoveState == MoveGeo&& isInEdit) {
                 for (int i = 0;i < selectIds.size();i++) {
                     int geoId = selectIds[i];
                     mGeoList[geoId]->translate(Base::Vector3d(onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y, 0));
@@ -228,7 +229,7 @@ namespace MOON {
         view.GetCameraController().EnableRotate(true);
         doneFaceShape = toShape();
         GetService(SketchToolbar).disableAllHandlers();
-        
+        ViewTool::createTopoActor(doneFaceShape,"sketcher");
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {

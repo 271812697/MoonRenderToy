@@ -13,6 +13,6 @@ namespace MOON
     public:
         static Core::ECS::Actor* getLastestActorSelected();
         static bool getSelectedTopoShape(std::vector<Part::TopoShape>&topo);
-        static bool createTopoActor(const Part::TopoShape& topo,const char* name=nullptr);
+        static Core::ECS::Actor* createTopoActor(const Part::TopoShape& topo,const char* name=nullptr);
     };
 }

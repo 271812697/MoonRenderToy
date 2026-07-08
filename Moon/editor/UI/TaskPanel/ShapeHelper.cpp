@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "renderer/SceneView.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
+#include <tracy/Tracy.hpp>
 namespace MOON {
 	class ShapeHelper::Internal
 	{
@@ -37,6 +38,7 @@ namespace MOON {
 	}
 	void ShapeHelper::previewShape()
 	{
+		ZoneScoped;
 		if (generateShape()) {
 
 			Part::TopoShape shape(mInternal->m_previewShape);
@@ -127,6 +129,16 @@ namespace MOON {
 			topo.setShape(mInternal->m_generateShape);
 			topoComp->discretizationShape();
 		}
+		auto preActor = scene->FindActorByName("TopoShapePreview");
+		if (preActor) {
+			scene->RemoveActor(preActor);
+			delete preActor;
+		}
+	}
+	void ShapeHelper::clearPreviewShape()
+	{
+		auto& view = GetService(Editor::Panels::SceneView);
+		auto scene = view.GetScene();
 		auto preActor = scene->FindActorByName("TopoShapePreview");
 		if (preActor) {
 			scene->RemoveActor(preActor);

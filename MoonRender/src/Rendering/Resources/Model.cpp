@@ -1,6 +1,6 @@
 ﻿#include <algorithm>
 #include "Rendering/Resources/Model.h"
-const Rendering::Geometry::BoundingSphere& Rendering::Resources::Model::GetBoundingSphere() const
+const Rendering::Geometry::BoundingSphere& Rendering::Resources::Model::GetBoundingSphere()
 {
 	return m_boundingSphere;
 }
@@ -96,8 +96,8 @@ void Rendering::Resources::Model::AddMesh(Mesh* mesh)
 
 void Rendering::Resources::Model::computeBoxAndShpere()
 {
-	ComputeBoundingSphere();
 	ComputeBoundingBox();
+	ComputeBoundingSphere();
 }
 
  std::vector<std::string>& Rendering::Resources::Model::GetMaterialNames() 

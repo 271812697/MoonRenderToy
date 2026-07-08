@@ -38,6 +38,9 @@ namespace MOON
 		static void RightMousePressed(AbstractWidget*);
 		static void MouseMove(AbstractWidget*);
 	protected:
+		//use for mouse move event
+		unsigned int mCurrentFrame = 1;
+		unsigned int mPreFrame = 0;
 		unsigned int mWidgetId;
 		CallbackCommand* KeyEventCallbackCommand;
 		static void ProcessKeyEvents(EventObject*, unsigned long, void*, void*);

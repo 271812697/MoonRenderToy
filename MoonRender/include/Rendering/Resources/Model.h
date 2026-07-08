@@ -16,7 +16,7 @@ namespace Rendering::Resources
 		void AddMesh(Mesh*mesh);
 		void computeBoxAndShpere();
 		std::vector<std::string>& GetMaterialNames() ;
-		const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const;
+		const Rendering::Geometry::BoundingSphere& GetBoundingSphere() ;
 		const Rendering::Geometry::bbox& GetBoundingBox() ;
 	
 		Model(const std::string& p_path);

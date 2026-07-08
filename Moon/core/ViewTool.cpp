@@ -40,7 +40,7 @@ namespace MOON {
 		}
 		return false;
 	}
-	bool ViewTool::createTopoActor(const Part::TopoShape& topoShape, const char* name )
+	 Core::ECS::Actor* ViewTool::createTopoActor(const Part::TopoShape& topoShape, const char* name )
 	{
 		auto& view = GetService(Editor::Panels::SceneView);
 		auto scene = view.GetScene();
@@ -49,6 +49,6 @@ namespace MOON {
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 		topo = topoShape;
 		topoComp->discretizationShape();
-		return true;
+		return topoActor;
 	}
 }

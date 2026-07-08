@@ -20,6 +20,7 @@ namespace MOON {
 		virtual bool generateShape()override;
 		void onSelectAny();
 	private:
+		void onAngleChange();
 		bool initilized = false;
 		class Internal;
 		Internal* mInternal = nullptr;
