@@ -56,6 +56,7 @@ namespace MOON {
                 }
             }
             mBehaviour = new ArrowRotateWidget("rotate");
+            mBehaviour->setImmediateInvoke(false);
             if (!faceShape.isNull()) {
                 Part::TopoShape tempShape = faceShape.makeElementFace(nullptr, "Part::FaceMakerCheese");
                 GProp_GProps props;
@@ -76,6 +77,8 @@ namespace MOON {
                 tempAxis.Direction().X(), tempAxis.Direction().Y(), tempAxis.Direction().Z());
             mBehaviour->setUpRotateCenter(ax.Location().X(),
                 tempAxis.Location().Y(), tempAxis.Location().Z());
+            mBehaviour->setAngle(angle);
+
         }
         bool setSketcherAxis() {
             // 1. 获取当前激活的草图
@@ -184,7 +187,6 @@ namespace MOON {
         else if (propertyName == "Revolve:Reverse") {
             mInternal->reverse = value.toBool();
 			mInternal->setAxis(mInternal->axis);
-            mInternal->mBehaviour->setAngle(mInternal->angle);
             updatePreView = true;
         }
         if (updatePreView&&initilized) {
