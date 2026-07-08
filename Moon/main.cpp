@@ -19,24 +19,7 @@ int main(int argc, char* argv[])
 	CORE_INFO("Init Geometry Types");
 	Part::GeometryTypeInit();
 	//test jobsystem
-	MOON::System::JobSystem::OnInit();
-	MOON::System::JobSystem::Context ctx;
-	std::vector<int>testTable(100);
-	//execute
-	//for (int i = 0;i < 100;i++) {
-	//	//MOON::System::JobSystem;
-	//	auto lamda=[i,&testTable](JobDispatchArgs arg) {
-	//		testTable[i] = i;
-	//		};
-	//	MOON::System::JobSystem::Execute(ctx,lamda);
-	//}
-
-	//dispatch
-	//auto lamda = [ &testTable](JobDispatchArgs arg) {
-	//	testTable[arg.jobIndex] = arg.jobIndex;
-	//	};
-	//MOON::System::JobSystem::Dispatch(ctx,100,10,lamda);
-	//MOON::System::JobSystem::Wait(ctx);
+	MOON::System::JobSystem::OnInit(2);
 	
 	QApplication::setFont(font);
 	MOON::Editor editor;

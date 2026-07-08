@@ -15,7 +15,7 @@ namespace Rendering::Resources
 		virtual void Unbind() const = 0;
 		virtual uint32_t GetVertexCount() const = 0;
 		virtual uint32_t GetIndexCount(int index=0) const = 0;
-		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const = 0;
-		virtual const Rendering::Geometry::bbox& GetBoundingBox()const=0;
+		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere()  = 0;
+		virtual const Rendering::Geometry::bbox& GetBoundingBox()=0;
 	};
 }

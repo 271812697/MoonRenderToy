@@ -65,6 +65,7 @@ namespace MOON {
 	}
 	void EventWidget::update()
 	{
+		mCurrentFrame = (mCurrentFrame + 1) % 1000000;
 		if (mActive&&mVisible) {
 			onUpdate();
 		}
@@ -151,8 +152,13 @@ namespace MOON {
 
 	void EventWidget::MouseMove(AbstractWidget* w)
 	{
+		
 		EventWidget* self = reinterpret_cast<EventWidget*>(w);
-		self->onMouseMove();
+		if (self->mCurrentFrame != self->mPreFrame) {
+			self->mPreFrame = self->mCurrentFrame;
+			self->onMouseMove();
+		}
+		
 	}
 	void EventWidget::ProcessKeyEvents(EventObject*, unsigned long event, void* clientdata, void*)
 	{

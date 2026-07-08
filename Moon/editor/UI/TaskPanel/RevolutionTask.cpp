@@ -1,4 +1,5 @@
-﻿#include "editor/UI/TaskPanel/RevolutionTask.h"
+﻿#include <tracy/Tracy.hpp>
+#include "editor/UI/TaskPanel/RevolutionTask.h"
 #include "TaskBox.h"
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/EnumProperty.h"
@@ -61,18 +62,20 @@ namespace MOON {
                 BRepGProp::SurfaceProperties(tempShape.getSubTopoShape(TopAbs_FACE, 1).getShape(), props);
               
                 gp_Pnt cog = props.CentreOfMass();
-                mBehaviour->setUpOriginPos(cog.X(),cog.Y(),cog.Z());
+                mBehaviour->setUpOriginPos(cog.X(),cog.Y(),cog.Z()); 
+                mBehaviour->AddObserver(ArrowRotateEvent::AngleChange, self, &RevolutionTask::onAngleChange);
             }
-         
-           
         }
         void setAxis(const gp_Ax1& ax) {
             axis = ax;
-            
+            gp_Ax1 tempAxis = axis;
+            if (reverse) {
+                tempAxis.Reverse();
+            }
             mBehaviour->setUpRotateAxis(
-                ax.Direction().X(), ax.Direction().Y(), ax.Direction().Z());
+                tempAxis.Direction().X(), tempAxis.Direction().Y(), tempAxis.Direction().Z());
             mBehaviour->setUpRotateCenter(ax.Location().X(),
-                ax.Location().Y(), ax.Location().Z());
+                tempAxis.Location().Y(), tempAxis.Location().Z());
         }
         bool setSketcherAxis() {
             // 1. 获取当前激活的草图
@@ -110,8 +113,7 @@ namespace MOON {
         gp_Ax1 axis;
         int axisType = 0;
         float angle=90;
-        bool  reverse;
-       
+        bool  reverse = false;
         ExecuteCommandPair selectEdgeObserver;
     };
 
@@ -128,7 +130,7 @@ namespace MOON {
         mPreviewOption.b = 0;
         PropertyComponent* p=addGroupParam("Revolve");
         mInternal->angleProp = new SliderFloatProperty("Angle", p);
-        mInternal->angleProp->setMinMax(0,360);
+        mInternal->angleProp->setMinMax(-360,360);
 
         addParam(mInternal->angleProp);
         EnumProperty* join = new EnumProperty("Axis", p);
@@ -148,7 +150,6 @@ namespace MOON {
 
     QVariant RevolutionTask::getParamValue(const QString& propertyName)
     {
-
         if (propertyName == "Revolve:Angle") {
             return QVariant::fromValue(mInternal->angle);
         }
@@ -165,9 +166,11 @@ namespace MOON {
 
     void RevolutionTask::setParamValue(const QString& propertyName, const QVariant& value)
     {
+        ZoneScoped;
         bool updatePreView = false;
         if (propertyName == "Revolve:Angle") {
             mInternal->angle = value.toFloat();
+            mInternal->mBehaviour->setAngle(mInternal->angle);
             updatePreView = true;
         }
         else if (propertyName == "Revolve:Axis") {
@@ -180,6 +183,8 @@ namespace MOON {
         }
         else if (propertyName == "Revolve:Reverse") {
             mInternal->reverse = value.toBool();
+			mInternal->setAxis(mInternal->axis);
+            mInternal->mBehaviour->setAngle(mInternal->angle);
             updatePreView = true;
         }
         if (updatePreView&&initilized) {
@@ -201,6 +206,7 @@ namespace MOON {
     }
     bool RevolutionTask::generateShape()
     {
+        ZoneScoped;
         if (mInternal->faceShape.isNull()) {
             return false;
         }
@@ -209,10 +215,16 @@ namespace MOON {
             raxis.Reverse();
         }
         float radAngle = mInternal->angle * 3.14159265358979323846f / 180.0f;
-        Part::TopoShape revolve= mInternal->faceShape.makeElementRevolve(raxis, radAngle, "Part::FaceMakerBullseye");
-        getPreviewShape() = revolve;
+        Part::TopoShape revolve;
+        {
+			ZoneScopedN("Revolve");
+            revolve= mInternal->faceShape.makeElementRevolve(raxis, radAngle, "Part::FaceMakerCheese");
+            getPreviewShape() = revolve;
+        }
+      
         Part::TopoShape resShape;
         if (!mInternal->baseShape.isNull()) {
+            ZoneScopedN("makeBoolen");
             if (mInternal->mType == RevolutionType::ReAdditive) {
                 resShape = mInternal->baseShape.makeElementFuse(revolve);
             }
@@ -229,6 +241,7 @@ namespace MOON {
     }
     void RevolutionTask::onSelectAny()
     {
+        ZoneScoped;
         if (mInternal->axisType == 2) {
             CORE_INFO("Any thing selected");
             std::vector<Part::TopoShape>shapes;
@@ -264,5 +277,11 @@ namespace MOON {
                 }
             }
         }
+    }
+    void RevolutionTask::onAngleChange()
+    {
+        ZoneScoped;
+        mInternal->angle= mInternal->mBehaviour->getAngle();
+        mInternal->angleProp->updateWidgetValue(mInternal->angle);
     }
 }

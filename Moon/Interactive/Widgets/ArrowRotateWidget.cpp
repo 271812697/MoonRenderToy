@@ -87,7 +87,6 @@ namespace MOON {
 			face->model.block(0, 3, 3, 1) = mInternal->originPos;
 		}
 		mInternal->curPos = mInternal->originPos;
-
 	}
 
 	void ArrowRotateWidget::setUpScale(float s)
@@ -96,19 +95,62 @@ namespace MOON {
 	}
 
 
-	void ArrowRotateWidget::setAngle(float angle)
+	void ArrowRotateWidget::setAngle(float angleDeg)
 	{
-		//return (mInternal->originCenter - mInternal->center).norm();
+		// 角度转弧度
+		float rad = angleDeg * 3.14159265358979323846f / 180.0f;
+
+		auto& center = mInternal->rotateCenter;
+		auto& axis = mInternal->rotateAxis;
+		auto& origin = mInternal->originPos;
+
+		// 1. 基准径向向量（垂直旋转轴分量）
+		Eigen::Vector3f originVec = origin - center;
+		float proj = originVec.dot(axis);
+		Eigen::Vector3f radial0 = originVec - proj * axis;
+
+		// 2. 罗德里格斯：绕轴旋转 radial0 得到旋转后径向向量
+		Eigen::Matrix3f rotMat;
+		float c = cos(rad);
+		float s = sin(rad);
+		float oneMinusC = 1.0f - c;
+		Eigen::Matrix3f K;
+		K << 0, -axis.z(), axis.y(),
+			axis.z(), 0, -axis.x(),
+			-axis.y(), axis.x(), 0;
+		rotMat = Eigen::Matrix3f::Identity() + s * K + oneMinusC * K * K;
+
+		Eigen::Vector3f radialRot = rotMat * radial0;
+
+		// 3. 还原完整坐标（保留平行轴分量）
+		Eigen::Vector3f newPos = center + radialRot + proj * axis;
+		mInternal->curPos = newPos;
+
+		// 4. 更新箭头面片平移与朝向矩阵
+		TriangleFace* face = nullptr;
+		if (mInternal->viewData.getTriangleFace("Arrow", face))
+		{
+			// 平移到新位置
+			face->model.block(0, 3, 3, 1) = mInternal->curPos;
+
+			// 重新计算箭头朝向
+			Eigen::Vector3f offset = mInternal->curPos - mInternal->rotateCenter;
+			Eigen::Vector3f arrowDir = mInternal->rotateAxis.cross(offset).normalized();
+			face->model.block(0, 0, 3, 3) = RotationMatrixZ(arrowDir);
+		}
 	}
 
 	float ArrowRotateWidget::getAngle()
 	{
-		//mInternal->center = len * mInternal->normal + mInternal->originCenter;
-		//TriangleFace* face;
-		//if (mInternal->viewData.getTriangleFace("Arrow", face)) {
-		//	face->model.block(0, 3, 3, 1) = mInternal->center;
-		//}
-		return 0;
+		Eigen::Vector3f a=(mInternal->originPos - mInternal->rotateCenter);
+		a = a - a.dot(mInternal->rotateAxis) * mInternal->rotateAxis;
+		Eigen::Vector3f b = (mInternal->curPos - mInternal->rotateCenter);
+		b = b - b.dot(mInternal->rotateAxis) * mInternal->rotateAxis;
+		a = a.normalized();
+		b = b.normalized();
+		float val=a.cross(b).dot(mInternal->rotateAxis);
+		float angle = acos(a.dot(b))/ 3.14159265358979323846f * 180.0f;
+		return  val>0.0?angle:(360.0f- angle) ;
 	}
 	void ArrowRotateWidget::onLeftMousePressed()
 	{

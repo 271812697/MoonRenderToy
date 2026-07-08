@@ -92,7 +92,6 @@ namespace Core::ECS::Components
             auto scene = view.GetScene();
            
             if (mInternal->updateFace) { 
-                static MOON::System::JobSystem::Context ctx;
                 mInternal->updateFace = false; 
                 mInternal->childMeshInfos.clear();
                 std::vector<Data::ComplexGeoData::Domain> domains;
@@ -214,6 +213,7 @@ namespace Core::ECS::Components
                         domainIndex++;
                         mInternal->domainIndexToFaceChildIndex[i] = domainIndex;
                         DomainIndexToi[domainIndex] = i;
+						ZoneScopedN("CreateActor");
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
                         actor.SetParent(*faceChild);     
                         domainId.push_back(actor.GetID());
@@ -233,6 +233,7 @@ namespace Core::ECS::Components
                 domainBoxs.resize(numDomains);
 
                 auto lamda = [&](JobDispatchArgs arg) {
+                    ZoneScopedN("merge job");
                     int domainIndex=arg.jobIndex;
                     Maths::FVector2 indexId = Maths::FVector2{ domainIndex * 1.0f,domainId[domainIndex] * 1.0f };
 
@@ -254,9 +255,13 @@ namespace Core::ECS::Components
                         indices[domainIndexNum[domainIndex].first + 3 * k + 2] = domains[iIndex].facets[k].I3 + domainVertexNum[domainIndex].first;;
                     }
                 };
-               
-                MOON::System::JobSystem::Dispatch(ctx, numDomains, 10, lamda);
-                MOON::System::JobSystem::Wait(ctx);
+                {
+                    ZoneScopedN("Wait Batch");
+                    MOON::System::JobSystem::Context mergeCtx;
+                    MOON::System::JobSystem::Dispatch(mergeCtx, numDomains, 10, lamda);
+                    MOON::System::JobSystem::Wait(mergeCtx);
+                }
+
 
                 ::Rendering::Resources::Mesh* faceMesh = nullptr;
                 {
@@ -274,12 +279,14 @@ namespace Core::ECS::Components
                 auto model = faceChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 model->GetMaterialNames().emplace_back("Face");
                 model->ClearMeshes();
-                model->AddMesh(faceMesh);
-                auto computeBox =[=](JobDispatchArgs arg) {
-                    faceMesh->ComputeBoundingSphereAndBox();
-                    model->computeBoxAndShpere();
-                    };
-                MOON::System::JobSystem::Execute(ctx,computeBox);
+                model->AddMesh(faceMesh);    
+              
+                //auto computeBox =[=](JobDispatchArgs arg) {
+                //    faceMesh->ComputeBoundingSphereAndBox();
+                //    model->computeBoxAndShpere();
+                //};
+                //static MOON::System::JobSystem::Context computeBoxCtx;
+                //MOON::System::JobSystem::Execute(computeBoxCtx,computeBox);
 
                 //these two tex have leaks!!!!
                 //domain colors Tex
@@ -293,14 +300,14 @@ namespace Core::ECS::Components
                 ::Rendering::HAL::GLTexture* domainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
                 domainColorTex->Allocate(desc);
                 // 创建并注册默认材质
-                auto& materilaRener = *faceChild->GetComponent <Core::ECS::Components::CMaterialRenderer>();
-                Core::Resources::Material* tempMat = materilaRener.GetMaterialAtIndex(0);
+                auto& materialRenderer = *faceChild->GetComponent <Core::ECS::Components::CMaterialRenderer>();
+                Core::Resources::Material* tempMat = materialRenderer.GetMaterialAtIndex(0);
                 tempMat->SetProperty("domainColorTex", domainColorTex);
-                auto& bacthMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
-                bacthMesh.SetColors(domainColor);
+                auto& batchMesh = *faceChild->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+                batchMesh.SetColors(domainColor);
                 {
-                    ZoneScopedN("domainBoxs BuildBvh"); 
-                    bacthMesh.BuildBvh(domainBoxs, domainRange);
+                    ZoneScopedN("domainBoxes BuildBvh"); 
+                    batchMesh.BuildBvh(domainBoxs, domainRange);
                 }
                 setChildsMeshTransParent({},false);
             }
@@ -428,11 +435,11 @@ namespace Core::ECS::Components
                 lineModel->ClearMeshes();
                 lineModel->AddMesh(lineMesh);
 
-                auto computeBox = [=](JobDispatchArgs arg) {
-                    lineMesh->ComputeBoundingSphereAndBox();
-                    lineModel->computeBoxAndShpere();
-                    };
-                MOON::System::JobSystem::Execute(ctx, computeBox);
+                //auto computeBox = [=](JobDispatchArgs arg) {
+                //    lineMesh->ComputeBoundingSphereAndBox();
+                //    lineModel->computeBoxAndShpere();
+                //    };
+                //MOON::System::JobSystem::Execute(ctx, computeBox);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        

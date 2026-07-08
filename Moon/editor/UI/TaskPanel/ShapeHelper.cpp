@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "renderer/SceneView.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
+#include <tracy/Tracy.hpp>
 namespace MOON {
 	class ShapeHelper::Internal
 	{
@@ -37,6 +38,7 @@ namespace MOON {
 	}
 	void ShapeHelper::previewShape()
 	{
+		ZoneScoped;
 		if (generateShape()) {
 
 			Part::TopoShape shape(mInternal->m_previewShape);

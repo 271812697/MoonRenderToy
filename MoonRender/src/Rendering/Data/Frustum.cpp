@@ -260,7 +260,7 @@ bool Rendering::Data::Frustum::BoundingSphereInFrustum(const Rendering::Geometry
 	return SphereInFrustum(worldCenter.x, worldCenter.y, worldCenter.z, scaledRadius);
 }
 
-bool Rendering::Data::Frustum::IsMeshInFrustum(const Rendering::Resources::Mesh& p_mesh, const Maths::FTransform& p_transform) const
+bool Rendering::Data::Frustum::IsMeshInFrustum(Rendering::Resources::Mesh& p_mesh, const Maths::FTransform& p_transform) const
 {
 	return BoundingSphereInFrustum(p_mesh.GetBoundingSphere(), p_transform);
 }

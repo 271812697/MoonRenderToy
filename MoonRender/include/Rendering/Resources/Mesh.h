@@ -35,8 +35,8 @@ namespace Rendering::Resources
 		virtual uint32_t GetVertexCount() const override;
 		virtual uint32_t GetIndexCount(int index=0) const override;
 
-		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere() const override;
-		virtual const Rendering::Geometry::bbox& GetBoundingBox()const override { return m_boundingBox; }
+		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere()  override;
+		virtual const Rendering::Geometry::bbox& GetBoundingBox() override;
 		std::vector<uint32_t> GetMaterialIndex() const;
 		std::vector<uint32_t> GetSubRangeBufferIndex() const;
 		void AddMaterial(int materialIndex,int subRangeIndex);
