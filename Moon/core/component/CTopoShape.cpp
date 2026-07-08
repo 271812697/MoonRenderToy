@@ -280,7 +280,8 @@ namespace Core::ECS::Components
                 model->GetMaterialNames().emplace_back("Face");
                 model->ClearMeshes();
                 model->AddMesh(faceMesh);    
-              
+                faceMesh->ComputeBoundingSphereAndBox();
+                model->computeBoxAndShpere();
                 //auto computeBox =[=](JobDispatchArgs arg) {
                 //    faceMesh->ComputeBoundingSphereAndBox();
                 //    model->computeBoxAndShpere();
@@ -435,11 +436,11 @@ namespace Core::ECS::Components
                 lineModel->ClearMeshes();
                 lineModel->AddMesh(lineMesh);
 
-                //auto computeBox = [=](JobDispatchArgs arg) {
-                //    lineMesh->ComputeBoundingSphereAndBox();
-                //    lineModel->computeBoxAndShpere();
-                //    };
-                //MOON::System::JobSystem::Execute(ctx, computeBox);
+                auto computeBox = [=](JobDispatchArgs arg) {
+                    lineMesh->ComputeBoundingSphereAndBox();
+                    lineModel->computeBoxAndShpere();
+                    };
+                MOON::System::JobSystem::Execute(ctx, computeBox);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
             }        

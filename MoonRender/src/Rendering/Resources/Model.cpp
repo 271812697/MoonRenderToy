@@ -2,17 +2,11 @@
 #include "Rendering/Resources/Model.h"
 const Rendering::Geometry::BoundingSphere& Rendering::Resources::Model::GetBoundingSphere()
 {
-	if (!m_boundingBox.isValid()) {
-		computeBoxAndShpere();
-	}
 	return m_boundingSphere;
 }
 
 const Rendering::Geometry::bbox& Rendering::Resources::Model::GetBoundingBox()
 {
-	if (!m_boundingBox.isValid()) {
-		computeBoxAndShpere();
-	}
 	return m_boundingBox;
 }
 

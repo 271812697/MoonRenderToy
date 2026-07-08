@@ -89,17 +89,13 @@ uint32_t Rendering::Resources::Mesh::GetIndexCount(int index) const
 
 const Rendering::Geometry::BoundingSphere& Rendering::Resources::Mesh::GetBoundingSphere()
 {
-	//if (m_bvh == nullptr) {
-	//	ComputeBoundingSphereAndBox();
-	//}
+
 	return m_boundingSphere;
 }
 
 const Rendering::Geometry::bbox& Rendering::Resources::Mesh::GetBoundingBox()
 {
-	//if (m_bvh == nullptr) {
-	//	ComputeBoundingSphereAndBox();
-	//}
+
 	return m_boundingBox;
 }
 
@@ -227,9 +223,6 @@ void Rendering::Resources::Mesh::BuildBvh()
 
 Rendering::Geometry::Bvh* Rendering::Resources::Mesh::GetBvh()
 {
-	if (m_bvh == nullptr) {
-		ComputeBoundingSphereAndBox();
-	}
 	return m_bvh;
 }
 
