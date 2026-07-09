@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <gp_Dir.hxx>
 namespace Part {
 	class TopoShape;
 }
@@ -22,6 +23,14 @@ namespace MOON {
 			bool useDomainColor = true;
 		};
 		PreviewOption mPreviewOption;
+		/// Find a valid face to extrude up to
+		static void getUpToFace(
+			Part::TopoShape& upToFace,
+			const Part::TopoShape& support,
+			const Part::TopoShape& sketchshape,
+			const std::string& method,
+			gp_Dir& dir
+		);
 	private:
 		class Internal;
 		Internal* mInternal = nullptr;

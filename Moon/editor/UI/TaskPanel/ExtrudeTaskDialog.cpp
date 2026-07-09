@@ -172,7 +172,7 @@ namespace MOON {
         double angleForward = mInternal->spinAngleForward->value();
         double lengthRev = mInternal->spinLenRev->value();
         double angleRev = mInternal->spinAngleRev->value();
-        int dirType = mInternal->cboDir->currentIndex();       // 0=正向,1=反向,2=对称
+        int dirType = mInternal->cboDir->currentIndex();       // 0=正向,1=反向,2=双向,3=对称
         int boolType = mInternal->cboBool->currentIndex();     // 0=新建,1=相加,2=相减,3=相交
         bool isDim = mInternal->rbDim->isChecked();
         bool isAll = mInternal->rbAll->isChecked();
@@ -189,15 +189,18 @@ namespace MOON {
 
         if (dirType == 0)      // 正向
         {
-
+            
         }
-        else if (dirType == 1) // 双向
+        else if (dirType == 1) {
+            params.lengthFwd *= -1;
+        }
+        else if (dirType == 2) // 双向
         {
             params.lengthRev = lengthRev;
             params.taperAngleRev = angleRev * std::numbers::pi / 180.0;
 
         }
-        else if (dirType == 2) // 对称
+        else if (dirType == 3) // 对称
         {
             params.lengthRev = params.lengthFwd;
             params.taperAngleRev = params.taperAngleFwd * std::numbers::pi / 180.0;
@@ -283,6 +286,7 @@ namespace MOON {
         mInternal->cboDir = new QComboBox;
         mInternal->cboDir->addItems({
             QStringLiteral("正向"),
+            QStringLiteral("反向"),
             QStringLiteral("双向"),
             QStringLiteral("对称")
             });

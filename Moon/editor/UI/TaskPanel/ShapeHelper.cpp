@@ -8,7 +8,68 @@
 #include "renderer/SceneView.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <tracy/Tracy.hpp>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
+#include <gp_Lin.hxx>
+#include <gce_MakeLin.hxx>
+#include <BRepIntCurveSurface_Inter.hxx>
+#include <gce_MakeDir.hxx>
+#include <TopoDS.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <BRepExtrema_DistShapeShape.hxx>
 namespace MOON {
+	struct cutTopoShapeFaces
+	{
+		Part::TopoShape face;
+		double distsq;
+	};
+	std::vector<cutTopoShapeFaces> findAllFacesCutBy(
+		const Part::TopoShape& shape,
+		const Part::TopoShape& face,
+		const gp_Dir& dir
+	)
+	{
+		// Find the centre of gravity of the face
+		GProp_GProps props;
+		BRepGProp::SurfaceProperties(face.getShape(), props);
+		gp_Pnt cog = props.CentreOfMass();
+
+		// create a line through the centre of gravity
+		gp_Lin line = gce_MakeLin(cog, dir);
+
+		// Find intersection of line with all faces of the shape
+		std::vector<cutTopoShapeFaces> result;
+		BRepIntCurveSurface_Inter mkSection;
+		// TODO: Less precision than Confusion() should be OK?
+
+		for (mkSection.Init(shape.getShape(), line, Precision::Confusion()); mkSection.More();
+			mkSection.Next()) {
+			gp_Pnt iPnt = mkSection.Pnt();
+			double dsq = cog.SquareDistance(iPnt);
+
+			if (dsq < Precision::Confusion()) {
+				continue;  // intersection with original face
+			}
+
+			// Find out which side of the original face the intersection is on
+			gce_MakeDir mkDir(cog, iPnt);
+			if (!mkDir.IsDone()) {
+				continue;  // some error (appears highly unlikely to happen, though...)
+			}
+
+			if (mkDir.Value().IsOpposite(dir, Precision::Confusion())) {
+				continue;  // wrong side of face (opposite to extrusion direction)
+			}
+
+			cutTopoShapeFaces newF;
+			newF.face = mkSection.Face();
+			newF.face.mapSubElement(shape);
+			newF.distsq = dsq;
+			result.push_back(newF);
+		}
+
+		return result;
+	}
 	class ShapeHelper::Internal
 	{
 	public:
@@ -156,5 +217,58 @@ namespace MOON {
 	void ShapeHelper::setGenerateShapeName(const char* name)
 	{
 		mInternal->name = name;
+	}
+	void ShapeHelper::getUpToFace(Part::TopoShape& upToFace, const Part::TopoShape& support, const Part::TopoShape& sketchshape, const std::string& method, gp_Dir& dir)
+	{
+		if ((method == "UpToLast") || (method == "UpToFirst")) {
+			std::vector<cutTopoShapeFaces> cfaces
+				= findAllFacesCutBy(support, sketchshape, dir);
+			if (cfaces.empty()) {
+				throw Base::ValueError("SketchBased: No faces found in this direction");
+			}
+
+			// Find nearest/furthest face
+			std::vector<cutTopoShapeFaces>::const_iterator it, it_near, it_far;
+			it_near = it_far = cfaces.begin();
+			for (it = cfaces.begin(); it != cfaces.end(); it++) {
+				if (it->distsq > it_far->distsq) {
+					it_far = it;
+				}
+				else if (it->distsq < it_near->distsq) {
+					it_near = it;
+				}
+			}
+			upToFace = (method == "UpToLast" ? it_far->face : it_near->face);
+		}
+		else if (findAllFacesCutBy(upToFace, sketchshape, dir).empty()) {
+			dir = -dir;
+		}
+
+		if (upToFace.shapeType(true) != TopAbs_FACE) {
+			if (!upToFace.hasSubShape(TopAbs_FACE)) {
+				throw Base::ValueError("SketchBased: Up to face: No face found");
+			}
+			upToFace = upToFace.getSubTopoShape(TopAbs_FACE, 1);
+		}
+
+		TopoDS_Face face = TopoDS::Face(upToFace.getShape());
+
+		// Check that the upToFace does not intersect the sketch face and
+		// is not parallel to the extrusion direction
+		BRepAdaptor_Surface adapt(face);
+
+		if (adapt.GetType() == GeomAbs_Plane) {
+			if (dir.IsNormal(adapt.Plane().Axis().Direction(), Precision::Confusion())) {
+				throw Base::ValueError(
+					"SketchBased: Up to face: Must not be parallel to extrusion direction!"
+				);
+			}
+		}
+
+		// We must measure from sketchshape, not supportface, here
+		BRepExtrema_DistShapeShape distSS(sketchshape.getShape(), face);
+		if (distSS.Value() < Precision::Confusion()) {
+			throw Base::ValueError("SketchBased: Up to face: Must not intersect sketch!");
+		}
 	}
 }
