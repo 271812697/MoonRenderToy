@@ -207,10 +207,11 @@ namespace MOON {
         if (isToFace&&!mInternal->upToFace.isNull()) {
             try
             {
-                prism.makeElementPrismUntil(
-                    mInternal->faceShape,
+                Part::TopoShape tempShape = mInternal->faceShape.makeElementFace(nullptr, "Part::FaceMakerCheese");
+                prism=prism.makeElementPrismUntil(
+                    tempShape,
                     mInternal->supportShape,
-                    mInternal->upToFace, params.dir ,Part::TopoShape::PrismMode::None,
+                    mInternal->upToFace, -params.dir ,Part::TopoShape::PrismMode::None,
                     true);
                 if (prism.isNull()) {
                     CORE_ERROR("Prim is Null");
@@ -421,7 +422,6 @@ namespace MOON {
     }
     void ExtrudeTaskDialog::onSelectFace(const std::vector<Part::TopoShape>& face)
     {
-       // mInternal->supportShape = face[0];
         mInternal->upToFace = face[1];
     }
     void ExtrudeTaskDialog::onWidgetLengthInvoke()
