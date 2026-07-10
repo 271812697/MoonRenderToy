@@ -22,6 +22,8 @@ namespace MOON {
 		void onAngleChange();
 		void onLengthChange();
 	private:
+		virtual void onSelectFace(const std::vector<Part::TopoShape>& face)override;
+	private:
 		void onWidgetLengthInvoke();
 		void onWidgetAngleInvoke();
 		class Internal;

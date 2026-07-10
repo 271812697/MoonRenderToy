@@ -109,6 +109,8 @@ namespace MOON {
         //based which shape to extrude and use which shape to extrude
         Part::TopoShape baseShape;
         Part::TopoShape faceShape;
+        Part::TopoShape upToFace;
+		Part::TopoShape supportShape;
         gp_Vec finalDir;
 
         PadTaskWidget* behaviour = nullptr;
@@ -131,20 +133,14 @@ namespace MOON {
         QRadioButton* rbAll = nullptr;
         QRadioButton* rbToFace = nullptr;
         QCheckBox* cbMergeEdges = nullptr;
-        // 预览用的临时形状
-        Part::TopoShape m_previewShape;
-        // 预览用的Actor
-        Core::ECS::TopoActor* m_previewActor = nullptr;
     };
     ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type)
         : BaseTaskDialog(parent), mInternal(new Internal(this,type))
     {
-
         if (type == ExtrudeType::Subtractive) {
             mPreviewOption.isTransparent = false;
             mPreviewOption.isBlend = true;
         }
-
         setGenerateShapeName("PadShape");
         buildUi();
         previewShape();
@@ -208,45 +204,85 @@ namespace MOON {
 
         // 6. 生成拉伸体(核心)
         Part::TopoShape prism;
-        try {
-            std::vector<Part::TopoShape> drafts;
-            Part::ExtrusionHelper::makeElementDraft(
-                params,
-                mInternal->faceShape,
-                drafts, App::StringHasherRef()
-            );
-            if (drafts.empty()) {
+        if (isToFace&&!mInternal->upToFace.isNull()) {
+            try
+            {
+                prism.makeElementPrismUntil(
+                    mInternal->faceShape,
+                    mInternal->supportShape,
+                    mInternal->upToFace, params.dir ,Part::TopoShape::PrismMode::None,
+                    true);
+                if (prism.isNull()) {
+                    CORE_ERROR("Prim is Null");
+                    return false;
+                }
+                getPreviewShape() = prism;
+
+                Part::TopoShape resShape;
+                if (!mInternal->baseShape.isNull()) {
+                    if (mInternal->extrudeType == ExtrudeType::Additive) {
+                        resShape = prism.makeElementFuse(mInternal->baseShape);
+                    }
+                    else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
+                        resShape = mInternal->baseShape.makeElementCut(prism);
+                    }
+                }
+                else {
+                    resShape = prism;
+                }
+                getGenerateShape() = resShape;
+
+
+                return true;
+            }
+            catch (const std::exception&)
+            {
                 return false;
             }
-            prism.makeElementCompound(
-                drafts,
-                nullptr,
-                Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
-            );
-            getPreviewShape() = prism;
-          
-            Part::TopoShape resShape;
-            if (!mInternal->baseShape.isNull()) {
-                if (mInternal->extrudeType == ExtrudeType::Additive) {
-                    resShape = prism.makeElementFuse(mInternal->baseShape);
-                }
-                else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
-                    resShape = mInternal->baseShape.makeElementCut(prism);
-                }
-            }
-            else {
-                resShape = prism;
-            }
-            getGenerateShape() = resShape;
-           
-           
-            return true;
         }
-        catch (Base::ValueError e) {
-            CORE_ERROR(e.getMessage());
-            // 拉伸失败，清空预览
+        else
+        {
+           try {
+                std::vector<Part::TopoShape> drafts;
+                Part::ExtrusionHelper::makeElementDraft(
+                    params,
+                    mInternal->faceShape,
+                    drafts, App::StringHasherRef()
+                );
+                if (drafts.empty()) {
+                    return false;
+                }
+                prism.makeElementCompound(
+                    drafts,
+                    nullptr,
+                    Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
+                );
+            
+                getPreviewShape() = prism;
+          
+                Part::TopoShape resShape;
+                if (!mInternal->baseShape.isNull()) {
+                    if (mInternal->extrudeType == ExtrudeType::Additive) {
+                        resShape = prism.makeElementFuse(mInternal->baseShape);
+                    }
+                    else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
+                        resShape = mInternal->baseShape.makeElementCut(prism);
+                    }
+                }
+                else {
+                    resShape = prism;
+                }
+                getGenerateShape() = resShape;
            
-            return false;;
+           
+                return true;
+            }
+            catch (Base::ValueError e) {
+                CORE_ERROR(e.getMessage());
+                // 拉伸失败，清空预览
+           
+                return false;;
+            }
         }
         return false;
     }
@@ -382,6 +418,11 @@ namespace MOON {
     void ExtrudeTaskDialog::onLengthChange()
     {
         mInternal->behaviour->setLength(mInternal->spinLenForward->value());
+    }
+    void ExtrudeTaskDialog::onSelectFace(const std::vector<Part::TopoShape>& face)
+    {
+       // mInternal->supportShape = face[0];
+        mInternal->upToFace = face[1];
     }
     void ExtrudeTaskDialog::onWidgetLengthInvoke()
     {

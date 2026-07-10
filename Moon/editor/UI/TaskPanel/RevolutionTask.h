@@ -18,7 +18,8 @@ namespace MOON {
 		virtual void clickApply() override;
 		virtual void clickCancel() override;
 		virtual bool generateShape()override;
-		void onSelectAny();
+	protected:
+		virtual void onSelectEdge(const std::vector<Part::TopoShape>& edge)override;
 	private:
 		void onAngleChange();
 		bool initilized = false;

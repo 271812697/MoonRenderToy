@@ -6,6 +6,9 @@
 #include "core/ViewTool.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
+#include "core/SelectionManager.h"
+#include "Interactive/Interactive/ExecuteCommand.h"
+#include "Interactive/Interactive/EventObject.h"
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <tracy/Tracy.hpp>
 #include <GProp_GProps.hxx>
@@ -76,6 +79,8 @@ namespace MOON {
 		Internal(ShapeHelper* s):self(s) {
 		}
 		~Internal() {
+			SelectionManager::instance().RemoveObserver(selectObserver.tag);
+			delete selectObserver.command;
 		}
 	private:
 		friend ShapeHelper;
@@ -85,9 +90,11 @@ namespace MOON {
 		Part::TopoShape m_generateShape;
 		Core::ECS::TopoActor* m_previewActor = nullptr;
 		std::string name="GenerateShape";
+		ExecuteCommandPair selectObserver;
 	};
 	ShapeHelper::ShapeHelper():mInternal(new Internal(this))
 	{
+		mInternal->selectObserver = SelectionManager::instance().AddObserver(SelectAny, this, &ShapeHelper::onSelectAny);
 	}
 	ShapeHelper::~ShapeHelper()
 	{
@@ -163,6 +170,10 @@ namespace MOON {
 			tempMat->SetDrawOrder(10000);
 			*/
 		}
+		else
+		{
+			CORE_ERROR("Generate Shape failed");
+		}
 	}
 	void ShapeHelper::generateFinalShape()
 	{
@@ -213,6 +224,29 @@ namespace MOON {
 	Part::TopoShape& ShapeHelper::getGenerateShape()
 	{
 		return mInternal->m_generateShape;
+	}
+	void ShapeHelper::onSelectAny()
+	{
+		ZoneScoped;
+		std::vector<Part::TopoShape>shapes;
+		ViewTool::getSelectedTopoShape(shapes);
+		if (shapes.size() > 0) {
+			if (shapes[1].getShape().ShapeType() == TopAbs_ShapeEnum::TopAbs_EDGE) {
+				CORE_INFO("TopAbs_EDGE selected");
+				onSelectEdge(shapes);
+			}
+			else if (shapes[1].getShape().ShapeType() == TopAbs_ShapeEnum::TopAbs_FACE)
+			{
+				CORE_INFO("TopAbs_FACE");
+				onSelectFace(shapes);
+			}
+		}
+	}
+	void ShapeHelper::onSelectEdge(const std::vector<Part::TopoShape>& edge)
+	{
+	}
+	void ShapeHelper::onSelectFace(const std::vector<Part::TopoShape>& face)
+	{
 	}
 	void ShapeHelper::setGenerateShapeName(const char* name)
 	{

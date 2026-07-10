@@ -15,6 +15,9 @@ namespace MOON {
 		Part::TopoShape& getPreviewShape();
 		Part::TopoShape& getGenerateShape();
 	protected:
+		void onSelectAny();
+		virtual void onSelectEdge(const std::vector<Part::TopoShape>& edge);
+		virtual void onSelectFace(const std::vector<Part::TopoShape>& face);
 		void setGenerateShapeName(const char* name);
 		struct PreviewOption {
 			bool isTransparent = true;
