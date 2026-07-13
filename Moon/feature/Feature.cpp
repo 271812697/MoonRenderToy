@@ -11,13 +11,28 @@
 #include <Core/Global/ServiceLocator.h>
 #include <Core/SceneSystem/Scene.h>
 #include "Feature.h"
+#include "TopoShape.h"
 
 namespace MOON {
-	Feartue::Feartue(const std::string& p_name) :TopoActor( p_name, "Feature", true, true)
+	Feature::Feature(const std::string& p_name) :TopoActor( p_name, "Feature", true, true)
 	{
 
 	}
-	Feartue::~Feartue()
+	Feature::~Feature()
 	{
+	}
+	bool Feature::execute()
+	{
+		return false;
+	}
+	Part::TopoShape& Feature::getBaseTopoShape()
+	{
+		return m_baseFeature->GetTopoShape();
+	}
+	Part::TopoShape Feature::getVerifyTopoFace()
+	{
+		std::string idString = subValues[0].substr(5);
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		return comp->GetTopoFace(std::stoi(idString));
 	}
 }

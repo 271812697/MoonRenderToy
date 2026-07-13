@@ -10,6 +10,7 @@
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
 #include <Core/SceneSystem/Scene.h>
+#include "TopoShape.h"
 
 namespace MOON {
 
@@ -137,5 +138,13 @@ namespace MOON {
 		if (m_scene) {
 			m_scene->RemoveActor(this);
 		}		
+	}
+	Part::TopoShape& TopoActor::GetTopoShape()
+	{
+		return GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape();
+	}
+	void TopoActor::setTopoShape(Part::TopoShape shape)
+	{
+		GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape() = shape;
 	}
 }

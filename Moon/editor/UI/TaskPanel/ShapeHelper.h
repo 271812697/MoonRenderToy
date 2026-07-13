@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include <gp_Dir.hxx>
+#include <string>
 namespace Part {
 	class TopoShape;
 }
 namespace MOON {
+	class Feature;
 	class ShapeHelper {
 	public:
 		ShapeHelper();
@@ -12,6 +14,10 @@ namespace MOON {
 		void previewShape();
 		void generateFinalShape();
 		void clearPreviewShape();
+		void setFeature(Feature* feature);
+		Feature* getFeature();
+		void setFeatureSubValues(const std::vector<std::string>& subValues);
+		//void 
 		Part::TopoShape& getPreviewShape();
 		Part::TopoShape& getGenerateShape();
 	protected:

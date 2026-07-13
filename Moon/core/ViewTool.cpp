@@ -5,6 +5,7 @@
 #include "core/component/CTopoShape.h"
 #include "core/component/TopoShapeActor.h"
 #include "renderer/SceneView.h"
+#include "feature/Feature.h"
 namespace MOON {
 	Core::ECS::Actor* ViewTool::getLastestActorSelected()
 	{
@@ -34,6 +35,36 @@ namespace MOON {
 					int childId = std::stoi(idString);
 					topo.push_back( topoComp->GetTopoShape());
 					topo.push_back(type == "face"?topoComp->GetTopoFace(childId):topoComp->GetTopoEdge(childId));
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	bool ViewTool::getSelectedFeature(Feature*& feature, std::vector<std::string>& subValue)
+	{
+		Core::ECS::Actor* actor = getLastestActorSelected();
+		if (!actor) {
+			return false;
+		}
+		Feature* f = dynamic_cast<Feature*>(actor);
+		if (f) {
+			feature = f;
+			return true;
+		}
+		if (actor->HasParent()) {
+			auto parent = actor->GetParent();
+			Feature* f = dynamic_cast<Feature*>(parent);
+			if (f) {
+				feature = f;
+				return true;
+			}
+			if (parent->HasParent()) {
+				auto grandParent = parent->GetParent();
+				Feature* f=dynamic_cast<Feature*>(grandParent);
+				if (grandParent->HasComponent("CTopoShape")&&f) {
+					feature = f;
+					subValue = { actor->GetName() };
 					return true;
 				}
 			}
