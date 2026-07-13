@@ -42,9 +42,8 @@ namespace MOON {
 	}
 	 Core::ECS::Actor* ViewTool::createTopoActor(const Part::TopoShape& topoShape, const char* name )
 	{
-		auto& view = GetService(Editor::Panels::SceneView);
-		auto scene = view.GetScene();
-		auto topoActor = new Core::ECS::TopoActor(scene, std::string(name), "TopoShape", false);
+
+		auto topoActor = new TopoActor( std::string(name), "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 		topo = topoShape;

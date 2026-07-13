@@ -35,8 +35,6 @@ namespace MOON {
 
 	void PrimitiveCone::createTopoShape()
 	{	
-		auto scene = m_sceneView->GetScene();
-		
 		TopoDS_Shape ResultShape;
 		if (std::abs(radiusTop - radiusBottom) < Precision::Confusion()) {
 			BRepPrimAPI_MakeCylinder mkCylinder(radiusTop, height);
@@ -47,7 +45,7 @@ namespace MOON {
 			BRepPrimAPI_MakeCone mkCone(radiusBottom, radiusTop, height);
 			ResultShape = mkCone.Shape();
 		}
-		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeCone", "TopoShape", false);
+		auto topoActor = new TopoActor( "TopoShapeCone", "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 

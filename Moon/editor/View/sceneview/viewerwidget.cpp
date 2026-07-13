@@ -35,8 +35,7 @@ namespace MOON {
 		void initializeGL() {
 			auto& tree = GetService(TreeViewPanel);
 			
-			QObject::connect(mSelf, &ViewerWidget::sceneChange, &tree, &TreeViewPanel::updateTreeViewSceneRoot
-				, Qt::ConnectionType::QueuedConnection);
+			
 			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
 			QObject::connect(&tree, &TreeViewPanel::itemHovered, mSelf, &onActorHovered);
 
@@ -45,8 +44,8 @@ namespace MOON {
 			mEditorContext->sceneManager.LoadDefaultScene();
 			mSceneView = new Editor::Panels::SceneView("SceneView");
 			GetService(RenderPassSettingWidget).Refresh();
-			parser->ParsePathTraceScene(mScenePath.toStdString());
-			emit mSelf->sceneChange();
+			parser->ParseFile(mReadFilePath.toStdString());
+			
 			ImRenderer::instance().init();
 
 		}
@@ -74,15 +73,20 @@ namespace MOON {
 				ImRenderer::instance().newFrame(mSceneView);
 			}
 			mSceneView->Update(0.01);
-			if (mSwitchScene) {
-				mSwitchScene = false;
-				parser->ParsePathTraceScene(mScenePath.toStdString());
+			if (mDoReadFile) {
+				mDoReadFile = false;
+				parser->ParseFile(mReadFilePath.toStdString());
 				mSceneView->UnselectActor();
-				emit mSelf->sceneChange();
+				
 			}
-			else if (mUpdateTreeView) {
-				mUpdateTreeView = false;
-				emit mSelf->sceneChange();
+			else if (mRefreshTreeView) {
+				mRefreshTreeView = false;
+				
+			}
+				
+			if (mAddActors.size() > 0) {
+				GetTreeView.addActorToTree(mAddActors);
+				mAddActors.clear();
 			}
 			
 			mSceneView->Render();
@@ -108,23 +112,25 @@ namespace MOON {
 				mSceneView->Resize(mViewWidth, mViewHeight);
 			RenderWindowInteractor::Instance()->UpdateSize(mViewWidth,mViewHeight);
 		}
-		void onSwitchScene(const QString& path)
+		void onReadFile(const QString& path)
 		{
-			mScenePath = path;
-			mSwitchScene = true;
+			mReadFilePath = path;
+			mDoReadFile = true;
 		}
 	private:
 		friend ViewerWidget;
 		ViewerWidget* mSelf = nullptr;
 		Editor::Core::Context* mEditorContext = nullptr;
 		Editor::Panels::SceneView* mSceneView = nullptr;
+		std::vector<Core::ECS::Actor*>mAddActors;
 		ParseScene* parser = nullptr;
 		int mViewWidth;
 		int mViewHeight;
 		bool mInitFlag = false;
-		bool mSwitchScene = false;
-		bool mUpdateTreeView = false;
-		QString mScenePath = "";
+		
+		bool mRefreshTreeView = false;
+		QString mReadFilePath = "";
+		bool mDoReadFile = false;
 
 	};
 	ViewerWidget::ViewerWidget(QWidget* parent) :
@@ -212,6 +218,11 @@ namespace MOON {
 		return mInternal->mSceneView;
 	}
 
+	void ViewerWidget::addActorToTreeView(Core::ECS::Actor* actor)
+	{
+		mInternal->mAddActors.push_back(actor);
+	}
+
 	void ViewerWidget::onActorHovered(Core::ECS::Actor* actor)
 	{
 		if (actor != nullptr) {
@@ -226,13 +237,13 @@ namespace MOON {
 		}
 	}
 
-	void ViewerWidget::onSceneChange(const QString& path)
+	void ViewerWidget::onReadFile(const QString& path)
 	{
-		mInternal->onSwitchScene(path);
+		mInternal->onReadFile(path);
 	}
-	void ViewerWidget::updateTreeView()
+	void ViewerWidget::refreshTreeView()
 	{
-		mInternal->mUpdateTreeView = true;
+		mInternal->mRefreshTreeView = true;
 		
 	}
 	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {

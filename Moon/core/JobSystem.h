@@ -29,6 +29,7 @@ namespace MOON
 
             // Add a job to execute asynchronously. Any idle thread will execute this job.
             void Execute(Context& ctx, const Function<void(JobDispatchArgs)>& task);
+            void DelayExecute(const Function<void(JobDispatchArgs)>& task);
 
             // Divide a job onto multiple jobs and execute in parallel.
             //	jobCount	: how many jobs to generate for this task.

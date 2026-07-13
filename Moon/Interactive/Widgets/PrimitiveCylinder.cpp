@@ -36,11 +36,11 @@ namespace MOON {
 
 	void PrimitiveCylinder::createTopoShape()
 	{	
-		auto scene = m_sceneView->GetScene();
+		
 		BRepPrimAPI_MakeCylinder mkCylinder(radiusTop, height);
 		TopoDS_Shape ResultShape = mkCylinder.Shape();
 	
-		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeCylinder", "TopoShape", false);
+		auto topoActor = new TopoActor( "TopoShapeCylinder", "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 

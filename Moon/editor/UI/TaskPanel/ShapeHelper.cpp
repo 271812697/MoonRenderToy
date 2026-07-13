@@ -88,7 +88,7 @@ namespace MOON {
 		// 预览用的Actor
 		Part::TopoShape m_previewShape;
 		Part::TopoShape m_generateShape;
-		Core::ECS::TopoActor* m_previewActor = nullptr;
+		TopoActor* m_previewActor = nullptr;
 		std::string name="GenerateShape";
 		ExecuteCommandPair selectObserver;
 	};
@@ -127,7 +127,7 @@ namespace MOON {
 				if (preActor) {
 					scene->RemoveActor(preActor);
 				}
-				mInternal->m_previewActor = new Core::ECS::TopoActor(scene, "TopoShapePreview", "TopoShape", true);
+				mInternal->m_previewActor = new TopoActor("TopoShapePreview", "TopoShape", true);
 			}
 			const auto& topoComp = mInternal->m_previewActor->GetComponent<Core::ECS::Components::CTopoShape>();
 			Part::TopoShape& topo = topoComp->GetTopoShape();
@@ -195,7 +195,7 @@ namespace MOON {
 			for (auto& ac:scene->FindActorsByTag("TopoShape")) {
 				ac.get().SetActive(false);
 			}
-			auto topoActor = new Core::ECS::TopoActor(scene, mInternal->name, "TopoShape", false);
+			auto topoActor = new TopoActor(mInternal->name, "TopoShape", false);
 			const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 			Part::TopoShape& topo = topoComp->GetTopoShape();
 			topo.setShape(mInternal->m_generateShape);

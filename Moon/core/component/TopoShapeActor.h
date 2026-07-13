@@ -4,10 +4,10 @@ namespace Core::SceneSystem
 {
 	class Scene;
 }
-namespace Core::ECS { 
-	class TopoActor :public Actor {
+namespace MOON { 
+	class TopoActor :public ::Core::ECS::Actor {
 	public:
-		TopoActor(Core::SceneSystem::Scene* scene, const std::string& p_name, const std::string& p_tag, bool p_playing);
+		TopoActor(const std::string& p_name, const std::string& p_tag, bool p_playing,bool addToTree=true);
 		void ClearModel();
 		virtual ~TopoActor() override;
 		virtual void OnSerialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_actorsRoot) override;

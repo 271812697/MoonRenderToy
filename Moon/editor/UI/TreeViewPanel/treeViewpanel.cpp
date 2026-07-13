@@ -8,6 +8,7 @@
 #include "Sketcher/SketcherObj.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "renderer/Context.h"
+#include "core/JobSystem.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
 #include <QHeaderView>
@@ -105,11 +106,24 @@ namespace MOON {
 
 	void TreeViewPanel::updateTreeViewSketcherRoot()
 	{
-		mInternal->mModel->onSketcherChange();
+		System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+			mInternal->mModel->onSketcherChange();
+			});
+	}
+
+	void TreeViewPanel::addActorToTree(const std::vector<Core::ECS::Actor*>& actor)
+	{
+		System::JobSystem::DelayExecute([this,actor](JobDispatchArgs) {
+			mInternal->mModel->beginBatchOperation();
+			mInternal->mModel->notifyActorsCreated(actor);
+			mInternal->mModel->endBatchOperation();			
+		});
 	}
 
 	void TreeViewPanel::updateTreeViewSceneRoot() {
-		mInternal->mModel->onSceneRootChange();
+		System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+			mInternal->mModel->onSceneRootChange();
+		});
 	}
 
 	void TreeViewPanel::highlightByActor(Core::ECS::Actor* actor)

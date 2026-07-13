@@ -57,7 +57,7 @@ namespace MOON {
 		
 		auto& viewer = GetService(ViewerWidget);
 		
-		connect(this, &OpenFileCommand::sceneChange, &viewer, &ViewerWidget::onSceneChange);
+		connect(this, &OpenFileCommand::readFilePath, &viewer, &ViewerWidget::onReadFile);
 		auto openfile=new QAction(this);
 		setAction(openfile);
 		openfile->setObjectName(QString::fromUtf8("actionFileOpen"));
@@ -99,7 +99,7 @@ namespace MOON {
 		if (!QFileInfo::exists(fileName))
 			return;
 		CORE_INFO("Switch to Scene {0}", fileName.toStdString());
-		emit sceneChange(fileName);
+		emit readFilePath(fileName);
 		//SurfaceMesh mesh;
 		//read_stl( mesh, fileName.toStdString());
 		//;

@@ -81,12 +81,12 @@ namespace MOON {
 	private:
 		Part::TopoShape basedTopoShape;
 		Part::TopoShape doneFaceShape;
-		struct CurveSegement;
+		struct CurveSegment;
 		void updateGeoSegment(int id);
 		void pickGeo();
 		Base::Matrix4D updateTransform()const;
 		Base::Vector2d getMouseHitSketchPlanePoint();
-		CurveSegement getCurveSegment( Part::Geometry* geo) ;
+		CurveSegment getCurveSegment( Part::Geometry* geo) ;
 		SketcherPlane2D mPlane ;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
@@ -107,14 +107,14 @@ namespace MOON {
 		Base::Vector2d onSketchPosClicked;//used for click when select geometry curve
 		Base::Vector2d onSketchPosMove;//used for mouse move
 		Base::Vector2d onSketchPosP2;
-		struct CurveSegement
+		struct CurveSegment
 		{
 			std::vector<Base::Vector3d> point;
 			std::vector<double> params;
 			std::vector<Base::Vector3d>sepoints;
-			CurveSegement(const std::vector<Base::Vector3d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) : point(p), params(u),sepoints(se) {}
-			CurveSegement() {}
+			CurveSegment(const std::vector<Base::Vector3d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) : point(p), params(u),sepoints(se) {}
+			CurveSegment() {}
 		};
-		std::unordered_map<Part::Geometry*, CurveSegement>mGeoSegment;
+		std::unordered_map<Part::Geometry*, CurveSegment>mGeoSegment;
 	};
 }

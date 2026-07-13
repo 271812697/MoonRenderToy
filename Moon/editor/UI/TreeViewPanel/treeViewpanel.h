@@ -15,6 +15,7 @@ namespace MOON {
 		TreeViewPanel(QWidget* parent);
 		~TreeViewPanel();
 		void updateTreeViewSketcherRoot();
+		void addActorToTree(const std::vector<Core::ECS::Actor*>& actor);
 	signals:
 		void setSelectActor(Core::ECS::Actor* actor);
 		void itemHovered(Core::ECS::Actor* actor);   // 悬浮

@@ -1129,9 +1129,9 @@ namespace MOON {
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         return onSketchPos;
     }
-    SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 
+    SketcherObj::CurveSegment SketcherObj::getCurveSegment(Part::Geometry* geo) 
     {
-		CurveSegement seg;
+		CurveSegment seg;
 		CurveConvert::toVector2D(geo, 50, seg.point, seg.params);
         if (geo->isDerivedFrom<Part::GeomCurve>()) {
             if (geo->is<Part::GeomArcOfCircle>()) {
