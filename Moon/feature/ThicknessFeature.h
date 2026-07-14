@@ -6,6 +6,7 @@ namespace MOON {
 		ThicknessFeature(const std::string& p_name);
 		virtual ~ThicknessFeature() override;
 		virtual bool execute();
+		
 		float thickNessValue = 0.5;
 		int mode = 0;
 		int joinType = 0;

@@ -29,6 +29,8 @@ namespace MOON {
 		void keyReleaseEvent(QKeyEvent* event) override;
 		::Editor::Panels::AView* getView();
 		void addActorToTreeView(Core::ECS::Actor* actor);
+		void removeActorFromTreeView(Core::ECS::Actor* actor);
+		void modifyActorInTreeView(Core::ECS::Actor* actor);
 	public slots:
 		void onActorSelected(Core::ECS::Actor* actor);
 		void onActorHovered(Core::ECS::Actor* actor);

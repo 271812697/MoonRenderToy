@@ -84,11 +84,16 @@ namespace MOON {
 				
 			}
 				
-			if (mAddActors.size() > 0) {
-				GetTreeView.addActorToTree(mAddActors);
+			if (mAddActors.size() > 0|| mRemoveActors.size() > 0||mModifyActors.size()>0) {
+				std::vector<TreeViewPanel::Operation> operations;
+				operations.push_back(TreeViewPanel::Operation( TreeViewPanel::OperationType::Add,mAddActors ));
+				operations.push_back(TreeViewPanel::Operation(TreeViewPanel::OperationType::Remove, mRemoveActors));
+				operations.push_back(TreeViewPanel::Operation(TreeViewPanel::OperationType::Update, mModifyActors));
+				GetTreeView.updateActorInTree(operations);
 				mAddActors.clear();
+				mRemoveActors.clear();
+				mModifyActors.clear();
 			}
-			
 			mSceneView->Render();
 			
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
@@ -123,6 +128,8 @@ namespace MOON {
 		Editor::Core::Context* mEditorContext = nullptr;
 		Editor::Panels::SceneView* mSceneView = nullptr;
 		std::vector<Core::ECS::Actor*>mAddActors;
+		std::vector<Core::ECS::Actor*>mRemoveActors;
+		std::vector<Core::ECS::Actor*>mModifyActors;
 		ParseScene* parser = nullptr;
 		int mViewWidth;
 		int mViewHeight;
@@ -221,6 +228,16 @@ namespace MOON {
 	void ViewerWidget::addActorToTreeView(Core::ECS::Actor* actor)
 	{
 		mInternal->mAddActors.push_back(actor);
+	}
+
+	void ViewerWidget::removeActorFromTreeView(Core::ECS::Actor* actor)
+	{
+		mInternal->mRemoveActors.push_back(actor);
+	}
+
+	void ViewerWidget::modifyActorInTreeView(Core::ECS::Actor* actor)
+	{
+		mInternal->mModifyActors.push_back(actor);
 	}
 
 	void ViewerWidget::onActorHovered(Core::ECS::Actor* actor)

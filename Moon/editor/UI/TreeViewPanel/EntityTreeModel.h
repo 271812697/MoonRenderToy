@@ -68,15 +68,6 @@ namespace MOON
                 item->setStatusTip(QString());
                 item->setAccessibleText(QString());
                 item->setAccessibleDescription(QString());
-
-                // 🔥 关键：清空子节点（递归释放）
-                while (item->rowCount() > 0) {
-                    QStandardItem* child = item->takeChild(0);
-                    if (child) {
-                        // 子节点也回收到池中
-                        release(child);
-                    }
-                }
             }
 
         public:
@@ -115,13 +106,14 @@ namespace MOON
             }
 
             void release(QStandardItem* item) {
-                if (!item) return;
+                //we should never use this
+                //if (!item) return;
 
-                //std::lock_guard<std::mutex> lock(m_mutex);
+                ////std::lock_guard<std::mutex> lock(m_mutex);
 
-                // 🔥 重置后回收
-                resetItem(item);
-                m_pool.push_back(item);
+                //// 🔥 重置后回收
+                //resetItem(item);
+                //m_pool.push_back(item);
             }
 
             void clear() {
@@ -149,7 +141,7 @@ namespace MOON
         // 辅助函数
         Core::ECS::Actor* getActorFromItem(QStandardItem* item);
         void updateTopoShapeRecursive(Core::ECS::Actor* actor);
-        void collectAllChildren(Core::ECS::Actor* actor, std::vector<Core::ECS::Actor*>& out);
+       
 
         //struct Internal;
         //std::unique_ptr<Internal> m_internal;

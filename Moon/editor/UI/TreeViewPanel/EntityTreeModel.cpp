@@ -60,7 +60,9 @@ namespace MOON {
 		delete mInternal;
 	}
 	void EntityTreeModel::beginBatchOperation()
-	{
+	{		
+		mInternal->mTreeView->clearHighlight();
+		mInternal->mTreeView->clearLastHoverIndex();
 		m_batchMode = true;
 		m_batchCounter++;
 		m_pendingOps.clear();
@@ -135,6 +137,16 @@ namespace MOON {
 	}
 	void EntityTreeModel::notifyActorsModified(const std::vector<Core::ECS::Actor*>& actors)
 	{
+		if (actors.empty()) return;
+
+		if (m_batchMode) {
+			PendingOperation op;
+			op.type = PendingOperation::Modify;
+			op.actors = actors;
+			m_pendingOps.push_back(std::move(op));
+			return;
+		}
+		processBatchModify(actors);
 	}
 	void EntityTreeModel::notifyActorCreated(Core::ECS::Actor* actor)
 	{
@@ -202,19 +214,19 @@ namespace MOON {
 	void EntityTreeModel::onSketcherChange()
 	{
 		//mInternal->manaulCheck = false;
-		mInternal->sketcherRoot->removeRows(0, mInternal->sketcherRoot->rowCount());
-		auto sketcherList=SketcherObjManager::instance().GetAllSketcherObjs();
-		auto curActiveSketch=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-		for (int i = 0;i < sketcherList.size();i++) {
-			QStandardItem* temp = new QStandardItem;
-			temp->setText(QString::fromStdString("sketcher"));
-			temp->setIcon(mInternal->mIconMaps["Sketcher"]);
-			mInternal->sketcherRoot->setChild(mInternal->sketcherRoot->rowCount(), temp);
-			temp->setData(QVariant::fromValue((void*)sketcherList[i]), Qt::UserRole+1);
-			temp->setData(QVariant::fromValue((void*)nullptr), Qt::UserRole);
-			temp->setCheckable(true);
-			temp->setCheckState(curActiveSketch== sketcherList[i] ? Qt::Checked : Qt::Unchecked);
-		}
+		//mInternal->sketcherRoot->removeRows(0, mInternal->sketcherRoot->rowCount());
+		//auto sketcherList=SketcherObjManager::instance().GetAllSketcherObjs();
+		//auto curActiveSketch=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		//for (int i = 0;i < sketcherList.size();i++) {
+		//	QStandardItem* temp = new QStandardItem;
+		//	temp->setText(QString::fromStdString("sketcher"));
+		//	temp->setIcon(mInternal->mIconMaps["Sketcher"]);
+		//	mInternal->sketcherRoot->setChild(mInternal->sketcherRoot->rowCount(), temp);
+		//	temp->setData(QVariant::fromValue((void*)sketcherList[i]), Qt::UserRole+1);
+		//	temp->setData(QVariant::fromValue((void*)nullptr), Qt::UserRole);
+		//	temp->setCheckable(true);
+		//	temp->setCheckState(curActiveSketch== sketcherList[i] ? Qt::Checked : Qt::Unchecked);
+		//}
 		//mInternal->manaulCheck =true;
 	}
 	void EntityTreeModel::onSceneRootChange()
@@ -239,17 +251,16 @@ namespace MOON {
 	void EntityTreeModel::processPendingUpdates()
 	{
 		if (m_pendingOps.empty()) return;
-
 		// 🔥 合并操作（同类型且同Actor只保留最后一次）
 		std::unordered_map<Core::ECS::Actor*, PendingOperation::Type> lastOp;
-
 		// 从后往前遍历，保留最后一次操作
 		for (auto it = m_pendingOps.rbegin(); it != m_pendingOps.rend(); ++it) {
-			if (it->type == PendingOperation::Add || it->type == PendingOperation::Remove) {
-				for (auto* actor : it->actors) {
-					if (lastOp.find(actor) == lastOp.end()) {
-						lastOp[actor] = it->type;
-					}
+			for (auto* actor : it->actors) {
+				if (lastOp.find(actor) == lastOp.end()) {
+					lastOp[actor] = it->type;
+				}
+				else if (it->type== PendingOperation::Type::Remove) {
+					lastOp[actor] = it->type;
 				}
 			}
 		}
@@ -397,19 +408,19 @@ namespace MOON {
 					}
 				}
 			}
-			else
-			{
-				SketcherObj* sketcher = static_cast<SketcherObj*>(item->data(Qt::UserRole + 1).value<void*>());
-				if (sketcher) {
-					Qt::CheckState currentState = item->checkState();
-					if (currentState == Qt::Checked) {
-						sketcher->setActive(true);
-					}
-					else if (currentState == Qt::Unchecked) {
-						sketcher->setActive(false);
-					}
-				}
-			}
+			//else
+			//{
+			//	SketcherObj* sketcher = static_cast<SketcherObj*>(item->data(Qt::UserRole + 1).value<void*>());
+			//	if (sketcher) {
+			//		Qt::CheckState currentState = item->checkState();
+			//		if (currentState == Qt::Checked) {
+			//			sketcher->setActive(true);
+			//		}
+			//		else if (currentState == Qt::Unchecked) {
+			//			sketcher->setActive(false);
+			//		}
+			//	}
+			//}
 		}
 		isProcessing = false;
 	}
@@ -460,67 +471,48 @@ namespace MOON {
 	}
 	void EntityTreeModel::processBatchRemove(const std::vector<Core::ECS::Actor*>& actors)
 	{
-
-		// 🔥 第一步：收集所有需要删除的Actor（包括子节点）
-		std::vector<Core::ECS::Actor*> allToRemove;
-		allToRemove.reserve(actors.size() * 2);
-
-		for (auto* actor : actors) {
-			collectAllChildren(actor, allToRemove);
-		}
-		allToRemove.insert(allToRemove.end(), actors.begin(), actors.end());
-
-		// 🔥 第二步：去重（可能有重叠的父子关系）
-		std::unordered_set<Core::ECS::Actor*> uniqueActors(allToRemove.begin(), allToRemove.end());
-
-		// 🔥 第三步：收集需要删除的Item
-		std::vector<std::pair<QStandardItem*, QStandardItem*>> itemsToRemove; // item, parent
-		itemsToRemove.reserve(uniqueActors.size());
-
-		for (auto* actor : uniqueActors) {
-			auto it = mInternal->actorToItem.find(actor);
+		std::vector<QStandardItem*> rootItem;
+		//remove actors
+		for (int i = 0;i < actors.size();i++) {
+			auto it = mInternal->actorToItem.find(actors[i]);
 			if (it != mInternal->actorToItem.end()) {
-				QStandardItem* item = it->second;
-				QStandardItem* parent = item->parent();
-				itemsToRemove.emplace_back(item, parent);
-				mInternal->actorToItem.erase(it);
-			}
-		}
-
-		// 🔥 第四步：批量从父节点移除（从下往上，避免索引错乱）
-		// 按父节点分组
-		std::unordered_map<QStandardItem*, std::vector<int>> parentToRows;
-		for (auto& [item, parent] : itemsToRemove) {
-			if (parent) {
-				parentToRows[parent].push_back(item->row());
-			}
-		}
-
-		// 从后往前删除（避免索引变化影响）
-		for (auto& [parent, rows] : parentToRows) {
-			std::sort(rows.begin(), rows.end(), std::greater<int>());
-			for (int row : rows) {
-				QStandardItem* removedItem = parent->takeChild(row);
-				if (removedItem) {
-					// 🔥 回收Item到池中
-					m_itemPool.release(removedItem);
+				std::vector<QStandardItem*>stack;
+				QStandardItem* curRootItem = it->second;
+				rootItem.push_back(curRootItem);
+				stack.push_back(curRootItem);
+				while (!stack.empty()) {
+					QStandardItem* item = stack.back();stack.pop_back();
+					Core::ECS::Actor* actor = static_cast<Core::ECS::Actor*>(item->data(Qt::UserRole).value<void*>());
+					if (actor) {
+						mInternal->actorToItem.erase(actor);
+					}
+					int rowCnt = item->rowCount();
+					for (int i = 0;i < rowCnt;i++) {
+						QStandardItem* child = item->child(i);
+						stack.push_back(child);
+					}
 				}
 			}
 		}
-
-		// 🔥 第五步：处理根节点下的直接删除
-		for (auto& [item, parent] : itemsToRemove) {
-			if (!parent) {
-				// 直接从sceneRoot删除
-				int row = item->row();
-				QStandardItem* removedItem = mInternal->sceneRoot->takeChild(row);
-				if (removedItem) {
-					m_itemPool.release(removedItem);
-				}
-			}
+		//remove QStandardItem
+		for (int i = 0;i < rootItem.size();i++) {
+			std::vector<QStandardItem*>stack;
+			QStandardItem* curRootItem = rootItem[i];
+			//stack.push_back(curRootItem);
+			curRootItem->parent()->removeRow(curRootItem->row());
+			//while (!stack.empty()) {
+			//	QStandardItem* item = stack.back();stack.pop_back();
+			//	int rowCnt = item->rowCount();
+			//	for (int i = 0;i < rowCnt;i++) {
+			//		QStandardItem* child = item->child(i);
+			//		item->takeChild(i);
+			//		stack.push_back(child);
+			//	}
+			//	// 🔥 回收Item到池中
+			//	m_itemPool.release(item);
+			//	m_stats.totalRemoved++;
+			//}
 		}
-
-		m_stats.totalRemoved += uniqueActors.size();
 	}
 	void EntityTreeModel::processBatchModify(const std::vector<Core::ECS::Actor*>& actors)
 	{
@@ -531,10 +523,10 @@ namespace MOON {
 				QStandardItem* item = it->second;
 
 				// 更新名称
-				auto name = actor->GetName();
-				if (item->text() != QString::fromStdString(name)) {
-					item->setText(QString::fromStdString(name));
-				}
+				//auto name = actor->GetName();
+				//if (item->text() != QString::fromStdString(name)) {
+				//	item->setText(QString::fromStdString(name));
+				//}
 
 				// 更新激活状态
 				bool active = actor->IsActive();
@@ -544,13 +536,13 @@ namespace MOON {
 				}
 
 				// 更新图标（如果tag变化）
-				auto tag = actor->GetTag();
-				if (mInternal->mIconMaps.find(tag) != mInternal->mIconMaps.end()) {
-					QIcon icon = mInternal->mIconMaps[tag];
-					if (item->icon().cacheKey() != icon.cacheKey()) {
-						item->setIcon(icon);
-					}
-				}
+				//auto tag = actor->GetTag();
+				//if (mInternal->mIconMaps.find(tag) != mInternal->mIconMaps.end()) {
+				//	QIcon icon = mInternal->mIconMaps[tag];
+				//	if (item->icon().cacheKey() != icon.cacheKey()) {
+				//		item->setIcon(icon);
+				//	}
+				//}
 			}
 		}
 	}
@@ -673,14 +665,6 @@ namespace MOON {
 
 		for (auto* child : actor->GetChildren()) {
 			updateTopoShapeRecursive(child);
-		}
-	}
-	void EntityTreeModel::collectAllChildren(Core::ECS::Actor* actor, std::vector<Core::ECS::Actor*>& out)
-	{
-		auto& children = actor->GetChildren();
-		for (auto* child : children) {
-			out.push_back(child);
-			collectAllChildren(child, out);
 		}
 	}
 }

@@ -12,10 +12,23 @@ namespace MOON {
 	{
 		Q_OBJECT
 	public:
+		enum OperationType
+		{
+			Add,
+			Remove,
+			Update
+		};
+		struct Operation
+		{
+			OperationType type;
+			std::vector<Core::ECS::Actor*> actors;
+		};
 		TreeViewPanel(QWidget* parent);
 		~TreeViewPanel();
 		void updateTreeViewSketcherRoot();
 		void addActorToTree(const std::vector<Core::ECS::Actor*>& actor);
+		void removeActorFromTree(const std::vector<Core::ECS::Actor*>& actor);
+		void updateActorInTree(const std::vector<Operation>&opeartions);
 	signals:
 		void setSelectActor(Core::ECS::Actor* actor);
 		void itemHovered(Core::ECS::Actor* actor);   // 悬浮

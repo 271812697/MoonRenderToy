@@ -35,9 +35,10 @@ namespace MOON {
             if (shapes.size() > 0) {
                 if (shapes[1].shapeType() == TopAbs_FACE) {
                     std::string subValue = "face_" + std::to_string( shapes[0].findShape(shapes[1].getShape())-1);
-                   ;
+                  
                     auto testfeature=new Feature("test");
                     testfeature->setTopoShape(shapes[0]);
+                    //testfeature->addToTreeView();
 			        feature = new ThicknessFeature("Thickness");
 			        feature->setBaseFeature(testfeature);
                     feature->setSubValues({ subValue });

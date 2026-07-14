@@ -1,4 +1,5 @@
 ﻿#include "editor/UI/TaskPanel/ShapeHelper.h"
+#include "editor/View/sceneview/viewerwidget.h"
 #include "TopoShape.h"
 #include "core/component/TopoShapeActor.h"
 #include "core/component/CTopoShape.h"
@@ -115,39 +116,50 @@ namespace MOON {
 		auto feature=getFeature();
 		if (feature) {
 			if (feature->execute()) {
-				Part::TopoShape shape=feature->GetTopoShape();
+				Part::TopoShape shape=feature->getPreviewShape();
 				try
 				{
-					shape = shape.makeElementRefine();
+					mInternal->m_previewShape = shape.makeElementRefine();
 				}
 				catch (Standard_Failure& err)
 				{
 					CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
 				}
-				const auto& topoComp = feature->GetComponent<Core::ECS::Components::CTopoShape>();
+
+
+				if (mInternal->m_previewActor == nullptr) {
+					auto& view = GetService(Editor::Panels::SceneView);
+					auto scene = view.GetScene();
+					auto preActor = scene->FindActorByName("TopoShapePreview");
+					if (preActor) {
+						scene->RemoveActor(preActor);
+					}
+					mInternal->m_previewActor = new TopoActor("TopoShapePreview", "TopoShape", true);
+				}
+				const auto& topoComp = mInternal->m_previewActor->GetComponent<Core::ECS::Components::CTopoShape>();
 				Part::TopoShape& topo = topoComp->GetTopoShape();
-				topo.setShape(shape);
+				topo.setShape(mInternal->m_previewShape);
 				topoComp->discretizationShape();
-				//auto MatRender = feature->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
-				//Core::Resources::Material* tempMat = MatRender->GetMaterialAtIndex(0);
-				//tempMat->SetProperty("u_Albedo", Maths::FVector4(mPreviewOption.r, mPreviewOption.g, mPreviewOption.b, mPreviewOption.a));
-				//if (mPreviewOption.isTransparent) {
-				//	tempMat->SetTransparent(true);
-				//	tempMat->SetDepthWriting(true);
-				//}
-				//else {
-				//	if (mPreviewOption.isBlend) {
-				//		tempMat->SetBlendable(true);
-				//		tempMat->SetDepthTest(false);
-				//		tempMat->SetDepthWriting(false);
-				//		tempMat->SetDrawOrder(10000);
-				//	}
-				//}
-				//if (!mPreviewOption.useDomainColor) {
-				//	tempMat->AddFeature("DISABLE_DOMAIN_COLOR");
-				//}
-				//tempMat->SetBackfaceCulling(false);
-				//tempMat->SetFrontfaceCulling(false);
+				auto MatRender = mInternal->m_previewActor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+				Core::Resources::Material* tempMat = MatRender->GetMaterialAtIndex(0);
+				tempMat->SetProperty("u_Albedo", Maths::FVector4(mPreviewOption.r, mPreviewOption.g, mPreviewOption.b, mPreviewOption.a));
+				if (mPreviewOption.isTransparent) {
+					tempMat->SetTransparent(true);
+					tempMat->SetDepthWriting(true);
+				}
+				else {
+					if (mPreviewOption.isBlend) {
+						tempMat->SetBlendable(true);
+						tempMat->SetDepthTest(false);
+						tempMat->SetDepthWriting(false);
+						tempMat->SetDrawOrder(10000);
+					}
+				}
+				if (!mPreviewOption.useDomainColor) {
+					tempMat->AddFeature("DISABLE_DOMAIN_COLOR");
+				}
+				tempMat->SetBackfaceCulling(false);
+				tempMat->SetFrontfaceCulling(false);
 			}
 			else
 			{
@@ -228,34 +240,56 @@ namespace MOON {
 	}
 	void ShapeHelper::generateFinalShape()
 	{
-		if (mInternal->m_generateShape.isNull()) {
-			generateShape();
-		}
-		auto& view = GetService(Editor::Panels::SceneView);
-		auto scene = view.GetScene();
-		if (!mInternal->m_generateShape.isNull()) {
-			Part::TopoShape shape(mInternal->m_generateShape);
-			try
-			{
-				mInternal->m_generateShape = shape.makeElementRefine();
-			}
-			catch (Standard_Failure& err)
-			{
-				CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
-			}
-			for (auto& ac:scene->FindActorsByTag("TopoShape")) {
+		ZoneScoped;
+		auto feature = getFeature();
+		if (feature) {
+			feature->addToTreeView();
+			auto& view = GetService(Editor::Panels::SceneView);
+			auto scene = view.GetScene();	
+			for (auto& ac : scene->FindActorsByTag("TopoShape")) {
 				ac.get().SetActive(false);
+				GetViewerWidget.modifyActorInTreeView(&ac.get());
 			}
-			auto topoActor = new TopoActor(mInternal->name, "TopoShape", false);
-			const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
-			Part::TopoShape& topo = topoComp->GetTopoShape();
-			topo.setShape(mInternal->m_generateShape);
-			topoComp->discretizationShape();
+			auto preActor = scene->FindActorByName("TopoShapePreview");
+			if (preActor) {
+				GetViewerWidget.removeActorFromTreeView(preActor);
+				scene->RemoveActor(preActor);
+				delete preActor;
+			}
 		}
-		auto preActor = scene->FindActorByName("TopoShapePreview");
-		if (preActor) {
-			scene->RemoveActor(preActor);
-			delete preActor;
+		else
+		{
+			if (mInternal->m_generateShape.isNull()) {
+				generateShape();
+			}
+			auto& view = GetService(Editor::Panels::SceneView);
+			auto scene = view.GetScene();
+			if (!mInternal->m_generateShape.isNull()) {
+				Part::TopoShape shape(mInternal->m_generateShape);
+				try
+				{
+					mInternal->m_generateShape = shape.makeElementRefine();
+				}
+				catch (Standard_Failure& err)
+				{
+					CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
+				}
+				for (auto& ac:scene->FindActorsByTag("TopoShape")) {
+					ac.get().SetActive(false);
+					GetViewerWidget.modifyActorInTreeView(&ac.get());
+				}
+				auto topoActor = new TopoActor(mInternal->name, "TopoShape", false);
+				const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
+				Part::TopoShape& topo = topoComp->GetTopoShape();
+				topo.setShape(mInternal->m_generateShape);
+				topoComp->discretizationShape();
+			}
+			auto preActor = scene->FindActorByName("TopoShapePreview");
+			if (preActor) {
+				GetViewerWidget.removeActorFromTreeView(preActor);
+				scene->RemoveActor(preActor);
+				delete preActor;
+			}
 		}
 	}
 	void ShapeHelper::clearPreviewShape()

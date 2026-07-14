@@ -52,9 +52,8 @@ namespace MOON {
                 Part::TopoShape baseShape= getBaseTopoShape();
                 Part::TopoShape face = getVerifyTopoFace();
                 Part::TopoShape shape = baseShape.makeElementThickSolid({face}, thickness, tol, intersection, false, mode, static_cast<Part::JoinType>(join));
-                //getPreviewShape() = shape;
-                //getGenerateShape() = shape;
-				GetTopoShape().setShape(shape.getShape());
+				topoShape->setShape(shape.getShape());
+                getPreviewShape() = *topoShape;
                 return true;
             }
             catch (Standard_Failure& e)

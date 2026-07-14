@@ -27,6 +27,7 @@ namespace MOON {
 		faceChild.SetParent(*this);
 		edgeChild.SetParent(*this);
 		AddComponent<Core::ECS::Components::CTopoShape>();
+		topoShape = &GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape();
 		faceChild.AddComponent<Core::ECS::Components::CModelRenderer>();
 		faceChild.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 		faceChild.AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
@@ -141,10 +142,10 @@ namespace MOON {
 	}
 	Part::TopoShape& TopoActor::GetTopoShape()
 	{
-		return GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape();
+		return *topoShape;
 	}
 	void TopoActor::setTopoShape(Part::TopoShape shape)
 	{
-		GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape() = shape;
+		topoShape->setShape(shape);;
 	}
 }

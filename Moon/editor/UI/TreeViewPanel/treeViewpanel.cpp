@@ -106,24 +106,56 @@ namespace MOON {
 
 	void TreeViewPanel::updateTreeViewSketcherRoot()
 	{
-		System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+		//System::JobSystem::DelayExecute([this](JobDispatchArgs) {
 			mInternal->mModel->onSketcherChange();
-			});
+			//});
 	}
 
 	void TreeViewPanel::addActorToTree(const std::vector<Core::ECS::Actor*>& actor)
 	{
-		System::JobSystem::DelayExecute([this,actor](JobDispatchArgs) {
+		//System::JobSystem::DelayExecute([this,actor](JobDispatchArgs) {
 			mInternal->mModel->beginBatchOperation();
 			mInternal->mModel->notifyActorsCreated(actor);
 			mInternal->mModel->endBatchOperation();			
-		});
+		//});
+	}
+
+	void TreeViewPanel::removeActorFromTree(const std::vector<Core::ECS::Actor*>& actor)
+	{
+		//System::JobSystem::DelayExecute([this, actor](JobDispatchArgs) {
+			mInternal->mModel->beginBatchOperation();
+			mInternal->mModel->notifyActorsRemoved(actor);
+			mInternal->mModel->endBatchOperation();
+			//});
+	}
+
+	void TreeViewPanel::updateActorInTree(const std::vector<Operation>& operations)
+	{
+		//System::JobSystem::DelayExecute([this, operations](JobDispatchArgs) {
+
+			mInternal->mModel->beginBatchOperation();
+			for (int i = 0;i < operations.size();i++) {
+				if (operations[i].actors.size() > 0) {
+					if (operations[i].type == OperationType::Add) {
+						mInternal->mModel->notifyActorsCreated(operations[i].actors);
+					}
+					else if (operations[i].type == OperationType::Remove) {
+						mInternal->mModel->notifyActorsRemoved(operations[i].actors);
+					}
+					else if (operations[i].type== OperationType::Update) {
+						mInternal->mModel->notifyActorsModified(operations[i].actors);
+					}
+				}
+			}
+			mInternal->mModel->endBatchOperation();
+
+			//});
 	}
 
 	void TreeViewPanel::updateTreeViewSceneRoot() {
-		System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+		//System::JobSystem::DelayExecute([this](JobDispatchArgs) {
 			mInternal->mModel->onSceneRootChange();
-		});
+		//});
 	}
 
 	void TreeViewPanel::highlightByActor(Core::ECS::Actor* actor)

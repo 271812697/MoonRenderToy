@@ -18,7 +18,10 @@ namespace MOON {
 		void RemoveFromScene();
 		Part::TopoShape& GetTopoShape();
 		void setTopoShape(Part::TopoShape shape);
+	protected:
+		Part::TopoShape* topoShape;
 	private:
+		
 		Core::SceneSystem::Scene* m_scene=nullptr;
 	};
 }

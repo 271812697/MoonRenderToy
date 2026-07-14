@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "core/component/TopoShapeActor.h"
 namespace MOON { 
+	
 	class Feature :public TopoActor {
 	public:
 		Feature(const std::string& p_name);
@@ -15,9 +16,15 @@ namespace MOON {
 		Feature* getBaseFeature() { return m_baseFeature; }
 		Part::TopoShape& getBaseTopoShape();
 		Part::TopoShape getVerifyTopoFace();
-	private:
+	    Part::TopoShape& getPreviewShape();
+		void addToTreeView();
+	protected:
+		
 		Feature* m_baseFeature = nullptr;
 		std::vector<std::string> subValues;
+	private:
+		class Internal;
+		Internal* mInternal = nullptr;
 
 	};
 }
