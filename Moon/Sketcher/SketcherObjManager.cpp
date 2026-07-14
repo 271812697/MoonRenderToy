@@ -28,6 +28,10 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
+	SketcherFeature* SketcherObjManager::GetCurrentActiveSketcherFeature()
+	{
+		return mInternal->sketchers.back();
+	}
 	SketcherObj* SketcherObjManager::GetCurrentActiveSketcherObj()
 	{
 		return mInternal->currentSketcherObj;

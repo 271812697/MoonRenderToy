@@ -41,30 +41,30 @@ namespace MOON {
 		}
 		return false;
 	}
-	bool ViewTool::getSelectedFeature(Feature*& feature, std::vector<std::string>& subValue)
+	Feature* ViewTool::getSelectedFeature()
+	{
+		Core::ECS::Actor* actor = getLastestActorSelected();
+		if (!actor) {
+			return nullptr;
+		}
+		Feature* f = dynamic_cast<Feature*>(actor);
+		return f;
+	}
+	bool ViewTool::getSelectedBasedFeature(Feature*&f,std::vector<std::string>&subValues)
 	{
 		Core::ECS::Actor* actor = getLastestActorSelected();
 		if (!actor) {
 			return false;
 		}
-		Feature* f = dynamic_cast<Feature*>(actor);
-		if (f) {
-			feature = f;
-			return true;
-		}
+
 		if (actor->HasParent()) {
 			auto parent = actor->GetParent();
-			Feature* f = dynamic_cast<Feature*>(parent);
-			if (f) {
-				feature = f;
-				return true;
-			}
 			if (parent->HasParent()) {
 				auto grandParent = parent->GetParent();
-				Feature* f=dynamic_cast<Feature*>(grandParent);
-				if (grandParent->HasComponent("CTopoShape")&&f) {
-					feature = f;
-					subValue = { actor->GetName() };
+				Feature* feature = dynamic_cast<Feature*>(grandParent);
+				if (feature) {
+					f = feature;
+					subValues = { actor->GetName() };
 					return true;
 				}
 			}
