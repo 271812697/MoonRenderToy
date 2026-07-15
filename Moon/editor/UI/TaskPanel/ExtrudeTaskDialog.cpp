@@ -7,6 +7,7 @@
 #include "core/component/CTopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
+#include "feature/FeatureBody.h"
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/SceneView.h"
@@ -46,7 +47,7 @@ namespace MOON {
             if (f) {
                 //执行已有的feature 参数
                 feature = dynamic_cast<ExtrudeFeature*>(f);
-                faceShape = feature->getVerifyTopoFace();
+                faceShape = feature->getProfileFace();
             }
             else
             {
@@ -57,18 +58,21 @@ namespace MOON {
                 Feature* baseFeature = nullptr;
                 std::vector<std::string>subValues;
                 ViewTool::getSelectedBasedFeature(baseFeature,subValues);
-
+                //基于已有的feature 
                 if (baseFeature) {
                     extrudeFeature->setBaseFeature(baseFeature);
                     extrudeFeature->setSubValues(subValues);
-                    faceShape = extrudeFeature->getVerifyTopoFace();
+                    faceShape = extrudeFeature->getProfileFace();
                 }
                 else
                 {
-                    // 1. 获取当前激活的草图
+                    // 1. 获取当前激活的草图,
                     auto* sketchFeature = SketcherObjManager::instance().GetCurrentActiveSketcherFeature();
                     if (sketchFeature) {
-                        extrudeFeature->setBaseFeature(sketchFeature);
+                        //2.设置基于最后一个feature
+                        extrudeFeature->setBaseFeature(FeatureBody::instance().getLastBaseFeature());
+                        FeatureBody::instance().addFeature(extrudeFeature);
+                        extrudeFeature->setProfile(sketchFeature);
                         faceShape = sketchFeature->getSketcherObj()->getDoneFaceShape();
                     }
                 }
@@ -110,32 +114,12 @@ namespace MOON {
                 behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
             }
         }
-      
     private:
         ExtrudeFeature* feature=nullptr;
-        //based which shape to extrude and use which shape to extrude
-       
-
         PadTaskWidget* behaviour = nullptr;
-       
         ExtrudeType extrudeType;
         ExtrudeTaskDialog* self;
         friend ExtrudeTaskDialog;
-        // 在 ExtrudeTaskDialog.h 中添加
-        QDoubleSpinBox* spinLenForward = nullptr;
-        QDoubleSpinBox* spinAngleForward = nullptr;
-        QDoubleSpinBox* spinLenRev = nullptr;
-        QDoubleSpinBox* spinAngleRev = nullptr;
-        QLabel* labelLen2 = nullptr;
-        QLabel* labelAngle2 = nullptr;
-        QLabel* labelLen1 = nullptr;
-        QLabel* labelAngle1 = nullptr;
-        QComboBox* cboDir = nullptr;
-        QComboBox* cboBool = nullptr;
-        QRadioButton* rbDim = nullptr;
-        QRadioButton* rbAll = nullptr;
-        QRadioButton* rbToFace = nullptr;
-        QCheckBox* cbMergeEdges = nullptr;
     };
     ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type, Feature* feature)
         : ParamTaskDialog(parent), mInternal(new Internal(this,type)),ShapeHelper(feature)
@@ -196,7 +180,6 @@ namespace MOON {
     void ExtrudeTaskDialog::setParamValue(const QString& propertyName, const QVariant& value)
     {
         bool updatePreView = false;
-
         if (propertyName == "Extrude:Extrude Type") {
             mInternal->feature->extrudeType = value.value<int>();
             updatePreView = true;
@@ -221,7 +204,6 @@ namespace MOON {
             mInternal->feature->angleRev= value.toFloat();
             updatePreView = true;
         }
-
         if (updatePreView&& hasInitUi) {
             previewShape();
         }
@@ -233,138 +215,6 @@ namespace MOON {
 
     bool ExtrudeTaskDialog::generateShape()
     {
-		//// 1. 检查是否有有效的拉伸面
-  //      if (mInternal->faceShape.isNull()) {
-  //          return false;
-  //      }
-
-  //      // 2. 获取界面控件（你需要把控件提升为成员变量，我下面会说明）
-  //      //    先假设你已经把 spinLen, cboDir, cboBool, rbDim 等改成成员变量
-  //      if (!mInternal->spinLenForward || !mInternal->cboDir || !mInternal->cboBool || !mInternal->rbDim || !mInternal->rbAll || !mInternal->rbToFace)
-  //          return false;
-
-  //      // 3. 获取界面参数
-  //      double lengthForward = mInternal->spinLenForward->value();
-  //      double angleForward = mInternal->spinAngleForward->value();
-  //      double lengthRev = mInternal->spinLenRev->value();
-  //      double angleRev = mInternal->spinAngleRev->value();
-  //      int dirType = mInternal->cboDir->currentIndex();       // 0=正向,1=反向,2=双向,3=对称
-  //      int boolType = mInternal->cboBool->currentIndex();     // 0=新建,1=相加,2=相减,3=相交
-  //      bool isDim = mInternal->rbDim->isChecked();
-  //      bool isAll = mInternal->rbAll->isChecked();
-  //      bool isToFace = mInternal->rbToFace->isChecked();
-
-  //      // 4. 获取草图平面法向（拉伸方向基准）
-  //      // 5. 根据方向类型调整最终拉伸向量
-  //      Part::ExtrusionParameters params;
-  //      params.taperAngleFwd = angleForward * std::numbers::pi / 180.0;
-  //      params.innerWireTaper = Part::InnerWireTaper::SameAsOuter;
-  //      params.dir = mInternal->finalDir;
-  //      params.solid = true;
-  //      params.lengthFwd = lengthForward;
-
-  //      if (dirType == 0)      // 正向
-  //      {
-  //          
-  //      }
-  //      else if (dirType == 1) {
-  //          params.lengthFwd *= -1;
-  //      }
-  //      else if (dirType == 2) // 双向
-  //      {
-  //          params.lengthRev = lengthRev;
-  //          params.taperAngleRev = angleRev * std::numbers::pi / 180.0;
-
-  //      }
-  //      else if (dirType == 3) // 对称
-  //      {
-  //          params.lengthRev = params.lengthFwd;
-  //          params.taperAngleRev = params.taperAngleFwd * std::numbers::pi / 180.0;
-  //      }
-
-  //      // 6. 生成拉伸体(核心)
-  //      Part::TopoShape prism;
-  //      if (isToFace&&!mInternal->upToFace.isNull()) {
-  //          try
-  //          {
-  //              Part::TopoShape tempShape = mInternal->faceShape.makeElementFace(nullptr, "Part::FaceMakerCheese");
-  //              prism=prism.makeElementPrismUntil(
-  //                  tempShape,
-  //                  mInternal->supportShape,
-  //                  mInternal->upToFace, -params.dir ,Part::TopoShape::PrismMode::None,
-  //                  true);
-  //              if (prism.isNull()) {
-  //                  CORE_ERROR("Prim is Null");
-  //                  return false;
-  //              }
-  //              getPreviewShape() = prism;
-
-  //              Part::TopoShape resShape;
-  //              if (!mInternal->baseShape.isNull()) {
-  //                  if (mInternal->extrudeType == ExtrudeType::Additive) {
-  //                      resShape = prism.makeElementFuse(mInternal->baseShape);
-  //                  }
-  //                  else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
-  //                      resShape = mInternal->baseShape.makeElementCut(prism);
-  //                  }
-  //              }
-  //              else {
-  //                  resShape = prism;
-  //              }
-  //              getGenerateShape() = resShape;
-
-
-  //              return true;
-  //          }
-  //          catch (const std::exception&)
-  //          {
-  //              return false;
-  //          }
-  //      }
-  //      else
-  //      {
-  //         try {
-  //              std::vector<Part::TopoShape> drafts;
-  //              Part::ExtrusionHelper::makeElementDraft(
-  //                  params,
-  //                  mInternal->faceShape,
-  //                  drafts, App::StringHasherRef()
-  //              );
-  //              if (drafts.empty()) {
-  //                  return false;
-  //              }
-  //              prism.makeElementCompound(
-  //                  drafts,
-  //                  nullptr,
-  //                  Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
-  //              );
-  //          
-  //              getPreviewShape() = prism;
-  //        
-  //              Part::TopoShape resShape;
-  //              if (!mInternal->baseShape.isNull()) {
-  //                  if (mInternal->extrudeType == ExtrudeType::Additive) {
-  //                      resShape = prism.makeElementFuse(mInternal->baseShape);
-  //                  }
-  //                  else if (mInternal->extrudeType == ExtrudeType::Subtractive) {
-  //                      resShape = mInternal->baseShape.makeElementCut(prism);
-  //                  }
-  //              }
-  //              else {
-  //                  resShape = prism;
-  //              }
-  //              getGenerateShape() = resShape;
-  //         
-  //         
-  //              return true;
-  //          }
-  //          catch (Base::ValueError e) {
-  //              CORE_ERROR(e.getMessage());
-  //              // 拉伸失败，清空预览
-  //         
-  //              return false;;
-  //          }
-  //      }
         return false;
     }
     void ExtrudeTaskDialog::clickOk()
@@ -384,11 +234,11 @@ namespace MOON {
     }
     void ExtrudeTaskDialog::onAngleChange()
     {
-        mInternal->behaviour->setAngle(mInternal->spinAngleForward->value());
+        //mInternal->behaviour->setAngle(mInternal->spinAngleForward->value());
     }
     void ExtrudeTaskDialog::onLengthChange()
     {
-        mInternal->behaviour->setLength(mInternal->spinLenForward->value());
+        //mInternal->behaviour->setLength(mInternal->spinLenForward->value());
     }
  
     void ExtrudeTaskDialog::onSelectFace(const std::vector<Part::TopoShape>& face)
@@ -398,7 +248,6 @@ namespace MOON {
         if (extrudeFeature) {
             extrudeFeature->upToFace = face[1];
         }
-        
     }
     void ExtrudeTaskDialog::onWidgetLengthInvoke()
     {

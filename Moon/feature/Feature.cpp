@@ -36,12 +36,8 @@ namespace MOON {
 	{
 		return m_baseFeature->GetTopoShape();
 	}
-	Part::TopoShape Feature::getVerifyTopoFace()
+	Part::TopoShape Feature::getBaseTopoFaceShape()
 	{
-		SketcherFeature* sketch = dynamic_cast<SketcherFeature*>(m_baseFeature);
-		if (sketch) {
-		   return  sketch->getSketcherObj()->getDoneFaceShape();
-		}
 		std::string idString = subValues[0].substr(5);
 		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
 		return comp->GetTopoFace(std::stoi(idString));

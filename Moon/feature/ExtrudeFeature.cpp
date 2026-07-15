@@ -35,7 +35,7 @@
 #include <BRepClass3d_SolidClassifier.hxx>
 
 namespace MOON {
-    ExtrudeFeature::ExtrudeFeature(const std::string& p_name, int addSubType) :Feature(p_name,addSubType==0? "Pad": "Pocket")
+    ExtrudeFeature::ExtrudeFeature(const std::string& p_name, int addSubType) :FeatureBaseProfile(p_name,addSubType==0? "Pad": "Pocket")
 	{
         this->addSubType = addSubType;
 	}
@@ -44,18 +44,12 @@ namespace MOON {
 	}
 	bool ExtrudeFeature::execute()
 	{
-		SketcherFeature* sketch=dynamic_cast<SketcherFeature*>(m_baseFeature);
-       
-		Part::TopoShape face;
+		Part::TopoShape face=getProfileFace();
         Part::TopoShape baseShape;
-		if (sketch) {
-			face=sketch->getSketcherObj()->getDoneFaceShape();
-		}
-		else
-		{
-			face = getVerifyTopoFace();
+        if (m_baseFeature) {
             baseShape=getBaseTopoShape();
-		}
+        }
+       
 		Part::ExtrusionParameters params;
 		params.taperAngleFwd = angleForward * std::numbers::pi / 180.0;
 		params.innerWireTaper = Part::InnerWireTaper::SameAsOuter;
@@ -94,8 +88,6 @@ namespace MOON {
                     CORE_ERROR("Prim is Null");
                     return false;
                 }
-               
-
                 Part::TopoShape resShape;
                 if (!baseShape.isNull()) {
                     if (addSubType == 0) {
@@ -106,6 +98,7 @@ namespace MOON {
                     }
                 }
                 else {
+                    if(addSubType == 0)
                     resShape = prism;
                 }
                 topoShape->setShape(resShape);
@@ -147,6 +140,7 @@ namespace MOON {
                     }
                 }
                 else {
+                    if (addSubType == 0)
                     resShape = prism;
                 }
                 topoShape->setShape(resShape);
@@ -154,7 +148,7 @@ namespace MOON {
             }
             catch (Base::ValueError e) {
                 CORE_ERROR(e.getMessage());
-                return false;;
+                return false;
             }
         }
         return false;

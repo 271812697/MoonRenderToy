@@ -1,13 +1,14 @@
 ﻿#pragma once
-#include "feature/Feature.h"
+#include "feature/FeatureBaseProfile.h"
 #include <gp_Vec.hxx>
 namespace MOON { 
-	class ExtrudeFeature :public Feature {
+	class SketcherFeature;
+	class ExtrudeFeature :public FeatureBaseProfile {
 	public:
 		ExtrudeFeature(const std::string& p_name,int addsubType);
 		virtual ~ExtrudeFeature() override;
 		virtual bool execute();
-		
+		SketcherFeature* sketcher = nullptr;
         float lengthForward =10 ;
         double angleForward = 0;
         double lengthRev = 10;

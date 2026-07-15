@@ -36,7 +36,7 @@ namespace MOON {
                 if (baseFeature) {
                     feature->setBaseFeature(baseFeature);
                     feature->setSubValues(subValues);
-                    Part::TopoShape face = feature->getVerifyTopoFace();
+                    Part::TopoShape face = feature->getBaseTopoFaceShape();
                     gp_Pln pln;
                     face.findPlane(pln);
                     SketcherPlane2D plane;

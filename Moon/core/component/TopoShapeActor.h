@@ -21,7 +21,6 @@ namespace MOON {
 	protected:
 		Part::TopoShape* topoShape;
 	private:
-		
 		Core::SceneSystem::Scene* m_scene=nullptr;
 	};
 }
