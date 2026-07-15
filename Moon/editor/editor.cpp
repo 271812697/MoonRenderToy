@@ -21,6 +21,9 @@
 #include "Command/menubar/cameraMode.h"
 #include "Command/menubar/visibleview.h"
 #include "Command/menubar/sketch.h"
+#include "core/Global/ServiceLocator.h"
+#include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "editor/UI/TaskPanel/TaskViewWidget.h"
 
 namespace MOON {
 	class Editor::EditorInternal {
@@ -72,6 +75,14 @@ namespace MOON {
 			//self->addDockWidget(Qt::LeftDockWidgetArea, debugWidget);
 			//self->tabifyDockWidget(HierarchypanelDock, debugWidget);
 
+			connectSignals();
+		}
+		void connectSignals() {
+			//select features
+			auto& tree = ::Core::Global::ServiceLocator::Get<::MOON::TreeViewPanel>();
+			auto& task = ::Core::Global::ServiceLocator::Get<::MOON::TaskViewWidget>();
+			connect(&tree, &TreeViewPanel::selectFeature, &task, &TaskViewWidget::onSelectedFeature);
+		
 		}
 		void buildFileMenu() {
 			auto openFileCommand=new OpenFileCommand(self);

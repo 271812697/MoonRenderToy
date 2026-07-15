@@ -24,6 +24,5 @@ namespace MOON {
 			return Eigen::Vector3f(ret.x, ret.y, ret.z);
 		}
 		SketcherPlane2D() = default;
-
 	};
 }

@@ -8,6 +8,8 @@
 #include "Sketcher/SketcherObj.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "renderer/Context.h"
+#include "feature/Feature.h"
+#include "core/JobSystem.h"
 #include <QFileSystemModel>
 #include <QAbstractItemModel>
 #include <QHeaderView>
@@ -97,6 +99,20 @@ namespace MOON {
 
 		// 👇 这一句是关键！禁止点行触发勾选
 		setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+
+		connect(this, &QTreeView::doubleClicked, this, [this](const QModelIndex& index)
+			{
+				if (!index.isValid()) return;
+				::Core::ECS::Actor* actor = static_cast<::Core::ECS::Actor*>(index.data(Qt::UserRole).value<void*>());
+				
+				if (actor) {
+					Feature* feature=dynamic_cast<Feature*>(actor);
+					if (feature) {
+						emit selectFeature(feature);
+					}
+				}
+			});
 	}
 	TreeViewPanel::~TreeViewPanel()
 	{
@@ -105,11 +121,56 @@ namespace MOON {
 
 	void TreeViewPanel::updateTreeViewSketcherRoot()
 	{
-		mInternal->mModel->onSketcherChange();
+		//System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+			mInternal->mModel->onSketcherChange();
+			//});
+	}
+
+	void TreeViewPanel::addActorToTree(const std::vector<Core::ECS::Actor*>& actor)
+	{
+		//System::JobSystem::DelayExecute([this,actor](JobDispatchArgs) {
+			mInternal->mModel->beginBatchOperation();
+			mInternal->mModel->notifyActorsCreated(actor);
+			mInternal->mModel->endBatchOperation();			
+		//});
+	}
+
+	void TreeViewPanel::removeActorFromTree(const std::vector<Core::ECS::Actor*>& actor)
+	{
+		//System::JobSystem::DelayExecute([this, actor](JobDispatchArgs) {
+			mInternal->mModel->beginBatchOperation();
+			mInternal->mModel->notifyActorsRemoved(actor);
+			mInternal->mModel->endBatchOperation();
+			//});
+	}
+
+	void TreeViewPanel::updateActorInTree(const std::vector<Operation>& operations)
+	{
+		//System::JobSystem::DelayExecute([this, operations](JobDispatchArgs) {
+
+			mInternal->mModel->beginBatchOperation();
+			for (int i = 0;i < operations.size();i++) {
+				if (operations[i].actors.size() > 0) {
+					if (operations[i].type == OperationType::Add) {
+						mInternal->mModel->notifyActorsCreated(operations[i].actors);
+					}
+					else if (operations[i].type == OperationType::Remove) {
+						mInternal->mModel->notifyActorsRemoved(operations[i].actors);
+					}
+					else if (operations[i].type== OperationType::Update) {
+						mInternal->mModel->notifyActorsModified(operations[i].actors);
+					}
+				}
+			}
+			mInternal->mModel->endBatchOperation();
+
+			//});
 	}
 
 	void TreeViewPanel::updateTreeViewSceneRoot() {
-		mInternal->mModel->onSceneRootChange();
+		//System::JobSystem::DelayExecute([this](JobDispatchArgs) {
+			mInternal->mModel->onSceneRootChange();
+		//});
 	}
 
 	void TreeViewPanel::highlightByActor(Core::ECS::Actor* actor)
@@ -177,8 +238,8 @@ namespace MOON {
 			}
 			else
 			{
-				SketcherObj* sketcher = static_cast<SketcherObj*>(index.data(Qt::UserRole+1).value<void*>());
-				SketcherObjManager::instance().setCurrentActiveSketcherObj(sketcher);
+				//SketcherObj* sketcher = static_cast<SketcherObj*>(index.data(Qt::UserRole+1).value<void*>());
+				//SketcherObjManager::instance().setCurrentActiveSketcherObj(sketcher);
 			}
 		}
 	}

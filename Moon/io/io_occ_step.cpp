@@ -37,7 +37,7 @@ namespace MOON {
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
           
-            auto topoActor = new Core::ECS::TopoActor(scene, "TopoShape", "TopoShape", false);
+            auto topoActor = new TopoActor( "TopoShape", "TopoShape", false,false);
             Core::ECS::Components::CTopoShape* topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             static MOON::System::JobSystem::Context ctx;
             static std::string path;
@@ -47,8 +47,10 @@ namespace MOON {
                 Part::TopoShape& topo = topoComp->GetTopoShape();
                 topo.importStep(path.c_str());
                 topoComp->discretizationShape();
+                GetViewerWidget.addActorToTreeView(topoActor);
 		    };
 	        MOON::System::JobSystem::Execute(ctx,lamda);
+           
         }
     }
 }

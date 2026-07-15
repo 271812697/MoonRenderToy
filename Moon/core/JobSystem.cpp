@@ -271,6 +271,12 @@ namespace MOON
                 internal_state->wakeCondition.notify_one();
             }
 
+            void DelayExecute(const Function<void(JobDispatchArgs)>& task)
+            {
+				static Context ctx;
+                Execute(ctx,task);
+            }
+
             void Dispatch(Context& ctx, uint32_t jobCount, uint32_t groupSize, const Function<void(JobDispatchArgs)>& task, size_t sharedmemory_size)
             {
                

@@ -6,10 +6,10 @@ namespace MOON {
 	{
 		
 	public:
-		explicit ThicknessTaskDialog(QWidget* parent = nullptr);
+		explicit ThicknessTaskDialog(QWidget* parent = nullptr, Feature* feature = nullptr);
 		~ThicknessTaskDialog();
-		virtual QVariant getParamValue(const QString& propertyName);
-		virtual void setParamValue(const QString& propertyName, const QVariant& value);
+		virtual QVariant getParamValue(const QString& propertyName)override;
+		virtual void setParamValue(const QString& propertyName, const QVariant& value)override;
 		virtual void clickOk() override;
 		virtual void clickApply() override;
 		virtual void clickCancel() override;

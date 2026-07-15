@@ -15,33 +15,28 @@ namespace MOON {
 		}
 		~SketchPlaneInternal() {
 		}
-		enum SketcherPlane
-		{
-			XY_Plane,
-			YZ_Plane,
-			XZ_Plane,
-			NO_Plane
-		};
+
 		bool onMouseLeftClick() {
 			if (mSelectPlane != mPreSelectPlane) {
 				mSelectPlane = mPreSelectPlane;
 				if (mSelectPlane != NO_Plane) {
-					SketcherPlane2D plane;
+				
 					if (mSelectPlane == XY_Plane) {
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
+						plane = SketcherPlane2D();
 					}
 					if (mSelectPlane == XZ_Plane) {
 						plane.xAxis = Base::Vector3d{ 1,0,0 };
 						plane.yAxis = Base::Vector3d{ 0,0,-1 };
 						plane.normal = Base::Vector3d{ 0,1,0 };
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
+						
 					}
 					if (mSelectPlane == YZ_Plane) {
 						plane.xAxis = Base::Vector3d{ 0,0,-1 };
 						plane.yAxis = Base::Vector3d{ 0,1,0 };
 						plane.normal = Base::Vector3d{ 1,0,0 };
-						SketcherObjManager::instance().GetCurrentActiveSketcherObj()->setPlane(plane);
+						
 					}
+					mSelf->InvokeEvent(SketchPlaneEvent::SelectPlane);
 					mSelf->setActive(false);
 					mSelectPlane = NO_Plane;
 					return true;
@@ -52,12 +47,14 @@ namespace MOON {
 	private:
 		friend class SketchPlane;
 		SketchPlane* mSelf = nullptr;
-		SketcherPlane mSelectPlane{ NO_Plane };
-		SketcherPlane mPreSelectPlane{ NO_Plane };
+		Plane mSelectPlane{ NO_Plane };
+		Plane mPreSelectPlane{ NO_Plane };
+		SketcherPlane2D plane;
 	};
 
 	SketchPlane::SketchPlane(const std::string& name) :EventWidget(name)
 	, m_internal(new SketchPlaneInternal(this)){
+		setActive(true);
 	}
 	SketchPlane::~SketchPlane()
 	{
@@ -66,7 +63,7 @@ namespace MOON {
 	void SketchPlane::onUpdate()
 	{
 		
-		m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::NO_Plane;
+		m_internal->mPreSelectPlane = Plane::NO_Plane;
 	
 		renderer->drawOneMesh(
 			{0,0,0},
@@ -75,17 +72,17 @@ namespace MOON {
 			"GizmoSketchPlane");
 
 		if (renderer->isSelectPolygon("GizmoSketchPlane", "YPlane")|| renderer->isSelectPolygon("GizmoSketchPlane", "YArrow")) {
-		    m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::XZ_Plane;
+		    m_internal->mPreSelectPlane = Plane::XZ_Plane;
 		}
 		if (renderer->isSelectPolygon("GizmoSketchPlane", "XPlane") || renderer->isSelectPolygon("GizmoSketchPlane", "XArrow")) {
-			m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::YZ_Plane;
+			m_internal->mPreSelectPlane = Plane::YZ_Plane;
 		}
 		if (renderer->isSelectPolygon("GizmoSketchPlane", "ZPlane") || renderer->isSelectPolygon("GizmoSketchPlane", "ZArrow")) {			
-			m_internal->mPreSelectPlane = SketchPlaneInternal::SketcherPlane::XY_Plane;
+			m_internal->mPreSelectPlane = Plane::XY_Plane;
 		}
 
 
-		if (m_internal->mPreSelectPlane ==SketchPlaneInternal::SketcherPlane::XY_Plane) {
+		if (m_internal->mPreSelectPlane ==Plane::XY_Plane) {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,0,0.7 });
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZArrow"), { 1,1,0,1.0 });
 		}
@@ -94,7 +91,7 @@ namespace MOON {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZPlane"), { 1,1,1,1 });
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("ZArrow"), { 0,0,1,1.0 });
 		}
-		if (m_internal->mPreSelectPlane == SketchPlaneInternal::SketcherPlane::YZ_Plane) {	
+		if (m_internal->mPreSelectPlane == Plane::YZ_Plane) {	
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,0,0.7 });
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XArrow"), { 1,1,0,1.0 });
 		}
@@ -103,7 +100,7 @@ namespace MOON {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XPlane"), { 1,1,1,1 });
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("XArrow"), { 1,0,0,1.0 });
 		}
-		if (m_internal->mPreSelectPlane == SketchPlaneInternal::SketcherPlane::XZ_Plane) {
+		if (m_internal->mPreSelectPlane == Plane::XZ_Plane) {
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YPlane"), { 1,1,0,0.7 });
 			GizmoSketchPlane().setBlockColor(GizmoSketchPlane().getBlockId("YArrow"), { 1,1,0,1.0 });
 		}
@@ -117,5 +114,13 @@ namespace MOON {
 	void SketchPlane::onLeftMousePressed()
 	{
 		m_internal->onMouseLeftClick();
+	}
+	void SketchPlane::onMouseMove()
+	{
+		//m_internal->onMouseLeftClick();
+	}
+	SketcherPlane2D SketchPlane::getSelectPlane()
+	{
+		return m_internal->plane;
 	}
 }

@@ -6,6 +6,7 @@
 #include "Qtimgui/imgui/imgui.h"
 #include "renderer/SceneView.h"
 #include "Sketcher/SketcheTool2D.h"
+#include "feature/SketcherFeature.h"
 namespace MOON
 {
 
@@ -22,10 +23,14 @@ namespace MOON
     }
     void DrawSketchHandler::onUpdate()
     {
-       auto sketchobj= SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-       if (sketchobj) {
-           makePlane(sketchobj->getPlane());
+       auto feature=SketcherObjManager::instance().GetCurrentActiveSketcherFeature();
+       if (feature) {
+           auto sketchobj= feature->getSketcherObj();
+           if (sketchobj) {
+               makePlane(sketchobj->getPlane());
+           }
        }
+
        if (isSnapedSketchPos) {
            renderer->drawPoint(plane.valueEigen(onSketchPos), 16,Eigen::Vector4<uint8_t>(255, 0, 255, 0));
            //renderer->drawPoint2D({ onSketchPos.x,onSketchPos.y }, Eigen::Vector4<uint8_t>(255,0,255,0), 16,gizmoPlane);

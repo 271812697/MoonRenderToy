@@ -31,13 +31,12 @@ namespace MOON {
 	}
 
 	void PrimitiveBox::createTopoShape()
-	{	auto scene = m_sceneView->GetScene();
-
+	{	
 		BRepPrimAPI_MakeBox mkBox(2*scale.x(), 2*scale.y(), 2*scale.z());
 	
 		TopoDS_Shape ResultShape = mkBox.Shape();
 	
-		auto topoActor = new Core::ECS::TopoActor(scene, "TopoShapeBox", "TopoShape", false);
+		auto topoActor = new TopoActor( "TopoShapeBox", "TopoShape", false);
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 

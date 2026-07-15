@@ -28,14 +28,15 @@ namespace MOON {
 		void keyPressEvent(QKeyEvent* event) override;
 		void keyReleaseEvent(QKeyEvent* event) override;
 		::Editor::Panels::AView* getView();
+		void addActorToTreeView(Core::ECS::Actor* actor);
+		void removeActorFromTreeView(Core::ECS::Actor* actor);
+		void modifyActorInTreeView(Core::ECS::Actor* actor);
 	public slots:
 		void onActorSelected(Core::ECS::Actor* actor);
 		void onActorHovered(Core::ECS::Actor* actor);
 		void onActorHoverLeaved(Core::ECS::Actor* actor);
-		void onSceneChange(const QString& path);
-		void updateTreeView();
-	signals:
-		void sceneChange();
+		void onReadFile(const QString& path);
+		void refreshTreeView();
 
 	private:
 		class ViewerWindowInternal;

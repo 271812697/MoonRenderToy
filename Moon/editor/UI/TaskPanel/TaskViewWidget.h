@@ -26,6 +26,7 @@ namespace MOON {
         void clickOk();
         void clickApply();
         void clickCancel();
+        void onSelectedFeature(void* feature);
     private:
         QVBoxLayout* m_mainLayout;
         QWidget* m_contentWidget;

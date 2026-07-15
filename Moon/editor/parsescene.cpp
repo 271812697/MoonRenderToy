@@ -1,5 +1,6 @@
 ﻿#include "parsescene.h"
 #include "renderer/Context.h"
+#include "editor/View/sceneview/viewerwidget.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CPointLight.h"
@@ -100,6 +101,11 @@ namespace MOON {
 		//pointLight.SetLinear(0.0);
 
 		pointLight5.SetQuadratic(0.0);
+		GetViewerWidget.addActorToTreeView(&ac1);
+		GetViewerWidget.addActorToTreeView(&ac2);
+		GetViewerWidget.addActorToTreeView(&ac3);
+		GetViewerWidget.addActorToTreeView(&ac4);
+		GetViewerWidget.addActorToTreeView(&ac5);
 	}
 
 
@@ -107,7 +113,7 @@ namespace MOON {
 
 	bool LoadSceneFromFile(const std::string& filename, Core::SceneSystem::Scene* scene);
 	bool LoadGLTF(const std::string& filename, Core::SceneSystem::Scene* scene, bool binary);
-	void ParseScene::ParsePathTraceScene(const std::string& path) {
+	void ParseScene::ParseFile(const std::string& path) {
 		Core::SceneSystem::Scene* scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
 		if (scene == nullptr) {
 			return;
@@ -162,6 +168,7 @@ namespace MOON {
 			
 		
 				auto& actor = scene->CreateActor(sceneName);
+				GetViewerWidget.addActorToTreeView(&actor);
 				actor.AddComponent<Core::ECS::Components::CModelRenderer>().SetModel(model);
 				//actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(xform.data);
 				auto& materilaRener = actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
@@ -796,6 +803,7 @@ namespace MOON {
 			for (int rootIdx = 0; rootIdx < gltfScene.nodes.size(); rootIdx++)
 			{
 				auto& rootActor = scene->CreateActor();
+				GetViewerWidget.addActorToTreeView(&rootActor);
 				rootActor.SetName("Root " + std::to_string(rootIdx));
 				std::vector<int>indexStack;
 				//std::vector<Mat4>transformStack;
@@ -877,6 +885,7 @@ namespace MOON {
 							if (strcmp(name.c_str(), "") == 0)
 								name = "Mesh " + std::to_string(gltfNode.mesh) + " Prim" + prims[i].path;
 							auto& actor = scene->CreateActor();
+							GetViewerWidget.addActorToTreeView(&actor);
 							actor.SetParent(*scene->FindActorByID(parentActorIdx));
 							actor.SetName(name);
 
@@ -901,6 +910,7 @@ namespace MOON {
 						if (strcmp(name.c_str(), "") == 0)
 							name = "Mesh #";
 						auto& actor = scene->CreateActor();
+						GetViewerWidget.addActorToTreeView(&actor);
 						actor.SetParent(*scene->FindActorByID(parentActorIdx));
 						actor.SetName(name);
 						actor.GetComponent<Core::ECS::Components::CTransform>()->SetMatrix(localMat.data);

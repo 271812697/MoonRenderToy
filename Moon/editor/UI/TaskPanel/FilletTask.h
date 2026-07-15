@@ -6,7 +6,7 @@ namespace MOON {
 	{
 
 	public:
-		explicit FilletTask(QWidget* parent = nullptr);
+		explicit FilletTask(QWidget* parent = nullptr,Feature* feature=nullptr);
 		~FilletTask();
 		virtual QVariant getParamValue(const QString& propertyName);
 		virtual void setParamValue(const QString& propertyName, const QVariant& value);

@@ -143,15 +143,21 @@ namespace MOON {
     void SketcherObj::setPlane(const SketcherPlane2D& plane)
     {
         mPlane = plane;     
+        fitCamera();
+        //GetService(SketchToolbar).disableAllHandlers();
+    }
+    void SketcherObj::fitCamera()
+    {
+        
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(false);
         view.GetCamera()->SetSize(100);
         view.GetCamera()->SetProjectionMode(Rendering::Settings::EProjectionMode::ORTHOGRAPHIC);
-        float pos=view.GetCamera()->GetFar()/2.0;
-		Maths::FVector3 normal(mPlane.normal.x, mPlane.normal.y, mPlane.normal.z); 
-		Maths::FVector3 up(mPlane.yAxis.x, mPlane.yAxis.y, mPlane.yAxis.z);
+        float pos = view.GetCamera()->GetFar() / 2.0;
+        Maths::FVector3 normal(mPlane.normal.x, mPlane.normal.y, mPlane.normal.z);
+        Maths::FVector3 up(mPlane.yAxis.x, mPlane.yAxis.y, mPlane.yAxis.z);
         Maths::FQuaternion quat = Maths::FQuaternion::LookAt(-normal, up);
-		view.GetCameraController().MoveToPose(Maths::FVector3(mPlane.origin.x, mPlane.origin.y, mPlane.origin.z) + normal * pos, quat);
+        view.GetCameraController().MoveToPose(Maths::FVector3(mPlane.origin.x, mPlane.origin.y, mPlane.origin.z) + normal * pos, quat);
         planeTransform = updateTransform();
     }
     SketcherPlane2D SketcherObj::getPlane()
@@ -229,7 +235,6 @@ namespace MOON {
         view.GetCameraController().EnableRotate(true);
         doneFaceShape = toShape();
         GetService(SketchToolbar).disableAllHandlers();
-        ViewTool::createTopoActor(doneFaceShape,"sketcher");
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
@@ -1129,9 +1134,9 @@ namespace MOON {
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         return onSketchPos;
     }
-    SketcherObj::CurveSegement SketcherObj::getCurveSegment(Part::Geometry* geo) 
+    SketcherObj::CurveSegment SketcherObj::getCurveSegment(Part::Geometry* geo) 
     {
-		CurveSegement seg;
+		CurveSegment seg;
 		CurveConvert::toVector2D(geo, 50, seg.point, seg.params);
         if (geo->isDerivedFrom<Part::GeomCurve>()) {
             if (geo->is<Part::GeomArcOfCircle>()) {

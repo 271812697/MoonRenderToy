@@ -10,18 +10,24 @@
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
 #include <Core/SceneSystem/Scene.h>
+#include "TopoShape.h"
 
-namespace Core::ECS {
+namespace MOON {
 
-	TopoActor::TopoActor(Core::SceneSystem::Scene* scene, const std::string&p_name , const std::string& p_tag, bool p_playing) : Actor(scene->GetAvailableID(), p_name, p_tag, p_playing)
+	TopoActor::TopoActor(const std::string&p_name , const std::string& p_tag, bool p_playing, bool addToTree) :
+		Actor(0, p_name, p_tag, p_playing )
 	{
+		
+		auto scene = GetService(Editor::Core::Context).sceneManager.GetCurrentScene();
 		m_scene = scene;
+		SetID(scene->GetAvailableID());
 		scene->AddActor(this);
 		Core::ECS::Actor& faceChild=scene->CreateActor("Face");
 		Core::ECS::Actor& edgeChild = scene->CreateActor("Edge");
 		faceChild.SetParent(*this);
 		edgeChild.SetParent(*this);
 		AddComponent<Core::ECS::Components::CTopoShape>();
+		topoShape = &GetComponent<Core::ECS::Components::CTopoShape>()->GetTopoShape();
 		faceChild.AddComponent<Core::ECS::Components::CModelRenderer>();
 		faceChild.AddComponent<Core::ECS::Components::CMaterialRenderer>();
 		faceChild.AddComponent<Core::ECS::Components::CBatchMeshTriangle>();
@@ -100,7 +106,10 @@ namespace Core::ECS {
 			}
 
 		}
-		GetViewerWidget.updateTreeView();
+		if (addToTree) {
+			GetViewerWidget.addActorToTreeView(this);
+		}
+
 	}
 
 	void TopoActor::ClearModel()
@@ -130,5 +139,13 @@ namespace Core::ECS {
 		if (m_scene) {
 			m_scene->RemoveActor(this);
 		}		
+	}
+	Part::TopoShape& TopoActor::GetTopoShape()
+	{
+		return *topoShape;
+	}
+	void TopoActor::setTopoShape(Part::TopoShape shape)
+	{
+		topoShape->setShape(shape);;
 	}
 }

@@ -1,6 +1,28 @@
 ﻿#include "editor/UI/TaskPanel/TaskViewWidget.h"
 #include "Core/Global/ServiceLocator.h"
+#include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
+#include "editor/UI/TaskPanel/SketchTaskDialog.h"
+#include "TopoShape.h"
+#include "feature/SketcherFeature.h"
+#include "feature/ExtrudeFeature.h"
+
+
 namespace MOON {
+    BaseTaskDialog* createFeatureDialog(Feature* feature) {
+        ExtrudeFeature* extrude=dynamic_cast<ExtrudeFeature*>(feature);
+        if (extrude) {
+            
+            ExtrudeTaskDialog* dialog = new ExtrudeTaskDialog(nullptr, extrude->addSubType == 0 ? ExtrudeType::Additive : ExtrudeType::Subtractive,feature);
+            return dialog;
+        }
+        SketcherFeature* sketcher = dynamic_cast<SketcherFeature*>(feature);
+        if (sketcher) {
+			SketchTaskDialog* dialog = new SketchTaskDialog(nullptr,sketcher);
+            return dialog;
+        }
+
+        return nullptr;
+    }
     TaskViewWidget::TaskViewWidget(QWidget* parent)
         : QWidget(parent)
     {
@@ -73,6 +95,14 @@ namespace MOON {
             m_currentTask->clickCancel();
         }
         clearTask();
+    }
+    void TaskViewWidget::onSelectedFeature(void* feature)
+    {
+		if (!hasTask())
+		{
+            
+            setTaskDialog(createFeatureDialog( static_cast<Feature*>(feature)));
+		}
     }
     void TaskViewWidget::clickOk()
     {

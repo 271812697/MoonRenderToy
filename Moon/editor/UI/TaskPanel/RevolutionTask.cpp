@@ -1,6 +1,5 @@
 ﻿#include <tracy/Tracy.hpp>
 #include "editor/UI/TaskPanel/RevolutionTask.h"
-#include "TaskBox.h"
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/EnumProperty.h"
 #include "Widgets/BoolProperty.h"
@@ -8,32 +7,13 @@
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "core/ViewTool.h"
-#include "core/log.h"
-#include "core/SelectionManager.h"
-#include "Interactive/Widgets/AxisTranslationWidget.h"
-#include "Interactive/Interactive/ExecuteCommand.h"
 #include "Interactive/Widgets/ArrowRotateWidget.h"
-#include "base/BoundBox.h"
-#include "Geometry.h"
 
-#include <BRepTools.hxx>
-#include <BRepAdaptor_Surface.hxx>
 #include <gp_Vec.hxx>
 #include <gp_Dir.hxx>
-#include <GeomAbs_Shape.hxx>
-#include <ShapeFix_ShapeTolerance.hxx>
-#include <BRepAlgo.hxx>
-#include <ShapeAnalysis_Surface.hxx>
-#include <BRepAdaptor_Surface.hxx>
-#include <BRepLProp_SLProps.hxx>
-#include <Precision.hxx>
-#include <BRepAdaptor_Surface.hxx>
+
 #include <BRepAdaptor_Curve.hxx>
-#include <Precision.hxx>
-#include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
-#include <GeomAPI_ProjectPointOnSurf.hxx>
-#include <BRepClass3d_SolidClassifier.hxx>
 #include <GProp_GProps.hxx>
 #include <BRepGProp.hxx>
 namespace MOON {
@@ -99,8 +79,6 @@ namespace MOON {
         void onSelectAny() {
         }
         ~Internal() {
-            SelectionManager::instance().RemoveObserver(selectEdgeObserver.tag);
-            delete selectEdgeObserver.command;
             delete mBehaviour;
         }
     private:
@@ -117,11 +95,10 @@ namespace MOON {
         int axisType = 0;
         float angle=90;
         bool  reverse = false;
-        ExecuteCommandPair selectEdgeObserver;
     };
 
-    RevolutionTask::RevolutionTask(RevolutionType type,QWidget* parent)
-        : ParamTaskDialog(parent),mInternal(new Internal(this))
+    RevolutionTask::RevolutionTask(RevolutionType type,QWidget* parent, Feature* feature )
+        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this))
     {       
         mInternal->mType = type;
         setGenerateShapeName("RevolutionShape");
@@ -141,7 +118,6 @@ namespace MOON {
         BoolProperty* reverse = new BoolProperty("Reverse", p);
         addParam(reverse);
         buildUi();
-        mInternal->selectEdgeObserver=SelectionManager::instance().AddObserver(SelectAny, this, &RevolutionTask::onSelectAny);
         initilized = true;
         previewShape();
     }
@@ -241,43 +217,32 @@ namespace MOON {
         getGenerateShape() = resShape;
         return true;
     }
-    void RevolutionTask::onSelectAny()
-    {
+    void RevolutionTask::onSelectEdge(const std::vector<Part::TopoShape>& edge)
+    {  
         ZoneScoped;
         if (mInternal->axisType == 2) {
-            CORE_INFO("Any thing selected");
-            std::vector<Part::TopoShape>shapes;
-            ViewTool::getSelectedTopoShape(shapes);
-            if (shapes.size() > 0) {
-                if (shapes[1].getShape().ShapeType() == TopAbs_ShapeEnum::TopAbs_EDGE) {
-                    TopoDS_Edge refEdge = TopoDS::Edge(shapes[1].getShape());
-                    BRepAdaptor_Curve adapt(refEdge);
-                    gp_Pnt b;
-                    gp_Dir d;
-                    GeomAbs_CurveType curveType = adapt.GetType();
-                    if (curveType == GeomAbs_Line) {
-                        b = adapt.Line().Location();
-                        d = adapt.Line().Direction();
-                    }
-                    else if (curveType == GeomAbs_Circle) {
-                        b = adapt.Circle().Location();
-                        d = adapt.Circle().Axis().Direction();
-                    }
-                    else
-                    {
-                        double middle = adapt.FirstParameter() + adapt.LastParameter();
-                        gp_Vec v;
-                        adapt.D1(middle, b, v);
-                        d = v;
-                    }
-                    mInternal->setAxis(gp_Ax1 (b, d));
-                    previewShape();
-                }
-                else
-                {
-                    CORE_ERROR("not a edge to use as axis");
-                }
+            TopoDS_Edge refEdge = TopoDS::Edge(edge[1].getShape());
+            BRepAdaptor_Curve adapt(refEdge);
+            gp_Pnt b;
+            gp_Dir d;
+            GeomAbs_CurveType curveType = adapt.GetType();
+            if (curveType == GeomAbs_Line) {
+                b = adapt.Line().Location();
+                d = adapt.Line().Direction();
             }
+            else if (curveType == GeomAbs_Circle) {
+                b = adapt.Circle().Location();
+                d = adapt.Circle().Axis().Direction();
+            }
+            else
+            {
+                double middle = adapt.FirstParameter() + adapt.LastParameter();
+                gp_Vec v;
+                adapt.D1(middle, b, v);
+                d = v;
+            }
+            mInternal->setAxis(gp_Ax1(b, d));
+            previewShape();
         }
     }
     void RevolutionTask::onAngleChange()

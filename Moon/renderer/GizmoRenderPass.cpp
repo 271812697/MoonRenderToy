@@ -54,11 +54,11 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");
 			mWidgets["PrimitiveCone"] = new MOON::PrimitiveCone("PrimitiveCone");
-			mWidgets["GizmoSketchPlane"] = new MOON::SketchPlane("GizmoSketchPlane");
+			
 			mWidgets["DrawSketchHandlerRotate"] = new MOON::DrawSketchHandlerRotate("DrawSketchHandlerRotate");
 			mWidgets["DrawSketchHandlerTrimming"] = new MOON::DrawSketchHandlerTrimming("DrawSketchHandlerTrimming");
 			mWidgets["DrawSketchHandlerTrimming"]->setActive(false);
-			mWidgets["GizmoSketchPlane"]->setActive(false);
+			
 			mWidgets["ClipPlane"]->setActive(false);
 			mWidgets["SplitScreen"]->setActive(false);
 		}

@@ -1,5 +1,6 @@
 ﻿#include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "feature/SketcherFeature.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "Core/Global/ServiceLocator.h"
 #include <memory>
@@ -17,7 +18,7 @@ namespace MOON {
 		friend SketcherObjManager;
 		SketcherObjManager* self = nullptr;
 		SketcherObj* currentSketcherObj = nullptr;
-		std::vector<std::shared_ptr<SketcherObj>>sketchers;
+		std::vector<SketcherFeature*>sketchers;
 	};
 	SketcherObjManager& SketcherObjManager::instance() {
 		static SketcherObjManager sketcherManager;
@@ -27,16 +28,32 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
+	SketcherFeature* SketcherObjManager::CreateSketcherFeature()
+	{
+		SketcherFeature* ptr = new SketcherFeature("sketcher");
+		mInternal->sketchers.push_back(ptr);;
+		return ptr;
+	}
+	SketcherFeature* SketcherObjManager::GetCurrentActiveSketcherFeature()
+	{
+		if(mInternal->sketchers.size()>0)
+		return mInternal->sketchers.back();
+		return nullptr;
+	}
 	SketcherObj* SketcherObjManager::GetCurrentActiveSketcherObj()
 	{
-		return mInternal->currentSketcherObj;
+		auto feature = GetCurrentActiveSketcherFeature();
+		if (feature) {
+			return feature->getSketcherObj();
+		}
+		return nullptr;
 	}
 	void SketcherObjManager::setCurrentActiveSketcherObj(SketcherObj* obj)
 	{
 		auto& sketchers = mInternal->sketchers;
 		if (!obj) {
 			if (sketchers.size()) {
-				mInternal->currentSketcherObj = sketchers.back().get();
+				mInternal->currentSketcherObj = sketchers.back()->getSketcherObj();
 			}
 			else
 			{
@@ -47,7 +64,7 @@ namespace MOON {
 		{
 			
 			for (int i = 0;i < sketchers.size();i++) {
-				if (sketchers[i].get() == obj) {
+				if (sketchers[i]->getSketcherObj() == obj) {
 					mInternal->currentSketcherObj = obj;
 					break;
 				}
@@ -66,28 +83,17 @@ namespace MOON {
 	std::vector<SketcherObj*> SketcherObjManager::GetAllSketcherObjs()
 	{
 		std::vector<SketcherObj*>res;
-		for (int i = 0;i < mInternal->sketchers.size();i++) {
-			res.push_back(mInternal->sketchers[i].get());
-		}
+		//for (int i = 0;i < mInternal->sketchers.size();i++) {
+		//	res.push_back(mInternal->sketchers[i].get());
+		//}
 		return res;
 	}
-	void SketcherObjManager::Push()
-	{
-		CreateSketcherObj();
-		setCurrentActiveSketcherObj(nullptr);
-		GetTreeView.updateTreeViewSketcherRoot();
-	}
-	void SketcherObjManager::Pop()
-	{
-		mInternal->sketchers.pop_back();
-		setCurrentActiveSketcherObj(nullptr);
-		GetTreeView.updateTreeViewSketcherRoot();
-	}
+
 	SketcherObj* SketcherObjManager::CreateSketcherObj()
 	{
-		std::shared_ptr<SketcherObj>ptr = std::make_shared<SketcherObj>();
-		mInternal->sketchers.push_back(ptr);
-		return ptr.get();
+		SketcherFeature* ptr = new SketcherFeature("sketcher");
+		mInternal->sketchers.push_back(ptr);;
+		return ptr->getSketcherObj();
 	}
 	SketcherObjManager::SketcherObjManager():mInternal(new SketcherObjManagerInternal(this))
 	{

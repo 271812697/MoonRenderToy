@@ -6,7 +6,7 @@ namespace MOON {
 		Q_OBJECT
 	public:
 		ParseScene(QObject* parent);
-		void ParsePathTraceScene(const std::string& path);
+		void ParseFile(const std::string& path);
 	public slots:
 		void updateTreeViewSceneRoot();
 		void updateTreeViewPathRoot();

@@ -2,82 +2,108 @@
 #include "TaskBox.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "feature/SketcherFeature.h"
+#include "core/ViewTool.h"
+#include "Interactive/Widgets/SketchPlane.h"
 #include <QLabel>
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QGroupBox>
+#include <gp_Pln.hxx>
 namespace MOON {
-    SketchTaskDialog::SketchTaskDialog(QWidget* parent)
-        : BaseTaskDialog(parent)
+
+    class SketchTaskDialog::Internal
+    {
+    public:
+        Internal(SketchTaskDialog* s) :self(s) {
+            auto f = self->getFeature();
+            if (f) {
+                //
+				feature = dynamic_cast<SketcherFeature*>(f);
+                feature->getSketcherObj()->setActive(true);
+                feature->getSketcherObj()->fitCamera();
+            }
+            else
+            {
+                feature = SketcherObjManager::instance().CreateSketcherFeature();
+                //feature->getSketcherObj()->setActive(true);
+				self->setFeature(feature);
+                Feature* baseFeature = nullptr;
+                std::vector<std::string>subValues;
+                ViewTool::getSelectedBasedFeature(baseFeature, subValues);
+                if (baseFeature) {
+                    feature->setBaseFeature(baseFeature);
+                    feature->setSubValues(subValues);
+                    Part::TopoShape face = feature->getBaseTopoFaceShape();
+                    gp_Pln pln;
+                    face.findPlane(pln);
+                    SketcherPlane2D plane;
+                    plane.normal = Base::Vector3d{ pln.Axis().Direction().X(),pln.Axis().Direction().Y(),pln.Axis().Direction().Z() };
+                    plane.origin = Base::Vector3d{ pln.Location().X(),pln.Location().Y(),pln.Location().Z() };
+                    plane.xAxis = Base::Vector3d{ pln.XAxis().Direction().X(),pln.XAxis().Direction().Y(),pln.XAxis().Direction().Z() };
+                    plane.yAxis = Base::Vector3d{ pln.YAxis().Direction().X(),pln.YAxis().Direction().Y(),pln.YAxis().Direction().Z() };
+                    feature->getSketcherObj()->setPlane(plane);
+                }
+                else
+                {
+					behaviour = new SketchPlane("selectPlane");
+                    behaviour->AddObserver(SketchPlaneEvent::SelectPlane,self, &SketchTaskDialog::onSelectPlane);
+                }
+            }
+        }
+        ~Internal() {
+            feature->getSketcherObj()->setActive(false);
+            if (behaviour) {
+                delete behaviour;
+            }
+        }
+    private:
+        friend SketchTaskDialog;
+        SketchTaskDialog* self = nullptr;
+        SketcherFeature* feature = nullptr;
+        SketchPlane* behaviour = nullptr;
+    };
+
+    SketchTaskDialog::SketchTaskDialog(QWidget* parent, Feature* feature)
+        : ParamTaskDialog(parent),mInternal(new Internal(this)),ShapeHelper(feature)
     {
         buildUi();
-        SketcherObjManager::instance().Push();
-        sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
     }
 
     SketchTaskDialog::~SketchTaskDialog()
     {
-        
+        delete mInternal;
     }
 
-    void SketchTaskDialog::buildUi()
+    QVariant SketchTaskDialog::getParamValue(const QString& propertyName)
     {
-        // ========== 1. 草图常规设置 ==========
-        TaskBox* boxGeneral = new TaskBox(QStringLiteral("草图常规设置"));
-        QWidget* wGeneral = new QWidget;
-        QVBoxLayout* layGeneral = new QVBoxLayout(wGeneral);
-        layGeneral->setSpacing(6);
-
-        layGeneral->addWidget(new QLabel(QStringLiteral("草图名称")));
-        QLineEdit* edtName = new QLineEdit(QStringLiteral("Sketch001"));
-        layGeneral->addWidget(edtName);
-
-        layGeneral->addWidget(new QLabel(QStringLiteral("附着基准平面")));
-        QComboBox* cboDatum = new QComboBox;
-        cboDatum->addItems({
-            QStringLiteral("XY平面"),
-            QStringLiteral("XZ平面"),
-            QStringLiteral("YZ平面"),
-            QStringLiteral("自定义基准面")
-            });
-        layGeneral->addWidget(cboDatum);
-        boxGeneral->setContent(wGeneral);
-        mainLayout()->addWidget(boxGeneral);
-
-        // ========== 2. 自动约束设置 ==========
-        TaskBox* boxConstraint = new TaskBox(QStringLiteral("自动约束设置"));
-        QWidget* wConstraint = new QWidget;
-        QVBoxLayout* layConstraint = new QVBoxLayout(wConstraint);
-
-        layConstraint->addWidget(new QCheckBox(QStringLiteral("启用自动约束")));
-        layConstraint->addWidget(new QCheckBox(QStringLiteral("重合约束")));
-        layConstraint->addWidget(new QCheckBox(QStringLiteral("水平/竖直约束")));
-        layConstraint->addWidget(new QCheckBox(QStringLiteral("平行/垂直约束")));
-        boxConstraint->setContent(wConstraint);
-        mainLayout()->addWidget(boxConstraint);
-
-        // ========== 3. 显示选项 ==========
-        TaskBox* boxView = new TaskBox(QStringLiteral("显示选项"));
-        QWidget* wView = new QWidget;
-        QVBoxLayout* layView = new QVBoxLayout(wView);
-
-        layView->addWidget(new QCheckBox(QStringLiteral("显示网格")));
-        layView->addWidget(new QCheckBox(QStringLiteral("显示坐标轴")));
-        layView->addWidget(new QCheckBox(QStringLiteral("隐藏背景零件")));
-        boxView->setContent(wView);
-        mainLayout()->addWidget(boxView);
-        mainLayout()->addStretch();
+        return QVariant();
     }
+
+    void SketchTaskDialog::setParamValue(const QString& propertyName, const QVariant& value)
+    {
+
+    }
+
+    
     void SketchTaskDialog::clickOk()
     {
-        sketchObj->makeDone();
+        mInternal->feature->getSketcherObj()->makeDone();
+        mInternal->feature->execute();
+        mInternal->feature->makeDone();
     }
     void SketchTaskDialog::clickApply()
     {
     }
     void SketchTaskDialog::clickCancel()
     {
+    }
+    void SketchTaskDialog::onSelectPlane()
+    {
+        if (mInternal->behaviour) {
+            mInternal->feature->getSketcherObj()->setPlane(mInternal->behaviour->getSelectPlane());
+        }
     }
 }

@@ -88,6 +88,7 @@ namespace MOON {
             }
         }
         mainLayout()->addStretch();
+        hasInitUi = true;
     }
     void ParamTaskDialog::clickOk()
     {

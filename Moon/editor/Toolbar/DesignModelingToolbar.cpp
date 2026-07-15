@@ -15,7 +15,8 @@ namespace MOON {
 
 	BaseTaskDialog* createTaskDialog(const std::string name) {
 		if (name == "Pad") {
-			return new ExtrudeTaskDialog();
+			ExtrudeTaskDialog* extrude= new ExtrudeTaskDialog(nullptr, ExtrudeType::Additive);
+			return extrude;
 		}
 		if (name == "Thickness") {
 			return new ThicknessTaskDialog();
