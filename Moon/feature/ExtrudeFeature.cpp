@@ -35,7 +35,7 @@
 #include <BRepClass3d_SolidClassifier.hxx>
 
 namespace MOON {
-    ExtrudeFeature::ExtrudeFeature(const std::string& p_name, int addsubType) :Feature(p_name,addsubType==0? "Pad": "Pocket")
+    ExtrudeFeature::ExtrudeFeature(const std::string& p_name, int addSubType) :Feature(p_name,addSubType==0? "Pad": "Pocket")
 	{
         this->addSubType = addSubType;
 	}
