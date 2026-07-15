@@ -46,11 +46,12 @@ namespace MOON {
             if (f) {
                 //执行已有的feature 参数
                 feature = dynamic_cast<ExtrudeFeature*>(f);
+                faceShape = feature->getVerifyTopoFace();
             }
             else
             {
                 //新建一个feature 
-                ExtrudeFeature* extrudeFeature = new ExtrudeFeature("extrude");
+                ExtrudeFeature* extrudeFeature = new ExtrudeFeature("extrude",extrudeType== ExtrudeType::Additive?0:1);
                 feature = extrudeFeature;
                 self->setFeature(extrudeFeature);
                 Feature* baseFeature = nullptr;
@@ -58,7 +59,6 @@ namespace MOON {
                 ViewTool::getSelectedBasedFeature(baseFeature,subValues);
 
                 if (baseFeature) {
-                    
                     extrudeFeature->setBaseFeature(baseFeature);
                     extrudeFeature->setSubValues(subValues);
                     faceShape = extrudeFeature->getVerifyTopoFace();
@@ -72,43 +72,42 @@ namespace MOON {
                         faceShape = sketchFeature->getSketcherObj()->getDoneFaceShape();
                     }
                 }
-
-                if (!faceShape.isNull())
-                {
-                    gp_Pln pln;
-                    if (!faceShape.findPlane(pln)) {
-                        TopoDS_Face face = TopoDS::Face(faceShape.getShape());
-                        BRepAdaptor_Surface adapt(face);
-                        double u = adapt.FirstUParameter()
-                            + (adapt.LastUParameter() - adapt.FirstUParameter()) / 2.;
-                        double v = adapt.FirstVParameter()
-                            + (adapt.LastVParameter() - adapt.FirstVParameter()) / 2.;
-                        BRepLProp_SLProps prop(adapt, u, v, 2, Precision::Confusion());
-                        if (prop.IsNormalDefined()) {
-                            gp_Pnt pnt;
-                            gp_Vec vec;
-                            // handles the orientation state of the shape
-                            BRepGProp_Face(face).Normal(u, v, pnt, vec);
-                            pln = gp_Pln(pnt, gp_Dir(vec));
-                        }
+            }
+            if (!faceShape.isNull())
+            {
+                gp_Pln pln;
+                if (!faceShape.findPlane(pln)) {
+                    TopoDS_Face face = TopoDS::Face(faceShape.getShape());
+                    BRepAdaptor_Surface adapt(face);
+                    double u = adapt.FirstUParameter()
+                        + (adapt.LastUParameter() - adapt.FirstUParameter()) / 2.;
+                    double v = adapt.FirstVParameter()
+                        + (adapt.LastVParameter() - adapt.FirstVParameter()) / 2.;
+                    BRepLProp_SLProps prop(adapt, u, v, 2, Precision::Confusion());
+                    if (prop.IsNormalDefined()) {
+                        gp_Pnt pnt;
+                        gp_Vec vec;
+                        // handles the orientation state of the shape
+                        BRepGProp_Face(face).Normal(u, v, pnt, vec);
+                        pln = gp_Pln(pnt, gp_Dir(vec));
                     }
-                    behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
-                    if (extrudeType == ExtrudeType::Additive)
-                    {
-                        behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
-                        extrudeFeature->finalDir = { pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
-                    }
-                    else
-                    {
-                        behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
-                        extrudeFeature->finalDir = { -pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z() };
-                    }
-                    behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
-                    behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
-                    behaviour->setLength(10);
-                    behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
-                    behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
                 }
+                behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
+                if (extrudeType == ExtrudeType::Additive)
+                {
+                    behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                    feature->finalDir = { pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
+                }
+                else
+                {
+                    behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
+                    feature->finalDir = { -pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z() };
+                }
+                behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
+                behaviour->setLength(10);
+                behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
+                behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
             }
         }
       
@@ -138,8 +137,8 @@ namespace MOON {
         QRadioButton* rbToFace = nullptr;
         QCheckBox* cbMergeEdges = nullptr;
     };
-    ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type)
-        : ParamTaskDialog(parent), mInternal(new Internal(this,type))
+    ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type, Feature* feature)
+        : ParamTaskDialog(parent), mInternal(new Internal(this,type)),ShapeHelper(feature)
     {
         if (type == ExtrudeType::Subtractive) {
             mPreviewOption.isTransparent = false;
@@ -166,7 +165,6 @@ namespace MOON {
         auto extrudeAngle2 = new SliderFloatProperty("Angle 2", p);
         extrudeAngle2->setMinMax(-90, 90);
         addParam(extrudeAngle2);
-        
         buildUi();
         previewShape();
     }
@@ -224,7 +222,7 @@ namespace MOON {
             updatePreView = true;
         }
 
-        if (updatePreView) {
+        if (updatePreView&& hasInitUi) {
             previewShape();
         }
     }
@@ -392,10 +390,7 @@ namespace MOON {
     {
         mInternal->behaviour->setLength(mInternal->spinLenForward->value());
     }
-    void ExtrudeTaskDialog::setUp()
-    {
-        mInternal->setUp();
-    }
+ 
     void ExtrudeTaskDialog::onSelectFace(const std::vector<Part::TopoShape>& face)
     {
         ExtrudeFeature* extrudeFeature=

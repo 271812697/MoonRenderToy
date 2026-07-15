@@ -34,7 +34,7 @@ namespace MOON {
 		SketcherFeature* self = nullptr;
 		std::shared_ptr<SketcherObj> sketcher;
 	};
-    SketcherFeature::SketcherFeature(const std::string& p_name) :Feature(p_name),mInternal(new Internal(this))
+    SketcherFeature::SketcherFeature(const std::string& p_name) :Feature(p_name, "Sketcher"),mInternal(new Internal(this))
 	{
 	}
 	SketcherObj* SketcherFeature::getSketcherObj()

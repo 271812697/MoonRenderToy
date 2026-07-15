@@ -97,8 +97,8 @@ namespace MOON {
         bool  reverse = false;
     };
 
-    RevolutionTask::RevolutionTask(RevolutionType type,QWidget* parent)
-        : ParamTaskDialog(parent),mInternal(new Internal(this))
+    RevolutionTask::RevolutionTask(RevolutionType type,QWidget* parent, Feature* feature )
+        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this))
     {       
         mInternal->mType = type;
         setGenerateShapeName("RevolutionShape");

@@ -146,8 +146,8 @@ namespace MOON {
         std::vector<Part::TopoShape>shapes;
     };
 
-    FilletTask::FilletTask(QWidget* parent)
-        : ParamTaskDialog(parent),mInternal(new Internal(this))
+    FilletTask::FilletTask(QWidget* parent, Feature* feature )
+        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this))
     {       
         setGenerateShapeName("FilletShape");
         mPreviewOption.isTransparent = false;

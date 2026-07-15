@@ -365,9 +365,11 @@ namespace MOON
                 //actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
                 //geoComp.setGeometry(geo.get());
                 //geoComp.discretizationShape(plane);
-                SketcherObjManager::instance().GetCurrentActiveSketcherObj()->addGeometry((geo));;
+                SketcherObj* sketchobj=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+                if (sketchobj) {
+                    sketchobj->addGeometry((geo));
+                }
             }
-
         }
         bool finish()
         {

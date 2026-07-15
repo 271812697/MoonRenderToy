@@ -8,7 +8,7 @@ namespace MOON {
 	class Feature;
 	class ShapeHelper {
 	public:
-		ShapeHelper();
+		ShapeHelper(Feature* feature);
 		virtual ~ShapeHelper();
 		virtual bool generateShape();
 		void previewShape();

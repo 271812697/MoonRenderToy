@@ -20,6 +20,7 @@ namespace MOON {
 		virtual void onLeftMouseReleased()override;
 		virtual void onKeyPress(const std::string& key)override;
 		void setPlane(const SketcherPlane2D&plane);
+		void fitCamera();
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;

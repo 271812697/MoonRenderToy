@@ -31,7 +31,7 @@
 #include <BRepClass3d_SolidClassifier.hxx>
 
 namespace MOON {
-	ThicknessFeature::ThicknessFeature(const std::string& p_name) :Feature(p_name)
+	ThicknessFeature::ThicknessFeature(const std::string& p_name) :Feature(p_name, "Thickness")
 	{
 	}
 	ThicknessFeature::~ThicknessFeature()

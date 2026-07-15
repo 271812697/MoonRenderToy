@@ -24,5 +24,6 @@ namespace MOON {
 	protected:	
 		std::vector<std::pair<CollapsibleGroupBoxWidget*, PropertyComponent*>>m_comps;
 		std::unordered_map<QString, int>groupToIndex;
+		bool hasInitUi = false;
 	};
 }

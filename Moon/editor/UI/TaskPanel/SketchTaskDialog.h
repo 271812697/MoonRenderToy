@@ -1,20 +1,21 @@
 ﻿#pragma once
-#include "editor/UI/TaskPanel/BaseTaskDialog.h"
-#include <QVBoxLayout>
+#include "editor/UI/TaskPanel/ParamTaskDialog.h"
+#include "editor/UI/TaskPanel/ShapeHelper.h"
 namespace MOON {
-	class SketcherObj;
-	class SketchTaskDialog : public BaseTaskDialog
+	class SketchTaskDialog : public ParamTaskDialog, public ShapeHelper
 	{
 		Q_OBJECT
 	public:
-		explicit SketchTaskDialog(QWidget* parent = nullptr);
+		explicit SketchTaskDialog(QWidget* parent = nullptr,Feature* feature =nullptr);
 		~SketchTaskDialog();
-		virtual void buildUi() override;
+		virtual QVariant getParamValue(const QString& propertyName)override;
+		virtual void setParamValue(const QString& propertyName, const QVariant& value)override;
 		virtual void clickOk() override;
 		virtual void clickApply() override;
 		virtual void clickCancel() override;
+		void onSelectPlane();
 	private:
-		// 这里可以添加一些成员变量，比如输入框、按钮等
-		SketcherObj* sketchObj = nullptr;
+		class Internal;
+		Internal* mInternal = nullptr;
 	};
 }

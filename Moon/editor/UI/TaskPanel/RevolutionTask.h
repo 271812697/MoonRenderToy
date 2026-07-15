@@ -10,7 +10,7 @@ namespace MOON {
 	class RevolutionTask : public ParamTaskDialog, public ShapeHelper
 	{
 	public:
-		explicit RevolutionTask(RevolutionType type ,QWidget* parent = nullptr);
+		explicit RevolutionTask(RevolutionType type ,QWidget* parent = nullptr, Feature* feature = nullptr);
 		~RevolutionTask();
 		virtual QVariant getParamValue(const QString& propertyName);
 		virtual void setParamValue(const QString& propertyName, const QVariant& value);

@@ -35,6 +35,13 @@ namespace MOON {
 			mIconMaps["PostProcessStack"] = QIcon(":/widgets/icons/awesomeface.png");
 			mIconMaps[""]= QIcon(":/widgets/icons/Model.png");
 			mIconMaps["Sketcher"] = QIcon(":/widgets/icons/Sketcher_NewSketch.svg");
+
+			mIconMaps["Pad"] = QIcon(":/widgets/icons/partdesign/PartDesign_Pad.svg");
+			mIconMaps["Revolve"] = QIcon(":/widgets/icons/partdesign/PartDesign_Revolution.svg");
+			mIconMaps["Thickness"] = QIcon(":/widgets/icons/partdesign/PartDesign_Thickness.svg");
+			mIconMaps["Fillet"] = QIcon(":/widgets/icons/partdesign/PartDesign_Fillet.svg");
+			mIconMaps["Pocket"] = QIcon(":/widgets/icons/partdesign/PartDesign_Pocket.svg");
+			mIconMaps["Groove"] = QIcon(":/widgets/icons/partdesign/PartDesign_Groove.svg");
 		}
 	private:
 		friend EntityTreeModel;
@@ -408,25 +415,11 @@ namespace MOON {
 					}
 				}
 			}
-			//else
-			//{
-			//	SketcherObj* sketcher = static_cast<SketcherObj*>(item->data(Qt::UserRole + 1).value<void*>());
-			//	if (sketcher) {
-			//		Qt::CheckState currentState = item->checkState();
-			//		if (currentState == Qt::Checked) {
-			//			sketcher->setActive(true);
-			//		}
-			//		else if (currentState == Qt::Unchecked) {
-			//			sketcher->setActive(false);
-			//		}
-			//	}
-			//}
 		}
 		isProcessing = false;
 	}
 	void EntityTreeModel::processBatchAdd(const std::vector<Core::ECS::Actor*>& actors)
 	{
-
 		for (int i = 0; i < actors.size(); i++) {
 			if (!actors[i]->HasParent()) {
 				std::vector <QStandardItem*> root = { mInternal->sceneRoot };
@@ -439,24 +432,19 @@ namespace MOON {
 					auto name = cur->GetName();
 					auto tag = cur->GetTag();
 					temp->setText(QString::fromStdString(name));
-
 					if (mInternal->mIconMaps.find(tag) != mInternal->mIconMaps.end()) {
 						temp->setIcon(mInternal->mIconMaps[tag]);
 					}
-
-					//temp->setIcon(mInternal->mIconMaps["eyeOpen"]);
 					temp->setCheckable(true);
 					temp->setCheckState(cur->IsActive()?Qt::Checked:Qt::Unchecked);
 					temp->setData(QVariant::fromValue((void*)cur), Qt::UserRole);
 					parent->appendRow( temp);
 
 					QModelIndex index = this->indexFromItem(temp);
-					//mInternal->mTreeView->expand(index);
 					std::vector<Core::ECS::Actor*>& childList = cur->GetChildren();
 					if (childList.size() > 0) {
 						for (int i = childList.size() - 1;i >= 0;i--) {
 							s.push_back(childList[i]);
-							//CORE_INFO("{} -> {}", (void*)child, child->GetName());
 							root.push_back(temp);
 						}
 					}
@@ -464,7 +452,6 @@ namespace MOON {
 				}
 			}
 		}
-
 		// 统计
 		m_stats.totalCreated += actors.size();
 		m_stats.poolHitCount += actors.size();

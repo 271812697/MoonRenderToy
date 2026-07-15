@@ -28,13 +28,25 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
+	SketcherFeature* SketcherObjManager::CreateSketcherFeature()
+	{
+		SketcherFeature* ptr = new SketcherFeature("sketcher");
+		mInternal->sketchers.push_back(ptr);;
+		return ptr;
+	}
 	SketcherFeature* SketcherObjManager::GetCurrentActiveSketcherFeature()
 	{
+		if(mInternal->sketchers.size()>0)
 		return mInternal->sketchers.back();
+		return nullptr;
 	}
 	SketcherObj* SketcherObjManager::GetCurrentActiveSketcherObj()
 	{
-		return mInternal->currentSketcherObj;
+		auto feature = GetCurrentActiveSketcherFeature();
+		if (feature) {
+			return feature->getSketcherObj();
+		}
+		return nullptr;
 	}
 	void SketcherObjManager::setCurrentActiveSketcherObj(SketcherObj* obj)
 	{
@@ -76,18 +88,7 @@ namespace MOON {
 		//}
 		return res;
 	}
-	void SketcherObjManager::Push()
-	{
-		CreateSketcherObj();
-		setCurrentActiveSketcherObj(nullptr);
-		GetTreeView.updateTreeViewSketcherRoot();
-	}
-	void SketcherObjManager::Pop()
-	{
-		mInternal->sketchers.pop_back();
-		setCurrentActiveSketcherObj(nullptr);
-		GetTreeView.updateTreeViewSketcherRoot();
-	}
+
 	SketcherObj* SketcherObjManager::CreateSketcherObj()
 	{
 		SketcherFeature* ptr = new SketcherFeature("sketcher");

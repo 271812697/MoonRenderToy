@@ -4,7 +4,7 @@
 namespace MOON { 
 	class ExtrudeFeature :public Feature {
 	public:
-		ExtrudeFeature(const std::string& p_name);
+		ExtrudeFeature(const std::string& p_name,int addsubType);
 		virtual ~ExtrudeFeature() override;
 		virtual bool execute();
 		

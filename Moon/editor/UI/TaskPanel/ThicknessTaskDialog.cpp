@@ -36,7 +36,7 @@ namespace MOON {
                 if (shapes[1].shapeType() == TopAbs_FACE) {
                     std::string subValue = "face_" + std::to_string( shapes[0].findShape(shapes[1].getShape())-1);
                   
-                    auto testfeature=new Feature("test");
+                    auto testfeature=new Feature("test","TopoShape");
                     testfeature->setTopoShape(shapes[0]);
                     //testfeature->addToTreeView();
 			        feature = new ThicknessFeature("Thickness");
@@ -143,8 +143,8 @@ namespace MOON {
         std::vector<Part::TopoShape>shapes;
     };
 
-    ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent)
-        : ParamTaskDialog(parent),mInternal(new Internal(this))
+    ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent, Feature* feature)
+        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this))
     {
         setGenerateShapeName("ThickShape");
         PropertyComponent* p=addGroupParam("Thickness");

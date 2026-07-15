@@ -98,9 +98,10 @@ namespace MOON {
 		std::string name="GenerateShape";
 		ExecuteCommandPair selectObserver;
 	};
-	ShapeHelper::ShapeHelper():mInternal(new Internal(this))
+	ShapeHelper::ShapeHelper(Feature* feature):mInternal(new Internal(this))
 	{
 		mInternal->selectObserver = SelectionManager::instance().AddObserver(SelectAny, this, &ShapeHelper::onSelectAny);
+		mInternal->feature = feature;
 	}
 	ShapeHelper::~ShapeHelper()
 	{
@@ -243,7 +244,7 @@ namespace MOON {
 		ZoneScoped;
 		auto feature = getFeature();
 		if (feature) {
-			feature->addToTreeView();
+			feature->makeDone();
 			auto& view = GetService(Editor::Panels::SceneView);
 			auto scene = view.GetScene();	
 			for (auto& ac : scene->FindActorsByTag("TopoShape")) {

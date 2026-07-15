@@ -11,7 +11,7 @@ namespace MOON {
 	{
 		Q_OBJECT
 	public:
-		explicit ExtrudeTaskDialog(QWidget* parent = nullptr, ExtrudeType type=Additive);
+		explicit ExtrudeTaskDialog(QWidget* parent = nullptr, ExtrudeType type=Additive, Feature* feature=nullptr);
 		virtual ~ExtrudeTaskDialog()override;
 		
 		virtual QVariant getParamValue(const QString& propertyName)override;
@@ -23,7 +23,6 @@ namespace MOON {
 		void onValueChange();
 		void onAngleChange();
 		void onLengthChange();
-		void setUp();
 	private:
 		virtual void onSelectFace(const std::vector<Part::TopoShape>& face)override;
 	private:

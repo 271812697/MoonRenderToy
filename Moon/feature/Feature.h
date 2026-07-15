@@ -4,7 +4,7 @@ namespace MOON {
 	
 	class Feature :public TopoActor {
 	public:
-		Feature(const std::string& p_name);
+		Feature(const std::string& p_name,const std::string& tag);
 		virtual ~Feature() override;
 		virtual bool execute();
 		void setBaseFeature(Feature* f) {
@@ -17,12 +17,12 @@ namespace MOON {
 		Part::TopoShape& getBaseTopoShape();
 		Part::TopoShape getVerifyTopoFace();
 	    Part::TopoShape& getPreviewShape();
-		void addToTreeView();
+		void makeDone();
 	protected:
-		
 		Feature* m_baseFeature = nullptr;
 		std::vector<std::string> subValues;
 	private:
+		bool hasInTree = false;
 		class Internal;
 		Internal* mInternal = nullptr;
 
