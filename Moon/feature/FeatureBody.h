@@ -9,6 +9,7 @@ namespace MOON {
 		virtual ~FeatureBody() ;
 		void addFeature(Feature* feature);
 		bool removeFeature(Feature* feature);
+		void populateFeature(Feature* feature);
 		Feature* getLastBaseFeature(Feature* feature);
 		bool setBaseFeatureFor(Feature* feature);
 	private:

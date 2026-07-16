@@ -160,6 +160,12 @@ namespace MOON {
         view.GetCameraController().MoveToPose(Maths::FVector3(mPlane.origin.x, mPlane.origin.y, mPlane.origin.z) + normal * pos, quat);
         planeTransform = updateTransform();
     }
+    void SketcherObj::beginEdit()
+    {
+       isInEdit = true;
+       setActive(true);
+       fitCamera();
+    }
     SketcherPlane2D SketcherObj::getPlane()
     {
         return mPlane;

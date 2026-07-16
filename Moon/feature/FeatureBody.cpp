@@ -1,6 +1,7 @@
 ﻿
 #include "feature/FeatureBody.h"
 #include "SketcherFeature.h"
+#include "feature/FeatureBaseProfile.h"
 
 namespace MOON {
 	class FeatureBody::Internal {
@@ -51,6 +52,32 @@ namespace MOON {
 			}
 		}
 		return false;
+	}
+
+	void FeatureBody::populateFeature(Feature* feature)
+	{
+		if (feature) {
+			std::vector<Feature*>stack;
+			stack.push_back(feature);
+			while (!stack.empty()) {
+				Feature* curFeature = stack.back(); stack.pop_back();
+				for (int i = 0; i < mInternal->featureList.size(); i++) {
+					if (mInternal->featureList[i]->getBaseFeature()== curFeature) {
+						mInternal->featureList[i]->execute();
+						mInternal->featureList[i]->makeDone();
+					}
+					else {
+						FeatureBaseProfile*  profile=dynamic_cast<FeatureBaseProfile*>(mInternal->featureList[i]);
+						if (profile) {
+							if (profile->getProfile() == curFeature) {
+								mInternal->featureList[i]->execute();
+								mInternal->featureList[i]->makeDone();
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	Feature* FeatureBody::getLastBaseFeature(Feature* target)

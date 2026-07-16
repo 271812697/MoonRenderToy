@@ -18,6 +18,7 @@ namespace MOON {
 		friend SketcherObjManager;
 		SketcherObjManager* self = nullptr;
 		SketcherObj* currentSketcherObj = nullptr;
+		SketcherFeature* currentSketcher = nullptr;
 		std::vector<SketcherFeature*>sketchers;
 	};
 	SketcherObjManager& SketcherObjManager::instance() {
@@ -36,6 +37,10 @@ namespace MOON {
 	}
 	SketcherFeature* SketcherObjManager::GetCurrentActiveSketcherFeature()
 	{
+		return mInternal->currentSketcher;
+	}
+	SketcherFeature* SketcherObjManager::GetLastSketcherFeature()
+	{
 		if(mInternal->sketchers.size()>0)
 		return mInternal->sketchers.back();
 		return nullptr;
@@ -48,37 +53,13 @@ namespace MOON {
 		}
 		return nullptr;
 	}
-	void SketcherObjManager::setCurrentActiveSketcherObj(SketcherObj* obj)
+	void SketcherObjManager::setCurrentActiveSketcherFeature(SketcherFeature* obj)
 	{
-		auto& sketchers = mInternal->sketchers;
-		if (!obj) {
-			if (sketchers.size()) {
-				mInternal->currentSketcherObj = sketchers.back()->getSketcherObj();
-			}
-			else
-			{
-				mInternal->currentSketcherObj = nullptr;
+		for (int i = 0; i < mInternal->sketchers.size(); i++) {
+			if (mInternal->sketchers[i] == obj) {
+				mInternal->currentSketcher = obj;
 			}
 		}
-		else
-		{
-			
-			for (int i = 0;i < sketchers.size();i++) {
-				if (sketchers[i]->getSketcherObj() == obj) {
-					mInternal->currentSketcherObj = obj;
-					break;
-				}
-			}
-		}
-		//for (int i = 0;i < sketchers.size();i++) {
-		//	if (sketchers[i].get() != mInternal->currentSketcherObj) {
-		//		sketchers[i]->setActive(false);
-		//	}
-		//	else
-		//	{
-		//		sketchers[i]->setActive(true);
-		//	}
-		//}
 	}
 	std::vector<SketcherObj*> SketcherObjManager::GetAllSketcherObjs()
 	{

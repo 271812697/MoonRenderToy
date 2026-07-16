@@ -56,7 +56,7 @@ namespace MOON {
                 else
                 {
                     // 1. 获取当前激活的草图,
-                    auto* sketchFeature = SketcherObjManager::instance().GetCurrentActiveSketcherFeature();
+                    auto* sketchFeature = SketcherObjManager::instance().GetLastSketcherFeature();
                     if (sketchFeature) {
                         //2.设置基于最后一个feature
                         FeatureBody::instance().setBaseFeatureFor(extrudeFeature);

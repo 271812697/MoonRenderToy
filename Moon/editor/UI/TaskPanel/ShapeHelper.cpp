@@ -245,15 +245,16 @@ namespace MOON {
 		ZoneScoped;
 		auto feature = getFeature();
 		if (feature) {
-			feature->makeDone();
+			
 			auto& view = GetService(Editor::Panels::SceneView);
 			auto scene = view.GetScene();	
-			for (auto& ac : scene->FindActorsByTag("TopoShape")) {
-				if (dynamic_cast<Feature*>(&ac.get())) {
-					ac.get().SetActive(false);
-					GetViewerWidget.modifyActorInTreeView(&ac.get());
+			for (auto& ac : scene->GetActors()) {
+				if (dynamic_cast<Feature*>(ac)&&ac!=feature) {
+					ac->SetActive(false);
+					GetViewerWidget.modifyActorInTreeView(ac);
 				}
 			}
+			feature->makeDone();
 			auto preActor = scene->FindActorByName("TopoShapePreview");
 			if (preActor) {
 				GetViewerWidget.removeActorFromTreeView(preActor);
@@ -277,12 +278,6 @@ namespace MOON {
 				catch (Standard_Failure& err)
 				{
 					CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
-				}
-				for (auto& ac:scene->FindActorsByTag("TopoShape")) {
-					if (dynamic_cast<Feature*>(&ac.get())) {
-						ac.get().SetActive(false);
-						GetViewerWidget.modifyActorInTreeView(&ac.get());
-					}
 				}
 				auto topoActor = new TopoActor(mInternal->name, "TopoShape", false);
 				const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();

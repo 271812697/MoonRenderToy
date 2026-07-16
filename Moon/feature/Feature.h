@@ -13,7 +13,7 @@ namespace MOON {
 			subValues = values;
 		}
 		Feature* getBaseFeature() { return m_baseFeature; }
-		Part::TopoShape& getBaseTopoShape();
+		Part::TopoShape getBaseTopoShape();
 		Part::TopoShape getBaseTopoFaceShape();
 	    Part::TopoShape& getPreviewShape();
 		void makeDone();

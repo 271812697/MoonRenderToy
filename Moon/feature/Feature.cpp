@@ -34,7 +34,7 @@ namespace MOON {
 	{
 		return false;
 	}
-	Part::TopoShape& Feature::getBaseTopoShape()
+	Part::TopoShape Feature::getBaseTopoShape()
 	{
 		return m_baseFeature->GetTopoShape();
 	}
@@ -56,5 +56,6 @@ namespace MOON {
 		}
 		auto comp =GetComponent<Core::ECS::Components::CTopoShape>();
 		comp->discretizationShape();
+		FeatureBody::instance().populateFeature(this);
 	}
 }

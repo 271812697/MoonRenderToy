@@ -22,8 +22,8 @@ namespace MOON {
             if (f) {
                 //
 				feature = dynamic_cast<SketcherFeature*>(f);
-                feature->getSketcherObj()->setActive(true);
-                feature->getSketcherObj()->fitCamera();
+                feature->getSketcherObj()->beginEdit();
+
             }
             else
             {
@@ -52,6 +52,7 @@ namespace MOON {
                     behaviour->AddObserver(SketchPlaneEvent::SelectPlane,self, &SketchTaskDialog::onSelectPlane);
                 }
             }
+            SketcherObjManager::instance().setCurrentActiveSketcherFeature(feature);
         }
         ~Internal() {
             feature->getSketcherObj()->setActive(false);
