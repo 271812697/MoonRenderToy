@@ -4,6 +4,7 @@
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
 #include "Feature.h"
+#include "feature/FeatureBody.h"
 #include "SketcherFeature.h"
 #include "Sketcher/SketcherObj.h"
 #include "TopoShape.h"
@@ -22,10 +23,11 @@ namespace MOON {
 	};
 	Feature::Feature(const std::string& p_name,  const std::string& tag) :TopoActor( p_name, tag, true, false),mInternal(new Internal(this))
 	{
-
+		FeatureBody::instance().addFeature(this);
 	}
 	Feature::~Feature()
 	{
+		FeatureBody::instance().removeFeature(this);
 		delete mInternal;
 	}
 	bool Feature::execute()

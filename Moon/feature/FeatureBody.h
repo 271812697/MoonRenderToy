@@ -1,14 +1,16 @@
 ﻿#pragma once
-#include "core/component/TopoShapeActor.h"
+#include <string>
 namespace MOON { 
 	class Feature;
-	class FeatureBody :public TopoActor {
+	class FeatureBody  {
 	public:
 		FeatureBody(const std::string& p_name);
 		static FeatureBody& instance();
-		virtual ~FeatureBody() override;
+		virtual ~FeatureBody() ;
 		void addFeature(Feature* feature);
-		Feature* getLastBaseFeature();
+		bool removeFeature(Feature* feature);
+		Feature* getLastBaseFeature(Feature* feature);
+		bool setBaseFeatureFor(Feature* feature);
 	private:
 		class Internal;
 		Internal* mInternal = nullptr;

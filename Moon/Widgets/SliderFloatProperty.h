@@ -7,10 +7,12 @@ namespace MOON {
 		SliderFloatProperty(const QString& n, PropertyComponent* comp,float a,float b);
 		~SliderFloatProperty();
 		void setMinMax(float a,float b);
+		void setStep(float step);
 		virtual PropertyQtWidget* createEditorWidget(QWidget* parent = nullptr)override;
 	private:
 		float minA = -10.f;
 		float maxB = 10.0f;
+		float step = 0.02f;
 	};
 
 }

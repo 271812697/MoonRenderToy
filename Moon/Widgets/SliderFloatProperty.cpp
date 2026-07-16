@@ -22,6 +22,14 @@ namespace MOON {
 			widget->setMaxValue(b);
 		}
 	}
+	void SliderFloatProperty::setStep(float step)
+	{
+		if (mWidget) {
+			this->step = step;
+			auto widget = dynamic_cast<FloatSliderWidgetQt*>(mWidget);
+			widget->setIncrement(step);
+		}
+	}
 	PropertyQtWidget* SliderFloatProperty::createEditorWidget(QWidget* parent) {
 		if (mWidget == nullptr) {
 			auto widget = new FloatSliderWidgetQt(parent);
@@ -30,7 +38,7 @@ namespace MOON {
 			widget->setValue(owner->getPropertyValue(mName).toFloat());
 			widget->setMinValue(minA);
 			widget->setMaxValue(maxB);
-			widget->setIncrement(0.02f);
+			widget->setIncrement(step);
 			
 		}
 		return mWidget;
