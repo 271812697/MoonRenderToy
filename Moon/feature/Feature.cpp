@@ -44,6 +44,34 @@ namespace MOON {
 		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
 		return comp->GetTopoFace(std::stoi(idString));
 	}
+	std::vector<Part::TopoShape> Feature::getBaseTopoFaceShapes()
+	{
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		std::vector<Part::TopoShape>ret;
+		ret.reserve(subValues.size());
+		for (int i = 0;i < subValues.size();i++) {
+			std::string idString = subValues[i].substr(5);
+			ret.emplace_back(comp->GetTopoFace(std::stoi(idString)));
+		}
+		return ret;
+	}
+	Part::TopoShape Feature::getBaseTopoEdgeShape()
+	{
+		std::string idString = subValues[0].substr(5);
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		return comp->GetTopoEdge(std::stoi(idString));
+	}
+	std::vector<Part::TopoShape> Feature::getBaseTopoEdgeShapes()
+	{
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		std::vector<Part::TopoShape>ret;
+		ret.reserve(subValues.size());
+		for (int i = 0;i < subValues.size();i++) {
+			std::string idString = subValues[i].substr(5);
+			ret.emplace_back(comp->GetTopoEdge(std::stoi(idString)));
+		}
+		return ret;
+	}
 	Part::TopoShape& Feature::getPreviewShape()
 	{
 		return mInternal->previewShape;

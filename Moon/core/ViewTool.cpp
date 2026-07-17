@@ -52,11 +52,12 @@ namespace MOON {
 	}
 	bool ViewTool::getSelectedBasedFeature(Feature*&f,std::vector<std::string>&subValues)
 	{
+		//if use the method,we pretend that the selectids is from a Feature.
 		Core::ECS::Actor* actor = getLastestActorSelected();
 		if (!actor) {
 			return false;
 		}
-
+		std::vector<SelectID> selectIds = SelectionManager::instance().getSelect();
 		if (actor->HasParent()) {
 			auto parent = actor->GetParent();
 			if (parent->HasParent()) {
@@ -64,7 +65,16 @@ namespace MOON {
 				Feature* feature = dynamic_cast<Feature*>(grandParent);
 				if (feature) {
 					f = feature;
-					subValues = { actor->GetName() };
+					subValues.clear();
+					subValues.reserve(selectIds.size());
+					auto& view = GetService(Editor::Panels::SceneView);
+					auto scene = view.GetScene();
+					for (int i = 0;i < selectIds.size();i++) {
+						auto tempActor = scene->FindActorByID(selectIds[i]);
+						if (tempActor) {
+							subValues.emplace_back(tempActor->GetName());
+						}
+					}
 					return true;
 				}
 			}

@@ -53,6 +53,7 @@ namespace MOON {
 		);
 		
 		topo.setTransform(mm);
-		topoComp->discretizationShape();
+		topoActor->makeDone();
+		
 	}
 }

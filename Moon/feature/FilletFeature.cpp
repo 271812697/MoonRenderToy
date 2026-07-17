@@ -1,0 +1,72 @@
+﻿#include "core/component/TopoShapeActor.h"
+#include "renderer/SceneView.h"
+#include <Core/ResourceManagement/MaterialManager.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
+#include <Core/ECS/Components/CModelRenderer.h>
+#include "Core/ECS/Components/CBatchMeshTriangle.h"
+#include "Core/ECS/Components/CBatchMeshLine.h"
+#include "Core/ResourceManagement/ModelManager.h"
+#include "editor/View/sceneview/viewerwidget.h"
+#include "core/component/CTopoShape.h"
+#include <Core/Global/ServiceLocator.h>
+#include <Core/SceneSystem/Scene.h>
+#include "TopoShape.h"
+#include "FilletFeature.h"
+#include "core/log.h"
+#include <gp_Pln.hxx>
+#include <BRepTools.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <gp_Vec.hxx>
+#include <gp_Dir.hxx>
+#include <GeomAbs_Shape.hxx>
+#include <ShapeFix_ShapeTolerance.hxx>
+#include <BRepAlgo.hxx>
+#include <ShapeAnalysis_Surface.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <Precision.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <BRep_Tool.hxx>
+#include <TopoDS.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
+
+namespace MOON {
+	FilletFeature::FilletFeature(const std::string& p_name) :Feature(p_name, "Fillet")
+	{
+	}
+	FilletFeature::~FilletFeature()
+	{
+	}
+	bool FilletFeature::execute()
+	{
+        Part::TopoShape baseShape = getBaseTopoShape();
+        
+        std::vector<Part::TopoShape> baseEdge=getBaseTopoEdgeShapes();
+        std::vector<Part::TopoShape> edges =useAllEdges ? baseShape.getSubTopoShapes(TopAbs_EDGE) : baseEdge ;
+        try
+        {
+            Part::TopoShape resShape(0);
+            resShape.makeElementFillet(baseShape, edges, radius, radius);
+            TopTools_ListOfShape aLarg;
+            aLarg.Append(baseShape.getShape());
+            if (!BRepAlgo::IsValid(aLarg, baseShape.getShape(), Standard_False, Standard_False)) {
+                ShapeFix_ShapeTolerance aSFT;
+                aSFT.LimitTolerance(
+                    baseShape.getShape(),
+                    Precision::Confusion(),
+                    Precision::Confusion(),
+                    TopAbs_SHAPE
+                );
+            }
+            topoShape->setShape(resShape.getShape());
+            getPreviewShape() = baseShape.makeElementCut(resShape);
+            return true;
+        }
+        catch (Standard_Failure& e)
+        {
+            CORE_ERROR(e.GetMessageString());
+            return false;
+        }
+        return true;
+	}
+}

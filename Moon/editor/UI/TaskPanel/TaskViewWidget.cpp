@@ -3,10 +3,12 @@
 #include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
 #include "editor/UI/TaskPanel/SketchTaskDialog.h"
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
+#include "editor/UI/TaskPanel/FilletTask.h"
 #include "TopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
 #include "feature/ThicknessFeature.h"
+#include "feature/FilletFeature.h"
 
 
 namespace MOON {
@@ -27,6 +29,11 @@ namespace MOON {
         if (thickness) {
 			ThicknessTaskDialog* dialog = new ThicknessTaskDialog(nullptr, thickness);
 			return dialog;
+        }
+        FilletFeature* fillet = dynamic_cast<FilletFeature*>(feature);
+        if (fillet) {
+            FilletTask* dialog = new FilletTask(nullptr,fillet);
+            return dialog;
         }
 
         return nullptr;

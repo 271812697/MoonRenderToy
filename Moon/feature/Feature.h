@@ -15,6 +15,9 @@ namespace MOON {
 		Feature* getBaseFeature() { return m_baseFeature; }
 		Part::TopoShape getBaseTopoShape();
 		Part::TopoShape getBaseTopoFaceShape();
+		std::vector<Part::TopoShape> getBaseTopoFaceShapes();
+		Part::TopoShape getBaseTopoEdgeShape();
+		std::vector<Part::TopoShape> getBaseTopoEdgeShapes();
 	    Part::TopoShape& getPreviewShape();
 		void makeDone();
 	protected:
@@ -24,6 +27,5 @@ namespace MOON {
 		bool hasInTree = false;
 		class Internal;
 		Internal* mInternal = nullptr;
-
 	};
 }

@@ -22,8 +22,6 @@ namespace MOON {
 	void PrimitiveSphere::onUpdate()
 	{
 		renderer->sphereEdit(renderer->makeId("Sphere"), translation, radius);
-		
-
 	}
 
 	void PrimitiveSphere::createTopoShape()
@@ -49,7 +47,7 @@ namespace MOON {
 		);
 		
 		topo.setTransform(mm);
-		topoComp->discretizationShape();
+		topoActor->makeDone();
 	}
 
 }

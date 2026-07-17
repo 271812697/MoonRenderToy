@@ -47,7 +47,8 @@ namespace Core::ECS::Components
         std::vector<int>curTransparentChildMeshIndex;
         std::vector<std::pair<int, int>> curTransparentChildMesh;
         std::vector<std::pair<int, int>>curOpaqueChildMesh;
-        std::vector<Eigen::Vector3f> lineSeg;
+        std::vector<Eigen::Vector3f> hoverLineSeg;
+        std::vector<std::vector<Eigen::Vector3f>>selectLineSeg;
 	};
 	CTopoShape::CTopoShape(ECS::Actor& p_owner) : AComponent(p_owner),mInternal(new CTopoShapeInternal(this))
 	{
@@ -81,9 +82,12 @@ namespace Core::ECS::Components
 
 	void CTopoShape::OnUpdate(float p_deltaTime)
 	{
+        auto& instance=MOON::ImRenderer::instance();
         if (mInternal->hoverLine) {
-            auto& instance=MOON::ImRenderer::instance();
-            instance.drawLineList(mInternal->lineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
+            instance.drawLineList(mInternal->hoverLineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
+        }
+        for (int i = 0;i < mInternal->selectLineSeg.size();i++) {
+            instance.drawLineList(mInternal->selectLineSeg[i], 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             ZoneScoped;
@@ -519,15 +523,54 @@ namespace Core::ECS::Components
         }
     }
 
+    void CTopoShape::selectChildFaces(const std::vector<int>& childIds)
+    {
+        if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
+            auto& batchMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            std::vector<int>candidates;
+            candidates.reserve(childIds.size());
+            for (int i = 0;i < childIds.size();i++) {
+                candidates.emplace_back(mInternal->domainIndexToFaceChildIndex[childIds[i]]);
+            }
+            batchMesh.SetCandidatesIndex(candidates);
+            batchMesh.SetColor(mInternal->highOption.selectColor);
+        }
+        else if (mInternal->highOption.mode == HighLightOption::Mode::Transparent)
+        {
+            std::vector<int>candidates;
+            candidates.reserve(childIds.size());
+            for (int i = 0;i < childIds.size();i++) {
+                candidates.emplace_back(mInternal->domainIndexToFaceChildIndex[childIds[i]]);
+            }
+            setChildsMeshTransParent(candidates);
+        }
+    }
+
     void CTopoShape::hoverChildLine(int childId)
     {
         mInternal->hoverLine = true;
         auto& colorBar = *owner.GetChild("Edge")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
         auto vertexArray = colorBar.getLineSeg(childId);
-        mInternal->lineSeg.clear();
-        mInternal->lineSeg.reserve(vertexArray.size());
+        mInternal->hoverLineSeg.clear();
+        mInternal->hoverLineSeg.reserve(vertexArray.size());
         for (auto v : vertexArray) {
-            mInternal->lineSeg.push_back(Eigen::Vector3f(v.x, v.y, v.z));;
+            mInternal->hoverLineSeg.push_back(Eigen::Vector3f(v.x, v.y, v.z));;
+        }
+    }
+
+    void CTopoShape::selectChildLines(const std::vector<int>& childIds)
+    {
+        mInternal->selectLineSeg.clear();
+        auto& colorBar = *owner.GetChild("Edge")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
+        for (int i = 0;i < childIds.size();i++) {
+            auto vertexArray = colorBar.getLineSeg(childIds[i]);
+            mInternal->selectLineSeg.emplace_back();
+            auto& arr = mInternal->selectLineSeg.back();
+            arr.clear();
+            arr.reserve(vertexArray.size());
+            for (auto v : vertexArray) {
+                arr.push_back(Eigen::Vector3f(v.x, v.y, v.z));;
+            }
         }
     }
 
@@ -546,6 +589,11 @@ namespace Core::ECS::Components
     void CTopoShape::clearHoverLine()
     {
         mInternal->hoverLine = false;
+    }
+
+    void CTopoShape::clearSelectLines()
+    {
+        mInternal->selectLineSeg.clear();
     }
 
     void CTopoShape::discretizationFaceShape()

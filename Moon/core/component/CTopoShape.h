@@ -34,10 +34,12 @@ namespace Core::ECS::Components
 		Part::TopoShape GetTopoFace(int childFaceId);
 		Part::TopoShape GetTopoEdge(int childFaceId);
 		void hoverChild(int childId);
+		void selectChildFaces(const std::vector<int>&childIds);
 		void hoverChildLine(int childId);
-
+		void selectChildLines(const std::vector<int>& childIds);
 		void clearHover();
 		void clearHoverLine();
+		void clearSelectLines();
 		void discretizationFaceShape();
 		void discretizationEdgeShape();
 		void discretizationShape();
