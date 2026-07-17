@@ -2,23 +2,31 @@
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
 #include "editor/UI/TaskPanel/SketchTaskDialog.h"
+#include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "TopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
+#include "feature/ThicknessFeature.h"
 
 
 namespace MOON {
     BaseTaskDialog* createFeatureDialog(Feature* feature) {
         ExtrudeFeature* extrude=dynamic_cast<ExtrudeFeature*>(feature);
         if (extrude) {
-            
             ExtrudeTaskDialog* dialog = new ExtrudeTaskDialog(nullptr, extrude->addSubType == 0 ? ExtrudeType::Additive : ExtrudeType::Subtractive,feature);
             return dialog;
         }
+
         SketcherFeature* sketcher = dynamic_cast<SketcherFeature*>(feature);
         if (sketcher) {
 			SketchTaskDialog* dialog = new SketchTaskDialog(nullptr,sketcher);
             return dialog;
+        }
+
+		ThicknessFeature* thickness = dynamic_cast<ThicknessFeature*>(feature);
+        if (thickness) {
+			ThicknessTaskDialog* dialog = new ThicknessTaskDialog(nullptr, thickness);
+			return dialog;
         }
 
         return nullptr;

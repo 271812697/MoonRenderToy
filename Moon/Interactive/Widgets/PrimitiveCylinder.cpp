@@ -1,18 +1,15 @@
 ﻿#include "Interactive/Widgets/PrimitiveCylinder.h"
 #include "Interactive/Im3DRenderer.h"
-#include "Qtimgui/imgui/imgui.h"
 
 #include "Interactive/MathUtil/MathUtil.h"
-#include "renderer/SceneView.h"
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/ECS/Components/CMaterialRenderer.h>
+
 #include "core/component/CTopoShape.h"
 #include "core/component/TopoShapeActor.h"
+#include "feature/Feature.h"
 #include "TopoShape.h"
 
 
 #include <BRepPrimAPI_MakeCylinder.hxx>
-#include <Precision.hxx>
 
 namespace MOON {
 	
@@ -40,7 +37,7 @@ namespace MOON {
 		BRepPrimAPI_MakeCylinder mkCylinder(radiusTop, height);
 		TopoDS_Shape ResultShape = mkCylinder.Shape();
 	
-		auto topoActor = new TopoActor( "TopoShapeCylinder", "TopoShape", false);
+		auto topoActor = new Feature("CylinderFearture", "Cylinder");
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 

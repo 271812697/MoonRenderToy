@@ -8,6 +8,7 @@
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include "core/component/CTopoShape.h"
 #include "core/component/TopoShapeActor.h"
+#include "feature/Feature.h"
 #include "TopoShape.h"
 
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -27,7 +28,6 @@ namespace MOON {
 	void PrimitiveBox::onUpdate()
 	{
 		renderer->boxEdit(renderer->makeId("Box"), translation, rot, scale);
-
 	}
 
 	void PrimitiveBox::createTopoShape()
@@ -35,8 +35,8 @@ namespace MOON {
 		BRepPrimAPI_MakeBox mkBox(2*scale.x(), 2*scale.y(), 2*scale.z());
 	
 		TopoDS_Shape ResultShape = mkBox.Shape();
-	
-		auto topoActor = new TopoActor( "TopoShapeBox", "TopoShape", false);
+		
+		auto topoActor =new Feature("BoxFeature", "Box"); 
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 

@@ -32,7 +32,7 @@ namespace MOON {
 	}
 	bool Feature::execute()
 	{
-		return false;
+		return true;
 	}
 	Part::TopoShape Feature::getBaseTopoShape()
 	{
