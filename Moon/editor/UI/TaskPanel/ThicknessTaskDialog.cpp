@@ -212,10 +212,6 @@ namespace MOON {
             delete mInternal->feature;
         }
     }
-    bool ThicknessTaskDialog::generateShape()
-    {
-        return false;
-    }
     void ThicknessTaskDialog::onWidgetLengthInvoke() {
         mInternal->feature->thickNessValue = mInternal->axisBehaviour->getLength();
         mInternal->thickNessProp->updateWidgetValue(mInternal->feature->thickNessValue);

@@ -19,7 +19,6 @@ namespace MOON {
 		virtual void clickOk() override;
 		virtual void clickApply() override;
 		virtual void clickCancel() override;
-		virtual bool generateShape()override;
 	private:
 		virtual void onSelectFace(const std::vector<Part::TopoShape>& face)override;
 	private:

@@ -107,10 +107,6 @@ namespace MOON {
 	{
 		delete mInternal;
 	}
-	bool ShapeHelper::generateShape()
-	{
-		return false;
-	}
 	void ShapeHelper::previewShape()
 	{
 		ZoneScoped;
@@ -168,84 +164,12 @@ namespace MOON {
 				CORE_ERROR("Generate Shape failed");
 			}
 		}
-		else
-		{
-			if (generateShape()) {
-
-				Part::TopoShape shape(mInternal->m_previewShape);
-				try
-				{
-					mInternal->m_previewShape = shape.makeElementRefine();
-				}
-				catch (Standard_Failure& err)
-				{
-					CORE_ERROR("Refine generateShape failed:{}",err.GetMessageString());
-				}
-
-
-				if (mInternal->m_previewActor == nullptr) {
-					auto& view = GetService(Editor::Panels::SceneView);
-					auto scene = view.GetScene();
-					auto preActor = scene->FindActorByName("TopoShapePreview");
-					if (preActor) {
-						scene->RemoveActor(preActor);
-					}
-					mInternal->m_previewActor = new TopoActor("TopoShapePreview", "TopoShape", true);
-				}
-				const auto& topoComp = mInternal->m_previewActor->GetComponent<Core::ECS::Components::CTopoShape>();
-				Part::TopoShape& topo = topoComp->GetTopoShape();
-				topo.setShape(mInternal->m_previewShape);
-				topoComp->discretizationShape();
-				auto MatRender = mInternal->m_previewActor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
-				Core::Resources::Material* tempMat = MatRender->GetMaterialAtIndex(0);
-				/*
-						struct PreviewOption {
-				bool isTransparent = true;
-				float r=1.0f, g=1.0f, b=1.0f, a = 0.4f;
-				bool isBlend = true;
-				bool domainColor = true;
-			};
-				*/
-				tempMat->SetProperty("u_Albedo", Maths::FVector4(mPreviewOption.r, mPreviewOption.g, mPreviewOption.b, mPreviewOption.a));
-				if (mPreviewOption.isTransparent) {
-					tempMat->SetTransparent(true);
-					tempMat->SetDepthWriting(true);
-				}
-				else {
-					if (mPreviewOption.isBlend) {
-						tempMat->SetBlendable(true);
-						tempMat->SetDepthTest(false);
-						tempMat->SetDepthWriting(false);
-						tempMat->SetDrawOrder(10000);
-					}
-				}
-				if (!mPreviewOption.useDomainColor) {
-					tempMat->AddFeature("DISABLE_DOMAIN_COLOR");
-				}
-				tempMat->SetBackfaceCulling(false);
-				tempMat->SetFrontfaceCulling(false);
-				//tempMat->SetDepthWriting(true);
-
-				/*
-				tempMat->SetBlendable(true);
-				tempMat->SetDepthTest(false);
-				tempMat->SetDepthWriting(false);
-				tempMat->SetDrawOrder(10000);
-				*/
-			}
-			else
-			{
-				CORE_ERROR("Generate Shape failed");
-			}
-		}
-
 	}
 	void ShapeHelper::generateFinalShape()
 	{
 		ZoneScoped;
 		auto feature = getFeature();
 		if (feature) {
-			
 			auto& view = GetService(Editor::Panels::SceneView);
 			auto scene = view.GetScene();	
 			for (auto& ac : scene->GetActors()) {
@@ -255,36 +179,6 @@ namespace MOON {
 				}
 			}
 			feature->makeDone();
-			auto preActor = scene->FindActorByName("TopoShapePreview");
-			if (preActor) {
-				GetViewerWidget.removeActorFromTreeView(preActor);
-				scene->RemoveActor(preActor);
-				delete preActor;
-			}
-		}
-		else
-		{
-			if (mInternal->m_generateShape.isNull()) {
-				generateShape();
-			}
-			auto& view = GetService(Editor::Panels::SceneView);
-			auto scene = view.GetScene();
-			if (!mInternal->m_generateShape.isNull()) {
-				Part::TopoShape shape(mInternal->m_generateShape);
-				try
-				{
-					mInternal->m_generateShape = shape.makeElementRefine();
-				}
-				catch (Standard_Failure& err)
-				{
-					CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
-				}
-				auto topoActor = new TopoActor(mInternal->name, "TopoShape", false);
-				const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
-				Part::TopoShape& topo = topoComp->GetTopoShape();
-				topo.setShape(mInternal->m_generateShape);
-				topoComp->discretizationShape();
-			}
 			auto preActor = scene->FindActorByName("TopoShapePreview");
 			if (preActor) {
 				GetViewerWidget.removeActorFromTreeView(preActor);
@@ -321,10 +215,7 @@ namespace MOON {
 	{
 		return mInternal->m_previewShape;
 	}
-	Part::TopoShape& ShapeHelper::getGenerateShape()
-	{
-		return mInternal->m_generateShape;
-	}
+
 	void ShapeHelper::onSelectAny()
 	{
 		ZoneScoped;

@@ -213,42 +213,6 @@ namespace MOON {
             delete mInternal->feature;
         }
     }
-    bool RevolutionTask::generateShape()
-    {
-       /* 
-        ZoneScoped;
-        if (mInternal->faceShape.isNull()) {
-            return false;
-        }
-        gp_Ax1 raxis=mInternal->axis;
-        if (mInternal->reverse) {
-            raxis.Reverse();
-        }
-        float radAngle = mInternal->angle * 3.14159265358979323846f / 180.0f;
-        Part::TopoShape revolve;
-        {
-			ZoneScopedN("Revolve");
-            revolve= mInternal->faceShape.makeElementRevolve(raxis, radAngle, "Part::FaceMakerCheese");
-            getPreviewShape() = revolve;
-        }
-      
-        Part::TopoShape resShape;
-        if (!mInternal->baseShape.isNull()) {
-            ZoneScopedN("makeBoolen");
-            if (mInternal->mType == RevolutionType::ReAdditive) {
-                resShape = mInternal->baseShape.makeElementFuse(revolve);
-            }
-            else if (mInternal->mType == RevolutionType::ReSubtractive) {
-                resShape = mInternal->baseShape.makeElementCut(revolve);
-            }
-        }
-        else
-        {
-            resShape = revolve;
-        }
-        getGenerateShape() = resShape;*/
-        return true;
-    }
     void RevolutionTask::onSelectEdge(const std::vector<Part::TopoShape>& edge)
     {  
         ZoneScoped;

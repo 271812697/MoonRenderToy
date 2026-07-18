@@ -178,10 +178,6 @@ namespace MOON {
             delete mInternal->feature;
         }
     }
-    bool FilletTask::generateShape()
-    {
-        return false;
-    }
     void FilletTask::onWidgetLengthInvoke1()
     {        
         mInternal->feature->radius= mInternal->axisBehaviour1->getLength();

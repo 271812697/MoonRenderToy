@@ -10,7 +10,7 @@ namespace MOON {
 	public:
 		ShapeHelper(Feature* feature);
 		virtual ~ShapeHelper();
-		virtual bool generateShape();
+		
 		void previewShape();
 		void generateFinalShape();
 		void clearPreviewShape();
@@ -19,7 +19,7 @@ namespace MOON {
 		void setFeatureSubValues(const std::vector<std::string>& subValues);
 		//void 
 		Part::TopoShape& getPreviewShape();
-		Part::TopoShape& getGenerateShape();
+		
 	protected:
 		void onSelectAny();
 		virtual void onSelectEdge(const std::vector<Part::TopoShape>& edge);

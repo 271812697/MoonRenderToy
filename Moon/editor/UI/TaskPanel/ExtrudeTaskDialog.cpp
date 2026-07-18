@@ -240,11 +240,6 @@ namespace MOON {
     {
         delete mInternal;
     }
-
-    bool ExtrudeTaskDialog::generateShape()
-    {
-        return false;
-    }
     void ExtrudeTaskDialog::clickOk()
     {
         generateFinalShape();
