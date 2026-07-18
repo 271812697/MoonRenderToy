@@ -4,11 +4,13 @@
 #include "editor/UI/TaskPanel/SketchTaskDialog.h"
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "editor/UI/TaskPanel/FilletTask.h"
+#include "editor/UI/TaskPanel/RevolutionTask.h"
 #include "TopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
 #include "feature/ThicknessFeature.h"
 #include "feature/FilletFeature.h"
+#include "feature/RevolveFeature.h"
 
 
 namespace MOON {
@@ -35,7 +37,11 @@ namespace MOON {
             FilletTask* dialog = new FilletTask(nullptr,fillet);
             return dialog;
         }
-
+        RevolveFeature* revolve = dynamic_cast<RevolveFeature*>(feature);
+        if (revolve) {
+            RevolutionTask* dialog = new RevolutionTask(revolve->addSubType==0? RevolutionType::ReAdditive: RevolutionType::ReSubtractive,nullptr,revolve);
+            return dialog;
+        }
         return nullptr;
     }
     TaskViewWidget::TaskViewWidget(QWidget* parent)

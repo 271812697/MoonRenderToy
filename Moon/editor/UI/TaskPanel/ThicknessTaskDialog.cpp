@@ -207,7 +207,6 @@ namespace MOON {
     void ThicknessTaskDialog::clickCancel()
     {
         clearPreviewShape();
-
         if (mInternal->isCreatedFeature) {
             mInternal->feature->RemoveFromScene();
             delete mInternal->feature;

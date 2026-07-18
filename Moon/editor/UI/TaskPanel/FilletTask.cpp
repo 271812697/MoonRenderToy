@@ -180,36 +180,6 @@ namespace MOON {
     }
     bool FilletTask::generateShape()
     {
-        //if (mInternal->shapes.size() > 0) {
-        //   
-        //    std::vector<Part::TopoShape> edges=mInternal->feature->useAllEdges ? mInternal->shapes[0].getSubTopoShapes(TopAbs_EDGE) : std::vector<Part::TopoShape>{ mInternal->shapes[1].getShape() };
-        //    try
-        //    {
-        //        Part::TopoShape resShape(0);
-        //        resShape.makeElementFillet(mInternal->shapes[0],edges,mInternal->feature->radius, mInternal->feature->radius);
-        //        TopTools_ListOfShape aLarg;
-        //        aLarg.Append(mInternal->shapes[0].getShape());
-        //        if (!BRepAlgo::IsValid(aLarg, mInternal->shapes[0].getShape(), Standard_False, Standard_False)) {
-        //            ShapeFix_ShapeTolerance aSFT;
-        //            aSFT.LimitTolerance(
-        //                mInternal->shapes[0].getShape(),
-        //                Precision::Confusion(),
-        //                Precision::Confusion(),
-        //                TopAbs_SHAPE
-        //            );
-        //        }
-        //        getGenerateShape() = resShape;
-        //        getPreviewShape() = mInternal->shapes[0].makeElementCut(resShape);
-        //        return true;
-        //    }
-        //    catch (Standard_Failure& e)
-        //    {
-        //        CORE_ERROR(e.GetMessageString());
-        //        return false;
-        //    }
-        //    return true;
-        //
-        //}
         return false;
     }
     void FilletTask::onWidgetLengthInvoke1()
