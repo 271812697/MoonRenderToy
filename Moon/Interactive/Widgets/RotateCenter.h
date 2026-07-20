@@ -14,5 +14,7 @@ namespace MOON
 		virtual void onRightMousePressed()override;
 		virtual void onRightMouseReleased()override;
 		virtual void onMouseMove()override;
+		virtual void onKeyPress(const std::string& key)override;
+		virtual void onKeyRelease(const std::string& key)override;
 	};
 }

@@ -200,6 +200,7 @@ namespace MOON {
 
 	void ViewerWidget::mousePressEvent(QMouseEvent* e)
 	{
+		
 	}
 
 	void ViewerWidget::mouseMoveEvent(QMouseEvent* event)
@@ -267,7 +268,7 @@ namespace MOON {
 		if (actor != nullptr) {
 			
 			mInternal->mSceneView->SelectActor(*actor);
-			GetSelection.addSelect({ actor->GetID() });
+			GetSelection.select({ actor->GetID() });
 		}
 	}
 }

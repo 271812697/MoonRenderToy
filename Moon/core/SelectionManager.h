@@ -27,17 +27,23 @@ namespace MOON
 		SelectAny,
 		None
 	};
+	enum SelectMode
+	{
+		OverrideSelect = 0,
+		AddSelect
+	};
 	class SelectionManager:public EventObject
 	{
 	public:
 		static SelectionManager& instance();
 		void setPreselect(SelectID id);
-		void addSelect(const std::vector<SelectID>& selectIdLists);
-		void setSelect(const std::vector<SelectID>& selectIdLists);
+		
+		void select(const std::vector<SelectID>& selectIdLists);
 		void clearSelect();
 		void clearPreselect();
 		SelectID getPreselect();
 		std::vector<SelectID> getSelect();
+		void setSelectMode(SelectMode mode);
 		~SelectionManager();
 	private:
 		SelectionManager();

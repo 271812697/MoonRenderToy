@@ -12,6 +12,9 @@ namespace MOON {
 		void setProfile(SketcherFeature* f) {
 			mProfile = f;
 		}
+		SketcherFeature* getProfile() {
+			return mProfile;
+		}
 	
 	protected:
 		SketcherFeature* mProfile = nullptr;

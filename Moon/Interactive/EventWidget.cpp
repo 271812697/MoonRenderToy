@@ -19,15 +19,15 @@ namespace MOON {
 		m_sceneView = &GetService(Editor::Panels::SceneView);
 
 		// Define widget events
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::NoModifier, 0,
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonPressEvent, GizmoEvent::AnyModifier, 0,
 			0, 0, WidgetEvent::Select, this, EventWidget::LeftMousePressed);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, GizmoEvent::NoModifier, 0,
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::LeftButtonReleaseEvent, GizmoEvent::AnyModifier, 0,
 			0, 0, WidgetEvent::Select3D, this, EventWidget::LeftMouseReleased);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonReleaseEvent, GizmoEvent::NoModifier, 0,
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonReleaseEvent, GizmoEvent::AnyModifier, 0,
 			0, 0, WidgetEvent::Completed, this, EventWidget::RightMouseReleased);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonPressEvent, GizmoEvent::NoModifier, 0,
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::RightButtonPressEvent, GizmoEvent::AnyModifier, 0,
 			0, 0, WidgetEvent::EndSelect, this, EventWidget::RightMousePressed);
-		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MouseMoveEvent, GizmoEvent::NoModifier, 0,
+		this->CallbackMapper->SetCallbackMethod(ExecuteCommand::MouseMoveEvent, GizmoEvent::AnyModifier, 0,
 			0, 0, WidgetEvent::Move3D, this, EventWidget::MouseMove);
 
 		this->KeyEventCallbackCommand = CallbackCommand::New();

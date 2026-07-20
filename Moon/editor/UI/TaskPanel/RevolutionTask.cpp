@@ -7,6 +7,9 @@
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "core/ViewTool.h"
+#include "feature/SketcherFeature.h"
+#include "feature/RevolveFeature.h"
+#include "feature/FeatureBody.h"
 #include "Interactive/Widgets/ArrowRotateWidget.h"
 
 #include <gp_Vec.hxx>
@@ -19,45 +22,66 @@
 namespace MOON {
     class RevolutionTask::Internal {
     public:
-        Internal(RevolutionTask*s):self(s){
-            std::vector<Part::TopoShape>shapes;
-            ViewTool::getSelectedTopoShape(shapes);
-            if (shapes.size() > 0) {
-                faceShape = shapes[1];
-                baseShape = shapes[0];
+        Internal(RevolutionTask*s, RevolutionType type)
+            :self(s),mType(type)
+        {
+            auto f=self->getFeature();
+            if (f) {
+                feature = dynamic_cast<RevolveFeature*>(f);
+                //faceShape = feature->getProfileFace();
             }
             else
-            {
-                // 1. 获取当前激活的草图
-                SketcherObj* sketchObj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-                if (sketchObj) {
-                    faceShape = sketchObj->getDoneFaceShape();
-                    baseShape = sketchObj->getBasedTopoShape();
+            {  
+                Part::TopoShape faceShape;
+                isCreatedFeature = true;
+                feature = new RevolveFeature("Revolve",mType== RevolutionType::ReAdditive?0:1);
+                self->setFeature(feature);
+                Feature* baseFeature = nullptr;
+                std::vector<std::string>subValues;
+                ViewTool::getSelectedBasedFeature(baseFeature, subValues);
+                if (baseFeature) {
+                    feature->setBaseFeature(baseFeature);
+                    feature->setSubValues(subValues);
+                    faceShape = feature->getProfileFace();
                 }
-            }
-            mBehaviour = new ArrowRotateWidget("rotate");
-            mBehaviour->setImmediateInvoke(false);
-            if (!faceShape.isNull()) {
+                else
+                {
+                    // 1. 获取当前激活的草图,
+                    auto* sketchFeature = SketcherObjManager::instance().GetLastSketcherFeature();
+                    if (sketchFeature) {
+                        //2.设置基于最后一个feature
+                        FeatureBody::instance().setBaseFeatureFor(feature);
+                        feature->setProfile(sketchFeature);
+                        faceShape = sketchFeature->getSketcherObj()->getDoneFaceShape();
+                    }
+                }
                 Part::TopoShape tempShape = faceShape.makeElementFace(nullptr, "Part::FaceMakerCheese");
                 GProp_GProps props;
                 BRepGProp::SurfaceProperties(tempShape.getSubTopoShape(TopAbs_FACE, 1).getShape(), props);
-              
                 gp_Pnt cog = props.CentreOfMass();
-                mBehaviour->setUpOriginPos(cog.X(),cog.Y(),cog.Z()); 
+                feature->origin[0] = cog.X();
+                feature->origin[1] = cog.Y();
+                feature->origin[2] = cog.Z();
+            }
+            if (feature) {  
+                mBehaviour = new ArrowRotateWidget("rotate");
+                mBehaviour->setUpOriginPos(feature->origin[0], feature->origin[1], feature->origin[2]);
+                mBehaviour->setAngle(feature->angle);
+                mBehaviour->setImmediateInvoke(false);
                 mBehaviour->AddObserver(ArrowRotateEvent::AngleChange, self, &RevolutionTask::onAngleChange);
             }
         }
         void setAxis(const gp_Ax1& ax) {
-            axis = ax;
-            gp_Ax1 tempAxis = axis;
-            if (reverse) {
+            feature->axis = ax;
+            gp_Ax1 tempAxis = feature->axis;
+            if (feature->reverse) {
                 tempAxis.Reverse();
             }
             mBehaviour->setUpRotateAxis(
                 tempAxis.Direction().X(), tempAxis.Direction().Y(), tempAxis.Direction().Z());
             mBehaviour->setUpRotateCenter(ax.Location().X(),
                 tempAxis.Location().Y(), tempAxis.Location().Z());
-            mBehaviour->setAngle(angle);
+            mBehaviour->setAngle(feature->angle);
 
         }
         bool setSketcherAxis() {
@@ -66,7 +90,7 @@ namespace MOON {
             if (sketchObj) {
                 Base::Vector3d origin = sketchObj->getPlaneOrigin();
                 Base::Vector3d saxis = sketchObj->getPlaneXAxis();
-                if (axisType == 1) {
+                if (feature->axisType == 1) {
                     saxis = sketchObj->getPlaneYAxis();
                 }
                 gp_Pnt b(origin.x, origin.y, origin.z);;
@@ -79,7 +103,9 @@ namespace MOON {
         void onSelectAny() {
         }
         ~Internal() {
-            delete mBehaviour;
+            if (mBehaviour) {
+                delete mBehaviour;
+            }
         }
     private:
         ArrowRotateWidget* mBehaviour = nullptr;
@@ -87,18 +113,14 @@ namespace MOON {
         friend RevolutionTask;
         RevolutionTask* self = nullptr;
         RevolutionType mType;
-        Part::TopoShape baseShape;
-        Part::TopoShape faceShape;
-
        
-        gp_Ax1 axis;
-        int axisType = 0;
-        float angle=90;
-        bool  reverse = false;
+        RevolveFeature* feature=nullptr;
+        bool isCreatedFeature = false;
+
     };
 
     RevolutionTask::RevolutionTask(RevolutionType type,QWidget* parent, Feature* feature )
-        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this))
+        : ParamTaskDialog(parent),ShapeHelper(feature), mInternal(new Internal(this,type))
     {       
         mInternal->mType = type;
         setGenerateShapeName("RevolutionShape");
@@ -130,7 +152,7 @@ namespace MOON {
     QVariant RevolutionTask::getParamValue(const QString& propertyName)
     {
         if (propertyName == "Revolve:Angle") {
-            return QVariant::fromValue(mInternal->angle);
+            return QVariant::fromValue(mInternal->feature->angle);
         }
         else if (propertyName == "Revolve:Axis") {
             QList<QString>list = {"Sketch X", "Sketch Y" ,"Select Edge"  };
@@ -138,7 +160,7 @@ namespace MOON {
         }
        
         else if (propertyName == "Revolve:Reverse") {
-            return QVariant::fromValue(mInternal->reverse);
+            return QVariant::fromValue(mInternal->feature->reverse);
         }
         return QVariant();
     }
@@ -148,21 +170,26 @@ namespace MOON {
         ZoneScoped;
         bool updatePreView = false;
         if (propertyName == "Revolve:Angle") {
-            mInternal->angle = value.toFloat();
-            mInternal->mBehaviour->setAngle(mInternal->angle);
+            mInternal->feature->angle = value.toFloat();
+            mInternal->mBehaviour->setAngle(mInternal->feature->angle);
             updatePreView = true;
         }
         else if (propertyName == "Revolve:Axis") {
-            mInternal->axisType = value.value<int>();
-            if (mInternal->axisType != 2) {
+            mInternal->feature->axisType = value.value<int>();
+            if (mInternal->feature->axisType != 2) {
                 if (mInternal->setSketcherAxis()) {
                     updatePreView = true;
                 }
             }
+            else
+            {
+                mInternal->setAxis(mInternal->feature->axis);
+                updatePreView = true;
+            }
         }
         else if (propertyName == "Revolve:Reverse") {
-            mInternal->reverse = value.toBool();
-			mInternal->setAxis(mInternal->axis);
+            mInternal->feature->reverse = value.toBool();
+			mInternal->setAxis(mInternal->feature->axis);
             updatePreView = true;
         }
         if (updatePreView&&initilized) {
@@ -181,46 +208,15 @@ namespace MOON {
     void RevolutionTask::clickCancel()
     {
         clearPreviewShape();
-    }
-    bool RevolutionTask::generateShape()
-    {
-        ZoneScoped;
-        if (mInternal->faceShape.isNull()) {
-            return false;
+        if (mInternal->isCreatedFeature) {
+            mInternal->feature->RemoveFromScene();
+            delete mInternal->feature;
         }
-        gp_Ax1 raxis=mInternal->axis;
-        if (mInternal->reverse) {
-            raxis.Reverse();
-        }
-        float radAngle = mInternal->angle * 3.14159265358979323846f / 180.0f;
-        Part::TopoShape revolve;
-        {
-			ZoneScopedN("Revolve");
-            revolve= mInternal->faceShape.makeElementRevolve(raxis, radAngle, "Part::FaceMakerCheese");
-            getPreviewShape() = revolve;
-        }
-      
-        Part::TopoShape resShape;
-        if (!mInternal->baseShape.isNull()) {
-            ZoneScopedN("makeBoolen");
-            if (mInternal->mType == RevolutionType::ReAdditive) {
-                resShape = mInternal->baseShape.makeElementFuse(revolve);
-            }
-            else if (mInternal->mType == RevolutionType::ReSubtractive) {
-                resShape = mInternal->baseShape.makeElementCut(revolve);
-            }
-        }
-        else
-        {
-            resShape = revolve;
-        }
-        getGenerateShape() = resShape;
-        return true;
     }
     void RevolutionTask::onSelectEdge(const std::vector<Part::TopoShape>& edge)
     {  
         ZoneScoped;
-        if (mInternal->axisType == 2) {
+        if (mInternal->feature->axisType == 2) {
             TopoDS_Edge refEdge = TopoDS::Edge(edge[1].getShape());
             BRepAdaptor_Curve adapt(refEdge);
             gp_Pnt b;
@@ -248,7 +244,7 @@ namespace MOON {
     void RevolutionTask::onAngleChange()
     {
         ZoneScoped;
-        mInternal->angle= mInternal->mBehaviour->getAngle();
-        mInternal->angleProp->updateWidgetValue(mInternal->angle);
+        mInternal->feature->angle= mInternal->mBehaviour->getAngle();
+        mInternal->angleProp->updateWidgetValue(mInternal->feature->angle);
     }
 }

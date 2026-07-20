@@ -1,5 +1,4 @@
 ﻿#include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
-#include "TaskBox.h"
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/EnumProperty.h"
 #include "Widgets/BoolProperty.h"
@@ -8,124 +7,85 @@
 #include "core/log.h"
 #include "Interactive/Widgets/AxisTranslationWidget.h"
 #include "feature/ThicknessFeature.h"
-#include "Geometry.h"
+#include "App/GizmoHelper.h"
 #include "base/BoundBox.h"
-#include <gp_Pln.hxx>
-#include <BRepTools.hxx>
-#include <BRepAdaptor_Surface.hxx>
-#include <gp_Vec.hxx>
-#include <gp_Dir.hxx>
 #include <GeomAbs_Shape.hxx>
-#include <ShapeFix_ShapeTolerance.hxx>
-#include <BRepAlgo.hxx>
-#include <ShapeAnalysis_Surface.hxx>
-#include <BRepLProp_SLProps.hxx>
-#include <Precision.hxx>
-#include <BRepAdaptor_Curve.hxx>
 #include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
-#include <GeomAPI_ProjectPointOnSurf.hxx>
-#include <BRepClass3d_SolidClassifier.hxx>
+#include <TopExp_Explorer.hxx>
 namespace MOON {
-
+    std::vector<Part::TopoShape> getContinuousEdges(const Part::TopoShape& shape,const Part::TopoShape& face) {
+        std::vector<Part::TopoShape> ret;
+        auto addEdge = [&](const TopoDS_Shape& subShape) {
+            auto faces = shape.findAncestorsShapes(subShape, TopAbs_FACE);
+            if (faces.size() != 2) {
+                CORE_WARN(": skip edge ");
+                return;
+            }
+            const TopoDS_Shape& face1 = faces.front();
+            const TopoDS_Shape& face2 = faces.back();
+            GeomAbs_Shape cont
+                = BRep_Tool::Continuity(TopoDS::Edge(subShape), TopoDS::Face(face1), TopoDS::Face(face2));
+            if (cont != GeomAbs_C0) {
+                CORE_WARN( ": skip edge that is not C0 continuous");
+                return;
+            }
+            ret.push_back(subShape);
+        };
+        for (TopExp_Explorer exp(face.getShape(), TopAbs_EDGE); exp.More(); exp.Next()) {
+            addEdge(exp.Current());
+        }
+        return ret;
+    }
     class ThicknessTaskDialog::Internal {
     public:
         Internal(ThicknessTaskDialog*s):self(s){
-            ViewTool::getSelectedTopoShape(shapes);
-            if (shapes.size() > 0) {
-                if (shapes[1].shapeType() == TopAbs_FACE) {
-                    std::string subValue = "face_" + std::to_string( shapes[0].findShape(shapes[1].getShape())-1);
-                  
-                    auto testfeature=new Feature("test","TopoShape");
-                    testfeature->setTopoShape(shapes[0]);
-                    //testfeature->addToTreeView();
-			        feature = new ThicknessFeature("Thickness");
-			        feature->setBaseFeature(testfeature);
-                    feature->setSubValues({ subValue });
-                    self->setFeature(feature);
-                    axisBehaviour = new AxisTranslationWidget("thickness");
-                    double boxLen = shapes[1].getBoundBoxOptimal().CalcDiagonalLength();
-                    float len = boxLen * 0.01;;
+            auto f = self->getFeature();
+			if (f) {
+				feature = dynamic_cast<ThicknessFeature*>(f);
+            }
+            else
+            {
+                Feature* baseFeature = nullptr;
+                std::vector<std::string>subValues;
+                ViewTool::getSelectedBasedFeature(baseFeature, subValues);
+                if (baseFeature) {
+					isCreatedFeature = true;
+					feature = new ThicknessFeature("Thickness");
+					feature->setBaseFeature(baseFeature);
+					feature->setSubValues(subValues);
+					self->setFeature(feature);
 
+                    Part::TopoShape baseShape = feature->getBaseTopoShape();
+                    Part::TopoShape baseFace = feature->getBaseTopoFaceShape();
+                    double boxLen = baseFace.getBoundBoxOptimal().CalcDiagonalLength();
+                    feature->scale = boxLen * 0.01;;
                     feature->thickNessValue = boxLen * 0.02;
-                    Part::TopoShape outWire = shapes[1].splitWires();
-                    //outWire.isLinearEdge
-                    auto solids = shapes[0].findAncestorsShapes(shapes[1].getShape(), TopAbs_SOLID);
-                    TopoDS_Edge edge = TopoDS::Edge(outWire.getOrderedEdges().front().getShape());
-                    TopoDS_Solid solid = TopoDS::Solid(solids[0]);
-                    // 2. 获取边的中点坐标和切向量
-                    double first, last;
-                    Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
-                    double midParam = (first + last) * 0.5;
-                    gp_Pnt midPoint;
-                    gp_Vec tangent;
-                    curve->D1(midParam, midPoint, tangent);
-                    tangent.Normalize();
-                    TopoDS_Face face = TopoDS::Face(shapes[1].getShape());
-                    // 4. 计算某个面上、过边上一点、位于面内且垂直于边的方向
-                    auto getInPlanePerpDir = [&](const TopoDS_Solid& solid, const TopoDS_Face& face, const gp_Pnt& point, const gp_Vec& tangent) -> gp_Vec {
-                        BRepAdaptor_Surface surf(face);
-
-                        gp_Vec normal;
-                        if (surf.GetType() == GeomAbs_Plane) {
-                            // 平面：直接用平面法向
-                            normal = surf.Plane().Axis().Direction();
-                        }
-                        else {
-                            // 曲面：将点投影到曲面，获取 uv 参数后计算法向
-                            Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
-                            GeomAPI_ProjectPointOnSurf projector(point, surface);
-                            if (projector.NbPoints() == 0) {
-                                CORE_ERROR("Failed to project point onto surface");
-                                return gp_Vec(0, 0, 1); // 默认方向
-                            }
-                            double u, v;
-                            projector.Parameters(1, u, v);
-                            gp_Pnt P;
-                            gp_Vec dU, dV;
-                            surf.D1(u, v, P, dU, dV);
-                            normal = dU.Crossed(dV);
-                        }
-                        normal.Normalize();
-
-                        // 面内垂直于边的方向 = 切向量 × 法向量
-                        gp_Vec dir = tangent.Crossed(normal);
-                        dir.Normalize();
-
-                        // 沿 dir 方向偏移一点
-                        gp_Pnt testPoint = point.XYZ() + dir.XYZ() * 0.001;
-
-                        // 判断 testPoint 是否在实体内部
-
-                        BRepClass3d_SolidClassifier classifier(solid);
-                        classifier.Perform(testPoint, Precision::Confusion());
-                        if (classifier.State() == TopAbs_OUT) {
-                            // 如果在外部，反转方向
-                            dir.Reverse();
-                        }
-                        return dir;
-                        };
-                    gp_Vec d = getInPlanePerpDir(solid, face, midPoint, tangent);
-                    axisBehaviour->setUpOrigin(midPoint.X(), midPoint.Y(), midPoint.Z());
-                    if (feature->reverse) {
-                        axisBehaviour->setUpDir(d.X(), d.Y(), d.Z());
-                    }
-                    else {
-                        axisBehaviour->setUpDir(-d.X(), -d.Y(), -d.Z());
-                    }
-                    feature->dir[0] = -d.X();
-                    feature->dir[1] = -d.Y();
-                    feature->dir[2] = -d.Z();
-                    //axisBehaviour->setImmediateInvoke(false);
-                    axisBehaviour->setLength(feature->thickNessValue);
-                    axisBehaviour->AddObserver(AxisTranslationEvent::LengthChange, self, &ThicknessTaskDialog::onWidgetLengthInvoke);
-                    axisBehaviour->setUpScale(len);
-
+                    std::vector<Part::TopoShape>shapes=getContinuousEdges(baseShape,baseFace);
+                    Part::TopoShape edge = shapes[0];
+                    DraggerPlacementProps props = getDraggerPlacementFromEdgeAndFace(edge, baseFace);
+                    feature->dir[0] = -props.dir.x;
+                    feature->dir[1] = -props.dir.y;
+                    feature->dir[2] = -props.dir.z;
+                    feature->midPoint[0] = props.position.x;
+                    feature->midPoint[1] = props.position.y;
+                    feature->midPoint[2] = props.position.z;
                 }
-                else
-                {
-                    CORE_ERROR("It's not a face to exeute ThicknessTask");
+            }
+            if (feature) {  
+       
+                //axisBehaviour->setImmediateInvoke(false);
+                axisBehaviour = new AxisTranslationWidget("thickness");
+                axisBehaviour->setUpOrigin(feature->midPoint[0], feature->midPoint[1], feature->midPoint[2]);
+                if (feature->reverse) {
+                    axisBehaviour->setUpDir(-feature->dir[0], -feature->dir[1], -feature->dir[2]);
                 }
+                else {
+                    axisBehaviour->setUpDir(feature->dir[0], feature->dir[1], feature->dir[2]);
+                }
+                axisBehaviour->setLength(feature->thickNessValue);
+                axisBehaviour->AddObserver(AxisTranslationEvent::LengthChange, self, &ThicknessTaskDialog::onWidgetLengthInvoke);
+                axisBehaviour->setUpScale(feature->scale);
             }
         }
         ~Internal() {
@@ -139,8 +99,7 @@ namespace MOON {
         ThicknessTaskDialog* self = nullptr;
 		ThicknessFeature* feature = nullptr;
         AxisTranslationWidget* axisBehaviour = nullptr;
-       
-        std::vector<Part::TopoShape>shapes;
+        bool isCreatedFeature = false;
     };
 
     ThicknessTaskDialog::ThicknessTaskDialog(QWidget* parent, Feature* feature)
@@ -248,34 +207,10 @@ namespace MOON {
     void ThicknessTaskDialog::clickCancel()
     {
         clearPreviewShape();
-    }
-    bool ThicknessTaskDialog::generateShape()
-    {
-        //if (mInternal->shapes.size() > 0) {
-        //    double tol = Precision::Confusion();
-        //    double thickness = (mInternal->feature->reverse ? -1. : 1.) * mInternal->feature->thickNessValue;
-        //    int join = mInternal->feature->joinType;
-        //    if (join == 1) {
-        //        join = 2;
-        //    }
-
-        //    if (fabs(thickness) > 2 * tol) {
-        //        try
-        //        {
-        //            Part::TopoShape shape=mInternal->shapes[0].makeElementThickSolid({ mInternal->shapes[1] }, thickness, tol, mInternal->intersection, false, mInternal->mode, static_cast<Part::JoinType>(join));
-        //            getPreviewShape() = shape;
-        //            getGenerateShape() = shape;
-        //            return true;
-        //        }
-        //        catch (Standard_Failure& e)
-        //        {
-        //            CORE_ERROR(e.GetMessageString());
-        //            return false;
-        //        }
-        //        return false;
-        //    }
-        //}
-        return false;
+        if (mInternal->isCreatedFeature) {
+            mInternal->feature->RemoveFromScene();
+            delete mInternal->feature;
+        }
     }
     void ThicknessTaskDialog::onWidgetLengthInvoke() {
         mInternal->feature->thickNessValue = mInternal->axisBehaviour->getLength();

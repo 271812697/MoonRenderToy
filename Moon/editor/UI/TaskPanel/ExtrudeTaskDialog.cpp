@@ -1,31 +1,17 @@
 ﻿#include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
-#include "TaskBox.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
-#include "App/ExtrusionHelper.h"
 #include "core/component/TopoShapeActor.h"
-#include "core/component/CTopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
 #include "feature/FeatureBody.h"
 #include "TopoShape.h"
-#include "Core/Global/ServiceLocator.h"
-#include "renderer/SceneView.h"
 #include "core/ViewTool.h"
 #include "core/log.h"
 #include "Interactive/Widgets/PadTaskWidget.h"
-#include <Core/ECS/Components/CMaterialRenderer.h>
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/EnumProperty.h"
-#include "Widgets/BoolProperty.h"
-#include <QLabel>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QComboBox>
-#include <QDoubleSpinBox>
-#include <QGroupBox>
-#include <QRadioButton>
-#include <numbers>
+
 #include <gp_Pln.hxx>
 #include <TopoDS.hxx>
 #include <BRepAdaptor_Surface.hxx>
@@ -38,10 +24,12 @@ namespace MOON {
             setUp();
         }
         ~Internal() {
-            delete behaviour;
+            delete behaviour1;
+            delete behaviour2;
         }
         void setUp() {
-            behaviour = new PadTaskWidget("pad");
+            behaviour1 = new PadTaskWidget("pad");
+            behaviour2=new PadTaskWidget("pad");
             Part::TopoShape faceShape;
             auto f = self->getFeature();
             if (f) {
@@ -52,6 +40,7 @@ namespace MOON {
             else
             {
                 //新建一个feature 
+                isCreateFeature = true;
                 ExtrudeFeature* extrudeFeature = new ExtrudeFeature("extrude",extrudeType== ExtrudeType::Additive?0:1);
                 feature = extrudeFeature;
                 self->setFeature(extrudeFeature);
@@ -67,15 +56,15 @@ namespace MOON {
                 else
                 {
                     // 1. 获取当前激活的草图,
-                    auto* sketchFeature = SketcherObjManager::instance().GetCurrentActiveSketcherFeature();
+                    auto* sketchFeature = SketcherObjManager::instance().GetLastSketcherFeature();
                     if (sketchFeature) {
                         //2.设置基于最后一个feature
-                        extrudeFeature->setBaseFeature(FeatureBody::instance().getLastBaseFeature());
-                        FeatureBody::instance().addFeature(extrudeFeature);
+                        FeatureBody::instance().setBaseFeatureFor(extrudeFeature);
                         extrudeFeature->setProfile(sketchFeature);
                         faceShape = sketchFeature->getSketcherObj()->getDoneFaceShape();
                     }
-                }
+                } 
+                
             }
             if (!faceShape.isNull())
             {
@@ -96,30 +85,44 @@ namespace MOON {
                         pln = gp_Pln(pnt, gp_Dir(vec));
                     }
                 }
-                behaviour->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
+                behaviour1->setUpOrigin(pln.Location().X(), pln.Location().Y(), pln.Location().Z());
                 if (extrudeType == ExtrudeType::Additive)
                 {
-                    behaviour->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                    behaviour1->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
+                    behaviour2->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
                     feature->finalDir = { pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z() };
                 }
                 else
-                {
-                    behaviour->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
+                { 
+                    behaviour1->setUpDir(-pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z());
+                    behaviour2->setUpDir(pln.Axis().Direction().X(), pln.Axis().Direction().Y(), pln.Axis().Direction().Z());
                     feature->finalDir = { -pln.Axis().Direction().X(), -pln.Axis().Direction().Y(), -pln.Axis().Direction().Z() };
                 }
-                behaviour->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
-                behaviour->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
-                behaviour->setLength(10);
-                behaviour->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke);
-                behaviour->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke);
+                behaviour1->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                behaviour1->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
+                behaviour1->setLength(10);
+                behaviour1->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke1);
+                behaviour1->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke1);
+
+                behaviour2->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
+                behaviour2->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
+                behaviour2->setLength(10);
+                behaviour2->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke2);
+                behaviour2->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke2);
             }
         }
     private:
         ExtrudeFeature* feature=nullptr;
-        PadTaskWidget* behaviour = nullptr;
+        PadTaskWidget* behaviour1 = nullptr;
+        PadTaskWidget* behaviour2 = nullptr;
         ExtrudeType extrudeType;
         ExtrudeTaskDialog* self;
+        SliderFloatProperty* extrudeLength1 = nullptr;
+        SliderFloatProperty* extrudeAngle1 = nullptr;
+        SliderFloatProperty* extrudeLength2 = nullptr;
+        SliderFloatProperty* extrudeAngle2 = nullptr;
         friend ExtrudeTaskDialog;
+        bool isCreateFeature = false;
     };
     ExtrudeTaskDialog::ExtrudeTaskDialog(QWidget* parent, ExtrudeType type, Feature* feature)
         : ParamTaskDialog(parent), mInternal(new Internal(this,type)),ShapeHelper(feature)
@@ -136,19 +139,23 @@ namespace MOON {
         EnumProperty* dir = new EnumProperty("Extrude Direction", p); 
         addParam(dir);
 
-        auto extrudeLength1 = new SliderFloatProperty("Length 1", p);
-        extrudeLength1->setMinMax(0.1, 9999);
-        addParam(extrudeLength1);
-        auto extrudeAngle1 = new SliderFloatProperty("Angle 1", p);
-        extrudeAngle1->setMinMax(-90,90);
-        addParam(extrudeAngle1);
+        mInternal->extrudeLength1 = new SliderFloatProperty("Length 1", p);
+        mInternal->extrudeLength1->setMinMax(0.1, 1000);
+        mInternal->extrudeLength1->setStep(0.1);
+        addParam(mInternal->extrudeLength1);
+        mInternal->extrudeAngle1 = new SliderFloatProperty("Angle 1", p);
+        mInternal->extrudeAngle1->setMinMax(-90,90);
+        mInternal->extrudeAngle1->setStep(1.0);
+        addParam(mInternal->extrudeAngle1);
 
-        auto extrudeLength2 = new SliderFloatProperty("Length 2", p);
-        extrudeLength2->setMinMax(0.1, 9999);
-        addParam(extrudeLength2);
-        auto extrudeAngle2 = new SliderFloatProperty("Angle 2", p);
-        extrudeAngle2->setMinMax(-90, 90);
-        addParam(extrudeAngle2);
+        mInternal->extrudeLength2 = new SliderFloatProperty("Length 2", p);
+        mInternal->extrudeLength2->setMinMax(0.1, 1000);
+        mInternal->extrudeLength2->setStep(0.1);
+        addParam(mInternal->extrudeLength2);
+        mInternal->extrudeAngle2 = new SliderFloatProperty("Angle 2", p);
+        mInternal->extrudeAngle2->setMinMax(-90, 90);
+        mInternal->extrudeAngle2->setStep(1.0);
+        addParam(mInternal->extrudeAngle2);
         buildUi();
         previewShape();
     }
@@ -186,23 +193,44 @@ namespace MOON {
         }
         else if (propertyName == "Extrude:Extrude Direction") {
             mInternal->feature->dirType = value.value<int>();
+            if (mInternal->behaviour2) {  
+                if (mInternal->feature->dirType == 2) {
+                    mInternal->behaviour2->setActive(true);
+                }
+                else
+                {
+                    mInternal->behaviour2->setActive(false);
+                }
+            }
             updatePreView = true;
         }
         else if (propertyName == "Extrude:Length 1") {
             mInternal->feature->lengthForward = value.toFloat();
+            if (mInternal->behaviour1)
+                mInternal->behaviour1->setLength(mInternal->feature->lengthForward);
             updatePreView = true;
         }
         else if (propertyName == "Extrude:Angle 1") {
             mInternal->feature->angleForward= value.toFloat();
+            if(mInternal->behaviour1)
+            mInternal->behaviour1->setAngle(mInternal->feature->angleForward);
             updatePreView = true;
         }
         else if (propertyName == "Extrude:Length 2") {
             mInternal->feature->lengthRev = value.toFloat();
-            updatePreView = true;
+            if (mInternal->behaviour2)
+                mInternal->behaviour2->setLength(mInternal->feature->lengthRev);
+            if (mInternal->feature->dirType == 2) {
+                updatePreView = true;
+            }
         }
         else if (propertyName == "Extrude:Angle 2") {
             mInternal->feature->angleRev= value.toFloat();
-            updatePreView = true;
+            if (mInternal->behaviour2)
+                mInternal->behaviour2->setAngle(mInternal->feature->angleRev);
+            if (mInternal->feature->dirType == 2) {
+                updatePreView = true;
+            }
         }
         if (updatePreView&& hasInitUi) {
             previewShape();
@@ -211,11 +239,6 @@ namespace MOON {
     ExtrudeTaskDialog::~ExtrudeTaskDialog()
     {
         delete mInternal;
-    }
-
-    bool ExtrudeTaskDialog::generateShape()
-    {
-        return false;
     }
     void ExtrudeTaskDialog::clickOk()
     {
@@ -227,34 +250,37 @@ namespace MOON {
     void ExtrudeTaskDialog::clickCancel()
     {
         clearPreviewShape();
+        if (mInternal->isCreateFeature) {
+            mInternal->feature->RemoveFromScene();
+            delete mInternal->feature;
+        }
     }
-    void ExtrudeTaskDialog::onValueChange()
-    {
-        previewShape();
-    }
-    void ExtrudeTaskDialog::onAngleChange()
-    {
-        //mInternal->behaviour->setAngle(mInternal->spinAngleForward->value());
-    }
-    void ExtrudeTaskDialog::onLengthChange()
-    {
-        //mInternal->behaviour->setLength(mInternal->spinLenForward->value());
-    }
- 
     void ExtrudeTaskDialog::onSelectFace(const std::vector<Part::TopoShape>& face)
     {
         ExtrudeFeature* extrudeFeature=
         dynamic_cast<ExtrudeFeature*>(getFeature());
         if (extrudeFeature) {
             extrudeFeature->upToFace = face[1];
+            if (mInternal->feature->extrudeType == 2) {
+                previewShape();
+            }
         }
     }
-    void ExtrudeTaskDialog::onWidgetLengthInvoke()
+    void ExtrudeTaskDialog::onWidgetLengthInvoke1()
     {
-       // mInternal->spinLenForward->setValue(mInternal->behaviour->getLength());
+        mInternal->extrudeLength1->updateWidgetValue(mInternal->behaviour1->getLength());
     }
-    void ExtrudeTaskDialog::onWidgetAngleInvoke()
+    void ExtrudeTaskDialog::onWidgetAngleInvoke1()
     {
-        //mInternal->spinAngleForward->setValue(mInternal->behaviour->getAngle());
+        mInternal->extrudeAngle1->updateWidgetValue(mInternal->behaviour1->getAngle());
+    }
+    void ExtrudeTaskDialog::onWidgetLengthInvoke2()
+    {
+        mInternal->extrudeLength2->updateWidgetValue(mInternal->behaviour2->getLength());
+    }
+
+    void ExtrudeTaskDialog::onWidgetAngleInvoke2()
+    {
+        mInternal->extrudeAngle2->updateWidgetValue(mInternal->behaviour2->getAngle());
     }
 }

@@ -9,8 +9,9 @@ namespace MOON {
 		~SketcherObjManager();
 		SketcherFeature* CreateSketcherFeature();
 		SketcherFeature* GetCurrentActiveSketcherFeature();
+		SketcherFeature* GetLastSketcherFeature();
 		SketcherObj* GetCurrentActiveSketcherObj();
-		void setCurrentActiveSketcherObj(SketcherObj* obj);
+		void setCurrentActiveSketcherFeature(SketcherFeature* obj);
 		std::vector<SketcherObj*> GetAllSketcherObjs();
 	private:
 		class SketcherObjManagerInternal;

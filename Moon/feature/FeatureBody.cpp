@@ -1,12 +1,7 @@
-﻿#include "core/component/TopoShapeActor.h"
-
-#include "editor/View/sceneview/viewerwidget.h"
-#include "core/component/CTopoShape.h"
-#include <Core/Global/ServiceLocator.h>
+﻿
 #include "feature/FeatureBody.h"
 #include "SketcherFeature.h"
-#include "Sketcher/SketcherObj.h"
-#include "TopoShape.h"
+#include "feature/FeatureBaseProfile.h"
 
 namespace MOON {
 	class FeatureBody::Internal {
@@ -18,7 +13,7 @@ namespace MOON {
 		FeatureBody* self = nullptr;
 		std::vector<Feature*>featureList;
 	};
-	FeatureBody::FeatureBody(const std::string& p_name) :TopoActor( p_name, "Body", true, false), mInternal(new Internal(this))
+	FeatureBody::FeatureBody(const std::string& p_name) :mInternal(new Internal(this))
 	{
 
 	}
@@ -40,16 +35,76 @@ namespace MOON {
 		}
 	}
 
-	Feature* FeatureBody::getLastBaseFeature()
+	bool FeatureBody::removeFeature(Feature* feature)
+	{
+		if (feature) {
+			int k = 0;
+			for (int i = 0;i < mInternal->featureList.size();i++) {
+				if (mInternal->featureList[i] != feature) {
+					mInternal->featureList[k++] = mInternal->featureList[i];
+				}
+			}
+			mInternal->featureList.resize(k);
+			for (int i = 0;i < mInternal->featureList.size();i++) {
+				if (mInternal->featureList[i]->getBaseFeature() == feature) {
+					mInternal->featureList[i]->setBaseFeature(nullptr);
+				}
+			}
+		}
+		return false;
+	}
+
+	void FeatureBody::populateFeature(Feature* feature)
+	{
+		if (feature) {
+			std::vector<Feature*>stack;
+			stack.push_back(feature);
+			while (!stack.empty()) {
+				Feature* curFeature = stack.back(); stack.pop_back();
+				for (int i = 0; i < mInternal->featureList.size(); i++) {
+					if (mInternal->featureList[i]->getBaseFeature()== curFeature) {
+						mInternal->featureList[i]->execute();
+						mInternal->featureList[i]->makeDone();
+					}
+					else {
+						FeatureBaseProfile*  profile=dynamic_cast<FeatureBaseProfile*>(mInternal->featureList[i]);
+						if (profile) {
+							if (profile->getProfile() == curFeature) {
+								mInternal->featureList[i]->execute();
+								mInternal->featureList[i]->makeDone();
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	Feature* FeatureBody::getLastBaseFeature(Feature* target)
 	{
 		if (mInternal->featureList.size() > 0) {
-			for (int i = mInternal->featureList.size() - 1; i >= 0; i--) {
-				SketcherFeature* feature = dynamic_cast<SketcherFeature*>(mInternal->featureList[i]);
-				if (!feature) {
-					return mInternal->featureList[i];
+			for (int i = mInternal->featureList.size()-1;i>=0;i--) {
+				if (mInternal->featureList[i] == target) {
+					for (int k = i - 1; k >= 0; k--) {
+						SketcherFeature* feature = dynamic_cast<SketcherFeature*>(mInternal->featureList[k]);
+						if (!feature) {
+							return mInternal->featureList[k];
+						}
+					}
 				}
 			}
 		}
 		return nullptr;
+	}
+	bool FeatureBody::setBaseFeatureFor(Feature* feature)
+	{
+		if (feature) {
+			Feature* baseFeature=getLastBaseFeature(feature);
+			if (baseFeature) {
+				feature->setBaseFeature(baseFeature);
+				return true;
+			}
+		}
+		return false;
 	}
 }

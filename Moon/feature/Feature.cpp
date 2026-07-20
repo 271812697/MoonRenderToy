@@ -4,6 +4,7 @@
 #include "core/component/CTopoShape.h"
 #include <Core/Global/ServiceLocator.h>
 #include "Feature.h"
+#include "feature/FeatureBody.h"
 #include "SketcherFeature.h"
 #include "Sketcher/SketcherObj.h"
 #include "TopoShape.h"
@@ -22,17 +23,18 @@ namespace MOON {
 	};
 	Feature::Feature(const std::string& p_name,  const std::string& tag) :TopoActor( p_name, tag, true, false),mInternal(new Internal(this))
 	{
-
+		FeatureBody::instance().addFeature(this);
 	}
 	Feature::~Feature()
 	{
+		FeatureBody::instance().removeFeature(this);
 		delete mInternal;
 	}
 	bool Feature::execute()
 	{
-		return false;
+		return true;
 	}
-	Part::TopoShape& Feature::getBaseTopoShape()
+	Part::TopoShape Feature::getBaseTopoShape()
 	{
 		return m_baseFeature->GetTopoShape();
 	}
@@ -41,6 +43,34 @@ namespace MOON {
 		std::string idString = subValues[0].substr(5);
 		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
 		return comp->GetTopoFace(std::stoi(idString));
+	}
+	std::vector<Part::TopoShape> Feature::getBaseTopoFaceShapes()
+	{
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		std::vector<Part::TopoShape>ret;
+		ret.reserve(subValues.size());
+		for (int i = 0;i < subValues.size();i++) {
+			std::string idString = subValues[i].substr(5);
+			ret.emplace_back(comp->GetTopoFace(std::stoi(idString)));
+		}
+		return ret;
+	}
+	Part::TopoShape Feature::getBaseTopoEdgeShape()
+	{
+		std::string idString = subValues[0].substr(5);
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		return comp->GetTopoEdge(std::stoi(idString));
+	}
+	std::vector<Part::TopoShape> Feature::getBaseTopoEdgeShapes()
+	{
+		auto comp = m_baseFeature->GetComponent<Core::ECS::Components::CTopoShape>();
+		std::vector<Part::TopoShape>ret;
+		ret.reserve(subValues.size());
+		for (int i = 0;i < subValues.size();i++) {
+			std::string idString = subValues[i].substr(5);
+			ret.emplace_back(comp->GetTopoEdge(std::stoi(idString)));
+		}
+		return ret;
 	}
 	Part::TopoShape& Feature::getPreviewShape()
 	{
@@ -54,5 +84,6 @@ namespace MOON {
 		}
 		auto comp =GetComponent<Core::ECS::Components::CTopoShape>();
 		comp->discretizationShape();
+		FeatureBody::instance().populateFeature(this);
 	}
 }

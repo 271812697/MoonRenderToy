@@ -1,5 +1,6 @@
 ﻿#include "RenderWindowInteractor.h"
 #include "ExecuteCommand.h" 
+#include "core/log.h"
 #include <QMouseEvent>
 #include <map>
 #include <mutex>
@@ -275,6 +276,7 @@ void RenderWindowInteractor::ReceiveEvent(QEvent*e) {
 	if (t == QEvent::MouseButtonPress || t == QEvent::MouseButtonRelease ||
 		t == QEvent::MouseButtonDblClick || t == QEvent::MouseMove || t == QEvent::HoverMove)
 	{
+
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
 		auto x = e2->x();
 		auto y = e2->y();
@@ -295,6 +297,7 @@ void RenderWindowInteractor::ReceiveEvent(QEvent*e) {
 			switch (e2->button())
 			{
 			case Qt::LeftButton:
+				
 				InvokeEvent(ExecuteCommand::LeftButtonPressEvent, e2);
 				break;
 
@@ -368,6 +371,7 @@ void RenderWindowInteractor::ReceiveEvent(QEvent*e) {
 
 	if (t == QEvent::KeyPress || t == QEvent::KeyRelease)
 	{
+		
 		QKeyEvent* e2 = static_cast<QKeyEvent*>(e);
 
 		// get key and keysym information

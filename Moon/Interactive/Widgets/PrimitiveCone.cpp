@@ -8,6 +8,7 @@
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include "core/component/CTopoShape.h"
 #include "core/component/TopoShapeActor.h"
+#include "feature/Feature.h"
 #include "TopoShape.h"
 
 #include <BRepPrimAPI_MakeSphere.hxx>
@@ -45,7 +46,7 @@ namespace MOON {
 			BRepPrimAPI_MakeCone mkCone(radiusBottom, radiusTop, height);
 			ResultShape = mkCone.Shape();
 		}
-		auto topoActor = new TopoActor( "TopoShapeCone", "TopoShape", false);
+		auto topoActor = new Feature("ConeFeature", "Cone");
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 
@@ -62,6 +63,6 @@ namespace MOON {
 			mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3)
 		);
 		topo.setTransform(mm);
-		topoComp->discretizationShape();
+		topoActor->makeDone();
 	}
 }

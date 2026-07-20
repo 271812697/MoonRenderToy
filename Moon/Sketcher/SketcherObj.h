@@ -21,6 +21,7 @@ namespace MOON {
 		virtual void onKeyPress(const std::string& key)override;
 		void setPlane(const SketcherPlane2D&plane);
 		void fitCamera();
+		void beginEdit();
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;

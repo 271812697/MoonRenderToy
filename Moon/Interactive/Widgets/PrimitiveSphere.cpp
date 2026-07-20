@@ -1,17 +1,13 @@
 ﻿#include "Interactive/Widgets/PrimitiveSphere.h"
 #include "Interactive/Im3DRenderer.h"
-#include "Qtimgui/imgui/imgui.h"
 
 #include "Interactive/MathUtil/MathUtil.h"
-#include "renderer/SceneView.h"
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/ECS/Components/CMaterialRenderer.h>
 #include "core/component/CTopoShape.h"
 #include "core/component/TopoShapeActor.h"
+#include "feature/Feature.h"
 #include "TopoShape.h"
 
 #include <BRepPrimAPI_MakeSphere.hxx>
-#include <Precision.hxx>
 
 namespace MOON {
 	
@@ -26,8 +22,6 @@ namespace MOON {
 	void PrimitiveSphere::onUpdate()
 	{
 		renderer->sphereEdit(renderer->makeId("Sphere"), translation, radius);
-		
-
 	}
 
 	void PrimitiveSphere::createTopoShape()
@@ -37,7 +31,7 @@ namespace MOON {
 		);
 		TopoDS_Shape ResultShape = mkSphere.Shape();
 	
-		auto topoActor = new TopoActor("TopoShapeSphere", "TopoShape", false);
+		auto topoActor = new Feature("SphereFeature", "Sphere");
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
 
@@ -53,7 +47,7 @@ namespace MOON {
 		);
 		
 		topo.setTransform(mm);
-		topoComp->discretizationShape();
+		topoActor->makeDone();
 	}
 
 }

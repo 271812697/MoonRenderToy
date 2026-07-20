@@ -68,30 +68,31 @@ namespace MOON {
 				auto actor = *pval;
 				if (actor) {	
 					GetTreeView.highlightByActor(&actor.value());
-					MOON::SelectionManager::instance().setSelect({ actor.value().GetID() });
+					MOON::SelectionManager::instance().select({ actor.value().GetID() });
 				}
 				else
 				{
-					MOON::SelectionManager::instance().clearSelect();
+					MOON::SelectionManager::instance().select({});
 					GetTreeView.clearHighlight();
 				}
 			}
 			else
 			{
-				MOON::SelectionManager::instance().clearSelect();
+				MOON::SelectionManager::instance().select({});
 				GetTreeView.clearHighlight();
 			}
 		}
 		else
 		{
-			MOON::SelectionManager::instance().clearSelect();
+			MOON::SelectionManager::instance().select({});
 			GetTreeView.clearHighlight();
 		}
 	}
 	void RotateCenter::onLeftMouseReleased()
 	{
 		drawRect = false;
-	/*	auto [w, h] = m_sceneView->GetSafeSize();
+	/*	
+	    auto [w, h] = m_sceneView->GetSafeSize();
 		float su = 2 * (sx) / (float)w - 1;
 		float sv = 2 * (h - sy) / (float)h - 1;
 		float eu = 2 * (ex) / (float)w - 1;
@@ -209,5 +210,18 @@ namespace MOON {
 		//		}
 		//	}
 		//}
+	}
+	void RotateCenter::onKeyPress(const std::string& key)
+	{
+		if (key == "CONTROL_L") {
+			GetSelection.setSelectMode(SelectMode::AddSelect);
+		}
+		
+	}
+	void RotateCenter::onKeyRelease(const std::string& key)
+	{
+		if (key == "CONTROL_L") {
+			GetSelection.setSelectMode(SelectMode::OverrideSelect);
+		}
 	}
 }

@@ -19,15 +19,13 @@ namespace MOON {
 		virtual void clickOk() override;
 		virtual void clickApply() override;
 		virtual void clickCancel() override;
-		virtual bool generateShape()override;
-		void onValueChange();
-		void onAngleChange();
-		void onLengthChange();
 	private:
 		virtual void onSelectFace(const std::vector<Part::TopoShape>& face)override;
 	private:
-		void onWidgetLengthInvoke();
-		void onWidgetAngleInvoke();
+		void onWidgetLengthInvoke1();
+		void onWidgetAngleInvoke1();
+		void onWidgetLengthInvoke2();
+		void onWidgetAngleInvoke2();
 		class Internal;
 		Internal* mInternal = nullptr;
 	};

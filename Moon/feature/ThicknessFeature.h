@@ -13,5 +13,7 @@ namespace MOON {
 		bool reverse = false;
 		bool intersection = false;
 		float dir[3];
+		float midPoint[3];
+		float scale=1.0;
 	};
 }
