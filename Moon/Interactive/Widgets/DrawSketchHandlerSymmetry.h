@@ -3,7 +3,6 @@
 #include "Interactive/Widgets/DrawSketchDefaultHandler.h"
 namespace MOON
 {
-
 	class DrawSketchHandlerSymmetry : public DrawSketchDefaultHandler<DrawSketchHandlerSymmetry, StateMachines::OneSeekEnd,0>
 	{
 		using SupperClass = DrawSketchDefaultHandler<DrawSketchHandlerSymmetry, StateMachines::OneSeekEnd, 0>;
