@@ -101,7 +101,7 @@ void Sketch::clear()
 
     param2geoelement.clear();
     pDependencyGroups.clear();
-    solverExtensions.clear();
+    
 
     internalAlignmentGeometryMap.clear();
 
@@ -626,14 +626,7 @@ std::set<std::pair<int, Sketcher::PointPos>> Sketch::getDependencyGroup(int geoI
     return group;
 }
 
-std::shared_ptr<SolverGeometryExtension> Sketch::getSolverExtension(int geoId) const
-{
-    if (geoId >= 0 && geoId < int(solverExtensions.size())) {
-        return solverExtensions[geoId];
-    }
 
-    return nullptr;
-}
 
 int Sketch::resetSolver()
 {

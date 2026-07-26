@@ -4,6 +4,9 @@
 #include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
+#include "Sketcher/Datatypes/Constraint.h"
+#include "Sketcher/Datatypes/Sketch.h"
+
 namespace Part {
 	class  Geometry;
 }
@@ -11,6 +14,18 @@ namespace MOON {
 	class SketcherObj :public EventWidget
 	{
 	public:
+		enum PointPos
+		{
+			None = 0,
+			StartP,
+			EndP,
+			CenterP
+		};
+		struct SelectGeoId
+		{
+			int GeoId;
+			PointPos pointPos = None;
+		};
 		SketcherObj();
 		~SketcherObj();
 
@@ -27,17 +42,21 @@ namespace MOON {
 		bool InEdit()const;
 		void draw();
 		void makeDone();
+		int solve(bool updateGeoAfterSolving = true);
 		int addGeometry(std::unique_ptr<Part::Geometry>&ptr);
 		int addGeometry(Part::Geometry* curve);
 		void addGeometry(const std::vector<Part::Geometry*>& curveList);
 		Part::Geometry* getGeometry(int GeoId);
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
-		int testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
-		std::vector<int> getSelectIds() const { return selectIds; }
+		SelectGeoId testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
+		std::vector<int> getSelectIds() const;
+		std::vector<SelectGeoId> getSelectGeoPosIds() const {
+			return selectIds;
+		}
 		void addSelect(const std::vector<int>& idList);
 		void removeSelect(const std::vector<int>& idList);
-		int getPreselectId()const {return preSelectGeoId;}
+		int getPreselectId()const {return preSelectGeoId.GeoId;}
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		int fillet(int geoId1,int geoId2,const Base::Vector3d& refPnt1,const Base::Vector3d& refPnt2,double radius,bool trim = true,bool createCorner = false,bool chamfer = false);
 		bool seekTrimPoints(
@@ -79,8 +98,34 @@ namespace MOON {
 		}
 		Base::Vector3d getPlaneYAxis() {
 			return mPlane.yAxis;
-		}
+		}	
+		/// add constraint
+		int addConstraint(const Sketcher::Constraint* constraint);
+		/// add constraint
+		int addConstraint(std::unique_ptr<Sketcher::Constraint> constraint);
+		// helper function to create a new constraint and move it to the Constraint Property
+		void addConstraint(
+			Sketcher::ConstraintType constrType,
+			int firstGeoId,
+			Sketcher::PointPos firstPos,
+			int secondGeoId = Sketcher::GeoEnum::GeoUndef,
+			Sketcher::PointPos secondPos = Sketcher::PointPos::none,
+			int thirdGeoId = Sketcher::GeoEnum::GeoUndef,
+			Sketcher::PointPos thirdPos = Sketcher::PointPos::none
+		);
+		// creates a new constraint
+		std::unique_ptr<Sketcher::Constraint> createConstraint(
+			Sketcher::ConstraintType constrType,
+			int firstGeoId,
+			Sketcher::PointPos firstPos,
+			int secondGeoId = Sketcher::GeoEnum::GeoUndef,
+			Sketcher::PointPos secondPos = Sketcher::PointPos::none,
+			int thirdGeoId = Sketcher::GeoEnum::GeoUndef,
+			Sketcher::PointPos thirdPos = Sketcher::PointPos::none
+		);
+
 	private:
+
 		Part::TopoShape basedTopoShape;
 		Part::TopoShape doneFaceShape;
 		struct CurveSegment;
@@ -92,9 +137,11 @@ namespace MOON {
 		SketcherPlane2D mPlane ;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
+		Sketcher::Sketch solvedSketch;
+		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
-		int preSelectGeoId = -1;
-		std::vector<int> selectIds ;
+		SelectGeoId preSelectGeoId = {- 1,PointPos::None} ;
+		std::vector<SelectGeoId> selectIds ;
 		bool hasClickSelected = false;
 		enum ClickMoveState
 		{
@@ -109,12 +156,21 @@ namespace MOON {
 		Base::Vector2d onSketchPosClicked;//used for click when select geometry curve
 		Base::Vector2d onSketchPosMove;//used for mouse move
 		Base::Vector2d onSketchPosP2;
+
+		struct SegPoint
+		{
+			PointPos pointPos;
+			Base::Vector3d coord;
+			SegPoint(const Base::Vector3d& c,const PointPos& p):coord(c),pointPos(p) {}
+		};
 		struct CurveSegment
 		{
 			std::vector<Base::Vector3d> point;
 			std::vector<double> params;
-			std::vector<Base::Vector3d>sepoints;
-			CurveSegment(const std::vector<Base::Vector3d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) : point(p), params(u),sepoints(se) {}
+			std::vector<SegPoint>sepoints;
+			//CurveSegment(const std::vector<Base::Vector3d>& p, const std::vector<double>&u,const std::vector<Base::Vector3d>&se) :
+			//	point(p), params(u),sepoints(se) {
+			//}
 			CurveSegment() {}
 		};
 		std::unordered_map<Part::Geometry*, CurveSegment>mGeoSegment;

@@ -36,9 +36,6 @@
 
 namespace Sketcher
 {
-// Forward declarations
-class SolverGeometryExtension;
-
 class  Sketch: public Base::Persistence
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
@@ -160,7 +157,7 @@ public:
 public:
     std::set<std::pair<int, Sketcher::PointPos>> getDependencyGroup(int geoId, PointPos pos) const;
 
-    std::shared_ptr<SolverGeometryExtension> getSolverExtension(int geoId) const;
+    //std::shared_ptr<SolverGeometryExtension> getSolverExtension(int geoId) const;
 
 
 public:
@@ -618,7 +615,7 @@ private:
 
     // map of geoIds to corresponding solverextensions. This is useful when solved geometry is NOT
     // to be assigned to the SketchObject
-    std::vector<std::shared_ptr<SolverGeometryExtension>> solverExtensions;
+   // std::vector<std::shared_ptr<SolverGeometryExtension>> solverExtensions;
 
     // maps a geoid corresponding to an internalgeometry (focus,knot,pole) to the geometry it
     // defines (ellipse, hyperbola, B-Spline)

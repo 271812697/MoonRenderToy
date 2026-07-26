@@ -13,6 +13,7 @@
 #include "UI/LogPanel/LogPanel.h"
 #include "UI/TaskPanel/TaskViewPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
+#include "editor/Toolbar/ContraintToolbar.h"
 #include "editor/Toolbar/primitiveToolbar.h"
 #include "editor/Toolbar/DesignModelingToolbar.h"
 #include "editor/View/sceneview/viewertitlebar.h"
@@ -127,6 +128,9 @@ namespace MOON {
 			QToolBar* sketchtoolBar = new SketchToolbar(self);
 			sketchtoolBar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, sketchtoolBar);
+			QToolBar* sketchContraintToolBar = new ConstraintToolbar(self);
+			sketchContraintToolBar->layout()->setSpacing(0);
+			self->addToolBar(Qt::TopToolBarArea, sketchContraintToolBar);
 			QToolBar* primitiveToolBar = new PrimitiveToolbar(self);
 			primitiveToolBar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, primitiveToolBar);
@@ -136,6 +140,7 @@ namespace MOON {
 			DesignModelingToolbar* designModelingToolbar = new DesignModelingToolbar(self);
 			designModelingToolbar->layout()->setSpacing(0);
 			self->addToolBar(Qt::TopToolBarArea, designModelingToolbar);
+
 		}
 		void retranslateUi() {
 			
