@@ -27,7 +27,6 @@
 #include <limits>
 
 #include <boost/regex.hpp>
-
 #include "ComplexGeoData.h"
 #include "ElementMap.h"
 #include "ElementNamingUtils.h"
@@ -35,7 +34,6 @@
 #include <Base/BoundBox.h>
 #include <Base/Placement.h>
 #include <Base/Rotation.h>
-
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
