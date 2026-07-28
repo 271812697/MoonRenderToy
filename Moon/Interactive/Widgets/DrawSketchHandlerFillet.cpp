@@ -63,7 +63,7 @@ namespace MOON {
             if (geoId1 >= 0) {
                 const Part::Geometry* geo = obj->getGeometry(geoId1);
                 if (geo->isDerivedFrom<Part::GeomBoundedCurve>()) {
-                    obj->addSelect({ geoId1 });
+                    obj->addSelect(geoId1);
                     return true;
                 }
             }
@@ -73,7 +73,7 @@ namespace MOON {
             if (geoId2 >= 0&&geoId2!=geoId1) {
                 const Part::Geometry* geo = obj->getGeometry(geoId2);
                 if (geo->isDerivedFrom<Part::GeomBoundedCurve>()) {
-                    obj->addSelect({ geoId2 });
+                    obj->addSelect(geoId2);
                     return true;
                 }
             }
