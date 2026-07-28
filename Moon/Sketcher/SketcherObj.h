@@ -146,6 +146,7 @@ namespace MOON {
 		void pickGeo();
 		void addSelect(SelectGeoId geoId);
 		void clearSelect();
+		void moveGeo(SelectGeoId geoId,float dx,float dy);
 		Base::Matrix4D updateTransform()const;
 		Base::Vector2d getMouseHitSketchPlanePoint();
 		CurveSegment getCurveSegment( Part::Geometry* geo) ;

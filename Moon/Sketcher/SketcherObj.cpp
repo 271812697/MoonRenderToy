@@ -77,13 +77,11 @@ namespace MOON {
             else if(selectState== OperationGeo) {
                 bool solveS = false;;
                 for (int i = 0;i < selectIds.size();i++) {
-                    int geoId = selectIds[i].GeoId;
-                    mGeoList[geoId]->translate(Base::Vector3d(onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y, 0));
-                    updateGeoSegment(geoId);
+                    moveGeo(selectIds[i], onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y);
                     solveS = true;
                 }
                 if (solveS) {
-                    //this->solve();
+                    this->solve();
                 }
             }
             else if (selectState ==Hot&& preSelectGeoId.GeoId == -1) {
@@ -273,7 +271,7 @@ namespace MOON {
 			if (isSelect) {
 				renderer->pushColor(selectColor);
 			}
-			else if (i == preSelectGeoId.GeoId) {
+			else if (i == preSelectGeoId.GeoId&&selectState!= OperationGeo) {
 				renderer->pushColor(preselectColor);
 			}
 			else {
@@ -1304,6 +1302,64 @@ namespace MOON {
     }
     void SketcherObj::clearSelect() {
         selectIds.clear();
+    }
+    void SketcherObj::moveGeo(SelectGeoId Id, float dx, float dy)
+    {
+        if (Id.GeoId < mGeoList.size()) {
+            int geoId = Id.GeoId;
+            Part::Geometry* geo = mGeoList[geoId].get();
+            bool isStart = Id.pointPos == PointPos::StartP;
+            bool isEnd = Id.pointPos == PointPos::EndP;
+            bool isCenter= Id.pointPos == PointPos::CenterP;
+            bool isNone = Id.pointPos == PointPos::None;
+            Base::Vector3d delta(dx, dy, 0);
+            Base::Vector3d mousePos = Base::Vector3d(onSketchPosMove.x,onSketchPosMove.y,0.0);
+            //if (Id.pointPos == PointPos::None) {
+            //    geo->translate(delta);
+            //}
+            //else
+            {
+                
+                if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                    if (geo->is<Part::GeomArcOfCircle>()) {
+                        Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(geo);
+                    }
+                    else if (geo->is<Part::GeomLineSegment>()) {
+                        Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
+                        if (isStart) {
+                            lineSeg->setPoints(lineSeg->getStartPoint() + delta,lineSeg->getEndPoint());
+                        }
+                        else if(isEnd) {
+                            lineSeg->setPoints(lineSeg->getStartPoint() , lineSeg->getEndPoint()+ delta);
+                        }
+                        else
+                        {
+                            geo->translate(delta);
+                        }
+                    }
+                    else if (geo->is<Part::GeomArcOfConic>()) {
+                        Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(geo);
+                       
+                    }
+                    else if (geo->is<Part::GeomCircle>()) {
+                        Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
+                        if (isNone) {
+                            curve->setRadius((mousePos-curve->getCenter()).Length());
+                        }
+                        else
+                        {
+                            geo->translate(delta);
+                        }
+                    }
+                    else if (geo->is<Part::GeomBSplineCurve>()) {
+                        Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
+                        geo->translate(delta);
+                    }
+                }
+            }
+           
+            updateGeoSegment(geoId);
+        }
     }
     void SketcherObj::addSelect(SelectGeoId geoId)
     {
