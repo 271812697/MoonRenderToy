@@ -1,0 +1,46 @@
+﻿set(TARGET_NAME MoonTracer)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+file(GLOB_RECURSE ${TARGET_NAME}_HEAD ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE ${TARGET_NAME}_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.inl)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${${TARGET_NAME}_HEAD} ${${TARGET_NAME}_SOURCE})
+add_executable(${TARGET_NAME} ${${TARGET_NAME}_HEAD} ${${TARGET_NAME}_SOURCE} ${RESOURCES})
+set_target_properties(${TARGET_NAME}
+  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+#get_target_property(TARGET_EXE_DIR ${TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
+set(TARGET_EXE_DIR "$<TARGET_FILE_DIR:${TARGET_NAME}>")
+# Link dependencies    
+TARGET_COMPILE_DEFINITIONS(${TARGET_NAME} PUBLIC AGZ_UTILS_SSE USE_OIDN)
+
+set(OIDN_LIBRARIES "OpenImageDenoise")
+
+# Link dependencies    
+target_link_directories(${TARGET_NAME}
+    PRIVATE "${CMAKE_SOURCE_DIR}/lib/oidn/lib"
+)
+target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES} 
+)
+
+
+target_link_libraries(${TARGET_NAME} PUBLIC
+        spdlog
+        ${OIDN_LIBRARIES}
+)
+target_include_directories(${TARGET_NAME} PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/factory/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tracer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/ext/avir
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc
+    ${LibDIR}/oidn/include
+)
+
+target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
+set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)

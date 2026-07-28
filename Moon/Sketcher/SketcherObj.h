@@ -123,7 +123,18 @@ namespace MOON {
 			int thirdGeoId = Sketcher::GeoEnum::GeoUndef,
 			Sketcher::PointPos thirdPos = Sketcher::PointPos::none
 		);
-
+	private:
+		void retrieveSolverDiagnostics();
+		int lastDoF;
+		bool lastHasConflict;
+		bool lastHasRedundancies;
+		bool lastHasPartialRedundancies;
+		bool lastHasMalformedConstraints;
+		int lastSolverStatus;
+		std::vector<int> lastConflicting;
+		std::vector<int> lastRedundant;
+		std::vector<int> lastPartiallyRedundant;
+		std::vector<int> lastMalformedConstraints;
 	private:
 
 		Part::TopoShape basedTopoShape;

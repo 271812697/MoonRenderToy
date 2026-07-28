@@ -275,22 +275,49 @@ namespace MOON {
     }
     int SketcherObj::solve(bool updateGeoAfterSolving)
     {
+        //Reset
         solvedSketch.resetInitMove();
+        //Set Up geometry and contraint
         std::vector<Part::Geometry*> GeoList;
         for (int i = 0; i < mGeoList.size(); i++) {
             GeoList.push_back(mGeoList[i].get());
         }
-        solvedSketch.setUpSketch(
+        lastDoF=solvedSketch.setUpSketch(
             GeoList, mConstraintList,0);
-        solvedSketch.solve();
-        std::vector<int>GeoIds;
-        for (int i = 0; i < mGeoList.size(); i++) {
-            GeoIds.push_back(i);;
-        } 
-        deleteGeometries(GeoIds);
-        mGeoList.clear();
-        std::vector<Part::Geometry*> geomlist = solvedSketch.extractGeometry();
-        addGeometry(geomlist);
+        //restrive the solver information
+        retrieveSolverDiagnostics();
+
+        lastSolverStatus = GCS::Failed;
+        int err = 0;
+        if (lastHasRedundancies) {// redundant constraints
+            err = -2;
+        }
+        if (lastDoF < 0) {// over-constrained sketch
+            err = -4;
+        }
+        else if (lastHasConflict) {// conflicting constraints
+            // The situation is exactly the same as in the over-constrained situation.
+            err = -3;
+        }
+        else if (lastHasMalformedConstraints) {
+            err = -5;
+        }
+        else {
+            lastSolverStatus = solvedSketch.solve();
+            if (lastSolverStatus != 0) {// solving
+                err = -1;
+            }
+        }
+        if (err==0) {
+            std::vector<int>GeoIds;
+            for (int i = 0; i < mGeoList.size(); i++) {
+                GeoIds.push_back(i);;
+            } 
+            deleteGeometries(GeoIds);
+            mGeoList.clear();
+            std::vector<Part::Geometry*> geomlist = solvedSketch.extractGeometry();
+            addGeometry(geomlist);        
+        }
         return 0;
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
@@ -1217,6 +1244,17 @@ namespace MOON {
         newConstr->Third = thirdGeoId;
         newConstr->ThirdPos = thirdPos;
         return newConstr;
+    }
+    void SketcherObj::retrieveSolverDiagnostics()
+    {
+        lastHasConflict = solvedSketch.hasConflicts();
+        lastHasRedundancies = solvedSketch.hasRedundancies();
+        lastHasPartialRedundancies = solvedSketch.hasPartialRedundancies();
+        lastHasMalformedConstraints = solvedSketch.hasMalformedConstraints();
+        lastConflicting = solvedSketch.getConflicting();
+        lastRedundant = solvedSketch.getRedundant();
+        lastPartiallyRedundant = solvedSketch.getPartiallyRedundant();
+        lastMalformedConstraints = solvedSketch.getMalformedConstraints();
     }
     void SketcherObj::updateGeoSegment(int id)
     {
