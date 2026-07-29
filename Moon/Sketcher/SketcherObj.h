@@ -59,6 +59,7 @@ namespace MOON {
 		
 		void removeSelect(const std::vector<int>& idList);
 		int getPreselectId()const {return preSelectGeoId.GeoId;}
+		SelectGeoId getPreSelectGeoId()const { return preSelectGeoId; }
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		int fillet(int geoId1,int geoId2,const Base::Vector3d& refPnt1,const Base::Vector3d& refPnt2,double radius,bool trim = true,bool createCorner = false,bool chamfer = false);
 		bool seekTrimPoints(

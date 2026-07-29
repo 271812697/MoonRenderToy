@@ -77,9 +77,11 @@ namespace MOON
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)
     {
-        for (int i = 0; i < EditCurve.size() - 1; i++) {
-            lines.push_back(EditCurve[i]);
-            lines.push_back(EditCurve[i + 1]);
+        if (EditCurve.size() > 0) {
+            for (int i = 0; i < EditCurve.size() - 1; i++) {
+                lines.push_back(EditCurve[i]);
+                lines.push_back(EditCurve[i + 1]);
+            }
         }
     }
     void DrawSketchHandler::drawEdit(const std::list<std::vector<Base::Vector2d>>& list) 

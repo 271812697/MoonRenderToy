@@ -15,6 +15,7 @@
 #include "Interactive/Widgets/SplitScreen.h"
 #include "Interactive/Widgets/DrawSketchHandlerPoint.h"
 #include "Interactive/Widgets/DrawSketchHandlerLine.h"
+#include "Interactive/Widgets/DrawSketchHandlerLineSet.h"
 #include "Interactive/Widgets/DrawSketchHandlerCircle.h"
 #include "Interactive/Widgets/DrawSketchHandlerRotate.h"
 #include "Interactive/Widgets/DrawSketchHandlerArc.h"
@@ -44,6 +45,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["SplitScreen"] = new MOON::SplitScreen("SplitScreen");
 			mWidgets["DrawSketchHandlerPoint"] = new MOON::DrawSketchHandlerPoint("DrawSketchHandlerPoint");
 			mWidgets["DrawSketchHandlerLine"]=new MOON::DrawSketchHandlerLine("DrawSketchHandlerLine");
+			mWidgets["DrawSketchHandlerLineSet"] = new MOON::DrawSketchHandlerLineSet("DrawSketchHandlerLineSet");
 			mWidgets["DrawSketchHandlerCircle"] = new MOON::DrawSketchHandlerCircle("DrawSketchHandlerCircle");
 			mWidgets["DrawSketchHandlerArc"] = new MOON::DrawSketchHandlerArc("DrawSketchHandlerArc");
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");

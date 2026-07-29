@@ -1314,50 +1314,69 @@ namespace MOON {
             bool isNone = Id.pointPos == PointPos::None;
             Base::Vector3d delta(dx, dy, 0);
             Base::Vector3d mousePos = Base::Vector3d(onSketchPosMove.x,onSketchPosMove.y,0.0);
-            //if (Id.pointPos == PointPos::None) {
-            //    geo->translate(delta);
-            //}
-            //else
-            {
-                
-                if (geo->isDerivedFrom<Part::GeomCurve>()) {
-                    if (geo->is<Part::GeomArcOfCircle>()) {
-                        Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(geo);
+
+            { 
+            if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                if (geo->is<Part::GeomArcOfCircle>()) {
+                    Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(geo);
+                    if (isNone) {
+                        curve->setRadius((mousePos - curve->getCenter()).Length());
                     }
-                    else if (geo->is<Part::GeomLineSegment>()) {
-                        Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
+                    else if (isCenter) {
+                        geo->translate(delta);
+                    }
+                    else
+                    {
+                        double u, v;
+                        curve->getRange(u,v,false);
+                        Base::Vector3d deltaV=mousePos - curve->getCenter();
+                        Base::Vector3d xAxis = Base::Vector3d(1, 0, 0);
+                        bool isNegative=xAxis.Cross(deltaV).z<0;
+                        double angle = (deltaV).GetAngle(Base::Vector3d(1, 0, 0));
+                        if (isNegative) {
+                            angle = -angle;
+                        }
                         if (isStart) {
-                            lineSeg->setPoints(lineSeg->getStartPoint() + delta,lineSeg->getEndPoint());
+                            curve->setRange(angle,v,false);
                         }
-                        else if(isEnd) {
-                            lineSeg->setPoints(lineSeg->getStartPoint() , lineSeg->getEndPoint()+ delta);
-                        }
-                        else
-                        {
-                            geo->translate(delta);
+                        else if (isEnd) {
+                            curve->setRange(u, angle, false);
                         }
                     }
-                    else if (geo->is<Part::GeomArcOfConic>()) {
-                        Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(geo);
-                       
+                }
+                else if (geo->is<Part::GeomLineSegment>()) {
+                    Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
+                    if (isStart) {
+                        lineSeg->setPoints(lineSeg->getStartPoint() + delta,lineSeg->getEndPoint());
                     }
-                    else if (geo->is<Part::GeomCircle>()) {
-                        Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
-                        if (isNone) {
-                            curve->setRadius((mousePos-curve->getCenter()).Length());
-                        }
-                        else
-                        {
-                            geo->translate(delta);
-                        }
+                    else if(isEnd) {
+                        lineSeg->setPoints(lineSeg->getStartPoint() , lineSeg->getEndPoint()+ delta);
                     }
-                    else if (geo->is<Part::GeomBSplineCurve>()) {
-                        Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
+                    else
+                    {
                         geo->translate(delta);
                     }
                 }
+                else if (geo->is<Part::GeomArcOfConic>()) {
+                    Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(geo);
+                       
+                }
+                else if (geo->is<Part::GeomCircle>()) {
+                    Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
+                    if (isNone) {
+                        curve->setRadius((mousePos-curve->getCenter()).Length());
+                    }
+                    else
+                    {
+                        geo->translate(delta);
+                    }
+                }
+                else if (geo->is<Part::GeomBSplineCurve>()) {
+                    Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
+                    geo->translate(delta);
+                }
             }
-           
+            }
             updateGeoSegment(geoId);
         }
     }
