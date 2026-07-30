@@ -29,54 +29,117 @@ namespace MOON {
 			auto action = new QAction(this);
 			action->setCheckable(false);
 			setAction(action);
-			
-		}
-		
-	protected:
-		virtual void execute()override {
-			bool value = action()->isChecked();
-			auto& view = GetService(Editor::Panels::SceneView);
-			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
-			/*
-					void addConstraint(
-			Sketcher::ConstraintType constrType,
-			int firstGeoId,
-			Sketcher::PointPos firstPos,
-			int secondGeoId = Sketcher::GeoEnum::GeoUndef,
-			Sketcher::PointPos secondPos = Sketcher::PointPos::none,
-			int thirdGeoId = Sketcher::GeoEnum::GeoUndef,
-			Sketcher::PointPos thirdPos = Sketcher::PointPos::none
-		);
-			*/
-			if (listOfGeoIds.size() > 1) {
-				Obj->addConstraint(
-					Sketcher::ConstraintType::Coincident, 
-					listOfGeoIds[0].GeoId,
-					convertPointPos(listOfGeoIds[0].pointPos),
-					listOfGeoIds[1].GeoId,
-					convertPointPos(listOfGeoIds[1].pointPos) );
-				Obj->solve();
-			}
-
-			//for (auto  id : listOfGeoIds) {
-			//	std::string pos = "None";
-			//	if (id.pointPos == SketcherObj::PointPos::StartP) {
-			//		pos = "Start";
-			//	}
-			//	if (id.pointPos == SketcherObj::PointPos::CenterP) {
-			//		pos = "Center";
-			//	}
-			//	if (id.pointPos == SketcherObj::PointPos::EndP) {
-			//		pos = "End";
-			//	}
-			//	CORE_INFO("Select {} {}",id.GeoId,pos);
-			//}
-			
-
 		}
 	};
+	class CoincidentConstraint :public ConstraintCommand {
+	public:
+		CoincidentConstraint(QObject* parent):ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
+			if (listOfGeoIds.size() > 1) {
+				if (listOfGeoIds.size() == 2) {
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Coincident,
+						listOfGeoIds[0].GeoId,
+						convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[1].GeoId,
+						convertPointPos(listOfGeoIds[1].pointPos));
+				}
+				else {
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Coincident,
+						listOfGeoIds[0].GeoId,
+						convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[1].GeoId,
+						convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[2].GeoId,
+						convertPointPos(listOfGeoIds[2].pointPos)
+					);
+				}
+
+				Obj->solve();
+			}
+		}
+	};
+	class HorizontalConstraint :public ConstraintCommand {
+	public:
+		HorizontalConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			if (listOfGeoIds.size() == 1) {
+				Obj->addConstraint(
+						Sketcher::ConstraintType::Horizontal,
+						listOfGeoIds[0].GeoId, Sketcher::PointPos::none
+						);
+			
+				Obj->solve();
+			}
+		}
+	};
+	class VerticalConstraint :public ConstraintCommand {
+	public:
+		VerticalConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			if (listOfGeoIds.size() == 1) {
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Vertical,
+					listOfGeoIds[0].GeoId, Sketcher::PointPos::none
+				);
+
+				Obj->solve();
+			}
+		}
+	};
+	class ParallelConstraint :public ConstraintCommand {
+	public:
+		ParallelConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			if (listOfGeoIds.size() == 2) {
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Parallel,
+					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
+					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+				);
+
+				Obj->solve();
+			}
+		}
+	};
+	class PerpendicularConstraint :public ConstraintCommand {
+	public:
+		PerpendicularConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			if (listOfGeoIds.size() == 2) {
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Perpendicular,
+					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
+					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+				);
+
+				Obj->solve();
+			}
+		}
+	};
 	class ConstraintToolbar::Internal {
 	public:
 
@@ -86,18 +149,38 @@ namespace MOON {
 			
 		}
 		void setup() {
-			coincident = new ConstraintCommand(self);
+			coincident = new CoincidentConstraint(self);
 			coincident->setIcon(":/widgets/icons/constraint/Constraint_Coincident.svg");
+			horizontal = new HorizontalConstraint(self);
+			horizontal->setIcon(":/widgets/icons/constraint/Constraint_Horizontal.svg");
+			vertical = new VerticalConstraint(self);
+			vertical->setIcon(":/widgets/icons/constraint/Constraint_Vertical.svg");
+			parallel = new ParallelConstraint(self);
+			parallel->setIcon(":/widgets/icons/constraint/Constraint_Parallel.svg");
+			perpendicular = new PerpendicularConstraint(self);
+			perpendicular->setIcon(":/widgets/icons/constraint/Constraint_Perpendicular.svg");
 			self->addAction(coincident->action());
+			self->addAction(horizontal->action());
+			self->addAction(vertical->action());
+			self->addAction(parallel->action());
+			self->addAction(perpendicular->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
 			coincident->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Coincident", nullptr));
+			horizontal->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Horizontal", nullptr));
+			vertical->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Vertical", nullptr));
+			parallel->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Parallel", nullptr));
+			perpendicular->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Perpendicular", nullptr));
 		}
 	private:
 		friend class ConstraintToolbar;
 		ConstraintToolbar* self = nullptr;
 		ConstraintCommand* coincident = nullptr;
+		ConstraintCommand* horizontal = nullptr;
+		ConstraintCommand* vertical = nullptr;
+		ConstraintCommand* parallel = nullptr;
+		ConstraintCommand* perpendicular = nullptr;
 	};
 
 	ConstraintToolbar::ConstraintToolbar(const QString& title, QWidget* parent)

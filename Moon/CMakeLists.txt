@@ -8,9 +8,8 @@ set(CMAKE_AUTORCC ON)
 qt5_add_resources(RESOURCES ./resource/resource.qrc)
 file(GLOB_RECURSE Moon_HEAD ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE Moon_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB GLSL ${CMAKE_CURRENT_SOURCE_DIR}/pathtrace/shaders/*.*)
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${Moon_HEAD} ${Moon_SOURCE} ${GLSL})
-add_executable(${TARGET_NAME} ${Moon_HEAD} ${Moon_SOURCE} ${RESOURCES}  ${GLSL})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${Moon_HEAD} ${Moon_SOURCE})
+add_executable(${TARGET_NAME} ${Moon_HEAD} ${Moon_SOURCE} ${RESOURCES})
 set_target_properties(${TARGET_NAME}
   PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib

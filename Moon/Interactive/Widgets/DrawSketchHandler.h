@@ -7,8 +7,6 @@
 #include <optional>
 namespace MOON
 {
-  
-    
     class DrawSketchHandler : public EventWidget {
     public:
 		DrawSketchHandler(const std::string& name)

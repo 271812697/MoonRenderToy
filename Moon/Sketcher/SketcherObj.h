@@ -34,6 +34,7 @@ namespace MOON {
 		virtual void onLeftMousePressed()override;
 		virtual void onLeftMouseReleased()override;
 		virtual void onKeyPress(const std::string& key)override;
+		virtual void onKeyRelease(const std::string& key)override;
 		void setPlane(const SketcherPlane2D&plane);
 		void fitCamera();
 		void beginEdit();
@@ -51,12 +52,14 @@ namespace MOON {
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		SelectGeoId testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		std::vector<int> getSelectIds() const;
+		void addSelect(int id);
 		std::vector<SelectGeoId> getSelectGeoPosIds() const {
 			return selectIds;
 		}
-		void addSelect(const std::vector<int>& idList);
+		
 		void removeSelect(const std::vector<int>& idList);
 		int getPreselectId()const {return preSelectGeoId.GeoId;}
+		SelectGeoId getPreSelectGeoId()const { return preSelectGeoId; }
 		bool snapPoint(Base::Vector2d& pos,const Base::Matrix4D& viewPortMat);
 		int fillet(int geoId1,int geoId2,const Base::Vector3d& refPnt1,const Base::Vector3d& refPnt2,double radius,bool trim = true,bool createCorner = false,bool chamfer = false);
 		bool seekTrimPoints(
@@ -123,7 +126,18 @@ namespace MOON {
 			int thirdGeoId = Sketcher::GeoEnum::GeoUndef,
 			Sketcher::PointPos thirdPos = Sketcher::PointPos::none
 		);
-
+	private:
+		void retrieveSolverDiagnostics();
+		int lastDoF;
+		bool lastHasConflict;
+		bool lastHasRedundancies;
+		bool lastHasPartialRedundancies;
+		bool lastHasMalformedConstraints;
+		int lastSolverStatus;
+		std::vector<int> lastConflicting;
+		std::vector<int> lastRedundant;
+		std::vector<int> lastPartiallyRedundant;
+		std::vector<int> lastMalformedConstraints;
 	private:
 
 		Part::TopoShape basedTopoShape;
@@ -131,6 +145,9 @@ namespace MOON {
 		struct CurveSegment;
 		void updateGeoSegment(int id);
 		void pickGeo();
+		void addSelect(SelectGeoId geoId);
+		void clearSelect();
+		void moveGeo(SelectGeoId geoId,float dx,float dy);
 		Base::Matrix4D updateTransform()const;
 		Base::Vector2d getMouseHitSketchPlanePoint();
 		CurveSegment getCurveSegment( Part::Geometry* geo) ;
@@ -141,17 +158,23 @@ namespace MOON {
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
 		SelectGeoId preSelectGeoId = {- 1,PointPos::None} ;
-		std::vector<SelectGeoId> selectIds ;
+		std::vector<SelectGeoId> selectIds;
 		bool hasClickSelected = false;
-		enum ClickMoveState
+		enum SelectState
 		{
-			SelectGeo,
-			HasSelectGeo,
-			MoveGeo,
+			Stop,
+			Hot,
+			OperationGeo,
+			DragRect,
 			End
 		};
+		enum SelectMode {
+			OverrideSelect,
+			AppendSelect
+		};
 		bool isHaveActiveHandler = false;
-		ClickMoveState clickMoveState = SelectGeo;
+		SelectState selectState = Stop;
+		SelectMode selectMode = OverrideSelect;
 		Base::Vector2d onSketchPosP1;
 		Base::Vector2d onSketchPosClicked;//used for click when select geometry curve
 		Base::Vector2d onSketchPosMove;//used for mouse move

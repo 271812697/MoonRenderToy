@@ -122,4 +122,5 @@ add_subdirectory(Extern)
 add_subdirectory(Moon)
 add_subdirectory(MoonRender)
 add_subdirectory(MoonGeomerty)
+add_subdirectory(MoonTracer)
 

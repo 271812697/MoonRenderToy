@@ -1,4 +1,4 @@
-<RCC>
+﻿<RCC>
     <qresource prefix="/">
         <file>darkstyle/Ubuntu-R.ttf</file>
         <file>darkstyle/darkstyle.qss</file>
@@ -72,11 +72,15 @@
         <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
 		    <file>icons/Sketcher_Trimming.svg</file>
         <file>icons/Sketcher_CreateLine.svg</file>
+        <file>icons/Sketcher_CreatePolyline.svg</file>
         <file>icons/Sketcher_Rotate.svg</file>
         <file>icons/Sketcher_Symmetry.svg</file>
         <file>icons/Sketcher_CreateFillet.svg</file>
         <file>icons/constraint/Constraint_Coincident.svg</file>
-		
+        <file>icons/constraint/Constraint_Horizontal.svg</file>
+        <file>icons/constraint/Constraint_Vertical.svg</file>
+        <file>icons/constraint/Constraint_Parallel.svg</file>
+        <file>icons/constraint/Constraint_Perpendicular.svg</file>
 		    <file>icons/Sketcher_NewSketch.svg</file>
 		    <file>icons/parametric/Part_Box_Parametric.svg</file>
 		    <file>icons/parametric/Part_Sphere_Parametric.svg</file>
