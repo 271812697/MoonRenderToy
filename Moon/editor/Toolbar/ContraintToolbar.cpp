@@ -42,12 +42,38 @@ namespace MOON {
 
 			if (listOfGeoIds.size() > 1) {
 				if (listOfGeoIds.size() == 2) {
-					Obj->addConstraint(
-						Sketcher::ConstraintType::Coincident,
-						listOfGeoIds[0].GeoId,
-						convertPointPos(listOfGeoIds[0].pointPos),
-						listOfGeoIds[1].GeoId,
-						convertPointPos(listOfGeoIds[1].pointPos));
+					Sketcher::ConstraintType constrType = Sketcher::ConstraintType::None;
+					if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::Coincident;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos));
+					}
+					else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::PointOnObject;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos),
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos));
+					}
+					else if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::PointOnObject;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos));
+
+					}
+					else {
+						CORE_ERROR("both are edges");
+					}
 				}
 				else {
 					Obj->addConstraint(
