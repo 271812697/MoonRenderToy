@@ -22,6 +22,7 @@
 #include <BRepLib_FindSurface.hxx>
 #include "Interactive/GizmoBehaviour.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "core/ViewTool.h"
 namespace MOON {
 	// 1. 从Wire列表构建截面面（无Compound，无编译错误）
 	TopoDS_Face BuildSectionFace(const std::list<TopoDS_Wire>& wireList)
@@ -234,39 +235,21 @@ namespace MOON {
 				renderer->popColor();
 			}
 		}
-		bool ret = true;
-		Eigen::Vector3f pos= m_internal->center;
-		float radius=renderer->pixelsToWorldSize(m_internal->center,48);
-		float worldHeight = renderer->pixelsToWorldSize(m_internal->center, 170);
-		float dis=renderer->pixelsToWorldSize(m_internal->center, 30);
+
 		renderer->drawOneMesh(
 			m_internal->center,
 			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"TransformAxis");
-		unsigned int planeOriginCircle = renderer->makeId("planeCircle");
-		auto& cirleDetectRadius = m_internal->cirleDetectRadius;
 
-		auto& normal = m_internal->zAxis;
 		auto& planeOrigin = m_internal->center;
-		
 		Eigen::Vector3f boxMin = Eigen::Vector3f(std::min(m_internal->boxMin.x(), planeOrigin.x()), std::min(m_internal->boxMin.y(), planeOrigin.y()), std::min(m_internal->boxMin.z(), planeOrigin.z()));
 		Eigen::Vector3f boxMax = Eigen::Vector3f(std::max(m_internal->boxMax.x(), planeOrigin.x()), std::max(m_internal->boxMax.y(), planeOrigin.y()), std::max(m_internal->boxMax.z(), planeOrigin.z()));
 
 		renderer->pushSize(3.0);;
 		renderer->drawAlignedBox(boxMin, boxMax);
 		renderer->popSize();
-		std::vector<Eigen::Vector3f> edges(std::move(clipBox(Plane(normal, planeOrigin), boxMin, boxMax)));
-		for (int i = 0; i < edges.size() / 2; i++)
-		{
-			renderer->drawLine(edges[2 * i], edges[2 * i + 1], 4, {255,255,255,255});
-		}
-		renderer->drawLineList(m_internal->slicelines,4, { 255,255,0,255 });
-		renderer->pushAlpha(0.6);
-		renderer->pushEnableSorting(true);
-		renderer->drawTriangleList(m_internal->sectionFace,4,{ 255,255,215,255 });
-		renderer->popAlpha();
-		renderer->popEnableSorting();
+
 
 		if (m_internal->updateEngineUbo)
 		{
@@ -425,15 +408,22 @@ namespace MOON {
 				auto& topoShape = topoComp->GetTopoShape();
 				double offset = m_internal->zAxis.dot(m_internal->center);
 				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-				auto wires = topoShape.slice(dir, offset);
-				m_internal->sectionFace = DiscretizeSectionFace(wires);
-				m_internal->slicelines.clear();
-				for (auto& w : wires) {
-					auto tempLine = DiscretizeWire(w);
-					m_internal->slicelines.insert(m_internal->slicelines.end(),
-						tempLine.begin(), tempLine.end()
-					);
+				auto wires = topoShape.slices(dir, std::vector<double>{ offset });
+
+				Part::TopoShape shape(wires);
+				if (!shape.isNull()) {
+					shape = shape.makeElementFace("Part::FaceMakerCheese");
+					ViewTool::createTopoActor(shape,"Section");
 				}
+				
+				//m_internal->sectionFace = DiscretizeSectionFace(wires);
+				//m_internal->slicelines.clear();
+				//for (auto& w : wires) {
+				//	auto tempLine = DiscretizeWire(w);
+				//	m_internal->slicelines.insert(m_internal->slicelines.end(),
+				//		tempLine.begin(), tempLine.end()
+				//	);
+				//}
 			}
 		}
 	}
