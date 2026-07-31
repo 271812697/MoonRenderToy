@@ -81,6 +81,7 @@
         <file>icons/constraint/Constraint_Vertical.svg</file>
         <file>icons/constraint/Constraint_Parallel.svg</file>
         <file>icons/constraint/Constraint_Perpendicular.svg</file>
+        <file>icons/constraint/Constraint_DistanceX.svg</file>
 		    <file>icons/Sketcher_NewSketch.svg</file>
 		    <file>icons/parametric/Part_Box_Parametric.svg</file>
 		    <file>icons/parametric/Part_Sphere_Parametric.svg</file>

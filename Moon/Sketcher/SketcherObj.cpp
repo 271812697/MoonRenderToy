@@ -495,9 +495,16 @@ namespace MOON {
         }
         selectIds.resize(left);
     }
-    bool SketcherObj::snapPoint(Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
+    bool SketcherObj::snapPoint(Base::Vector2d& pos)
     {
-        Base::Matrix4D trans= viewPortMat*getplaneTransform();
+        Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
+        Base::Matrix4D pla(
+            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
+            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
+            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
+            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
+        );
+        Base::Matrix4D trans= pla*getplaneTransform();
         //get the screen pos
         Base::Vector3d screenpPos = trans*Base::Vector3d{pos.x,pos.y,0.0};
         double deltaTole = 10.0;
@@ -1323,7 +1330,7 @@ namespace MOON {
                         curve->setRadius((mousePos - curve->getCenter()).Length());
                     }
                     else if (isCenter) {
-                        geo->translate(delta);
+                        curve->setCenter(mousePos);
                     }
                     else
                     {
@@ -1347,10 +1354,10 @@ namespace MOON {
                 else if (geo->is<Part::GeomLineSegment>()) {
                     Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
                     if (isStart) {
-                        lineSeg->setPoints(lineSeg->getStartPoint() + delta,lineSeg->getEndPoint());
+                        lineSeg->setPoints(mousePos,lineSeg->getEndPoint());
                     }
                     else if(isEnd) {
-                        lineSeg->setPoints(lineSeg->getStartPoint() , lineSeg->getEndPoint()+ delta);
+                        lineSeg->setPoints(lineSeg->getStartPoint() , mousePos);
                     }
                     else
                     {
@@ -1368,7 +1375,7 @@ namespace MOON {
                     }
                     else
                     {
-                        geo->translate(delta);
+                        curve->setCenter(mousePos);
                     }
                 }
                 else if (geo->is<Part::GeomBSplineCurve>()) {
@@ -1414,6 +1421,7 @@ namespace MOON {
         double x= (hitPos - mPlane.origin).Dot(mPlane.xAxis);
         double y=(hitPos - mPlane.origin).Dot(mPlane.yAxis);
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
+        snapPoint(onSketchPos);
         return onSketchPos;
     }
     SketcherObj::CurveSegment SketcherObj::getCurveSegment(Part::Geometry* geo) 
