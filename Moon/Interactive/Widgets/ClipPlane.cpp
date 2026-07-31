@@ -7,119 +7,16 @@
 #include "Interactive/Interactive/RenderWindowInteractor.h"
 #include "core/component/CTopoShape.h"
 #include "TopoShape.h"
-#include <TopoDS_Wire.hxx>
-#include <BRepAdaptor_CompCurve.hxx>
-#include <GCPnts_UniformAbscissa.hxx>
-#include <gp_Pnt.hxx>
-#include <TopoDS_Face.hxx>
-#include <TopoDS_Compound.hxx>
-#include <BRep_Builder.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepMesh_IncrementalMesh.hxx>
-#include <Poly_Triangulation.hxx>
-#include <TopoDS.hxx>
-#include <TopExp_Explorer.hxx>
-#include <BRepLib_FindSurface.hxx>
+#include "core/component/TopoShapeActor.h"
 #include "Interactive/GizmoBehaviour.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "core/ViewTool.h"
+
+#include <Core/ECS/Components/CMaterialRenderer.h>
+#include "Core/Global/ServiceLocator.h"
+#include <tracy/Tracy.hpp>
 namespace MOON {
-	// 1. 从Wire列表构建截面面（无Compound，无编译错误）
-	TopoDS_Face BuildSectionFace(const std::list<TopoDS_Wire>& wireList)
-	{
-		if (wireList.empty())
-			return TopoDS_Face();
 
-		// 取第一个wire创建基础面（平面切片专用）
-		const TopoDS_Wire& firstWire = wireList.front();
-		BRepBuilderAPI_MakeFace faceMaker(firstWire);
-
-		if (!faceMaker.IsDone())
-			return TopoDS_Face();
-
-		// 添加其余wire（内孔/子轮廓）
-		for (auto it = std::next(wireList.begin()); it != wireList.end(); ++it)
-		{
-			faceMaker.Add(*it);
-		}
-
-		return faceMaker.Face();
-	}
-
-	std::vector<Eigen::Vector3f> DiscretizeWire(const TopoDS_Wire& wire, double deflection = 0.1)
-	{
-		std::vector<Eigen::Vector3f> points;
-		BRepAdaptor_CompCurve curve(wire, Standard_True);
-		//if (!curve.IsValid())
-			//return points;
-
-		GCPnts_UniformAbscissa discretor(curve, deflection);
-		if (!discretor.IsDone())
-			return points;
-
-		Standard_Integer nbPoints = discretor.NbPoints();
-		if (nbPoints < 2)
-			return points;
-
-		// 先取第一个点
-		gp_Pnt p_prev;
-		curve.D0(discretor.Parameter(1), p_prev);
-
-		for (Standard_Integer i = 2; i <= nbPoints; ++i)
-		{
-			gp_Pnt p_curr;
-			curve.D0(discretor.Parameter(i), p_curr);
-
-			// 每一段线：存 起点 + 终点
-			points.push_back({ (float)p_prev.X(), (float)p_prev.Y(), (float)p_prev.Z() });
-			points.push_back({ (float)p_curr.X(), (float)p_curr.Y(), (float)p_curr.Z() });
-
-			p_prev = p_curr;
-		}
-
-		return points;
-	}
-	std::vector<Eigen::Vector3f> DiscretizeSectionFace(const std::list<TopoDS_Wire>& wires, double deflection = 0.1) {
-	
-		std::vector<Eigen::Vector3f> vertices;
-
-		TopoDS_Face face = BuildSectionFace(wires);
-
-		// 4. 对截面面进行三角网格化
-		BRepMesh_IncrementalMesh mesh(face, deflection, Standard_True);
-		if (!mesh.IsDone()) return vertices;
-
-		// 5. 提取所有三角面顶点（三点一组 = 一个面）
-		TopExp_Explorer explorer(face, TopAbs_FACE);
-		for (; explorer.More(); explorer.Next())
-		{
-			TopoDS_Face f = TopoDS::Face(explorer.Current());
-			TopLoc_Location loc;
-			Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(f,loc);
-			if (triangulation.IsNull()) continue;
-
-			// 遍历所有三角形
-			Standard_Integer nbTriangles = triangulation->NbTriangles();
-			for (Standard_Integer i = 1; i <= nbTriangles; ++i)
-			{
-				const Poly_Triangle& tri = triangulation->Triangle(i);
-				Standard_Integer n1 = tri(1);
-				Standard_Integer n2 = tri(2);
-				Standard_Integer n3 = tri(3);
-
-				gp_Pnt p1 = triangulation->Node(n1);
-				gp_Pnt p2 = triangulation->Node(n2);
-				gp_Pnt p3 = triangulation->Node(n3);
-
-				// 加入顶点：三点一组
-				vertices.push_back({ (float)p1.X(), (float)p1.Y(), (float)p1.Z() });
-				vertices.push_back({ (float)p2.X(), (float)p2.Y(), (float)p2.Z() });
-				vertices.push_back({ (float)p3.X(), (float)p3.Y(), (float)p3.Z() });
-			}
-		}
-
-		return vertices;
-	}
 	struct PickMeshInfo {
 		std::string blockName;
 		ClipPlane::PickMeshId meshId;
@@ -144,13 +41,34 @@ namespace MOON {
 	public:
 		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
 			clickObserver = mSelf->Interactor->AddObserver(ExecuteCommand::LeftButtonReleaseEvent, this, &ClipPlane::ClipPlaneInternal::onMouseLeftClick, 0.0f);		
-			mSelf->Interactor;
+	
 		}
 		~ClipPlaneInternal() {
 			delete clickObserver.command;
 			//delete moveObserver.command;
 		}
-		
+		void setUp() {
+			sectionActor = new TopoActor("Section", "Geomerty", true);
+			auto faceMat = sectionActor->GetChild("Face")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
+			faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\SectionFace.ovfx"]);
+			auto& renderer = GetSceneView.GetRenderer();;
+			{
+				faceMat->SetBackfaceCulling(false);
+				faceMat->SetCastShadows(false);
+				faceMat->SetReceiveShadows(false);
+				faceMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 1));
+				faceMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
+				faceMat->SetProperty("u_Roughness", 0.25f);
+				faceMat->SetProperty("u_Metallic", 0.75f);
+				// Emission
+				faceMat->SetProperty("u_EmissiveIntensity", 1.0f);
+				faceMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
+
+				faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
+				faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
+				faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
+			}
+		}
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
 				auto acptr=mSelf->m_sceneView->GetSelectedActor();
@@ -181,6 +99,7 @@ namespace MOON {
 			cirleDetectRadius = extent / 2;
 		}
 	private:
+		TopoActor* sectionActor = nullptr;
 		friend class ClipPlane;
 		ClipPlane* mSelf = nullptr;
 		Core::ECS::Actor* ac = nullptr;
@@ -214,6 +133,9 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
+		if (m_internal->sectionActor == nullptr) {
+			m_internal->setUp();
+		}
 		if (mState == AxisR)
 		{
 			float angle=m_internal->axisRPick.getRotationAngle();
@@ -382,48 +304,48 @@ namespace MOON {
 				m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
 			}
 		}
+		if (mState == AxisT || mState == PlaneT || mState == AxisR) {
+		
+			PickMeshId id = table[mPickMesh].meshId;
+			bool updateFlag = (id != PickMeshId::XAxis) && (id != PickMeshId::YAxis) &&
+				(id != PickMeshId::ZNormalPlane) && (id != PickMeshId::YNormalRotate);
+			if (updateFlag) {
+				updateSection();
+			}
+		}
 	}
 
 	void ClipPlane::updateSection()
 	{
 		m_internal->updateEngineUbo = true;
-		Core::ECS::Actor* selectActor = nullptr;
-		if (m_sceneView->IsSelectActor()) {
-			selectActor = m_sceneView->GetSelectedActor();
-			while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
-			{
-				selectActor = selectActor->GetParent();
-			}
-		}
-		else
+		Core::ECS::Actor* selectActor = m_internal->ac;
+		while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
 		{
-			selectActor = m_sceneView->GetScene()->FindActorByTag("TopoShape");
+			selectActor = selectActor->GetParent();
 		}
-
 		if (selectActor)
 		{
 			Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-
 			if (topoComp) {
 				auto& topoShape = topoComp->GetTopoShape();
 				double offset = m_internal->zAxis.dot(m_internal->center);
 				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-				auto wires = topoShape.slices(dir, std::vector<double>{ offset });
-
-				Part::TopoShape shape(wires);
-				if (!shape.isNull()) {
-					shape = shape.makeElementFace("Part::FaceMakerCheese");
-					ViewTool::createTopoActor(shape,"Section");
+				{
+					ZoneScopedN("clip");
+					auto wires = topoShape.slices(dir, std::vector<double>{ offset });
+					Part::TopoShape shape(wires);
+					if (!shape.isNull()) {
+						try
+						{
+							ZoneScopedN("makeFace");
+							shape = shape.makeElementFace("Part::FaceMakerCheese");
+							m_internal->sectionActor->setTopoShape(shape);
+						}
+						catch (const Base::Exception&e)
+						{
+						}
+					}
 				}
-				
-				//m_internal->sectionFace = DiscretizeSectionFace(wires);
-				//m_internal->slicelines.clear();
-				//for (auto& w : wires) {
-				//	auto tempLine = DiscretizeWire(w);
-				//	m_internal->slicelines.insert(m_internal->slicelines.end(),
-				//		tempLine.begin(), tempLine.end()
-				//	);
-				//}
 			}
 		}
 	}
