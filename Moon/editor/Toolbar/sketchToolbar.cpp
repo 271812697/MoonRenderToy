@@ -159,6 +159,10 @@ namespace MOON {
 		}
 		
 	}
+	void SketchToolbar::setUncheckedAction(const std::string& name)
+	{
+		CreateCurveCommand::commandMap[name]->action()->setChecked(false);
+	}
 	void SketchToolbar::constructor()
 	{
 		mInternal = new SketchToolbarInternal(this);

@@ -7,11 +7,16 @@
 #include "renderer/SceneView.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "feature/SketcherFeature.h"
+#include "editor/Toolbar/sketchToolbar.h"
+#include "core/Global/ServiceLocator.h"
 namespace MOON
 {
 
     void DrawSketchHandler::quit()
     {
+        this->setActive(false);
+        auto& sketchToolBar=GetService(MOON::SketchToolbar);
+        sketchToolBar.setUncheckedAction(getName());
     }
     void DrawSketchHandler::clearEdit()
     {
@@ -65,14 +70,7 @@ namespace MOON
         auto sketchobj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 		isSnapedSketchPos = false;
         if (sketchobj) {
-            Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
-            Base::Matrix4D pla(
-                mat.data[0], mat.data[1], mat.data[2], mat.data[3],
-                mat.data[4], mat.data[5], mat.data[6], mat.data[7],
-                mat.data[8], mat.data[9], mat.data[10], mat.data[11],
-                mat.data[12], mat.data[13], mat.data[14], mat.data[15]
-            );
-            isSnapedSketchPos=sketchobj->snapPoint(onSketchPos,pla);
+            isSnapedSketchPos=sketchobj->snapPoint(onSketchPos);
         }
     }
     void DrawSketchHandler::drawEdit(const std::vector<Base::Vector2d>& EditCurve)

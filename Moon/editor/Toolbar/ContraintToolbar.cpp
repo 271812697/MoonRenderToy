@@ -6,7 +6,83 @@
 #include "Sketcher/SketcherObj.h"
 #include "core/log.h"
 #include <QCoreApplication>
+#include <QDialog>
+#include <QDoubleSpinBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QFormLayout>
 namespace MOON {
+	class ParamDialog : public QDialog
+	{
+		
+	public:
+		struct ParamDef
+		{
+			std::string name;
+			float range[2];
+			int decimal = 3;
+			float singleStep = 1.0f;
+			float value;
+			ParamDef(
+				const std::string&n,float a,float b,
+				float v,int dec=3,float step=1.0):name(n),decimal(dec),singleStep(step),value(v)
+			{
+				range[0] = a;
+				range[1] = b;
+			}
+		};
+		explicit ParamDialog(const std::string&name,QWidget* parent = nullptr) {
+			setWindowTitle(name.c_str());
+			setModal(true);
+		}
+		void setUp() {
+			// 总布局
+			QVBoxLayout* layMain = new QVBoxLayout(this);
+			layMain->setContentsMargins(20, 20, 20, 20);
+			layMain->setSpacing(12);
+			// 表单布局（核心，多行参数）
+			QFormLayout* m_formLayout = new QFormLayout();
+			m_formLayout->setLabelAlignment(Qt::AlignRight);
+			m_formLayout->setSpacing(10);
+			layMain->addLayout(m_formLayout);
+			for (auto it : paramList) {
+				QLabel* lableTip = new QLabel(it.name.c_str());
+				QDoubleSpinBox* widget = new QDoubleSpinBox();
+				paramWidgetList[it.name] = widget;
+
+				// 数值框参数（匹配CAD软件）
+				widget->setRange(it.range[0], it.range[1]); // 最小0.001，避免0半径
+				widget->setDecimals(it.decimal);           // 3位小数，CAD精度
+				widget->setValue(it.value);
+				widget->setSingleStep(it.singleStep);
+				m_formLayout->addRow(lableTip, widget);
+			}
+			QPushButton* btnOk = new QPushButton("ok");
+			QPushButton* btnCancel = new QPushButton("cancle");
+
+
+
+			QHBoxLayout* layBtn = new QHBoxLayout();
+			layBtn->addStretch();
+			layBtn->addWidget(btnOk);
+			layBtn->addWidget(btnCancel);
+
+			layMain->addLayout(layBtn);
+			connect(btnOk, &QPushButton::clicked, this, &QDialog::accept);
+			connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+		}
+		void addParamDef(const ParamDef& def) {
+			paramList.push_back(def);
+		}
+		float getParamValue(const std::string& name) {
+			return paramWidgetList[name]->value();
+		}
+	private:
+		std::vector<ParamDef>paramList;
+		std::unordered_map<std::string, QDoubleSpinBox*>paramWidgetList;
+		
+	};
 	Sketcher::PointPos convertPointPos(SketcherObj::PointPos pos) {
 	   if (pos == SketcherObj::PointPos::None) {
 		  return Sketcher::PointPos::none;
@@ -42,12 +118,38 @@ namespace MOON {
 
 			if (listOfGeoIds.size() > 1) {
 				if (listOfGeoIds.size() == 2) {
-					Obj->addConstraint(
-						Sketcher::ConstraintType::Coincident,
-						listOfGeoIds[0].GeoId,
-						convertPointPos(listOfGeoIds[0].pointPos),
-						listOfGeoIds[1].GeoId,
-						convertPointPos(listOfGeoIds[1].pointPos));
+					Sketcher::ConstraintType constrType = Sketcher::ConstraintType::None;
+					if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::Coincident;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos));
+					}
+					else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::PointOnObject;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos),
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos));
+					}
+					else if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+						constrType = Sketcher::ConstraintType::PointOnObject;
+						Obj->addConstraint(
+							constrType,
+							listOfGeoIds[0].GeoId,
+							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[1].GeoId,
+							convertPointPos(listOfGeoIds[1].pointPos));
+
+					}
+					else {
+						CORE_ERROR("both are edges");
+					}
 				}
 				else {
 					Obj->addConstraint(
@@ -140,6 +242,64 @@ namespace MOON {
 			}
 		}
 	};
+	class DistanceXConstraint :public ConstraintCommand {
+	public:
+		DistanceXConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum>0) {
+				ParamDialog dialog("DX");
+
+				dialog.addParamDef(ParamDialog::ParamDef("DistanceX", 0, 100, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("DistanceX");
+					CORE_INFO("distanceX is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//horizontal length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceX;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else
+						{
+							// point on fixed x-coordinate
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceX;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+					else if (selectNum == 2) {
+						// point to point horizontal distance
+						auto newConstr = std::make_unique<Sketcher::Constraint>();
+						newConstr->Type = Sketcher::ConstraintType::DistanceX;
+						newConstr->First = listOfGeoIds[0].GeoId;
+						newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+						newConstr->Second = listOfGeoIds[1].GeoId;
+						newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+						newConstr->setValue(distance);
+						Obj->addConstraint(std::move(newConstr));
+						Obj->solve();
+					}
+				}
+			}
+		}
+	};
 	class ConstraintToolbar::Internal {
 	public:
 
@@ -159,11 +319,14 @@ namespace MOON {
 			parallel->setIcon(":/widgets/icons/constraint/Constraint_Parallel.svg");
 			perpendicular = new PerpendicularConstraint(self);
 			perpendicular->setIcon(":/widgets/icons/constraint/Constraint_Perpendicular.svg");
+			distanceX = new DistanceXConstraint(self);
+			distanceX->setIcon(":/widgets/icons/constraint/Constraint_DistanceX.svg");
 			self->addAction(coincident->action());
 			self->addAction(horizontal->action());
 			self->addAction(vertical->action());
 			self->addAction(parallel->action());
 			self->addAction(perpendicular->action());
+			self->addAction(distanceX->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -172,6 +335,7 @@ namespace MOON {
 			vertical->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Vertical", nullptr));
 			parallel->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Parallel", nullptr));
 			perpendicular->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Perpendicular", nullptr));
+			distanceX->action()->setText(QCoreApplication::translate("ConstraintToolbar", "DistanceX", nullptr));
 		}
 	private:
 		friend class ConstraintToolbar;
@@ -181,6 +345,7 @@ namespace MOON {
 		ConstraintCommand* vertical = nullptr;
 		ConstraintCommand* parallel = nullptr;
 		ConstraintCommand* perpendicular = nullptr;
+		ConstraintCommand* distanceX = nullptr;
 	};
 
 	ConstraintToolbar::ConstraintToolbar(const QString& title, QWidget* parent)

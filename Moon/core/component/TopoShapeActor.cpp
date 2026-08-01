@@ -147,5 +147,6 @@ namespace MOON {
 	void TopoActor::setTopoShape(Part::TopoShape shape)
 	{
 		topoShape->setShape(shape);;
+		GetComponent<Core::ECS::Components::CTopoShape>()->discretizationShape();
 	}
 }

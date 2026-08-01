@@ -20,6 +20,44 @@ namespace MOON {
 		}
 		~Internal() {
 		}
+		void clearSelectEffect(const std::unordered_set<SelectID, SelectIDHash>& clearList) {
+		
+			std::unordered_map<::Core::ECS::Components::CTopoShape*, int>selectFaceMap;
+			std::unordered_map<::Core::ECS::Components::CTopoShape*, int>selectEdgeMap;
+			for (auto& id : clearList) {
+				auto actor = GetMainScene->FindActorByID(id);
+				if (actor) {
+					if (actor->HasParent()) {
+						auto parent = actor->GetParent();
+						if (parent->HasParent()) {
+							auto grandParent = parent->GetParent();
+							if (grandParent->HasComponent("CTopoShape")) {
+								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
+
+								std::string idString = actor->GetName().substr(5);
+								int childId = std::stoi(idString);
+								if (parent->HasComponent("CBatchMeshTriangle")) {
+									if (childId != -1) {
+										selectFaceMap[topoComp] = 1;
+									}
+								}
+								else if (parent->HasComponent("CBatchMeshLine")) {
+									if (childId != -1) {
+										selectEdgeMap[topoComp] = 1;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			for (auto& it : selectFaceMap) {
+				it.first->selectChildFaces({});
+			}
+			for (auto& it : selectEdgeMap) {
+				it.first->clearSelectLines();
+			}
+		}
 	private:
 		friend SelectionManager;
 		SelectionManager* self = nullptr;
@@ -68,46 +106,14 @@ namespace MOON {
 	}
 	void SelectionManager::select(const std::vector<SelectID>& selectIdLists)
 	{
+		std::unordered_set<SelectID, SelectIDHash> beforeSelect = mInternal->selectIDs;
+		//this means select nothing we need clear
 		if (mInternal->mSelectMode == SelectMode::OverrideSelect&& selectIdLists.size()==0) {
-			std::unordered_map<::Core::ECS::Components::CTopoShape*, int>selectFaceMap;
-			std::unordered_map<::Core::ECS::Components::CTopoShape*, int>selectEdgeMap;
-			for (auto& id : mInternal->selectIDs) {
-				auto actor = GetMainScene->FindActorByID(id);
-				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasParent()) {
-							auto grandParent = parent->GetParent();
-							if (grandParent->HasComponent("CTopoShape")) {
-								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-
-								std::string idString = actor->GetName().substr(5);
-								int childId = std::stoi(idString);
-								if (parent->HasComponent("CBatchMeshTriangle")) {
-									if (childId != -1) {
-										selectFaceMap[topoComp]=1;
-									}
-								}
-								else if (parent->HasComponent("CBatchMeshLine")) {
-									if (childId != -1) {
-										selectEdgeMap[topoComp]=1;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			for (auto& it : selectFaceMap) {
-				it.first->selectChildFaces({});
-			}
-			for (auto& it : selectEdgeMap) {
-				it.first->clearSelectLines();
-			}
+			mInternal->clearSelectEffect(mInternal->selectIDs);
 			mInternal->selectIDs.clear();
 			return;
 		}
-		int beforeSelectSize = mInternal->selectIDs.size();
+		
 		if (mInternal->mSelectMode==SelectMode::OverrideSelect) {
 			mInternal->selectIDs.clear();
 			mInternal->selectIDs.insert(selectIdLists.begin(), selectIdLists.end());
@@ -118,8 +124,9 @@ namespace MOON {
 				mInternal->selectIDs.insert( selectIdLists.begin(), selectIdLists.end());
 			}
 		}
-		int curSelectSize= mInternal->selectIDs.size();
-		if (curSelectSize != beforeSelectSize) {
+		if (mInternal->selectIDs != beforeSelect)
+		{
+			mInternal->clearSelectEffect(beforeSelect);
 			std::unordered_map<::Core::ECS::Components::CTopoShape*, std::vector<int>>selectFaceMap;
 			std::unordered_map<::Core::ECS::Components::CTopoShape*, std::vector<int>>selectEdgeMap;
 			for (auto& id:mInternal->selectIDs) {
