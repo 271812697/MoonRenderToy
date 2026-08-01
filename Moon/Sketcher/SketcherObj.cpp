@@ -67,7 +67,7 @@ namespace MOON {
     }
     void SketcherObj::onMouseMove()
     {
-        onSketchPosP2 = getMouseHitSketchPlanePoint();
+        onSketchPosP2 = onSketchPosMove;
 		Base::Vector2d preOnSketchPosMove = onSketchPosMove;
         if (!isHaveActiveHandler&& isInEdit) {
             pickGeo();
@@ -1240,26 +1240,26 @@ namespace MOON {
     }
     int  SketcherObj::addConstraint(std::unique_ptr<Sketcher::Constraint> constraint)
     {
+        for (int i = 0; i < mConstraintList.size(); i++) {
+            if (
+                mConstraintList[i]->Type == constraint->Type &&
+                mConstraintList[i]->First == constraint->First &&
+                mConstraintList[i]->FirstPos == constraint->FirstPos &&
+                mConstraintList[i]->Second == constraint->Second &&
+                mConstraintList[i]->SecondPos == constraint->SecondPos &&
+                mConstraintList[i]->Third == constraint->Third &&
+                mConstraintList[i]->ThirdPos == constraint->ThirdPos
+                )
+            {
+                return -1;
+            }
+        }
         Sketcher::Constraint* constNew = constraint.release();
         mConstraintList.push_back(constNew);
         return mConstraintList.size()-1;
     }
     void SketcherObj::addConstraint(Sketcher::ConstraintType constrType, int firstGeoId, Sketcher::PointPos firstPos, int secondGeoId, Sketcher::PointPos secondPos, int thirdGeoId, Sketcher::PointPos thirdPos)
     {
-        for (int i = 0; i < mConstraintList.size(); i++) {
-            if (
-                mConstraintList[i]->Type == constrType &&
-                mConstraintList[i]->First == firstGeoId&& 
-                mConstraintList[i]->FirstPos == firstPos&&
-                mConstraintList[i]->Second == secondGeoId&&
-                mConstraintList[i]->SecondPos == secondPos &&
-                mConstraintList[i]->Third== thirdGeoId &&
-                mConstraintList[i]->ThirdPos== thirdPos
-                ) 
-            {
-                return;
-            }
-        }
         auto newConstr = createConstraint(
             constrType, firstGeoId, firstPos, secondGeoId, secondPos, thirdGeoId, thirdPos);
 

@@ -251,30 +251,52 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
-			ParamDialog dialog("DX");
+			int selectNum = listOfGeoIds.size();
+			if (selectNum>0) {
+				ParamDialog dialog("DX");
 
-			dialog.addParamDef(ParamDialog::ParamDef("DistanceX",0,100,5));
-			dialog.setUp();
-			// exec() 模态阻塞：对话框关闭后返回结果
-			int ret = dialog.exec();
-			if (ret == QDialog::Accepted)
-			{
-				// 用户点击确定，获取半径值
-				double r = dialog.getParamValue("DistanceX");
-				CORE_INFO("{}",r);
-	
-			}
-			else
-			{
-				// 用户取消，不做任何操作
-			
-			}
-			if (listOfGeoIds.size() == 1) {
-				//Obj->addConstraint(
-				//	Sketcher::ConstraintType::Horizontal,
-				//	listOfGeoIds[0].GeoId, Sketcher::PointPos::none
-				//);
-				//Obj->solve();
+				dialog.addParamDef(ParamDialog::ParamDef("DistanceX", 0, 100, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("DistanceX");
+					CORE_INFO("distanceX is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//horizontal length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceX;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else
+						{
+							// point on fixed x-coordinate
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceX;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+					else if (selectNum == 2) {
+						// point to point horizontal distance
+						auto newConstr = std::make_unique<Sketcher::Constraint>();
+						newConstr->Type = Sketcher::ConstraintType::DistanceX;
+						newConstr->First = listOfGeoIds[0].GeoId;
+						newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+						newConstr->Second = listOfGeoIds[1].GeoId;
+						newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+						newConstr->setValue(distance);
+						Obj->addConstraint(std::move(newConstr));
+						Obj->solve();
+					}
+				}
 			}
 		}
 	};
