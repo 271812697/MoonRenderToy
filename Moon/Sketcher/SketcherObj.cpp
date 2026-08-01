@@ -495,7 +495,7 @@ namespace MOON {
         }
         selectIds.resize(left);
     }
-    bool SketcherObj::snapPoint(Base::Vector2d& pos)
+    bool SketcherObj::snapPoint(Base::Vector2d& pos, const std::set<int>& avoid)
     {
         Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
         Base::Matrix4D pla(
@@ -512,16 +512,19 @@ namespace MOON {
         bool ret = false;
         // travel all segments
         for (int i = 0; i < mGeoList.size(); i++) {
-            Part::Geometry* geo = mGeoList[i].get();  
-            auto& segment = mGeoSegment[geo];
-            for (int j = 0;j < segment.sepoints.size();j++) {
-				double dist = (screenpPos -trans*segment.sepoints[j].coord).Length();
-				if (dist < deltaTole && dist < minDist) {
-					minDist = dist;
-					ret = true;
-					pos = { segment.sepoints[j].coord.x, segment.sepoints[j].coord.y };
-				}
+            if (!avoid.count(i)) {
+                Part::Geometry* geo = mGeoList[i].get();  
+                auto& segment = mGeoSegment[geo];
+                for (int j = 0;j < segment.sepoints.size();j++) {
+				    double dist = (screenpPos -trans*segment.sepoints[j].coord).Length();
+				    if (dist < deltaTole && dist < minDist) {
+					    minDist = dist;
+					    ret = true;
+					    pos = { segment.sepoints[j].coord.x, segment.sepoints[j].coord.y };
+				    }
+                }
             }
+
         }
         if (!ret) {
             //snap to orgin or XAxis or YAxis
@@ -543,24 +546,26 @@ namespace MOON {
             }
             //snap to curve
             for (int i = 0; i < mGeoList.size(); i++) {
-                Part::Geometry* geo = mGeoList[i].get();
-                auto& segment = mGeoSegment[geo];
-                if (geo->isDerivedFrom<Part::GeomCurve>()) {
-                    for (int j = 0;j < segment.point.size()-1;j++) {
-                        double u = 0.0;
-                        double dist = pointToSegmentDist(
-                            screenpPos,
-                            trans * segment.point[j],
-                            trans * segment.point[j+1],
-                            u);
-                        if (dist < deltaTole && dist < minDist) {
-                            minDist = dist;
-                            ret = true;
-                            u= segment.params[j] +u*(segment.params[j+1]-segment.params[j]);
-							Base::Vector3d pp=static_cast<Part::GeomCurve*>(geo)->value(u);
-                            pos = { pp.x, pp.y };
-                        }
-                    }   
+                if (!avoid.count(i)) {
+                    Part::Geometry* geo = mGeoList[i].get();
+                    auto& segment = mGeoSegment[geo];
+                    if (geo->isDerivedFrom<Part::GeomCurve>()) {
+                        for (int j = 0;j < segment.point.size()-1;j++) {
+                            double u = 0.0;
+                            double dist = pointToSegmentDist(
+                                screenpPos,
+                                trans * segment.point[j],
+                                trans * segment.point[j+1],
+                                u);
+                            if (dist < deltaTole && dist < minDist) {
+                                minDist = dist;
+                                ret = true;
+                                u= segment.params[j] +u*(segment.params[j+1]-segment.params[j]);
+							    Base::Vector3d pp=static_cast<Part::GeomCurve*>(geo)->value(u);
+                                pos = { pp.x, pp.y };
+                            }
+                        }   
+                    }
                 }
             }
         }
@@ -1306,6 +1311,9 @@ namespace MOON {
         );
         onSketchPosMove = getMouseHitSketchPlanePoint();
         preSelectGeoId = testSelect(onSketchPosMove, pla);
+        std::set<int>avoidList;
+        avoidList.insert(preSelectGeoId.GeoId);
+        snapPoint(onSketchPosMove, avoidList);
     }
     void SketcherObj::clearSelect() {
         selectIds.clear();
@@ -1421,7 +1429,6 @@ namespace MOON {
         double x= (hitPos - mPlane.origin).Dot(mPlane.xAxis);
         double y=(hitPos - mPlane.origin).Dot(mPlane.yAxis);
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
-        snapPoint(onSketchPos);
         return onSketchPos;
     }
     SketcherObj::CurveSegment SketcherObj::getCurveSegment(Part::Geometry* geo) 

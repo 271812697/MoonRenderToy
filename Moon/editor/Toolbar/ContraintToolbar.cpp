@@ -177,11 +177,20 @@ namespace MOON {
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
 			if (listOfGeoIds.size() == 1) {
+				// horizontal line
 				Obj->addConstraint(
 						Sketcher::ConstraintType::Horizontal,
 						listOfGeoIds[0].GeoId, Sketcher::PointPos::none
 						);
-			
+				Obj->solve();
+			}
+			else if (listOfGeoIds.size() == 2) {
+				// two points on the same horizontal line
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Horizontal,
+					listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+					listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos)
+				);
 				Obj->solve();
 			}
 		}
@@ -195,11 +204,20 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			if (listOfGeoIds.size() == 1) {
+				// vertical line
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Vertical,
 					listOfGeoIds[0].GeoId, Sketcher::PointPos::none
 				);
-
+				Obj->solve();
+			}
+			else if (listOfGeoIds.size() == 2) {
+				// two points on the same vertical line
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Vertical,
+					listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+					listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos)
+				);
 				Obj->solve();
 			}
 		}
@@ -223,6 +241,26 @@ namespace MOON {
 			}
 		}
 	};
+	class TangentConstraint :public ConstraintCommand {
+	public:
+		TangentConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			if (listOfGeoIds.size() == 2) {
+				//we need to make a oritention
+				Obj->addConstraint(
+					Sketcher::ConstraintType::Tangent,
+					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
+					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+				);
+
+				Obj->solve();
+			}
+		}
+	};
 	class PerpendicularConstraint :public ConstraintCommand {
 	public:
 		PerpendicularConstraint(QObject* parent) :ConstraintCommand(parent) {
@@ -232,11 +270,36 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			if (listOfGeoIds.size() == 2) {
+				//line and line
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Perpendicular,
 					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
 					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
 				);
+
+				Obj->solve();
+			}
+			else if (listOfGeoIds.size() == 3) {
+				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::None) {
+					//point and point and line
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Perpendicular,
+						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[2].GeoId
+					);
+				}
+				else
+				{
+					//this case need to figure out
+					//line and line
+					//Obj->addConstraint(
+					//	Sketcher::ConstraintType::Perpendicular,
+					//	listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+					//	listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+					//	listOfGeoIds[2].GeoId, convertPointPos(listOfGeoIds[2].pointPos)
+					//);
+				}
 
 				Obj->solve();
 			}
@@ -300,6 +363,120 @@ namespace MOON {
 			}
 		}
 	};
+	class DistanceYConstraint :public ConstraintCommand {
+	public:
+		DistanceYConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum > 0) {
+				ParamDialog dialog("DY");
+
+				dialog.addParamDef(ParamDialog::ParamDef("DistanceY", 0, 100, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("DistanceY");
+					CORE_INFO("distanceY is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//horizontal length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceY;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else
+						{
+							// point on fixed x-coordinate
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::DistanceY;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+					else if (selectNum == 2) {
+						// point to point horizontal distance
+						auto newConstr = std::make_unique<Sketcher::Constraint>();
+						newConstr->Type = Sketcher::ConstraintType::DistanceY;
+						newConstr->First = listOfGeoIds[0].GeoId;
+						newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+						newConstr->Second = listOfGeoIds[1].GeoId;
+						newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+						newConstr->setValue(distance);
+						Obj->addConstraint(std::move(newConstr));
+						Obj->solve();
+					}
+				}
+			}
+		}
+	};
+	class EqualConstraint :public ConstraintCommand {
+	public:
+		EqualConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum == 2) {
+				if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Equal,
+						listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
+						listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+					);
+					Obj->solve();
+				}
+			}
+		}
+	};
+	class SymmetricConstraint :public ConstraintCommand {
+	public:
+		SymmetricConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum == 3) {
+				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::None) {
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Symmetric,
+						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[2].GeoId
+					);
+					Obj->solve();
+				}
+				else
+				{
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Symmetric,
+						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[2].GeoId, convertPointPos(listOfGeoIds[2].pointPos)
+					);
+					Obj->solve();
+				}
+			}
+		}
+	};
+
 	class ConstraintToolbar::Internal {
 	public:
 
@@ -321,12 +498,24 @@ namespace MOON {
 			perpendicular->setIcon(":/widgets/icons/constraint/Constraint_Perpendicular.svg");
 			distanceX = new DistanceXConstraint(self);
 			distanceX->setIcon(":/widgets/icons/constraint/Constraint_DistanceX.svg");
+			distanceY = new DistanceYConstraint(self);
+			distanceY->setIcon(":/widgets/icons/constraint/Constraint_VerticalDistance.svg");
+			tangent = new TangentConstraint(self);
+			tangent->setIcon(":/widgets/icons/constraint/Constraint_Tangent.svg");
+			equal = new EqualConstraint(self);
+			equal->setIcon(":/widgets/icons/constraint/Constraint_EqualLength.svg");
+			symmetric = new SymmetricConstraint(self);
+			symmetric->setIcon(":/widgets/icons/constraint/Constraint_Symmetric.svg");
 			self->addAction(coincident->action());
 			self->addAction(horizontal->action());
 			self->addAction(vertical->action());
 			self->addAction(parallel->action());
 			self->addAction(perpendicular->action());
+			self->addAction(tangent->action());
 			self->addAction(distanceX->action());
+			self->addAction(distanceY->action());
+			self->addAction(equal->action());
+			self->addAction(symmetric->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -336,6 +525,9 @@ namespace MOON {
 			parallel->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Parallel", nullptr));
 			perpendicular->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Perpendicular", nullptr));
 			distanceX->action()->setText(QCoreApplication::translate("ConstraintToolbar", "DistanceX", nullptr));
+			tangent->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Tangent", nullptr));
+			equal->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Equal", nullptr));
+			symmetric->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Symmetric", nullptr));
 		}
 	private:
 		friend class ConstraintToolbar;
@@ -346,6 +538,10 @@ namespace MOON {
 		ConstraintCommand* parallel = nullptr;
 		ConstraintCommand* perpendicular = nullptr;
 		ConstraintCommand* distanceX = nullptr;
+		ConstraintCommand* distanceY = nullptr;
+		ConstraintCommand* tangent = nullptr;
+		ConstraintCommand* equal = nullptr;
+		ConstraintCommand* symmetric = nullptr;
 	};
 
 	ConstraintToolbar::ConstraintToolbar(const QString& title, QWidget* parent)
