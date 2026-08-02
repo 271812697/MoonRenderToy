@@ -476,14 +476,262 @@ namespace MOON {
 			}
 		}
 	};
+	class LengthConstraint :public ConstraintCommand {
+	public:
+		LengthConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			int selectNum = listOfGeoIds.size();
+			if (selectNum > 0) {
+				ParamDialog dialog("Distance");
+				dialog.addParamDef(ParamDialog::ParamDef("Dist", 0, 1000, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("Dist");
+					CORE_INFO("distance is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//line or arc length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Distance;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+					else if (selectNum == 2) {
+						// point to line horizontal distance. it needs to make sure Orientation
+						if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None&&
+							listOfGeoIds[1].pointPos == SketcherObj::PointPos::None
+							) {
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Distance;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->Second = listOfGeoIds[1].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else if 
+							(listOfGeoIds[0].pointPos == SketcherObj::PointPos::None &&
+							listOfGeoIds[1].pointPos == SketcherObj::PointPos::None
+							) {
+							// circle to circle, circle to
+				            // arc, etc.
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Distance;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->Second = listOfGeoIds[1].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else if
+							(listOfGeoIds[0].pointPos != SketcherObj::PointPos::None &&
+								listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
+								) {
+							// point to point distance
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Distance;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->Second = listOfGeoIds[1].GeoId;
+							newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+				}
+			}
+		}
+	};
+	class RadiusConstraint :public ConstraintCommand {
+	public:
+		RadiusConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
+			int selectNum = listOfGeoIds.size();
+			if (selectNum > 0) {
+				ParamDialog dialog("Radius");
+
+				dialog.addParamDef(ParamDialog::ParamDef("Radius", 0, 1000, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("Radius");
+					CORE_INFO("Radius is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//horizontal length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Radius;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+				}
+			}
+		}
+	};
+	class DiameterConstraint :public ConstraintCommand {
+	public:
+		DiameterConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum > 0) {
+				ParamDialog dialog("Diameter");
+
+				dialog.addParamDef(ParamDialog::ParamDef("Diameter", 0, 1000, 5));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("Diameter");
+					CORE_INFO("Diameter is {}", distance);
+					if (selectNum == 1) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+							//horizontal length
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Diameter;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+				}
+			}
+		}
+	};
+	class BlockConstraint :public ConstraintCommand {
+	public:
+		BlockConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+			for (int i = 0; i < listOfGeoIds.size(); i++) {
+				if (listOfGeoIds[i].pointPos == SketcherObj::None) {
+					Obj->addConstraint(
+						Sketcher::ConstraintType::Block,
+						listOfGeoIds[i].GeoId, Sketcher::PointPos::none
+					);
+					Obj->solve();
+				}
+			}
+		}
+	};
+	class AngleConstraint :public ConstraintCommand {
+	public:
+		AngleConstraint(QObject* parent) :ConstraintCommand(parent) {
+		}
+	protected:
+		virtual void execute()override {
+			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
+
+			int selectNum = listOfGeoIds.size();
+			if (selectNum > 0) {
+				ParamDialog dialog("Angle");
+				dialog.addParamDef(ParamDialog::ParamDef("Angle", 0, 360, 90));
+				dialog.setUp();
+				int ret = dialog.exec();
+				if (ret == QDialog::Accepted)
+				{
+					double distance = dialog.getParamValue("Angle");
+					
+					CORE_INFO("angle is {}", distance);
+					distance = distance * 3.14159265358979323846f / 180.0f;
+					if (selectNum == 3) {
+						if (
+							listOfGeoIds[0].pointPos != SketcherObj::PointPos::None
+							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
+							&& listOfGeoIds[2].pointPos != SketcherObj::PointPos::None
+							) {
+						    
+							//auto newConstr = std::make_unique<Sketcher::Constraint>();
+							//newConstr->Type = Sketcher::ConstraintType::Angle;
+							//newConstr->First = listOfGeoIds[0].GeoId;
+							//newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							//newConstr->Second = listOfGeoIds[1].GeoId;
+							//newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							//newConstr->Third = listOfGeoIds[2].GeoId;
+							//newConstr->ThirdPos = convertPointPos(listOfGeoIds[2].pointPos);
+							//newConstr->setValue(distance);
+							//Obj->addConstraint(std::move(newConstr));
+							//Obj->solve();
+						}
+					}
+					else if (selectNum == 2) {
+						// line to line
+						if (
+							listOfGeoIds[0].pointPos != SketcherObj::PointPos::None
+							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
+							) {
+
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Angle;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->Second = listOfGeoIds[1].GeoId;
+							newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+						else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None
+							&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Angle;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->Second = listOfGeoIds[1].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+					else if (selectNum == 1) {
+						if (
+							listOfGeoIds[0].pointPos == SketcherObj::PointPos::None
+							) {
+							auto newConstr = std::make_unique<Sketcher::Constraint>();
+							newConstr->Type = Sketcher::ConstraintType::Angle;
+							newConstr->First = listOfGeoIds[0].GeoId;
+							newConstr->setValue(distance);
+							Obj->addConstraint(std::move(newConstr));
+							Obj->solve();
+						}
+					}
+				}
+			}
+		}
+	};
 	class ConstraintToolbar::Internal {
 	public:
-
 		Internal(ConstraintToolbar* toolbar) :self(toolbar)
 		{
 			setup();
-			
 		}
 		void setup() {
 			coincident = new CoincidentConstraint(self);
@@ -506,6 +754,16 @@ namespace MOON {
 			equal->setIcon(":/widgets/icons/constraint/Constraint_EqualLength.svg");
 			symmetric = new SymmetricConstraint(self);
 			symmetric->setIcon(":/widgets/icons/constraint/Constraint_Symmetric.svg");
+			length = new LengthConstraint(self);
+			length->setIcon(":/widgets/icons/constraint/Constraint_Length.svg");
+			radius = new RadiusConstraint(self);
+			radius->setIcon(":/widgets/icons/constraint/Constraint_Radius.svg");
+			diameter = new DiameterConstraint(self);
+			diameter->setIcon(":/widgets/icons/constraint/Constraint_Diameter.svg");
+			block = new BlockConstraint(self);
+			block->setIcon(":/widgets/icons/constraint/Constraint_Block.svg");
+			angle= new AngleConstraint(self);
+			angle->setIcon(":/widgets/icons/constraint/Constraint_InternalAngle.svg");
 			self->addAction(coincident->action());
 			self->addAction(horizontal->action());
 			self->addAction(vertical->action());
@@ -516,6 +774,11 @@ namespace MOON {
 			self->addAction(distanceY->action());
 			self->addAction(equal->action());
 			self->addAction(symmetric->action());
+			self->addAction(length->action());
+			self->addAction(radius->action());
+			self->addAction(diameter->action());
+			self->addAction(block->action());
+			self->addAction(angle->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -525,9 +788,15 @@ namespace MOON {
 			parallel->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Parallel", nullptr));
 			perpendicular->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Perpendicular", nullptr));
 			distanceX->action()->setText(QCoreApplication::translate("ConstraintToolbar", "DistanceX", nullptr));
+			distanceY->action()->setText(QCoreApplication::translate("ConstraintToolbar", "DistanceY", nullptr));
 			tangent->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Tangent", nullptr));
 			equal->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Equal", nullptr));
 			symmetric->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Symmetric", nullptr));
+			length->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Length", nullptr));
+			radius->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Radius", nullptr));
+			diameter->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Diameter", nullptr));
+			block->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Block", nullptr));
+			angle->action()->setText(QCoreApplication::translate("ConstraintToolbar", "Angle", nullptr));
 		}
 	private:
 		friend class ConstraintToolbar;
@@ -542,19 +811,22 @@ namespace MOON {
 		ConstraintCommand* tangent = nullptr;
 		ConstraintCommand* equal = nullptr;
 		ConstraintCommand* symmetric = nullptr;
+		ConstraintCommand* length = nullptr;
+		ConstraintCommand* radius = nullptr;
+		ConstraintCommand* diameter = nullptr;
+		ConstraintCommand* block = nullptr;
+		ConstraintCommand* angle = nullptr;
 	};
 
 	ConstraintToolbar::ConstraintToolbar(const QString& title, QWidget* parent)
 		:QToolBar(title, parent),mInternal(new Internal(this))
 	{
 		RegService(ConstraintToolbar,*this);
-		
 	}
 	ConstraintToolbar::ConstraintToolbar(QWidget* parentObject) 
 		:QToolBar(parentObject), mInternal(new Internal(this))
 	{
 		RegService(ConstraintToolbar, *this);
-		
 	}
 	ConstraintToolbar::~ConstraintToolbar()
 	{
