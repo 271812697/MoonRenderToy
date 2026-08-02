@@ -304,15 +304,15 @@ namespace MOON {
 				m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
 			}
 		}
-		if (mState == AxisT || mState == PlaneT || mState == AxisR) {
-		
-			PickMeshId id = table[mPickMesh].meshId;
-			bool updateFlag = (id != PickMeshId::XAxis) && (id != PickMeshId::YAxis) &&
-				(id != PickMeshId::ZNormalPlane) && (id != PickMeshId::YNormalRotate);
-			if (updateFlag) {
-				updateSection();
-			}
-		}
+		//if (mState == AxisT || mState == PlaneT || mState == AxisR) {
+		//
+		//	PickMeshId id = table[mPickMesh].meshId;
+		//	bool updateFlag = (id != PickMeshId::XAxis) && (id != PickMeshId::YAxis) &&
+		//		(id != PickMeshId::ZNormalPlane) && (id != PickMeshId::YNormalRotate);
+		//	if (updateFlag) {
+		//		updateSection();
+		//	}
+		//}
 	}
 
 	void ClipPlane::updateSection()
