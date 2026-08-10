@@ -126,8 +126,8 @@ void main()
     reflectColor *= mix(0.2, 1.0, angleFactor) ;
     float alpha = grid * u_GridOpacity * horizonFade * fadeFactor;
     vec3 finalColor = reflectColor;
-    finalColor = mix(reflectColor, u_Color, alpha);
-    finalColor = mix(finalColor,vec3(0.15,0.15,0.15),(shadow/2.0));
+    finalColor = mix(reflectColor, u_Color, 0.3);
+    finalColor = mix(finalColor,vec3(0.10,0.10,0.10),(shadow*0.8));
     FRAGMENT_COLOR = vec4(finalColor, 1.0);
 
 }
