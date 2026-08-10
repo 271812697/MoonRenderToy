@@ -2,6 +2,31 @@
 
 This is a renderer written based on Qt+Opengl
 
+## Plans to do
+
+### Rendering
+
+- Performance Optimization
+  - [ ] lod
+  - [ ] grid mesh 
+- rendering effect
+  - [ ] 2D Gui for interactive on screen
+  - [ ] sketcher contraint draw
+  - [ ] Global lighting
+  - [ ] shadow on reflect plane
+  - [ ] ssao improve
+  - [ ] transparent imporve
+- PathTrace
+  - [ ] CPU
+  - [ ] GPU on CUDA
+  - [x] GPU on fragment
+
+
+
+- ```
+  Performance Optimization
+  ```
+
 ## Viewer
 
 ### OCC geometric modeling

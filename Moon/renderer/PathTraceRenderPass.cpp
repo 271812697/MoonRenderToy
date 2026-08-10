@@ -962,17 +962,17 @@ void main()
 		pathTraceShader.SetProperty("uniformLightCol", bvhService->renderOptions.uniformLightCol);
 		pathTraceShader.SetProperty("roughnessMollificationAmt", bvhService->renderOptions.roughnessMollificationAmt);
 		pathTraceShader.SetProperty("frameNum", frameCounter);
-		static Maths::FVector4 colors[] = {
-				{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
-				{ 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
-				 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
-				  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
-				   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
-					{ 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
-		};
-		for (int i = 0;i < 12;i++) {
-			pathTraceShader.SetProperty("domainColors["+std::to_string(i)+"]",colors[i]);
-		}
+		//static Maths::FVector4 colors[] = {
+		//		{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
+		//		{ 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
+		//		 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
+		//		  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
+		//		   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
+		//			{ 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
+		//};
+		//for (int i = 0;i < 12;i++) {
+		//	pathTraceShader.SetProperty("domainColors["+std::to_string(i)+"]",colors[i]);
+		//}
 
 		pathTraceShaderLowRes.SetProperty("resolution", Maths::FVector2(renderSize.x, renderSize.y));
 		pathTraceShaderLowRes.SetProperty("camera.position", cpos);

@@ -82,8 +82,6 @@ struct Ray
 	vec3 direction;
 };
 
-uniform vec4 domainColors[12];
-
 struct Medium
 {
 	int type;
@@ -155,7 +153,6 @@ struct State
 	int matID;
 	int domainId;
 	//uint tid;
-	int mid;
 	Material mat;
 	Medium medium;
 };
@@ -862,7 +859,7 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 	bool BLAS = false;
 
 	ivec3 triID = ivec3(-1);
-	int tempMeshid=-1;
+	
 	mat4 transMat;
 	mat4 transform;
 	vec3 bary;
@@ -875,7 +872,6 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 	while (index != -1)
 	{
 		ivec3 LRLeaf = ivec3(texelFetch(BVH, index * 3 + 2).xyz);
-
 		int leftIndex = int(LRLeaf.x);
 		int rightIndex = int(LRLeaf.y);
 		int leaf = int(LRLeaf.z);
@@ -909,11 +905,11 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 				if (all(greaterThanEqual(uvt, vec4(0.0))) && uvt.z < t)
 				{
 					//state.tid=leftIndex + i;
-					state.mid=tempMeshid;
+					
 					t = uvt.z;
 					triID = vertIndices;
 					state.matID = currMatID;
-					state.domainId=int(round(v0.w));
+					
 					bary = uvt.wxy;
 					vert0 = v0, vert1 = v1, vert2 = v2;
 					transform = transMat;
@@ -929,7 +925,7 @@ bool ClosestHit(Ray r, inout State state, inout LightSampleRec lightSample)
 			vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 3, 0), 0).xyzw;
 
 			transMat = mat4(r1, r2, r3, r4);
-			tempMeshid=-leaf - 1;
+			
 			rTrans.origin = vec3(inverse(transMat) * vec4(r.origin, 1.0));
 			rTrans.direction = vec3(inverse(transMat) * vec4(r.direction, 0.0));
 
@@ -1405,30 +1401,8 @@ void GetMaterial(inout State state, in Ray r)
 	vec4 param8 = texelFetch(materialsTex, ivec2(index + 7, 0), 0);
 
 	mat.baseColor = param1.rgb;
-	int domainColorIndex=state.domainId%12;
-	mat.baseColor*=domainColors[domainColorIndex].rgb;
-
-	
-	//ivec3 mfo=texelFetch(meshTriangleInfoTex,state.mid).xyz;
-	//if(mfo.x!=-1){
-		//mat.baseColor =vec3(1,1,0);
-		//for(int i=0;i<mfo.y;i++){
-			//int j=mfo.x+i;
-			//uint tid=texelFetch(triangleInfoTex,j).g+mfo.z;
-			
-			//if(tid==state.tid){
-			//	mat.baseColor =vec3(1,0,0);
-				//break;
-			//}
-		//}
-	//}	
-	//
-
-
 	mat.anisotropic = param1.w;
-
 	mat.emission = param2.rgb;
-
 	mat.metallic = param3.x;
 	mat.roughness = max(param3.y, 0.001);
 	mat.subsurface = param3.z;

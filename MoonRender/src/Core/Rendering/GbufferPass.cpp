@@ -154,6 +154,13 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 			std::cout << "invalidate buffer" << std::endl;
 		}
 	}
+	{
+		ssaoMaterial.SetProperty("gPosition", gbufferData.position.get());
+		ssaoMaterial.SetProperty("gNormal", gbufferData.normal.get());
+		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
+		for (unsigned int i = 0; i < 64; ++i)
+			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+	}
 }
 
 
@@ -205,16 +212,12 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		auto proj=frameDesc.camera.value().GetProjectionMatrix();
 		auto view = frameDesc.camera.value().GetViewMatrix();
 		
-		ssaoMaterial.SetProperty("gPosition",gbufferData.position.get());
-		ssaoMaterial.SetProperty("gNormal", gbufferData.normal.get());
-		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
+
 		ssaoMaterial.SetProperty("projection",proj);
 		ssaoMaterial.SetProperty("view",view);
 		ssaoMaterial.SetProperty("radius", gbufferParam.ssaoParam.radius);
 		ssaoMaterial.SetProperty("bias", gbufferParam.ssaoParam.bias);
-		ssaoMaterial.SetProperty("screensize",Maths::FVector2(frameDesc.renderWidth,frameDesc.renderHeight));
-		for (unsigned int i = 0; i < 64; ++i)
-			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+		ssaoMaterial.SetProperty("screensize",Maths::FVector2(frameDesc.renderWidth,frameDesc.renderHeight));;
 		//compute ssao
 		ssaobuffer.Bind();
 		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));

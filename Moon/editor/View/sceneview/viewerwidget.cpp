@@ -42,6 +42,7 @@ namespace MOON {
 			QObject::connect(&tree, &TreeViewPanel::itemLeave, mSelf, &onActorHoverLeaved);
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
+			
 			mSceneView = new Editor::Panels::SceneView("SceneView");
 			GetService(RenderPassSettingWidget).Refresh();
 			parser->ParseFile(mReadFilePath.toStdString());
