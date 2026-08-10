@@ -157,6 +157,21 @@ namespace MOON {
         if (Mode == STATUS_SEEK_First) {
 
             EditCurve[0] = onSketchPos;  // this may be overwritten if previousCurve is found
+            SketcherObj::SelectGeoId preSelectId= obj->testSelect(onSketchPos);
+            if (preSelectId.GeoId != -1&&(preSelectId.pointPos== SketcherObj::PointPos::StartP|| preSelectId.pointPos == SketcherObj::PointPos::EndP)) {
+                Part::Geometry* geo= obj->getGeometry(preSelectId.GeoId);
+                if (geo->is<Part::GeomLineSegment>() || geo->is<Part::GeomArcOfCircle>()) {
+                    previousCurve = preSelectId.GeoId;
+                    previousPosId = preSelectId.pointPos;
+                    updateTransitionData(previousCurve,
+                        previousPosId);
+                    if (geo->is<Part::GeomArcOfCircle>()) {
+                        TransitionMode = TRANSITION_MODE_Tangent;
+                        SnapMode = SNAP_MODE_Free;
+                    }
+                }
+            }
+
 
             //virtualsugConstr1 = sugConstr1;  // store original autoconstraints.
 

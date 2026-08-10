@@ -411,8 +411,15 @@ namespace MOON {
         }
         return ret;
     }
-    SketcherObj::SelectGeoId SketcherObj::testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat)
+    SketcherObj::SelectGeoId SketcherObj::testSelect(const Base::Vector2d& pos)
     {
+        Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
+        Base::Matrix4D viewPortMat(
+            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
+            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
+            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
+            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
+        );
         Base::Matrix4D trans = viewPortMat * getplaneTransform();
         Base::Vector3d p1 = trans * Base::Vector3d{ pos.x,pos.y,0.0 };
         double deltaTole = 5.0;
@@ -1302,15 +1309,8 @@ namespace MOON {
     }
     void SketcherObj::pickGeo()
     {
-        Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
-        Base::Matrix4D pla(
-            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
-            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
-            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
-            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
-        );
         onSketchPosMove = getMouseHitSketchPlanePoint();
-        preSelectGeoId = testSelect(onSketchPosMove, pla);
+        preSelectGeoId = testSelect(onSketchPosMove);
         std::set<int>avoidList;
         avoidList.insert(preSelectGeoId.GeoId);
         snapPoint(onSketchPosMove, avoidList);

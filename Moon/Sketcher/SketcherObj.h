@@ -50,7 +50,7 @@ namespace MOON {
 		Part::Geometry* getGeometry(int GeoId);
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
-		SelectGeoId testSelect(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
+		SelectGeoId testSelect(const Base::Vector2d& pos);
 		std::vector<int> getSelectIds() const;
 		void addSelect(int id);
 		std::vector<SelectGeoId> getSelectGeoPosIds() const {

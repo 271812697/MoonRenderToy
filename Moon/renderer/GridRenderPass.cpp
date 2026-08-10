@@ -167,13 +167,13 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	m_renderer.GetFeature<DebugModelRenderFeature>()
 		.DrawModelWithSingleMaterial(pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Plane"), m_gridMaterial, model);
 
-
-	if (true) {
-		ImVec2 a = { 0,1 }, b = { 1,0 };
-		ImVec2 size = ImVec2(frameDesc.renderWidth, frameDesc.renderHeight);
-		auto resid = m_mirroShadowFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-		ImGui::Image(resid->GetID(), size, a, b);
-	}
+	//debug
+	//if (false) {
+	//	ImVec2 a = { 0,1 }, b = { 1,0 };
+	//	ImVec2 size = ImVec2(frameDesc.renderWidth, frameDesc.renderHeight);
+	//	auto resid = m_mirroShadowFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	//	ImGui::Image(resid->GetID(), size, a, b);
+	//}
 }
 
 void Editor::Rendering::GridRenderPass::ResizeRenderer(int width, int height)
