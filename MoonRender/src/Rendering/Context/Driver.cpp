@@ -135,7 +135,7 @@ void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState
 
 		// Rasterization
 		if (i.rasterizationMode != c.rasterizationMode) m_gfxBackend->SetRasterizationMode(i.rasterizationMode);
-		//if (i.lineWidthPow2 != c.lineWidthPow2) m_gfxBackend->SetRasterizationLinesWidth(Utils::Conversions::Pow2toFloat(i.lineWidthPow2));
+		if (i.lineWidthPow2 != c.lineWidthPow2) m_gfxBackend->SetRasterizationLinesWidth(Utils::Conversions::Pow2toFloat(i.lineWidthPow2));
 		
 		if (i.colorWriting.mask != c.colorWriting.mask) m_gfxBackend->SetColorWriting(i.colorWriting.r, i.colorWriting.g, i.colorWriting.b, i.colorWriting.a);
 		if (i.depthWriting != c.depthWriting) m_gfxBackend->SetDepthWriting(i.depthWriting);
@@ -145,13 +145,16 @@ void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState
 		if (i.dither != c.dither) m_gfxBackend->SetCapability(ERenderingCapability::DITHER, i.dither);
 		if (i.polygonOffsetFill != c.polygonOffsetFill) {
 			m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_FILL, i.polygonOffsetFill);
-		}
-		if (i.polygonOffsetLine != c.polygonOffsetLine) {
-			m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_LINE, i.polygonOffsetLine);
-			if (i.polygonOffsetLine) {
+			if (i.polygonOffsetFill) {
 				m_gfxBackend->PolygonOffset(1.0f, 1.0f);
-			}		
+			}
 		}
+		//if (i.polygonOffsetLine != c.polygonOffsetLine) {
+		//	m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_LINE, i.polygonOffsetLine);
+		//	if (i.polygonOffsetLine) {
+		//		//m_gfxBackend->PolygonOffset(1.0f, 1.0f);
+		//	}		
+		//}
 
 		
 		if (i.sampleAlphaToCoverage != c.sampleAlphaToCoverage) m_gfxBackend->SetCapability(ERenderingCapability::SAMPLE_ALPHA_TO_COVERAGE, i.sampleAlphaToCoverage);

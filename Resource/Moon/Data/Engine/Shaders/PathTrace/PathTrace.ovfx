@@ -122,6 +122,8 @@ struct Camera
 	float fov;
 	float focalDist;
 	float aperture;
+	float owidth;
+	float oheight;
 };
 
 struct Light
@@ -1842,33 +1844,36 @@ vec4 PathTrace(Ray r)
 
 void main(void)
 {
-	vec2 coordsTile = mix(tileOffset, tileOffset + invNumTiles, TexCoords);
-
 	InitRNG(gl_FragCoord.xy, frameNum);
-
 	float r1 = 2.0 * rand();
 	float r2 = 2.0 * rand();
-
+	vec2 coordsTile = mix(tileOffset, tileOffset + invNumTiles, TexCoords);
 	vec2 jitter;
 	jitter.x = r1 < 1.0 ? sqrt(r1) - 1.0 : 1.0 - sqrt(2.0 - r1);
 	jitter.y = r2 < 1.0 ? sqrt(r2) - 1.0 : 1.0 - sqrt(2.0 - r2);
 
 	jitter /= (resolution * 0.5);
 	vec2 d = (coordsTile * 2.0 - 1.0) + jitter;
-
 	float scale = tan(camera.fov * 0.5);
-
-	d.y *=  scale;
+#if defined(PERSPECTIVE_CAMERA)
+    d.y *=  scale;
 	d.x *= resolution.x  /resolution.y *scale;
 	vec3 rayDir = normalize(d.x * camera.right + d.y * camera.up + camera.forward);
-
 	vec3 focalPoint = camera.focalDist * rayDir;
+#else
+    vec3 offsetVec =d.x * camera.right*camera.owidth*0.5 + d.y * camera.up*camera.oheight*0.5 ;
+#endif
+
 	float cam_r1 = rand() * TWO_PI;
 	float cam_r2 = rand() * camera.aperture;
 	vec3 randomAperturePos = (cos(cam_r1) * camera.right + sin(cam_r1) * camera.up) * sqrt(cam_r2);
+#if defined(PERSPECTIVE_CAMERA)
 	vec3 finalRayDir = normalize(focalPoint - randomAperturePos);
-
 	Ray ray = Ray(camera.position + randomAperturePos, finalRayDir);
+#else
+    vec3 finalRayDir = normalize(camera.forward);
+	Ray ray = Ray(camera.position + randomAperturePos+offsetVec, finalRayDir);
+#endif
 
 	vec4 accumColor = texture(accumTexture, coordsTile);
 
