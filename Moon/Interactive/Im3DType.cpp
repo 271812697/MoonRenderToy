@@ -50,7 +50,7 @@ namespace MOON {
 			uv[i].y() += v;
 		}
 	}
-	void PolyonMesh::setCellColor(int index, const Eigen::Vector4<uint8_t>& color)
+	void PolygonMesh::setCellColor(int index, const Eigen::Vector4<uint8_t>& color)
 	{
 		for (int i = 0;i < cellArray.size();i++) {
 			if (i == index) {
@@ -63,7 +63,7 @@ namespace MOON {
 		}
 		isDirty = true;
 	}
-	int PolyonMesh::getBlockId(const std::string& name)
+	int PolygonMesh::getBlockId(const std::string& name)
 	{
 		auto it = blockNameToIndex.find(name);
 		if (it != blockNameToIndex.end()) {
@@ -71,23 +71,24 @@ namespace MOON {
 		}
 		return -1;
 	}
-	void PolyonMesh::setBlockColor(int index, const Maths::FVector4& color)
+	void PolygonMesh::setBlockColor(int index, const Maths::FVector4& color)
 	{
 		blockColor[index] = color;
 		blockColorDirty = true;
 	}
-	void PolyonMesh::addCell(const PolygonFace& cell)
+	void PolygonMesh::addCell(const PolygonFace& cell)
 	{
+		mergeBox(cell);
 		cellArray.push_back(cell);
 		cellArray.back().blockId = nextBlockId;
 	}
-	void PolyonMesh::switchNextBlock(const Maths::FVector4& color,const std::string& name)
+	void PolygonMesh::switchNextBlock(const Maths::FVector4& color,const std::string& name)
 	{
 		blockColor.push_back(color);
 		blockNameToIndex[name] = nextBlockId;
 		nextBlockId++;
 	}
-	void PolyonMesh::submit()
+	void PolygonMesh::submit()
 	{
 		std::vector<VertexFormat> vData;
 		edgeValue.clear();
@@ -139,7 +140,7 @@ namespace MOON {
 			edgeTexture->SetTexture(std::unique_ptr<Rendering::HAL::Texture>(gltexture));
 		}
 	}
-	void PolyonMesh::bind()
+	void PolygonMesh::bind()
 	{
 		if (isDirty) {
 			isDirty = false;
@@ -167,35 +168,37 @@ namespace MOON {
 		}
 		glBindVertexArray(vao);
 	}
-	Eigen::Vector3f PolyonMesh::getCellNormal(int index)
+	Eigen::Vector3f PolygonMesh::getCellNormal(int index)
 	{
 		return cellArray[index].n;
 	}
-	PolyonMesh::~PolyonMesh()
+	PolygonMesh::~PolygonMesh()
 	{
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
 	}
-	void PolyonMesh::addMesh(Rendering::Resources::Mesh* mesh,const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
+	void PolygonMesh::addMesh(Rendering::Resources::Mesh* mesh,const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
 	{
 		int vcnt=mesh->GetVertexCount();
 		int icnt = mesh->GetIndexCount();
 		int num = icnt > 0 ? icnt : vcnt;
 		for (int i = 0; i < num;i+=3) {
-			auto v0 = Maths::FMatrix4::MulPoint(matrix,mesh->GetVertexPosition(i));
-			auto v1 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+1));
-			auto v2 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+2));
-			cellArray.push_back(PolygonFace({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z },c));
+			Maths::FVector3 v0 = Maths::FMatrix4::MulPoint(matrix,mesh->GetVertexPosition(i));
+			Maths::FVector3 v1 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+1));
+			Maths::FVector3 v2 = Maths::FMatrix4::MulPoint(matrix, mesh->GetVertexPosition(i+2));
+			PolygonFace face({ v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z }, c);
+			mergeBox(face);
+			cellArray.push_back(face);
 			cellArray.back().blockId = nextBlockId;
 		}
 	}
-	void PolyonMesh::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
+	void PolygonMesh::addModel(Rendering::Resources::Model* model, const Maths::FMatrix4& matrix, const Eigen::Vector4<uint8_t>& c)
 	{
 		for (auto m:model->GetMeshes()) {
 			addMesh(m,matrix,c);
 		}
 	}
-	void PolyonMesh::initGpuBuffer()
+	void PolygonMesh::initGpuBuffer()
 	{
 		glGenVertexArrays(1, &vao);
 		glGenBuffers(1, &vbo);
@@ -212,7 +215,7 @@ namespace MOON {
 		submit();
 		glBindVertexArray(0);
 	}
-	int PolyonMesh::hit(const Eigen::Matrix4f& viewProj, float u, float v)
+	int PolygonMesh::hit(const Eigen::Matrix4f& viewProj, float u, float v)
 	{
 		int res = -1;
 		float minDist = 100000.0f;
@@ -237,10 +240,35 @@ namespace MOON {
 		}
 		return res;
 	}
-	PolyonMesh& NavigateCube()
+	void PolygonMesh::setId(int id)
 	{
-		static PolyonMesh viewCube;
+		this->id = id;
+	}
+	int PolygonMesh::getId()
+	{
+		return this->id;
+	}
+	void PolygonMesh::mergeBox(const Eigen::Vector3f& vertex)
+	{
+		minConner.x() = std::min(minConner.x(), vertex.x());
+		minConner.y() = std::min(minConner.y(), vertex.y());
+		minConner.z() = std::min(minConner.z(), vertex.z());
+		maxConner.x() = std::max(maxConner.x(), vertex.x());
+		maxConner.y() = std::max(maxConner.y(), vertex.y());
+		maxConner.z() = std::max(maxConner.z(), vertex.z());
+	}
+	void PolygonMesh::mergeBox(const PolygonFace& face)
+	{
+		for (int i = 0;i < face.vertex.size();i++) {
+			mergeBox(face.vertex[i]);
+		}
+	}
+	GuiWidgetPolyMesh& NavigateCube()
+	{
+		static GuiWidgetPolyMesh viewCube;
 		if (viewCube.cellArray.size() == 0) {
+			viewCube.screenPos.viewportSizeX = 125;
+			viewCube.screenPos.viewportSizeY = 125;
 			float halflen = 3.0f;
 			float shift = 0.6f;
 			float ratio = 0.5 * shift / halflen;
@@ -281,55 +309,54 @@ namespace MOON {
 			cell.addPoint(B1, { (1 - 2 * ratio) / 3,(1 - ratio) / 2 });
 			cell.n = n;
 			cell.tranformUV(2.0 / 3, 0.0);
-			auto& cellArr = viewCube.cellArray;
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 }), -1.0 / 3.0, 0.5));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 }), 0.0, 0.5));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 }), -1.0 / 3.0, 0));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 }), -2.0 / 3.0, 0.0));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 }), -2.0 / 3.0, 0.5));
+			viewCube.addCell(cell);
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 }), -1.0 / 3.0, 0.5));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 }), 0.0, 0.5));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 270, 0, 0 }), -1.0 / 3.0, 0));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 }), -2.0 / 3.0, 0.0));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 }), -2.0 / 3.0, 0.5));
 
 			cell.clear();
 			cell.n = Eigen::Vector3f(1, 1, 1).normalized();
 			cell.addPointArray({ F1,F2,F3,F4,F5,F6 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
+			viewCube.addCell(cell);
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 90, 0, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 180, 0, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 90, -90, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 90, -180, 0 })));
 			cell.clear();
 			cell.n = Eigen::Vector3f(0, 1, 1).normalized();
 			cell.addPointArray({ A1,B1,F7,F8 }, { {0,0},{0,0 },{0,0} ,{0,0} });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			viewCube.addCell(cell);
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 			cell.clear();
 			cell.n = Eigen::Vector3f(1, 0, 1).normalized();
 			cell.addPointArray({ C2,F9,F10,B2 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
+			viewCube.addCell(cell);
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));
 			cell.clear();
 			cell.n = Eigen::Vector3f(0, -1, 1).normalized();
 			cell.addPointArray({ D1,F11,F12,C1 }, { { 0, 0 }, { 0,0 }, { 0,0 }, { 0,0 } });
-			cellArr.push_back(cell);
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
-			cellArr.push_back(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));			
+			viewCube.addCell(cell);
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 90, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 180, 0 })));
+			viewCube.addCell(cell.transform(EulerXYZToMatrix4Degree({ 0, 270, 0 })));		
 			viewCube.initGpuBuffer();
 			std::string texturePath = Tools::Utils::PathParser::GetExeDirectory() + "/Moon/Data/Engine/Textures/XYZ.png";
-			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);
+			viewCube.texture = Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(texturePath, true);	
 		}
 		return viewCube;
 	}
-	PolyonMesh& CoordAxis()
+	PolygonMesh& CoordAxis()
 	{
-		static PolyonMesh viewAxis;
+		static PolygonMesh viewAxis;
 		if (viewAxis.cellArray.size() == 0) {
 			float halflen = 3.0f;
 			Maths::FMatrix4 model =
@@ -357,9 +384,9 @@ namespace MOON {
 		}
 		return viewAxis;
 	}
-	PolyonMesh& TransformAxis()
+	PolygonMesh& TransformAxis()
 	{
-		static PolyonMesh poly;
+		static PolygonMesh poly;
 		if (poly.cellArray.size() == 0) {
 			float halflen = 3.0f;
 			Maths::FMatrix4 model =
@@ -425,9 +452,9 @@ namespace MOON {
 		}
 		return poly;
 	}
-	PolyonMesh& GizmoSketchPlane()
+	PolygonMesh& GizmoSketchPlane()
 	{
-		static PolyonMesh poly;
+		static PolygonMesh poly;
 		if (poly.cellArray.size() == 0) {
 			float halflen = 3.0f;
 			Maths::FMatrix4 model =Maths::FMatrix4::Translation({ 0,0,0 }) * Maths::FMatrix4::Scaling({ 6,6,6 });

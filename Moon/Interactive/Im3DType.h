@@ -196,23 +196,8 @@ namespace MOON
 	};
 
 
-	struct PolyonMesh {
-		int id;
-		std::vector<PolygonFace>cellArray;
-		std::vector<uint8_t>edgeValue;
-		std::vector<Maths::FVector4>blockColor;
-		std::unordered_map<std::string, int>blockNameToIndex;
-		unsigned int vao = 0;
-		unsigned int vbo = 0;
-		unsigned int numVertex = 0;
-		unsigned int nextBlockId=0;
-		bool isDirty = false;
-		bool blockColorDirty = true;
-		bool drawEdge = true;
-		Rendering::Resources::Texture* texture = nullptr;
-		Rendering::Resources::Texture* edgeTexture = nullptr;
-		Rendering::Resources::Texture* blockTexture = nullptr;
-		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+	class PolygonMesh {
+	public:
 		void setCellColor(int index, const Eigen::Vector4<uint8_t>& color);
 		int getBlockId(const std::string& name);
 		void setBlockColor(int index,const Maths::FVector4& color);
@@ -221,25 +206,72 @@ namespace MOON
 		void submit();
 		void bind();
 		Eigen::Vector3f getCellNormal(int index);
-		PolyonMesh() = default;
-		PolyonMesh(const std::vector<PolygonFace>& cells) :cellArray(cells) {
+		PolygonMesh() = default;
+		PolygonMesh(const std::vector<PolygonFace>& cells) :cellArray(cells) {
 			vao = 0;
 			vbo = 0;
 			initGpuBuffer();
 		}
-		PolyonMesh(const std::vector<PolygonFace>&& cells) :cellArray(std::move(cells)) {
+		PolygonMesh(const std::vector<PolygonFace>&& cells) :cellArray(std::move(cells)) {
 			vao = 0;
 			vbo = 0;
 			initGpuBuffer();
 		}
-		~PolyonMesh();
+		~PolygonMesh();
 		void addMesh(Rendering::Resources::Mesh*mesh, const Maths::FMatrix4& matrix , const Eigen::Vector4<uint8_t>& c);
 		void addModel(Rendering::Resources::Model*model,const Maths::FMatrix4& matrix,const Eigen::Vector4<uint8_t>& c);
 		void initGpuBuffer();
 		int hit(const Eigen::Matrix4f& viewProj, float u, float v);
+		void setId(int id);
+		int getId();
+
+
+	public:
+		Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+		unsigned int numVertex = 0;
+		Rendering::Resources::Texture* texture = nullptr;
+		Rendering::Resources::Texture* edgeTexture = nullptr;
+		Rendering::Resources::Texture* blockTexture = nullptr;
+		std::vector<PolygonFace>cellArray;
+		bool drawEdge = true;
+		Eigen::Vector3f minConner = {FLT_MAX,FLT_MAX, FLT_MAX};
+		Eigen::Vector3f maxConner = {FLT_MIN,FLT_MIN, FLT_MIN};
+	private:
+		void mergeBox(const Eigen::Vector3f& vertex);
+		void mergeBox(const PolygonFace& face);
+	protected:
+		int id;
+		std::vector<uint8_t>edgeValue;
+		std::vector<Maths::FVector4>blockColor;
+		std::unordered_map<std::string, int>blockNameToIndex;
+		unsigned int vao = 0;
+		unsigned int vbo = 0;
+		unsigned int nextBlockId = 0;
+		bool isDirty = false;
+		bool blockColorDirty = true;
 	};
-	PolyonMesh& NavigateCube();
-	PolyonMesh& CoordAxis();
-	PolyonMesh& TransformAxis();
-	PolyonMesh& GizmoSketchPlane();
+	class GuiWidgetPolyMesh :public PolygonMesh {
+	public:
+		GuiWidgetPolyMesh() = default;
+		GuiWidgetPolyMesh(const std::vector<PolygonFace>& cells) :PolygonMesh(cells) {
+		}
+		GuiWidgetPolyMesh(const std::vector<PolygonFace>&& cells) :PolygonMesh(cells) {
+
+		}
+
+		struct ScreenPositionInfo
+		{
+			int viewportSizeX = 1;
+			int viewportSizeY = 1;
+			int startX = 0;
+			int startY = 0;
+		};
+		ScreenPositionInfo screenPos;
+	protected:
+
+	};
+	GuiWidgetPolyMesh& NavigateCube();
+	PolygonMesh& CoordAxis();
+	PolygonMesh& TransformAxis();
+	PolygonMesh& GizmoSketchPlane();
 }

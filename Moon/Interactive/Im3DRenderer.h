@@ -326,7 +326,7 @@ namespace MOON
 		std::vector<PolygonInstance> drawLongTermMeshList;
 		//short lasting
 		std::vector<PolygonInstance> drawMeshList;
-		std::unordered_map<std::string, PolyonMesh*>mPreStorePolygon;
+		std::unordered_map<std::string, PolygonMesh*>mPreStorePolygon;
 		std::unordered_map<uint8_t,std::string >mPreStorePolygonId;
 		int selectPolygonId = -1;
 		int selectBlockId= -1;

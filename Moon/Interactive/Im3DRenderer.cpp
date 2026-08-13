@@ -128,10 +128,10 @@ namespace MOON
 		mPreStorePolygon["TransformAxis"] = &TransformAxis();
 		mPreStorePolygon["NavigateCube"] = &NavigateCube();
 		mPreStorePolygon["GizmoSketchPlane"] = &GizmoSketchPlane();
-		mPreStorePolygon["CoordAxis"]->id=0;
-		mPreStorePolygon["TransformAxis"]->id = 1;;
-		mPreStorePolygon["NavigateCube"]->id = 2;
-		mPreStorePolygon["GizmoSketchPlane"]->id = 3;;
+		mPreStorePolygon["CoordAxis"]->setId(0);
+		mPreStorePolygon["TransformAxis"]->setId(1);
+		mPreStorePolygon["NavigateCube"]->setId(2);
+		mPreStorePolygon["GizmoSketchPlane"]->setId(3);
 		mPreStorePolygonId[0] = "CoordAxis";
 		mPreStorePolygonId[1] = "TransformAxis";
 		mPreStorePolygonId[2] = "ViewCube";
@@ -201,7 +201,7 @@ namespace MOON
 	}
 	bool ImRenderer::isSelectPolygon(const std::string& pname, const std::string& bname)
 	{
-		return mPreStorePolygon[pname]->id == selectPolygonId && mPreStorePolygon[pname]->getBlockId(bname) == selectBlockId;
+		return mPreStorePolygon[pname]->getId() == selectPolygonId && mPreStorePolygon[pname]->getBlockId(bname) == selectBlockId;
 	}
 	void ImRenderer::resetSelectPolygon()
 	{
@@ -4044,24 +4044,22 @@ namespace MOON
 			const DrawList& drawList = drawLists[i];
 			unsigned int prim;
 
-			std::string passTag = "";
+			
 			Rendering::Data::Material* mat = nullptr;
 			switch (drawList.primType)
 			{
 			case DrawPrimitivePoints:
 				prim = GL_POINTS;
 				mat = mPointMaterial;
-				passTag = "point";
+			
 				break;
 			case DrawPrimitiveLines:
 				prim = GL_LINES;
 				mat = mLineMaterial;
-				passTag = "line";
 				break;
 			case DrawPrimitiveTriangles:
 				prim = GL_TRIANGLES;
 				mat = mTriangleMaterial;
-				passTag = "triangle";
 				// glEnable(GL_CULL_FACE); // culling valid for triangles, but optional
 				break;
 			default:
@@ -4087,17 +4085,19 @@ namespace MOON
 		//draw lit vertex data
 		{
 			auto& viewCube = NavigateCube();
-			float size = 3.0f;
-			int viewPortSize = 125;
-			int viewPortX = cameraParam.viewportWidth - viewPortSize;
-			int viewPortY = cameraParam.viewportHeight-viewPortSize;
+			float boxExtent=(viewCube.maxConner - viewCube.minConner).norm();
+			Eigen::Vector3f boxECenter = (viewCube.maxConner + viewCube.minConner) / 2.0;
+			Maths::FVector3 boxCenter = { boxECenter.x(),boxECenter.y(),boxECenter.z()};
 
-			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewPortSize-1;
-			float v = 2*(cameraParam.viewportHeight -cameraParam.cursor.y() - viewPortY) / (float)viewPortSize-1;
+			int viewPortX = cameraParam.viewportWidth - viewCube.screenPos.viewportSizeX;
+			int viewPortY = cameraParam.viewportHeight- viewCube.screenPos.viewportSizeY;
+
+			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewCube.screenPos.viewportSizeX -1;
+			float v = 2*(cameraParam.viewportHeight -cameraParam.cursor.y() - viewPortY) / (float)viewCube.screenPos.viewportSizeY -1;
 
 			auto transform=renderView->GetCamera()->GetTransform();
 			auto forward=transform.GetWorldForward();
-			auto position = -forward * size * 2.0f;
+			auto position = -forward * boxExtent / 2.0+boxCenter;
 			auto up = transform.GetWorldUp();
 			auto view = Maths::FMatrix4::CreateView(
 				position.x, position.y, position.z,
@@ -4105,7 +4105,7 @@ namespace MOON
 				up.x, up.y, up.z
 			);
 		
-			auto proj=Maths::FMatrix4::CreateOrthographic(size*1.8, 1, 0.1, size*3.0);
+			auto proj=Maths::FMatrix4::CreateOrthographic(boxExtent/2.0, 1, 0.1, boxExtent);
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
 			if (faceIndex != -1) {
 				viewCube.setCellColor(faceIndex,{255,255,0,255});
@@ -4120,9 +4120,9 @@ namespace MOON
 			mCellMaterial->SetProperty("uVProjMatrix", proj);
 			mCellMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
 			mCellMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
-			mCellMaterial->SetProperty("uViewPortSize", static_cast<float>(viewPortSize));
+			mCellMaterial->SetProperty("uViewPortSize", Maths::FVector2(viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY));
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
-			glViewport(viewPortX,viewPortY, viewPortSize, viewPortSize);
+			glViewport(viewPortX,viewPortY, viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY);
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
 			auto& viewAxis = CoordAxis();
@@ -4201,7 +4201,7 @@ namespace MOON
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
 			mCellMaterial->SetProperty("u_AlbedoMap", polygon->texture);
 			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
-			mCellMaterial->SetProperty("polygonId", polygon->id);
+			mCellMaterial->SetProperty("polygonId", polygon->getId());
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube, "PICKING_PASS");
 			
 			polygon->bind();
