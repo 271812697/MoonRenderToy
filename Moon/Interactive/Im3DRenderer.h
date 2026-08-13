@@ -18,20 +18,7 @@ namespace MOON
 {
 	using Vec2 = Eigen::Vector2f;
 	class EventWidget;
-	struct Plane2D
-	{
-		Eigen::Vector3d xAxis = { 1,0,0 };
-		Eigen::Vector3d yAxis = { 0,1,0 };
-		Eigen::Vector3d normal = {0,0,1};
-		Eigen::Vector3d origin = { 0,0,0 };
-		Eigen::Vector3d value(const Eigen::Vector2f coord)const {
-			return origin + coord.x() * xAxis + coord.y() * yAxis;
-		}
-		Eigen::Vector3d value(float x,float y)const {
-			return origin + x * xAxis + y * yAxis;
-		}
-		Plane2D() = default;
-	};
+	
 	class ImRenderer
 	{
 	private:
@@ -84,9 +71,7 @@ namespace MOON
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size, Eigen::Vector4<uint8_t> _color);
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, float _size);
 		void drawLine(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b);
-		void drawPoint2D(const Eigen::Vector2f& pos, float size, const Plane2D& plane = Plane2D());
-		void drawPoint2D(const Eigen::Vector2f& pos,const Eigen::Vector4<uint8_t>&color, float size, const Plane2D& plane = Plane2D());
-		void drawLine2D(const Vec2& a, const Vec2& b, const Plane2D& plane=Plane2D());
+		
 		void drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n);
 		void drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c);
 		void drawTriangle(const Eigen::Vector3f& _a, const Eigen::Vector3f& _b, const Eigen::Vector3f& _c, const Eigen::Vector4<uint8_t>& _color);
@@ -111,7 +96,7 @@ namespace MOON
 		void drawSphereFilled(const Eigen::Vector3f& _origin, float _radius, int _detail = -1);
 		void drawCircleFaceCamera(const Eigen::Vector3f& _origin);
 		void drawCircle(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float _radius, int _detail = -1);
-		void drawCircle2D(const Vec2& _origin, float _radius ,int _detail = -1,Plane2D plane=Plane2D());
+		
 		void drawConeFilled(
 			const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height, float _radius, int _detail);
 		void drawAlignedBox(const Eigen::Vector3f& _min, const Eigen::Vector3f& _max);

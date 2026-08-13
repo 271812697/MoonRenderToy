@@ -5,6 +5,7 @@
 #include "Qtimgui/implot/implotCustom.h"
 #include "Qtimgui/implot/imGuizmo.h"
 #include "Im3DRenderer.h"
+#include "Im2DRenderer.h"
 #include "Interactive/MathUtil/MathUtil.h"
 #include "Settings/DebugSetting.h"
 #include "renderer/SceneView.h"
@@ -493,20 +494,6 @@ namespace MOON
 		drawLine(_a, _b, sizeStack.back());
 	}
 
-	void ImRenderer::drawPoint2D(const Eigen::Vector2f& a, float size, const Plane2D& plane)
-	{
-		drawPoint(plane.value(a).cast<float>(), size, colorStack.back());
-	}
-
-	void ImRenderer::drawPoint2D(const Eigen::Vector2f&a, const Eigen::Vector4<uint8_t>& color, float size, const Plane2D& plane)
-	{
-		drawPoint(plane.value(a).cast<float>(), size, color);
-	}
-
-	void ImRenderer::drawLine2D(const Vec2& a, const Vec2& b, const Plane2D& plane)
-	{
-		drawLine(plane.value(a).cast<float>(), plane.value(b).cast<float>());
-	}
 
 
 	void ImRenderer::drawTriangle(const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c, const Eigen::Vector3f& n)
@@ -803,12 +790,6 @@ namespace MOON
 		end();
 		matrixStack.pop_back();
 	}
-
-	void ImRenderer::drawCircle2D(const Vec2& _origin, float _radius, int _detail, Plane2D plane)
-	{
-		drawCircle(plane.origin.cast<float>(), plane.normal.cast<float>(), _radius, _detail);
-	}
-
 	void ImRenderer::drawConeFilled(const Eigen::Vector3f& _origin, const Eigen::Vector3f& _normal, float height,
 		float _radius, int _detail)
 	{
@@ -3913,6 +3894,11 @@ namespace MOON
 
 	void ImRenderer::test()
 	{
+		Render2D::Im2DRender::instance().newFrame();
+		auto drawList= Render2D::Im2DRender::instance().getDrawList();
+		drawList->AddLine({ 0,0, }, { 100,100 },COL32(255,255,255,255),3.0);
+		drawList->AddRect({ 100,100, }, { 200,200 }, COL32(255, 255, 255, 255),3.0);
+		Render2D::Im2DRender::instance().endFrame();
 	}
 
 	void ImRenderer::drawUnsort()
