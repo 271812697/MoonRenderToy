@@ -5,7 +5,6 @@
 #include "Qtimgui/implot/implotCustom.h"
 #include "Qtimgui/implot/imGuizmo.h"
 #include "Im3DRenderer.h"
-#include "Im2DRenderer.h"
 #include "Interactive/MathUtil/MathUtil.h"
 #include "Settings/DebugSetting.h"
 #include "renderer/SceneView.h"
@@ -3894,11 +3893,9 @@ namespace MOON
 
 	void ImRenderer::test()
 	{
-		Render2D::Im2DRender::instance().newFrame();
-		auto drawList= Render2D::Im2DRender::instance().getDrawList();
-		drawList->AddLine({ 0,0, }, { 100,100 },COL32(255,255,255,255),3.0);
-		drawList->AddRect({ 100,100, }, { 200,200 }, COL32(255, 255, 255, 255),3.0);
-		Render2D::Im2DRender::instance().endFrame();
+		
+	
+		
 	}
 
 	void ImRenderer::drawUnsort()
