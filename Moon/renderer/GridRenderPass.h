@@ -39,6 +39,8 @@ namespace Editor::Rendering
 		virtual void ResizeRenderer(int width, int height) override;
 	private:
 		::Rendering::HAL::Framebuffer m_mirroFbo;
+		::Rendering::HAL::Framebuffer m_mirroShadowFbo;
 		::Core::Resources::Material m_gridMaterial;
+		::Core::Resources::Material m_ShadowMaterial;
 	};
 }

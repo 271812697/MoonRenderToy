@@ -7,6 +7,7 @@
 #include "Core/Rendering/EngineBufferRenderFeature.h"
 #include <Rendering/Features/DebugShapeRenderFeature.h>
 #include <Rendering/HAL/Profiling.h>
+#include "Qtimgui/imgui/imgui.h"
 
 
 
@@ -20,6 +21,12 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 	m_gridMaterial.SetBackfaceCulling(true);
 	m_gridMaterial.SetDepthWriting(false);
 	m_gridMaterial.SetDepthTest(true);
+
+	m_ShadowMaterial.SetShader(GetShaderService[":Shaders\\MirrorPlaneShadow.ovfx"]);
+	m_ShadowMaterial.SetBackfaceCulling(true);
+	m_ShadowMaterial.SetDepthTest(false);
+	m_ShadowMaterial.SetDepthWriting(false);
+
 
 
 	::Rendering::Settings::TextureDesc colorDesc{
@@ -36,6 +43,20 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT
 		}
 	};
+	::Rendering::Settings::TextureDesc shadowDesc{
+	.width = 1,
+	.height = 1,
+	.minFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+	.magFilter = ::Rendering::Settings::ETextureFilteringMode::LINEAR,
+	.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+	.verticalWrap = ::Rendering::Settings::ETextureWrapMode::CLAMP_TO_BORDER,
+	.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F,
+	.useMipMaps = false,
+	.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+		.format = ::Rendering::Settings::EFormat::RGBA,
+		.type = ::Rendering::Settings::EPixelDataType::FLOAT
+	}
+	};
 	::Rendering::Settings::TextureDesc depthDesc{
 		.width = 1,
 		.height = 1,
@@ -50,16 +71,18 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 			.type = ::Rendering::Settings::EPixelDataType::FLOAT
 		}
 	};
-
+	auto shadowTexture = std::make_shared<::Rendering::HAL::Texture>(::Rendering::Settings::ETextureType::TEXTURE_2D, "color");
+	shadowTexture->Allocate(shadowDesc);
 	auto renderTexture = std::make_shared<::Rendering::HAL::Texture>(
-		::Rendering::Settings::ETextureType::TEXTURE_2D, "peelcolor");
+		::Rendering::Settings::ETextureType::TEXTURE_2D, "color");
 	renderTexture->Allocate(colorDesc);
 	auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
-		::Rendering::Settings::ETextureType::TEXTURE_2D, "peeldepth");
+		::Rendering::Settings::ETextureType::TEXTURE_2D, "depth");
 	depthTexture->Allocate(depthDesc);
 	depthTexture->SetBorderColor(Maths::FVector4::One);
 	m_mirroFbo.Attach<::Rendering::HAL::Texture>(renderTexture, ::Rendering::Settings::EFramebufferAttachment::COLOR);
 	m_mirroFbo.Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+	m_mirroShadowFbo.Attach<::Rendering::HAL::Texture>(shadowTexture, ::Rendering::Settings::EFramebufferAttachment::COLOR);
 }
 
 void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
@@ -71,7 +94,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	assert(m_renderer.HasDescriptor<GridDescriptor>()&&"Cannot find GridDescriptor attached to this renderer");
 	assert(m_renderer.HasFeature<::Rendering::Features::DebugShapeRenderFeature>()&& "Cannot find DebugShapeRenderFeature attached to this renderer");
 	assert(m_renderer.HasFeature<Editor::Rendering::DebugModelRenderFeature>()&&"Cannot find DebugModelRenderFeature attached to this renderer");
-
+	
 	auto& frameDesc = m_renderer.GetFrameDescriptor();
 	auto& gridDescriptor = m_renderer.GetDescriptor<GridDescriptor>();
 	auto& debugShapeRenderer = m_renderer.GetFeature<::Rendering::Features::DebugShapeRenderFeature>();
@@ -86,7 +109,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 
 	/*
 	Step 1. 
-	Render the models to the mirror framebuffer,from the mirror camera
+	Render the models to the mirror framebuffer,from the mirror camera,and generate shadow.
 	*/
 	const auto& filteredDrawables = m_renderer.GetDescriptor<::Core::Rendering::SceneRenderer::SceneFilteredDrawablesDescriptor>();
 	auto drawMirroModels = [&](auto drawables,bool transparent) {
@@ -95,17 +118,32 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 			auto drawableCopy = drawable;
 			if (transparent) {
 				drawableCopy.pass = "";
-				
 			}
 			m_renderer.DrawEntity(p_pso, drawableCopy);
 		}
-		};
+	};
+	auto drawMirroShadowModels = [&](auto drawables) {
+		for (auto& drawable : drawables)
+		{
+			auto drawableCopy = drawable;
+			drawableCopy.material = m_ShadowMaterial;
+			m_renderer.DrawEntity(p_pso, drawableCopy);
+		}
+	};
 	m_mirroFbo.Bind();
-	m_renderer.Clear(true, true, false, Maths::FVector4(0.7, 0.7, 0.7 ,0.2));
+	m_renderer.Clear(true, true, false, Maths::FVector4(1.0, 1.0, 1.0 ,0.2));
 	drawMirroModels(filteredDrawables.opaques | std::views::values,false);
 	drawMirroModels(filteredDrawables.lines | std::views::values, false);
 	drawMirroModels(filteredDrawables.transparents | std::views::values,true);
 	m_mirroFbo.Unbind();
+
+	m_mirroShadowFbo.Bind();
+	m_renderer.Clear(true, true, false, Maths::FVector4(0, 0, 0, 1));
+	m_ShadowMaterial.SetProperty("uMirroPlane", plane);
+
+	drawMirroShadowModels(filteredDrawables.opaques | std::views::values);
+	m_mirroShadowFbo.Unbind();
+
 	/*
 	Step 2.
 	Blend the mirror framebuffer to the main framebuffer with grid shader, from the main camera
@@ -121,15 +159,25 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 
 	model = Maths::FMatrix4::Transpose(model);
 	const auto& color = m_mirroFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	const auto& shadow = m_mirroShadowFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 	m_gridMaterial.SetProperty("u_Color", gridDescriptor.gridColor);
 	m_gridMaterial.SetProperty("u_PlaneTransform", model);
 	m_gridMaterial.SetProperty("u_MirrorTex", &color.value());
+	m_gridMaterial.SetProperty("u_MirrorShadowTex", &shadow.value());
 	m_renderer.GetFeature<DebugModelRenderFeature>()
 		.DrawModelWithSingleMaterial(pso, *::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetModel("Plane"), m_gridMaterial, model);
 
+	//debug
+	//if (false) {
+	//	ImVec2 a = { 0,1 }, b = { 1,0 };
+	//	ImVec2 size = ImVec2(frameDesc.renderWidth, frameDesc.renderHeight);
+	//	auto resid = m_mirroShadowFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	//	ImGui::Image(resid->GetID(), size, a, b);
+	//}
 }
 
 void Editor::Rendering::GridRenderPass::ResizeRenderer(int width, int height)
 {
 	m_mirroFbo.Resize(width,height);
+	m_mirroShadowFbo.Resize(width,height);
 }

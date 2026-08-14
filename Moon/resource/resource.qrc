@@ -82,7 +82,17 @@
         <file>icons/constraint/Constraint_Parallel.svg</file>
         <file>icons/constraint/Constraint_Perpendicular.svg</file>
         <file>icons/constraint/Constraint_DistanceX.svg</file>
-		    <file>icons/Sketcher_NewSketch.svg</file>
+        <file>icons/constraint/Constraint_VerticalDistance.svg</file>
+        <file>icons/constraint/Constraint_Tangent.svg</file>
+        <file>icons/constraint/Constraint_Symmetric.svg</file>
+        <file>icons/constraint/Constraint_EqualLength.svg</file>
+        <file>icons/constraint/Constraint_Length.svg</file>
+        <file>icons/constraint/Constraint_Block.svg</file>
+        <file>icons/constraint/Constraint_Diameter.svg</file>
+        <file>icons/constraint/Constraint_Radius.svg</file>
+        <file>icons/constraint/Constraint_InternalAngle.svg</file>
+      
+        <file>icons/Sketcher_NewSketch.svg</file>
 		    <file>icons/parametric/Part_Box_Parametric.svg</file>
 		    <file>icons/parametric/Part_Sphere_Parametric.svg</file>
 		    <file>icons/parametric/Part_Cone_Parametric.svg</file>

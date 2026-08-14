@@ -31,7 +31,6 @@ namespace MOON {
 		return Maths::FVector3(cos(elevation) * sin(azimuth), sin(elevation), cos(elevation) * cos(azimuth)) * radius;
 	}
 	void addSphereLight(Core::SceneSystem::Scene* scene) {
-		//auto node = DebugSettings::instance().getNode("showLight");
 		DebugSettings::instance().addCallBack("showLight", "default", [scene](NodeBase* self) {
 			bool value = self->getData<bool>();
 			scene->FindActorByName("PointLight1")->SetActive(value);
@@ -39,11 +38,11 @@ namespace MOON {
 			scene->FindActorByName("PointLight3")->SetActive(value);
 			scene->FindActorByName("PointLight4")->SetActive(value);
 			});
-		auto ambient = scene->FindActorByName("Ambient Light");
+		
 		auto& ac1 = scene->CreateActor("PointLight1");
 		ac1.SetTag("PointLight");
 		auto& pointLight1 = ac1.AddComponent<Core::ECS::Components::CPointLight>();
-		float kI = 0.50;
+		float kI = 0.10;
 		float kB = kI / 1.5;
 		float kC = kI / 3.5;
 
@@ -96,7 +95,7 @@ namespace MOON {
 		auto& ac5 = scene->CreateActor("HeadLight");
 		ac5.SetTag("PointLight");
 		auto& pointLight5 = ac5.AddComponent<Core::ECS::Components::CPointLight>();
-		pointLight5.SetIntensity(kB);
+		pointLight5.SetIntensity(kB*5);
 		pointLight5.SetConstant(1.0);
 		//pointLight.SetLinear(0.0);
 
@@ -126,6 +125,7 @@ namespace MOON {
 			scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->SetIntensity(1.0f);
 		    scene->FindActorByName("Directional Light")->GetComponent<Core::ECS::Components::CDirectionalLight>()->GetData().castShadows = true;
 			addSphereLight(scene);
+			GetViewerWidget.addActorToTreeView(scene->FindActorByName("Post Process Stack"));
 		}
 
 		std::string sceneName = path;

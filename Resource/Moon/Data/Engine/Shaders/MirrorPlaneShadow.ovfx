@@ -1,0 +1,30 @@
+#shader vertex
+#version 450 core
+
+#include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
+#include ":Shaders/Common/Utils.ovfxh"
+
+layout (location = 0) in vec3 geo_Pos;
+layout (location = 1) in vec2 geo_TexCoords;
+layout (location = 2) in vec3 geo_Normal;
+layout (location = 3) in vec3 geo_Tangent;
+layout (location = 4) in vec3 geo_Bitangent;
+
+uniform vec4 uMirroPlane;
+void main()
+{
+    vec3 FragPos = vec3( ubo_Model * vec4(geo_Pos, 1.0));
+    float offsetw=dot(uMirroPlane.xyz,FragPos)+uMirroPlane.w;
+    FragPos = FragPos-offsetw*uMirroPlane.xyz;
+    gl_Position = ubo_Projection * ubo_View *vec4(FragPos, 1.0);
+}
+
+
+#shader fragment
+#version 450 core
+out vec4 FragColor;
+
+void main()
+{
+   FragColor=vec4(1,0,0,1);
+}

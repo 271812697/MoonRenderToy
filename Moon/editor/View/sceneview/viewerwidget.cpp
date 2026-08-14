@@ -16,6 +16,7 @@
 #include "core/log.h"
 #include "Core/Rendering/GbufferPass.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "Interactive/Im2DRenderer.h"
 #include "Settings/DebugSetting.h"
 #include "core/SelectionManager.h"
 #include "renderer/GizmoRenderPass.h"
@@ -42,6 +43,7 @@ namespace MOON {
 			QObject::connect(&tree, &TreeViewPanel::itemLeave, mSelf, &onActorHoverLeaved);
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
+			
 			mSceneView = new Editor::Panels::SceneView("SceneView");
 			GetService(RenderPassSettingWidget).Refresh();
 			parser->ParseFile(mReadFilePath.toStdString());
@@ -69,6 +71,7 @@ namespace MOON {
 
 		void paintGL() {
 			ImRenderer::instance().newImgui();
+			Render2D::Im2DRender::instance().newFrame();
 			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").IsEnabled()) {
 				ImRenderer::instance().newFrame(mSceneView);
 			}
@@ -99,6 +102,7 @@ namespace MOON {
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			debugImgui();
+			Render2D::Im2DRender::instance().endFrame();
 			ImRenderer::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
 		}

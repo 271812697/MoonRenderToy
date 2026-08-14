@@ -601,7 +601,11 @@ void main()
 		std::string pathtraceDefines = "";
 		std::string tonemapDefines = "";
 		std::string outputDefines = "";
-
+		
+		auto camera = view.GetCamera();
+		if (camera->GetProjectionMode()== ::Rendering::Settings::EProjectionMode::PERSPECTIVE) {
+			pathtraceDefines += "#define PERSPECTIVE_CAMERA\n";
+		}
 		if (bvhService->renderOptions.enableEnvMap && envMap != nullptr)
 			pathtraceDefines += "#define OPT_ENVMAP\n";
 
@@ -814,6 +818,11 @@ void main()
 		auto& view = GetService(Editor::Panels::SceneView);
 		auto camera=view.GetCamera();
 		auto bvhService = view.GetScene()->GetBvhService();
+		static ::Rendering::Settings::EProjectionMode preCameraType=camera->GetProjectionMode();
+		::Rendering::Settings::EProjectionMode curCameraType = camera->GetProjectionMode();
+		if (preCameraType!=curCameraType) {
+			refreshFlag = true;
+		}
 		if (camera->IsCameraViewMatrixChange()||bvhService->isMaterialDirty) {
 			refreshFlag = true;
 		}
@@ -828,6 +837,11 @@ void main()
 			bvhService->isMaterialDirty = false;
 			
 		}
+		else if(preCameraType != curCameraType)
+		{
+			UpdateShaders();
+		}
+		preCameraType = curCameraType;
 		//if (scene->instancesModified)
 		//{
 		//	// Transform
@@ -939,8 +953,10 @@ void main()
 		auto cwr=-camera->GetTransform().GetWorldRight();
 		auto cwu=camera->GetTransform().GetWorldUp();
 		auto cwf=camera->GetTransform().GetWorldForward();
-		float fov=camera->GetFov()/180.0f*3.15157f;
-		float focalDist=camera->GetNear();
+		float oheight = camera->GetSize()*2;
+		float owidth = camera->GetRatio()*oheight;
+		float fov = camera->GetFov()/180.0f*3.15157f;
+		float focalDist = camera->GetNear();
 		float aperture = 0.0f;
 
 		
@@ -951,6 +967,8 @@ void main()
 		pathTraceShader.SetProperty("camera.right", cwr);
 		pathTraceShader.SetProperty("camera.up",cwu );
 		pathTraceShader.SetProperty("camera.forward", cwf);
+		pathTraceShader.SetProperty("camera.oheight",oheight);
+		pathTraceShader.SetProperty("camera.owidth", owidth);
 		pathTraceShader.SetProperty("camera.fov", fov);
 		pathTraceShader.SetProperty("camera.focalDist", focalDist);
 		pathTraceShader.SetProperty("camera.aperture", aperture);
@@ -962,17 +980,17 @@ void main()
 		pathTraceShader.SetProperty("uniformLightCol", bvhService->renderOptions.uniformLightCol);
 		pathTraceShader.SetProperty("roughnessMollificationAmt", bvhService->renderOptions.roughnessMollificationAmt);
 		pathTraceShader.SetProperty("frameNum", frameCounter);
-		static Maths::FVector4 colors[] = {
-				{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
-				{ 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
-				 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
-				  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
-				   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
-					{ 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
-		};
-		for (int i = 0;i < 12;i++) {
-			pathTraceShader.SetProperty("domainColors["+std::to_string(i)+"]",colors[i]);
-		}
+		//static Maths::FVector4 colors[] = {
+		//		{ 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
+		//		{ 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
+		//		 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
+		//		  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
+		//		   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
+		//			{ 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
+		//};
+		//for (int i = 0;i < 12;i++) {
+		//	pathTraceShader.SetProperty("domainColors["+std::to_string(i)+"]",colors[i]);
+		//}
 
 		pathTraceShaderLowRes.SetProperty("resolution", Maths::FVector2(renderSize.x, renderSize.y));
 		pathTraceShaderLowRes.SetProperty("camera.position", cpos);
