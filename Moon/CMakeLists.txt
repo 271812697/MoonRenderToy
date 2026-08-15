@@ -39,20 +39,22 @@ target_include_directories(${TARGET_NAME} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${ThirdPartyDir}
     ${LibDIR}/oidn/include
+    ${LibDIR}/freetype/include
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj)
 set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD 20)
 
 set(OIDN_LIBRARIES "OpenImageDenoise")
+set(FREETYPE_LIBRARIES "freetype")
 
 # Link dependencies    
 target_link_directories(${TARGET_NAME}
-    PRIVATE "${CMAKE_SOURCE_DIR}/lib/oidn/lib"
+    PRIVATE "${CMAKE_SOURCE_DIR}/lib/oidn/lib" "${CMAKE_SOURCE_DIR}/lib/freetype/lib" 
     "${CMAKE_SOURCE_DIR}/lib"
 )
 message(STATUS "the lib is ${CMAKE_SOURCE_DIR}/lib")
-target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES} 
+target_link_libraries(${TARGET_NAME} PUBLIC ${OIDN_LIBRARIES}  ${FREETYPE_LIBRARIES}
 )
 
 add_custom_command(
@@ -60,6 +62,12 @@ add_custom_command(
     POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/oidn/lib/OpenImageDenoise.dll" "${TARGET_EXE_DIR}"
     COMMENT "Copying OpenImageDenoise.dll"
+)
+add_custom_command(
+    TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main
+    POST_BUILD  # 编译前执行（可选：POST_BUILD 编译后执行）
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LibDIR}/freetype/bin/freetype.dll" "${TARGET_EXE_DIR}"
+    COMMENT "Copying freetype.dll"
 )
 add_custom_command(
     TARGET ${TARGET_NAME}  # 替换成你的exe目标名，比如 main

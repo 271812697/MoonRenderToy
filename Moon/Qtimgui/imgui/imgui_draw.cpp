@@ -1,4 +1,4 @@
-// dear imgui, v1.93.0 WIP
+﻿// dear imgui, v1.93.0 WIP
 // (drawing and font code)
 
 /*
@@ -37,7 +37,7 @@ Index of this file:
 #ifndef IMGUI_DISABLE
 #include "imgui_internal.h"
 #ifdef IMGUI_ENABLE_FREETYPE
-#include "misc/freetype/imgui_freetype.h"
+#include "imgui_freetype.h"
 #endif
 
 #include <stdio.h>      // vsnprintf, sscanf, printf
