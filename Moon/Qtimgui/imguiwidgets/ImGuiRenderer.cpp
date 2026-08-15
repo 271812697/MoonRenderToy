@@ -77,7 +77,7 @@ namespace QtImGui {
 
 		// Setup backend capabilities flags
 		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 #ifndef QT_NO_CURSOR
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
 		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;  // We can honor io.WantSetMousePos requests (optional, rarely used)
@@ -198,7 +198,7 @@ namespace QtImGui {
 					glScissor((int)clip_min.x, (int)(fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
 					// Bind texture, Draw
-					glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->TextureId);
+					glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->GetTexID());
 					glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset + pcmd->IdxOffset);
 				}
 			}
