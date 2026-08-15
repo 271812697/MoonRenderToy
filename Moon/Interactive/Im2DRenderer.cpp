@@ -81,11 +81,12 @@ void main()
                     }
                 }
             }
-            void test() {
+            void test() {  
+                drawList.AddLine({ 0,0, }, { 500,500 }, IM_COL32(255, 255, 255, 255), 1.0);
                 drawList.AddNgonFilled({ 250,250 },100, IM_COL32(255, 255, 0, 255),8);
                 drawList.AddCircle({ 500,500 }, 100.0, IM_COL32(255, 255, 0, 255),0,6.0);
                 drawList.AddCircleFilled({ 500,500 }, 97.0, IM_COL32(255, 0, 0, 100), 0);
-                drawList.AddLine({ 0,0, }, { 500,500 }, IM_COL32(255, 255, 255, 255), 1.0);
+              
                 drawList.AddRect({ 100,100, }, { 600,600 }, IM_COL32(255, 255, 255, 255), 30.0, 3.0);
             }
         private:

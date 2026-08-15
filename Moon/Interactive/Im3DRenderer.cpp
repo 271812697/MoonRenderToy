@@ -4216,7 +4216,6 @@ namespace MOON
 	}
 	void ImRenderer::endImgui()
 	{
-		ImGui::ShowDemoWindow();
 		ImGui::Render();
 		QtImGui::render(imref);
 		isBeginImgui = false;
