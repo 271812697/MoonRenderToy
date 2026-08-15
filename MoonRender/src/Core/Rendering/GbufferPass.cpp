@@ -28,8 +28,7 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 	gbufferMaterial.SetBackfaceCulling(false);
 	ssaoMaterial.SetShader(GetShaderService[":Shaders\\ssao.ovfx"]);
 	ssaoMaterial.SetBackfaceCulling(false);
-	ssaoblurMaterial.SetShader(GetShaderService[":Shaders\\ssaoblur.ovfx"]);
-	ssaoblurMaterial.SetBackfaceCulling(false);
+	ssaoblurMaterial.SetShader(GetShaderService[":Shaders\\PostProcess\\blur.ovfx"]);
 
 	{
 		::Rendering::Settings::TextureDesc colorDesc{
@@ -149,8 +148,16 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 		gbufferData.occlusionBlur = std::make_shared<::Rendering::HAL::Texture>(
 			::Rendering::Settings::ETextureType::TEXTURE_2D, "occlusionBlur");
 		gbufferData.occlusionBlur->Allocate(colorDesc);
-		ssaoblurbuffer.Attach<::Rendering::HAL::Texture>(gbufferData.occlusionBlur, ::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-		if (!ssaoblurbuffer.Validate()) {
+		ssaoblurbuffer[0].Attach<::Rendering::HAL::Texture>(gbufferData.occlusionBlur, ::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+		if (!ssaoblurbuffer[0].Validate()) {
+			std::cout << "invalidate buffer" << std::endl;
+		}
+
+		auto occlusionBlur1 = std::make_shared<::Rendering::HAL::Texture>(
+			::Rendering::Settings::ETextureType::TEXTURE_2D, "occlusionBlur");
+		occlusionBlur1->Allocate(colorDesc);
+		ssaoblurbuffer[1].Attach<::Rendering::HAL::Texture>(occlusionBlur1, ::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+		if (!ssaoblurbuffer[1].Validate()) {
 			std::cout << "invalidate buffer" << std::endl;
 		}
 	}
@@ -224,12 +231,15 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		m_renderer.DrawEntity(p_pso, drawable);
 		ssaobuffer.Unbind();
 		//blur ssao
-		ssaoblurbuffer.Bind();
-		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
-		ssaoblurMaterial.SetProperty("ssaoInput", gbufferData.occlusion.get());
-		drawable.material = ssaoblurMaterial;
-		m_renderer.DrawEntity(p_pso, drawable);
-		ssaoblurbuffer.Unbind();
+		ssaoblurbuffer[0].Bind();
+		m_renderer.Present(*gbufferData.occlusion);
+		for (int i = 0; i < 6; i++) {
+			ssaoblurMaterial.SetProperty("horizontal", i % 2 ? true : false);
+			m_renderer.Blit(p_pso, ssaoblurbuffer[0], ssaoblurbuffer[1], ssaoblurMaterial);
+
+			++ssaoblurbuffer;
+		}
+		ssaoblurbuffer[0].Unbind();
 	}
 	
 
@@ -243,6 +253,7 @@ void Core::Rendering::GbufferPass::ResizeRenderer(int width, int height)
 {
 	gbuffer.Resize(width, height);
 	ssaobuffer.Resize(width,height);
-	ssaoblurbuffer.Resize(width,height);
+	ssaoblurbuffer[0].Resize(width, height);
+	ssaoblurbuffer[1].Resize(width, height);
 }
 

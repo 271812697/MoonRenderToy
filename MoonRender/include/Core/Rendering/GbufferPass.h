@@ -2,6 +2,7 @@
 #include <Rendering/Core/ARenderPass.h>
 #include <Rendering/HAL/Framebuffer.h>
 #include <Core/Resources/Material.h>
+#include <Core/Rendering/PingPongFramebuffer.h>
 namespace Core::Rendering
 {
 	struct GbufferTextureData {
@@ -38,7 +39,7 @@ namespace Core::Rendering
 		GbufferTextureData gbufferData;
 		::Rendering::HAL::Framebuffer gbuffer;
 		::Rendering::HAL::Framebuffer ssaobuffer;
-		::Rendering::HAL::Framebuffer ssaoblurbuffer;
+		::Core::Rendering::PingPongFramebuffer  ssaoblurbuffer;
 		GbufferParam gbufferParam;
 	};
 }
