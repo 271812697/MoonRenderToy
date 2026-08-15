@@ -1,8 +1,9 @@
 ﻿#pragma once 
 
 namespace MOON {
-	namespace Render2D{
 	struct ImDrawList;
+	namespace Render2D{
+	
 	class Im2DRender {
 	public:
 		~Im2DRender();

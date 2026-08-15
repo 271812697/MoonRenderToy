@@ -1,5 +1,5 @@
 ﻿#include <glad/glad.h>
-#include "Interactive/Im2DType.h"
+#include "Interactive/imgui/imgui.h"
 #include "Interactive/Im2DRenderer.h"
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
@@ -73,18 +73,20 @@ void main()
             }
             void uploadVertex() {
                  //drawList
-                if (mVertexBuffer->Allocate(drawList.VtxBuffer.size() * sizeof(Render2D::ImDrawVert), ::Rendering::Settings::EAccessSpecifier::STREAM_DRAW))
+                if (mVertexBuffer->Allocate(drawList.VtxBuffer.size() * sizeof(ImDrawVert), ::Rendering::Settings::EAccessSpecifier::STREAM_DRAW))
                 {
-                    mVertexBuffer->Upload(drawList.VtxBuffer.data());
+                    mVertexBuffer->Upload(drawList.VtxBuffer.Data);
                     if (mIndexBuffer->Allocate(drawList.IdxBuffer.size() * sizeof(unsigned int),::Rendering::Settings::EAccessSpecifier::STREAM_DRAW)) {
-                        mIndexBuffer->Upload(drawList.IdxBuffer.data());
+                        mIndexBuffer->Upload(drawList.IdxBuffer.Data);
                     }
                 }
             }
             void test() {
-                
-                drawList.AddLine({ 0,0, }, { 500,500 }, COL32(255, 255, 255, 255), 1.0);
-                drawList.AddRect({ 100,100, }, { 600,600 }, COL32(255, 255, 255, 255), 30.0, 3.0);
+                drawList.AddNgonFilled({ 250,250 },100, IM_COL32(255, 255, 0, 255),8);
+                drawList.AddCircle({ 500,500 }, 100.0, IM_COL32(255, 255, 0, 255),0,6.0);
+                drawList.AddCircleFilled({ 500,500 }, 97.0, IM_COL32(255, 0, 0, 100), 0);
+                drawList.AddLine({ 0,0, }, { 500,500 }, IM_COL32(255, 255, 255, 255), 1.0);
+                drawList.AddRect({ 100,100, }, { 600,600 }, IM_COL32(255, 255, 255, 255), 30.0, 3.0);
             }
         private:
             friend Im2DRender;
