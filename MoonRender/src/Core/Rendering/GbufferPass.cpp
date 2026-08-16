@@ -29,6 +29,7 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 	ssaoMaterial.SetShader(GetShaderService[":Shaders\\ssao.ovfx"]);
 	ssaoMaterial.SetBackfaceCulling(false);
 	ssaoblurMaterial.SetShader(GetShaderService[":Shaders\\PostProcess\\blur.ovfx"]);
+	//ssaoblurMaterial.AddFeature("k15x15");
 
 	{
 		::Rendering::Settings::TextureDesc colorDesc{

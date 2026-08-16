@@ -29,7 +29,7 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 
 
 	m_BlurMaterial.SetShader(GetShaderService[":Shaders\\PostProcess\\blur.ovfx"]);
-
+	//m_BlurMaterial.AddFeature("k15x15");
 
 
 
@@ -175,7 +175,7 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	model = Maths::FMatrix4::Transpose(model);
 	const auto& color = m_mirroFbo.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
 	const auto& shadow = m_mirroShadowFbo[0].GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
-	m_gridMaterial.SetProperty("u_Color", gridDescriptor.gridColor);
+	m_gridMaterial.SetProperty("u_Color", gridDescriptor.gridColor*0.7);
 	m_gridMaterial.SetProperty("u_PlaneTransform", model);
 	m_gridMaterial.SetProperty("u_MirrorTex", &color.value());
 	m_gridMaterial.SetProperty("u_MirrorShadowTex", &shadow.value());
