@@ -251,7 +251,7 @@ Handle(Geom_Surface) Part::Tools::makeSurface(
 
     return aRes;
 }
-bool Part::Tools::getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points, std::vector<gp_Vec>& normals, std::vector<Poly_Triangle>& facets) {
+bool Part::Tools::getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points,  std::vector<gp_Pnt2d>& uvs, std::vector<gp_Vec>& normals, std::vector<Poly_Triangle>& facets) {
     TopLoc_Location loc;
     Handle(Poly_Triangulation) hTria = BRep_Tool::Triangulation(face, loc);
     if (hTria.IsNull())
@@ -299,7 +299,20 @@ bool Part::Tools::getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>&
             //nor.Transform(transf);
         }
         points.push_back(p);
+       
     }
+    if (hTria->HasUVNodes()) {
+        for (int i = 1; i <= nbNodes; i++) {
+            uvs.push_back(hTria->UVNode(i));
+        }
+    }
+    else
+    {
+        for (int i = 1; i <= nbNodes; i++) {
+            uvs.push_back({0.0,0.0});
+        }
+    }
+    
     for (int i = 1; i <= nbTriangles; i++) {
         // Get the triangle
         Standard_Integer n1, n2, n3;
@@ -315,6 +328,7 @@ bool Part::Tools::getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>&
         }
         facets.emplace_back(n1, n2, n3);
     }
+
     return true;
 }
 

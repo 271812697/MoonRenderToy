@@ -53,7 +53,7 @@ namespace MOON {
         Part::TopoShape revolve;
         {
             ZoneScopedN("Revolve");
-            revolve = face.makeElementRevolve(raxis, radAngle, "Part::FaceMakerCheese");
+            revolve = face.makeElementRevolve(raxis, radAngle, "Part::FaceMakerBullseye");
             getPreviewShape() = revolve;
         }
 

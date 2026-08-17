@@ -155,7 +155,7 @@ public:
         std::vector<gp_Pnt>& points,
         std::vector<Poly_Triangle>& facets
     );
-    static bool getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points, std::vector<gp_Vec>& normals, std::vector<Poly_Triangle>& facets);
+    static bool getTriangulation(const TopoDS_Face& face, std::vector<gp_Pnt>& points, std::vector<gp_Pnt2d>& uvs, std::vector<gp_Vec>& normals, std::vector<Poly_Triangle>& facets);
     /*!
      * \brief getPolygonOnTriangulation
      * Get the polygon of edge.

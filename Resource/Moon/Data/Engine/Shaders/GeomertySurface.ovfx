@@ -1,5 +1,4 @@
 #pass Transparents
-#pass MirroPlane_pass
 #feature SPECULAR_WORKFLOW
 #feature WITH_EDGE
 #feature TRIANGLE_INFO
@@ -15,41 +14,25 @@
 layout (location = 0) in vec3 geo_Pos;
 layout (location = 1) in vec2 geo_TexCoords;
 layout (location = 2) in vec3 geo_Normal;
-layout (location = 3) in vec3 geo_Tangent;
-layout (location = 4) in vec3 geo_Bitangent;
+layout (location = 3) in vec2 geo_DomainId;
 
 out VS_OUT
 {
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
-
-    mat3 TBN;
-
+    vec2 DomainId;
 } vs_out;
 
 void main()
 {
     vec4 worldPos = ubo_Model * vec4(geo_Pos, 1.0);
-    
     mat3 normalMatrix = mat3(transpose(inverse(ubo_Model)));
     vec3 worldNormal = normalize(normalMatrix * geo_Normal);
-    
-#if defined(MirroPlane_pass)
-    worldPos = ubo_MirroPlaneMatrix * worldPos;
-    mat3 mirrorRot = mat3(ubo_MirroPlaneMatrix);
-    worldNormal = normalize(mirrorRot * worldNormal);
-#endif
-    
     vs_out.FragPos = worldPos.xyz;
     vs_out.TexCoords = geo_TexCoords;
     vs_out.Normal = worldNormal;
-    vs_out.TBN = ConstructTBN(ubo_Model, geo_Normal, geo_Tangent, geo_Bitangent);
-    
-#if defined(MirroPlane_pass)
-    vs_out.TBN = mirrorRot * vs_out.TBN;
-#endif
-    
+    vs_out.DomainId=geo_DomainId;    
     gl_Position = ubo_Projection * ubo_View * worldPos;
 }
 
@@ -63,14 +46,14 @@ in VS_OUT
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
-    mat3 TBN;
+    vec2 DomainId;
 
 }gs_in[];
 out GS_OUT{
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
-    mat3 TBN;
+    vec2 DomainId;
 #if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
     float screenLengthOutput;
@@ -143,9 +126,9 @@ void main()
 #endif 
         gs_out.FragPos=gs_in[i].FragPos;
         gs_out.TexCoords=gs_in[i].TexCoords;
-        //gs_out.Normal=nor;
+        gs_out.DomainId=gs_in[i].DomainId;
         gs_out.Normal=gs_in[i].Normal;
-        gs_out.TBN=gs_in[i].TBN;
+       
         gl_Position = gl_in[i].gl_Position;
 #if defined(WITH_EDGE)
         gl_Position.xy = gl_Position.xy + offsets[i]*gl_Position.w;
@@ -171,7 +154,7 @@ in GS_OUT
     vec3 FragPos;
     vec2 TexCoords;
     vec3 Normal;
-    mat3 TBN;
+    vec2 DomainId;
 #if defined(WITH_EDGE)
     noperspective vec4 edgeEqn[3];
     float screenLengthOutput;
@@ -1187,7 +1170,7 @@ void main()
         discard;
     }
 #if !defined(DISABLE_DOMAIN_COLOR) 
-    int domainIndex=int(round(fs_in.TexCoords.x));
+    int domainIndex=int(round(fs_in.DomainId.x));
     albedo.rgb*=texelFetch(domainColorTex,domainIndex).rgb;
 #endif
 
