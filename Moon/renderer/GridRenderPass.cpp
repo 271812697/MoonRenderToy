@@ -95,7 +95,6 @@ Editor::Rendering::GridRenderPass::GridRenderPass(::Rendering::Core::CompositeRe
 
 void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
-	
 	ZoneScoped;
 	TracyGpuZone("GridRenderPass");
 	
