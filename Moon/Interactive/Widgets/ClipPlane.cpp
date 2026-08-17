@@ -332,18 +332,19 @@ namespace MOON {
 				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
 				{
 					ZoneScopedN("clip");
-					auto wires = topoShape.slices(dir, std::vector<double>{ offset });
-					Part::TopoShape shape(wires);
+					auto faces = topoShape.slicesFace(dir, std::vector<double>{ offset });
+					Part::TopoShape shape(faces);
 					if (!shape.isNull()) {
-						try
-						{
-							ZoneScopedN("makeFace");
-							shape = shape.makeElementFace("Part::FaceMakerCheese");
-							m_internal->sectionActor->setTopoShape(shape);
-						}
-						catch (const Base::Exception&e)
-						{
-						}
+						m_internal->sectionActor->setTopoShape(shape);
+						//try
+						//{
+						//	ZoneScopedN("makeFace");
+						//	//shape = shape.makeElementFace("Part::FaceMakerCheese");
+						//	
+						//}
+						//catch (const Base::Exception&e)
+						//{
+						//}
 					}
 				}
 			}

@@ -73,6 +73,16 @@ std::list<TopoDS_Wire> CrossSection::slice(double d) const
     return removeDuplicates(wires);
 }
 
+std::vector<TopoDS_Face> Part::CrossSection::sliceFace(double d) const
+{
+    std::vector<TopoDS_Face> faces;
+    TopExp_Explorer xp;
+    for (xp.Init(s, TopAbs_SOLID); xp.More(); xp.Next()) {
+        sliceSolid(d, xp.Current(),faces);
+    }
+    return faces;
+}
+
 std::list<TopoDS_Wire> CrossSection::removeDuplicates(const std::list<TopoDS_Wire>& wires) const
 {
     std::list<TopoDS_Wire> wires_reduce;
@@ -157,6 +167,41 @@ void CrossSection::sliceSolid(double d, const TopoDS_Shape& shape, std::list<Top
                     TopTools_IndexedMapOfShape mapOfWires;
                     TopExp::MapShapes(face, TopAbs_WIRE, mapOfWires);
                     connectWires(mapOfWires, wires);
+                }
+            }
+        }
+    }
+}
+
+void Part::CrossSection::sliceSolid(double d, const TopoDS_Shape& shape, std::vector<TopoDS_Face>& faces) const
+{
+    gp_Pln slicePlane(a, b, c, -d);
+    BRepBuilderAPI_MakeFace mkFace(slicePlane);
+    TopoDS_Face face = mkFace.Face();
+
+    // Make sure to choose a point that does not lie on the plane (fixes #0001228)
+    gp_Vec tempVector(a, b, c);
+    tempVector.Normalize();  // just in case.
+    tempVector *= (d + 1.0);
+    gp_Pnt refPoint(0.0, 0.0, 0.0);
+    refPoint.Translate(tempVector);
+
+    BRepPrimAPI_MakeHalfSpace mkSolid(face, refPoint);
+    TopoDS_Solid solid = mkSolid.Solid();
+    FCBRepAlgoAPI_Cut mkCut(shape, solid);
+
+    if (mkCut.IsDone()) {
+        TopTools_IndexedMapOfShape mapOfFaces;
+        TopExp::MapShapes(mkCut.Shape(), TopAbs_FACE, mapOfFaces);
+        for (int i = 1; i <= mapOfFaces.Extent(); i++) {
+            const TopoDS_Face& face = TopoDS::Face(mapOfFaces.FindKey(i));
+            BRepAdaptor_Surface adapt(face);
+            if (adapt.GetType() == GeomAbs_Plane) {
+                gp_Pln plane = adapt.Plane();
+                if (plane.Axis().IsParallel(slicePlane.Axis(), Precision::Confusion())
+                    && plane.Distance(slicePlane.Location()) < Precision::Confusion()) {
+                    // sort and repair the wires
+                    faces.push_back(face);
                 }
             }
         }

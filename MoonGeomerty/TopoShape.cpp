@@ -1796,9 +1796,31 @@ std::list<TopoDS_Wire> TopoShape::slice(const Base::Vector3d& dir, double d) con
     CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
     return cs.slice(d);
 }
+TopoDS_Compound TopoShape::slicesFace(const Base::Vector3d&dir, const std::vector<double>&d) const {
+    std::vector<std::vector<TopoDS_Face>> face_list;
+    CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
+    for (double jt : d) {
+        face_list.push_back(cs.sliceFace(jt));
+    }
 
+    std::vector<std::vector<TopoDS_Face>>::const_iterator ft;
+    TopoDS_Compound comp;
+    BRep_Builder builder;
+    builder.MakeCompound(comp);
+
+    for (ft = face_list.begin(); ft != face_list.end(); ++ft) {
+        const std::vector<TopoDS_Face>& w = *ft;
+        for (const auto& wt : w) {
+            if (!wt.IsNull()) {
+                builder.Add(comp, wt);
+            }
+        }
+    }
+    return comp;
+}
 TopoDS_Compound TopoShape::slices(const Base::Vector3d& dir, const std::vector<double>& d) const
 {
+
     std::vector<std::list<TopoDS_Wire>> wire_list;
     CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
     for (double jt : d) {
