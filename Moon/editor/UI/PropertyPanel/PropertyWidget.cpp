@@ -18,6 +18,7 @@
 #include "Widgets/SliderFloatProperty.h"
 #include "Widgets/SliderIntProperty.h"
 #include "Widgets/ColorPickerProperty.h"
+#include "Widgets/TextureProperty.h"
 #include <QTreeWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -284,11 +285,9 @@ namespace MOON {
 			mat = comp->GetMaterialAtIndex(0);
 			for (auto& mprop:mat->GetProperties()) {
 				if (std::holds_alternative<Maths::FVector3>(mprop.second.value)) {
-					//auto v = std::get<Maths::FVector3>(mprop.second.value);
 					mProperties.push_back(new FVec3Property(mprop.first.c_str(), this));
 				}
 				else if (std::holds_alternative<float>(mprop.second.value)) {
-					//auto v = std::get<Maths::FVector3>(mprop.second.value);
 					mProperties.push_back(new SliderFloatProperty(mprop.first.c_str(), this));
 				}
 				else if (std::holds_alternative<Maths::FVector4>(mprop.second.value)) {
@@ -302,7 +301,10 @@ namespace MOON {
 					{
 						mProperties.push_back(new FVec4Property(mprop.first.c_str(), this));
 					}
-					
+				}
+				else if (std::holds_alternative<Rendering::Resources::Texture*>(mprop.second.value)) {
+					mProperties.push_back(new TextureProperty(mprop.first.c_str(), this));
+
 				}
 			}
 		}
@@ -327,8 +329,6 @@ namespace MOON {
 						
 					}
 					return QVariant::fromValue(v);
-					
-					
 				}
 				else if (std::holds_alternative<float>(ref.value().value)) {
 					auto v = std::get<float>(ref.value().value);
@@ -339,28 +339,39 @@ namespace MOON {
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
 			std::string propName = propertyName.toStdString();
+			auto ref = mat->GetProperty(propName);
 			if (mat->HasProperty(propName)) {
-				if (value.canConvert<Maths::FVector3>()) {
+				if (std::holds_alternative<Maths::FVector3>(ref.value().value)) {
 					mat->SetProperty(propName,value.value<Maths::FVector3>());
-				}else if (value.canConvert<Maths::FVector4>()) {
-					mat->SetProperty(propName, value.value<Maths::FVector4>());
-				}
-				else if (value.canConvert<QColor>()) {
-					auto color = value.value<QColor>();
-					float alpha = color.alpha();
-					if (alpha < 255) {
-						mat->SetTransparent(true);
-						mat->SetDepthWriting(true);
+				}else if (std::holds_alternative<Maths::FVector4>(ref.value().value)) {
+					std::string mainLower = propName;
+					std::transform(mainLower.begin(), mainLower.end(), mainLower.begin(),
+						[](unsigned char c) { return std::tolower(c); });
+					if (mainLower.find("u_albedo") != std::string::npos) {
+						auto color = value.value<QColor>();
+						float alpha = color.alpha();
+						if (alpha < 255) {
+							mat->SetTransparent(true);
+							mat->SetDepthWriting(true);
+						}
+						else
+						{
+							mat->SetBlendable(false);
+							mat->SetTransparent(false);
+							mat->SetDepthWriting(true);
+						}
+						mat->SetProperty(propName, Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f });						
 					}
 					else
 					{
-						mat->SetBlendable(false);
-						mat->SetTransparent(false);
-						mat->SetDepthWriting(true);
+						mat->SetProperty(propName, value.value<Maths::FVector4>());
 					}
-					mat->SetProperty(propName, Maths::FVector4{ color.red() / 255.0f,color.green() / 255.0f,color.blue() / 255.0f,color.alpha() / 255.0f });
 				}
-				else if (value.canConvert<float>()) {
+				else if (std::holds_alternative<Rendering::Resources::Texture*>(ref.value().value)) {
+					auto texturePath=value.toString().toStdString();
+					mat->LateUpdateTexture(propName, texturePath);
+				}
+				else if (std::holds_alternative<float>(ref.value().value)) {
 					mat->SetProperty(propName, value.value<float>());
 				}
 			}

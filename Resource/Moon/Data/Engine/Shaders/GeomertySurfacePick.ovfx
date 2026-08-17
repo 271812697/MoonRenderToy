@@ -2,23 +2,23 @@
 #version 450 core
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 layout (location = 0) in vec3 geo_Pos;
-layout (location = 1) in vec2 geo_TexCoords;
+layout (location = 3) in vec2 geo_DomainID;
 
 out vec3 VSOUT_World;
-out vec2 VstexCoords;
+out vec2 VSDomainId;
 
 void main()
 {
     vec4 worldPos = ubo_Model * vec4(geo_Pos, 1.0);
     VSOUT_World=worldPos.xyz;
-    VstexCoords = geo_TexCoords;
+    VSDomainId = geo_DomainID;
     gl_Position = ubo_Projection * ubo_View * worldPos;
 }
 
 #shader fragment
 #version 450 core
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
-in vec2 VstexCoords;
+in vec2 VSDomainId;
 in vec3 VSOUT_World;
 out vec4 FRAGMENT_COLOR;
 
@@ -30,7 +30,7 @@ void main()
             discard;
         }
     }
-    int actorId = int(round(VstexCoords.y));
+    int actorId = int(round(VSDomainId.y));
     int r = actorId & 0xFF;
     int g = (actorId >> 8) & 0xFF;
     int b = (actorId >> 16) & 0xFF; 

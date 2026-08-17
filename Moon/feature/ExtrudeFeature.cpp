@@ -78,7 +78,7 @@ namespace MOON {
         if (extrudeType==2 && !upToFace.isNull()) {
             try
             {
-                Part::TopoShape tempShape =face.makeElementFace(nullptr, "Part::FaceMakerCheese");
+                Part::TopoShape tempShape =face.makeElementFace(nullptr, "Part::FaceMakerBullseye");
                 prism = prism.makeElementPrismUntil(
                     tempShape,
                     supportShape,

@@ -246,9 +246,9 @@ namespace Core::ECS::Components
                     for (int k = 0; k < domains[iIndex].points.size(); k++) {
                         faceVertices[domainVertexNum[domainIndex].first + k] = {
                             Maths::FVector3{ static_cast<float>(domains[iIndex].points[k].x),static_cast<float>(domains[iIndex].points[k].y),static_cast<float>(domains[iIndex].points[k].z) },
-                            indexId,
-                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z) }
-                   
+                            Maths::FVector2{ static_cast<float>(domains[iIndex].uvs[k].x),static_cast<float>(domains[iIndex].uvs[k].y) },
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z)},
+                            indexId 
                         };
                         subBox.grow(faceVertices[domainVertexNum[domainIndex].first + k].position);
                     }
@@ -413,8 +413,8 @@ namespace Core::ECS::Components
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
                         v.position = linePoints[k];
-                        v.texCoords.x = i * 1.0f;
-                        v.texCoords.y = subLineId;
+                        v.domainId.x = i * 1.0f;
+                        v.domainId.y = subLineId;
                         p_vertices.emplace_back(v);
 
                         lineIndex.push_back(k);
@@ -422,8 +422,8 @@ namespace Core::ECS::Components
                     }
                     ::Rendering::Geometry::VertexBVH v;
                     v.position = linePoints[l.I2];
-                    v.texCoords.x = i * 1.0f;
-                    v.texCoords.y = subLineId;
+                    v.domainId.x = i * 1.0f;
+                    v.domainId.y = subLineId;
                     p_vertices.emplace_back(v);
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
