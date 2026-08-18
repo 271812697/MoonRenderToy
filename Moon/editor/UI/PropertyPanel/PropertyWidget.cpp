@@ -283,6 +283,10 @@ namespace MOON {
 	public:
 		MaterialPropertyComponent(Core::ECS::Components::CMaterialRenderer* comp) :ActorPropertyComponent(comp) {
 			mat = comp->GetMaterialAtIndex(0);
+			featureList = mat->GetShader()->GetFeatures();
+			for (auto feature : featureList) {
+				mProperties.push_back(new BoolProperty(feature.c_str(), this));
+			}
 			for (auto& mprop:mat->GetProperties()) {
 				if (std::holds_alternative<Maths::FVector3>(mprop.second.value)) {
 					mProperties.push_back(new FVec3Property(mprop.first.c_str(), this));
@@ -335,6 +339,10 @@ namespace MOON {
 					return QVariant::fromValue(v);
 				}
 			}
+			else if (featureList.count(propName))
+			{
+				return QVariant::fromValue(mat->HasFeature(propName)?true:false);
+			}
 			return QVariant();
 		}
 		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
@@ -375,8 +383,20 @@ namespace MOON {
 					mat->SetProperty(propName, value.value<float>());
 				}
 			}
+			else if (featureList.count(propName))
+			{
+				bool enable = value.value<bool>();
+				if (enable) {
+					mat->AddFeature(propName);
+				}
+				else
+				{
+					mat->RemoveFeature(propName);
+				}
+			}
 		}
 	private:
+		std::unordered_set<std::string>featureList;
 		Core::Resources::Material* mat;
 	};
 	ActorPropertyComponent* transferActorPropertyComponent(Core::ECS::Components::AComponent* comp) {

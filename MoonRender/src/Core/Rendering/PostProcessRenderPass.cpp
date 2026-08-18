@@ -79,7 +79,7 @@ void Core::Rendering::PostProcessRenderPass::Draw(::Rendering::Data::PipelineSta
 				++m_pingPongBuffers;
 			}
 		}
-
+		
 		m_renderer.Blit(p_pso, m_pingPongBuffers[0], mssaaframebuffer, m_blitMaterial);
 	}
 }

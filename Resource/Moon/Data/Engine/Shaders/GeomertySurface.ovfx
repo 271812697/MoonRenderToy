@@ -1,8 +1,9 @@
 #pass Transparents
 #feature SPECULAR_WORKFLOW
 #feature WITH_EDGE
-#feature TRIANGLE_INFO
+#feature SSAO
 #feature DISABLE_DOMAIN_COLOR
+#feature NORMAL_MAPPING
 
 
 #shader vertex
@@ -172,7 +173,7 @@ uniform float edgeOpacity=1.0f;
 
 uniform sampler2D u_AlbedoMap;
 uniform vec4 u_Albedo = vec4(1.0);
-
+uniform sampler2D u_NormalMap;
 uniform sampler2D u_AmbientOcclusionMap;
 uniform sampler2D u_MaskMap;
 
@@ -205,10 +206,7 @@ uniform bool u_AlphaDithering = false;
 uniform bool u_BuiltInToneMapping = false;
 uniform bool u_BuiltInGammaCorrection = false;
 
-#if defined(TRIANGLE_INFO)
-uniform usamplerBuffer triangleInfoTex;
-uniform int trifoLen=0;
-#endif
+
 #if defined(Transparents)
 uniform sampler2D DepthPeelTex;
 uniform sampler2D OpaqueDepthTex;
@@ -220,6 +218,7 @@ uniform mat4 _LightSpaceMatrix;
 uniform samplerCube _IrradianceCube;
 uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
+uniform float u_environmentIntensity=0.5f;
 uniform sampler2D occlusionTex;
 
 
@@ -273,6 +272,25 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 }   
 
 
+#if defined(NORMAL_MAPPING)
+vec3 getNormalFromMap(vec3 Normal)
+{
+    vec3 tangentNormal = texture(u_NormalMap, fs_in.TexCoords).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(fs_in.FragPos);
+    vec3 Q2  = dFdy(fs_in.FragPos);
+    vec2 st1 = dFdx(fs_in.TexCoords);
+    vec2 st2 = dFdy(fs_in.TexCoords);
+
+    vec3 N   = normalize(Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
+#endif
+
 
 out vec4 FRAGMENT_COLOR;
 
@@ -306,18 +324,6 @@ void main()
     albedo.rgb*=texelFetch(domainColorTex,domainIndex).rgb;
 #endif
 
-#if defined(TRIANGLE_INFO)
-    for(int i=0;i<trifoLen;i++){
-        uint tid=texelFetch(triangleInfoTex,i).g;
-        if(gl_PrimitiveID==tid){
-            albedo.rgb=vec3(1,1,1);
-            break;
-        }
-    }
-#endif
-   
-
-
     if (u_AlphaDithering && Dithering(albedo.a, gl_FragCoord.xy) < 0)
     {
         discard;
@@ -333,6 +339,10 @@ void main()
     if(dot(VD,normal)<0.0f){
         normal=-normal;
     }
+#if defined(NORMAL_MAPPING)
+    normal=getNormalFromMap(normal);
+#endif
+
 
 #if defined(SPECULAR_WORKFLOW)
     const float specular = texture(u_SpecularMap, texCoords).r * u_Specular;
@@ -343,11 +353,17 @@ void main()
     const float metallic = texture(u_MetallicMap, texCoords).r * u_Metallic;
     const float roughness = texture(u_RoughnessMap, texCoords).r * u_Roughness;
 #endif
+
+#if defined(SSAO)
     vec4 ndcpos= ubo_Projection * ubo_View * vec4(fs_in.FragPos, 1.0);
     ndcpos.xyz=ndcpos.xyz/ndcpos.w;
     ndcpos.xy=(ndcpos.xy+1.0)/2.0;
     float ssao=texture(occlusionTex, ndcpos.xy).r;
-    const float ao = ssao;//texture(u_AmbientOcclusionMap, texCoords).r;
+    const float ao = ssao;
+#else
+    const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
+#endif
+
 
 #if defined(WITH_EDGE)
     float edist[3];
@@ -406,7 +422,7 @@ void main()
     vec2 brdf  = texture(_BRDFLut, vec2(max(dot(normal, VD), 0.0), roughness)).rg;
     vec3 sp = prefilteredColor * (F * brdf.x + brdf.y);
 
-    vec3 iblColor = (kD * diffuse+sp) * ao;
+    vec3 iblColor = (kD * diffuse+sp) * ao*u_environmentIntensity;
 
 
  

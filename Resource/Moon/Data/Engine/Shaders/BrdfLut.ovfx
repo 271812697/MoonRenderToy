@@ -14,6 +14,9 @@ void main()
 
 #shader fragment
 #version 450 core
+out vec2 FragColor;
+in vec2 TexCoords;
+
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
@@ -105,23 +108,20 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
 
         if(NdotL > 0.0)
         {
-            float V = GeometrySmith(N, V, L, roughness)*NdotL*VdotH/max(NdotH,1e-5);
-         
+            float G = GeometrySmith(N, V, L, roughness);
+            float G_Vis = (G * VdotH) / (NdotH * NdotV);
             float Fc = pow(1.0 - VdotH, 5.0);
 
-            A += V * Fc;
-            B +=V;
+            A += (1.0 - Fc) * G_Vis;
+            B += Fc * G_Vis;
         }
     }
     A /= float(SAMPLE_COUNT);
     B /= float(SAMPLE_COUNT);
     return vec2(A, B);
 }
-in vec2 TexCoords;
-out vec2 FragColor;
-
-
-void main()
+// ----------------------------------------------------------------------------
+void main() 
 {
     vec2 integratedBRDF = IntegrateBRDF(TexCoords.x, TexCoords.y);
     FragColor = integratedBRDF;

@@ -398,9 +398,9 @@ namespace QtImGui {
 
 		// Start the frame
 		ImGui::NewFrame();
-		ImPlotCustom::ColormapScale("lo",1.0,0.0,10.0);
-		ImPlot::ShowDemoWindow();
-		ImGui::ShowDemoWindow();
+		//ImPlotCustom::ColormapScale("lo",1.0,0.0,10.0);
+		//ImPlot::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 		
 	}
 

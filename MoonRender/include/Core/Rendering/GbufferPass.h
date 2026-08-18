@@ -29,8 +29,6 @@ namespace Core::Rendering
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 		virtual void ResizeRenderer(int width, int height) override;
-	
-
 	private:
 		std::shared_ptr<::Rendering::HAL::Texture> noiseTexture;
 		::Core::Resources::Material gbufferMaterial;
@@ -39,7 +37,7 @@ namespace Core::Rendering
 		GbufferTextureData gbufferData;
 		::Rendering::HAL::Framebuffer gbuffer;
 		::Rendering::HAL::Framebuffer ssaobuffer;
-		::Core::Rendering::PingPongFramebuffer  ssaoblurbuffer;
+		::Rendering::HAL::Framebuffer ssaoblurbuffer;
 		GbufferParam gbufferParam;
 	};
 }

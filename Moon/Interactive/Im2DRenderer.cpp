@@ -123,7 +123,7 @@ void main()
         }
         void Im2DRender::endFrame()
         {
-            mInternal->test();
+            //mInternal->test();
             mInternal->uploadVertex();
             auto driver = Core::Global::ServiceLocator::Get<Editor::Core::Context>().driver.get();
             auto p_pso = driver->CreatePipelineState();
