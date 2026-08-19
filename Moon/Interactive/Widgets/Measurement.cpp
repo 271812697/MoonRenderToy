@@ -6,8 +6,7 @@
 #include "Interactive/Interactive/ExecuteCommand.h"
 #include "Interactive/Interactive/WidgetCallbackMapper.h"
 #include "Interactive/Interactive/WidgetEvent.h"
-#include "Interactive/Interactive/WidgetEventTranslator.h"
-#include "Interactive/Interactive/RenderWindowInteractor.h"
+
 
 namespace MOON {
 	struct Measure

@@ -13,7 +13,7 @@ This is a renderer written based on Qt+Opengl
   - [ ] 2D Gui for interactive on screen
   - [ ] sketcher contraint draw
   - [ ] Global lighting
-  - [ ] shadow on reflect plane
+  - [x] shadow on reflect plane
   - [ ] ssao improve
   - [ ] transparent imporve
 - PathTrace
@@ -131,7 +131,9 @@ plans to do:
 
 ## how we design it
 
+### Intersective Widgets
 
+![image-20260819112630072](README.assets/image-20260819112630072.png)
 
 ## Features
 
