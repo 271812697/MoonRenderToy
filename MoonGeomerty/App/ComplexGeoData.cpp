@@ -37,6 +37,7 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <Precision.hxx>
 
 
 using namespace Data;
@@ -105,7 +106,7 @@ Base::Placement ComplexGeoData::getPlacement() const
 
 double ComplexGeoData::getAccuracy() const
 {
-    return 0.0;
+    return Precision::Confusion();
 }
 
 void ComplexGeoData::getLinesFromSubElement(const Segment* segment,

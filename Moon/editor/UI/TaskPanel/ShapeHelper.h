@@ -27,7 +27,7 @@ namespace MOON {
 		void setGenerateShapeName(const char* name);
 		struct PreviewOption {
 			bool isTransparent = true;
-			float r=1.0f, g=1.0f, b=1.0f, a = 0.4f;
+			float r=1.0f, g=0.0f, b=1.0f, a = 0.4f;
 			bool isBlend = true;
 			bool useDomainColor = true;
 		};
