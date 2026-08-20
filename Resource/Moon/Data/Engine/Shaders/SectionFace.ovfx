@@ -289,12 +289,15 @@ void main()
     float stripeBand=0.04f;
     float stripeBandS=0.02f;
     vec3 origin=ubo_plane.xyz;
+    float fade=0.0;//clamp(length(ubo_ViewPos-fs_in.FragPos)/50.0,0,1);
     float dist=length(origin-fs_in.FragPos);
     float kth = floor(dist / stripePeriod);
     float center = kth * stripePeriod + stripePeriod * 0.5;
     float modDist = abs(dist - center);
     float t = smoothstep(stripeBandS, stripeBand, modDist);
-    albedo.rgb = mix(vec3(0,0,0), albedo.rgb, t);
+    vec3 faceColor=albedo.rgb;
+    albedo.rgb = mix(vec3(0,0,0), faceColor, t);
+    albedo.rgb = mix(albedo.rgb,faceColor, fade);
     vec3 normal = normalize(fs_in.Normal);
   
     vec3 VD=normalize(ubo_ViewPos-fs_in.FragPos);
