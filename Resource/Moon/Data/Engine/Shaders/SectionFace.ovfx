@@ -286,15 +286,15 @@ void main()
     }
 
     float stripePeriod=0.2f;
-    float stripeBand=0.02f;
+    float stripeBand=0.04f;
+    float stripeBandS=0.02f;
     vec3 origin=ubo_plane.xyz;
     float dist=length(origin-fs_in.FragPos);
-    float modDist=mod(dist,stripePeriod);
-    bool isStripe=modDist<stripeBand;
-    if(isStripe){
-        albedo.rgb=vec3(0,0,0);
-    }
-
+    float kth = floor(dist / stripePeriod);
+    float center = kth * stripePeriod + stripePeriod * 0.5;
+    float modDist = abs(dist - center);
+    float t = smoothstep(stripeBandS, stripeBand, modDist);
+    albedo.rgb = mix(vec3(0,0,0), albedo.rgb, t);
     vec3 normal = normalize(fs_in.Normal);
   
     vec3 VD=normalize(ubo_ViewPos-fs_in.FragPos);
