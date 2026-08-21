@@ -265,9 +265,10 @@ void Rendering::Resources::Mesh::AddSubRangeBuffer()
 	uploadIndicesCount.push_back(0);
 	int index = m_vertexArrays.size() - 1;
 	m_vertexArrays[index]->SetLayout(std::to_array<Settings::VertexAttribute>({
-		{ Settings::EDataType::FLOAT, 3 }, // position
-		{ Settings::EDataType::FLOAT, 2 }, // texCoords
-		{ Settings::EDataType::FLOAT, 3 } // normal
+			{ Settings::EDataType::FLOAT, 3 }, // position
+			{ Settings::EDataType::FLOAT, 2 }, // texCoords
+			{ Settings::EDataType::FLOAT, 3 }, // normal
+			{ Settings::EDataType::FLOAT, 2 }, // domainId
 		}), m_vertexBuffer, *m_IndexBuffers[index]);
 }
 void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox()

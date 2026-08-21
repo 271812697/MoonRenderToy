@@ -1,5 +1,4 @@
 #feature CLIP_PLANE
-#feature BATCHLINE
 #shader vertex
 #version 450 core
 
@@ -53,16 +52,5 @@ void main()
             discard;
         }    
     }
-
-#if defined(BATCHLINE)
-    int lineIndex=int(round(fs_in.DomainId.x));
-    vec3 color=texelFetch(lineColorTex,lineIndex).rgb;
-    if(lineId==1928){
-     color=vec3(1,1,0);
-    }
-    FRAGMENT_COLOR = vec4(0 ,1,1, 1);
-#else
-    FRAGMENT_COLOR = vec4(1,1,1, 1);
-#endif
-
+    FRAGMENT_COLOR = vec4(0,0,0, 1);
 }

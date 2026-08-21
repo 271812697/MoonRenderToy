@@ -221,7 +221,8 @@ namespace Core::ECS::Components
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
                         actor.SetParent(*faceChild);     
                         domainId.push_back(actor.GetID());
-                        domainColor.push_back(colors[0]);
+                        domainColor.push_back(colors[(domains[i].id-1) % 12]);
+                       
                         cnt = (cnt + 1) % 12;
                         mInternal->childMeshInfos.push_back(std::make_pair<int, int>(indexOffset, domains[i].facets.size() * 3));
                         domainVertexNum.push_back({vertexOffset, domains[i].points.size() });

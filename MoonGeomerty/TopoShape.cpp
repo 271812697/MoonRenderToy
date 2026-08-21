@@ -3465,9 +3465,11 @@ void TopoShape::getDomains(std::vector<Domain>& domains) const
         ++countFaces;
     }
     domains.reserve(countFaces);
+   
 
     for (TopExp_Explorer xp(this->_Shape, TopAbs_FACE); xp.More(); xp.Next()) {
         TopoDS_Face face = TopoDS::Face(xp.Current());
+        int id=this->findAncestor(face, TopAbs_SOLID);
 
         std::vector<gp_Pnt> points;
         std::vector<gp_Vec> normals;
@@ -3478,10 +3480,12 @@ void TopoShape::getDomains(std::vector<Domain>& domains) const
             // It's important for some algorithms (e.g. color mapping) that the numbers of
             // faces and domains match
             Domain domain;
+            domain.id = id;
             domains.push_back(domain);
         }
         else {
             Domain domain;
+            domain.id = id;
             // copy the points
             domain.points.reserve(points.size());
             domain.normals.reserve(points.size());

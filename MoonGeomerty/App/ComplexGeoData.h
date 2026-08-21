@@ -109,6 +109,7 @@ public:
         std::vector<Base::Vector3d> normals;
         std::vector<Base::Vector2d>uvs;
         std::vector<Facet> facets;
+        int id;
     };
 
     /// Constructor
