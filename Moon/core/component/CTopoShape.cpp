@@ -84,10 +84,10 @@ namespace Core::ECS::Components
 	{
         auto& instance=MOON::ImRenderer::instance();
         if (mInternal->hoverLine) {
-            instance.drawLineList(mInternal->hoverLineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
+            instance.drawLineList(mInternal->hoverLineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 180, 255));
         }
         for (int i = 0;i < mInternal->selectLineSeg.size();i++) {
-            instance.drawLineList(mInternal->selectLineSeg[i], 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+            instance.drawLineList(mInternal->selectLineSeg[i], 3.0f, Eigen::Vector4<uint8_t>(255, 0, 130, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             ZoneScoped;
@@ -183,7 +183,7 @@ namespace Core::ECS::Components
                 }
                
                 static Maths::FVector4 colors[] = {
-                { 140.0 / 255.0f, 180.0f / 255.0f, 216.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
+                { 255.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
                 { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
                  { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
                   { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
@@ -221,7 +221,8 @@ namespace Core::ECS::Components
                         auto& actor = scene->CreateActor("face_" + std::to_string(i));
                         actor.SetParent(*faceChild);     
                         domainId.push_back(actor.GetID());
-                        domainColor.push_back(colors[cnt]);
+                        domainColor.push_back(colors[(domains[i].id-1) % 12]);
+                       
                         cnt = (cnt + 1) % 12;
                         mInternal->childMeshInfos.push_back(std::make_pair<int, int>(indexOffset, domains[i].facets.size() * 3));
                         domainVertexNum.push_back({vertexOffset, domains[i].points.size() });
@@ -246,9 +247,9 @@ namespace Core::ECS::Components
                     for (int k = 0; k < domains[iIndex].points.size(); k++) {
                         faceVertices[domainVertexNum[domainIndex].first + k] = {
                             Maths::FVector3{ static_cast<float>(domains[iIndex].points[k].x),static_cast<float>(domains[iIndex].points[k].y),static_cast<float>(domains[iIndex].points[k].z) },
-                            indexId,
-                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z) }
-                   
+                            Maths::FVector2{ static_cast<float>(domains[iIndex].uvs[k].x),static_cast<float>(domains[iIndex].uvs[k].y) },
+                            Maths::FVector3{ static_cast<float>(domains[iIndex].normals[k].x),static_cast<float>(domains[iIndex].normals[k].y),static_cast<float>(domains[iIndex].normals[k].z)},
+                            indexId 
                         };
                         subBox.grow(faceVertices[domainVertexNum[domainIndex].first + k].position);
                     }
@@ -413,8 +414,8 @@ namespace Core::ECS::Components
                     for (int k = l.I1; k <= l.I2 - 1; k++) {
                         ::Rendering::Geometry::VertexBVH v;
                         v.position = linePoints[k];
-                        v.texCoords.x = i * 1.0f;
-                        v.texCoords.y = subLineId;
+                        v.domainId.x = i * 1.0f;
+                        v.domainId.y = subLineId;
                         p_vertices.emplace_back(v);
 
                         lineIndex.push_back(k);
@@ -422,8 +423,8 @@ namespace Core::ECS::Components
                     }
                     ::Rendering::Geometry::VertexBVH v;
                     v.position = linePoints[l.I2];
-                    v.texCoords.x = i * 1.0f;
-                    v.texCoords.y = subLineId;
+                    v.domainId.x = i * 1.0f;
+                    v.domainId.y = subLineId;
                     p_vertices.emplace_back(v);
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());

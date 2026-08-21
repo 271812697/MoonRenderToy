@@ -66,7 +66,7 @@ namespace MOON {
 				faceMat->SetProperty("u_Albedo",Maths::FVector4(1,1,1,1));
 				faceMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
 				faceMat->SetProperty("u_Roughness", 0.25f);
-				faceMat->SetProperty("u_Metallic", 0.75f);
+				faceMat->SetProperty("u_Metallic", 0.25f);
 				// Emission
 				faceMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				faceMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
@@ -82,10 +82,10 @@ namespace MOON {
 				//tempMat->SetBlendable(true);
 				//tempMat->SetDepthWriting(false);
 				faceTransparentMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
-				faceTransparentMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 0.5));
+				faceTransparentMat->SetProperty("u_Albedo", Maths::FVector4(1, 0, 0, 0.5));
 				faceTransparentMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
 				faceTransparentMat->SetProperty("u_Roughness", 0.25f);
-				faceTransparentMat->SetProperty("u_Metallic", 0.75f);
+				faceTransparentMat->SetProperty("u_Metallic", 0.25f);
 				// Emission
 				faceTransparentMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				faceTransparentMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
@@ -101,8 +101,8 @@ namespace MOON {
 				lineMat->SetBackfaceCulling(false);
 				lineMat->SetCastShadows(false);
 				lineMat->SetReceiveShadows(false);
-				lineMat->SetLineWidth(2.0);
-				lineMat->AddFeature("BATCHLINE");
+				lineMat->SetLineWidth(3.0);
+				
 			}
 
 		}

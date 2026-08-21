@@ -9,6 +9,8 @@
 #include <glad/glad.h>
 #include <Tools/Utils/PathParser.h>
 namespace MOON {
+
+
 	void PolygonFace::clear() {
 		vertex.clear();
 		uv.clear();

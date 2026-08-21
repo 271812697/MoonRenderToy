@@ -55,11 +55,9 @@ namespace MOON {
 		GizmoPlaneTranslate(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos)
 			: plane(planeEq), origin(pos) {
 		}
-
 		void startPick(const Eigen::Vector4f& planeEq, const Eigen::Vector3f& pos);
 
 		void apply(const Eigen::Vector3f& ray, const Eigen::Vector3f& eye, Eigen::Vector3f& pos);
-
 	private:
 		Eigen::Vector4f plane = Eigen::Vector4f(0, 0, 1, 0);
 		Eigen::Vector3f origin = Eigen::Vector3f::Zero();

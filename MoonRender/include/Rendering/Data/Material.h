@@ -53,6 +53,7 @@ namespace Rendering::Data
 		void Unbind() const;
 		bool HasProperty(const std::string& p_name) const;
 		void SetProperty(const std::string p_name, const MaterialPropertyType& p_value, bool p_singleUse = false);
+		void LateUpdateTexture(const std::string &p_name,const std::string& p_path);
 		bool TrySetProperty(const std::string& p_name, const MaterialPropertyType& p_value, bool p_singleUse = false);
 		Tools::Utils::OptRef<const MaterialProperty> GetProperty(const std::string p_name) const;
 		Rendering::Resources::Shader*& GetShader();
@@ -105,6 +106,8 @@ namespace Rendering::Data
 
 	protected:
 		Rendering::Resources::Shader* m_shader = nullptr;
+		std::map<std::string, std::string>lateLoadTextures;
+
 		PropertyMap m_properties;
 		Data::FeatureSet m_features;
 

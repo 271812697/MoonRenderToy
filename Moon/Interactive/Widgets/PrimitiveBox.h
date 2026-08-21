@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Interactive/Widgets/PrimitiveShape.h"
-#include <Eigen/Core>
 
 namespace MOON
 {

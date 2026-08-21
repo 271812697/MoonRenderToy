@@ -547,6 +547,7 @@ public:
     ) const;
     std::list<TopoDS_Wire> slice(const Base::Vector3d&, double) const;
     TopoDS_Compound slices(const Base::Vector3d&, const std::vector<double>&) const;
+    TopoDS_Compound slicesFace(const Base::Vector3d&, const std::vector<double>&) const;
     /**
      * @brief generalFuse: run general fuse algorithm between this and shapes
      * supplied as sOthers

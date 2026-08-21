@@ -41,10 +41,12 @@ class  CrossSection
 public:
     CrossSection(double a, double b, double c, const TopoDS_Shape& s);
     std::list<TopoDS_Wire> slice(double d) const;
+    std::vector<TopoDS_Face>sliceFace(double d)const;
 
 private:
     void sliceNonSolid(double d, const TopoDS_Shape&, std::list<TopoDS_Wire>& wires) const;
     void sliceSolid(double d, const TopoDS_Shape&, std::list<TopoDS_Wire>& wires) const;
+    void sliceSolid(double d, const TopoDS_Shape&, std::vector<TopoDS_Face>&faces) const;
     void connectEdges(const std::list<TopoDS_Edge>& edges, std::list<TopoDS_Wire>& wires) const;
     void connectWires(const TopTools_IndexedMapOfShape& wireMap, std::list<TopoDS_Wire>& wires) const;
     TopoDS_Wire fixWire(const TopoDS_Wire& wire) const;

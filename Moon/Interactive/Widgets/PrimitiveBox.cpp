@@ -1,18 +1,13 @@
 ﻿#include "Interactive/Widgets/PrimitiveBox.h"
 #include "Interactive/Im3DRenderer.h"
-#include "Qtimgui/imgui/imgui.h"
 
 #include "Interactive/MathUtil/MathUtil.h"
-#include "renderer/SceneView.h"
-#include <Core/ECS/Components/CModelRenderer.h>
-#include <Core/ECS/Components/CMaterialRenderer.h>
+
 #include "core/component/CTopoShape.h"
-#include "core/component/TopoShapeActor.h"
 #include "feature/Feature.h"
 #include "TopoShape.h"
 
 #include <BRepPrimAPI_MakeBox.hxx>
-#include <Precision.hxx>
 
 namespace MOON {
 	
@@ -33,9 +28,7 @@ namespace MOON {
 	void PrimitiveBox::createTopoShape()
 	{	
 		BRepPrimAPI_MakeBox mkBox(2*scale.x(), 2*scale.y(), 2*scale.z());
-	
 		TopoDS_Shape ResultShape = mkBox.Shape();
-		
 		auto topoActor =new Feature("BoxFeature", "Box"); 
 		const auto& topoComp = topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
 		Part::TopoShape& topo = topoComp->GetTopoShape();
@@ -51,9 +44,7 @@ namespace MOON {
 			mat(2, 0), mat(2, 1), mat(2, 2), mat(2, 3),
 			mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3)
 		);
-		
 		topo.setTransform(mm);
 		topoActor->makeDone();
-		
 	}
 }

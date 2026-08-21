@@ -1,4 +1,7 @@
 ﻿#include "ImGuiRenderer.h"
+#include "Qtimgui/imgui/imgui_freetype.h"
+#include "Qtimgui/implot/implot.h"
+#include "Qtimgui/implot/implotCustom.h"
 
 #include <QDateTime>
 #include <QGuiApplication>
@@ -73,11 +76,12 @@ namespace QtImGui {
 		initializeOpenGLFunctions();
 
 		g_ctx = ImGui::CreateContext();
+		ImPlot::CreateContext();
 		ImGui::SetCurrentContext(g_ctx);
 
 		// Setup backend capabilities flags
 		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 #ifndef QT_NO_CURSOR
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
 		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;  // We can honor io.WantSetMousePos requests (optional, rarely used)
@@ -198,7 +202,7 @@ namespace QtImGui {
 					glScissor((int)clip_min.x, (int)(fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
 					// Bind texture, Draw
-					glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->TextureId);
+					glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->GetTexID());
 					glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset + pcmd->IdxOffset);
 				}
 			}
@@ -231,10 +235,13 @@ namespace QtImGui {
 		unsigned char* pixels;
 		int width, height;
 
+		ImFontConfig cfg;
+		cfg.SizePixels = 25.0f;
+		cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LightHinting;
 		std::string path = "/Fonts/Ruda-Bold.ttf";
 		
 		path = Tools::Utils::PathParser::GetExeDirectory()+  "/Moon/Data/Engine/" + path;
-		io.FontDefault = io.Fonts->AddFontFromFileTTF(path.c_str(), 25);
+		io.FontDefault = io.Fonts->AddFontFromFileTTF(path.c_str(),25.0f, &cfg );
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
 		// Upload texture to graphics system
@@ -391,6 +398,11 @@ namespace QtImGui {
 
 		// Start the frame
 		ImGui::NewFrame();
+		ImPlotCustom::AddTextTransform(ImVec2(100, 100), 45.0f/180.0f*3.14159, IM_COL32(255, 0, 0, 255), "HelloWorld");
+	    //ImPlotCustom::ColormapScale("lo",1.0,0.0,10.0);
+		//ImPlot::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
+		
 	}
 
 	void ImGuiRenderer::render()
@@ -410,7 +422,9 @@ namespace QtImGui {
 	ImGuiRenderer::~ImGuiRenderer()
 	{
 		// remove this context
+		ImPlot::DestroyContext();
 		ImGui::DestroyContext(g_ctx);
+		
 	}
 
 	void ImGuiRenderer::onMousePressedChange(QMouseEvent* event)

@@ -1796,9 +1796,31 @@ std::list<TopoDS_Wire> TopoShape::slice(const Base::Vector3d& dir, double d) con
     CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
     return cs.slice(d);
 }
+TopoDS_Compound TopoShape::slicesFace(const Base::Vector3d&dir, const std::vector<double>&d) const {
+    std::vector<std::vector<TopoDS_Face>> face_list;
+    CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
+    for (double jt : d) {
+        face_list.push_back(cs.sliceFace(jt));
+    }
 
+    std::vector<std::vector<TopoDS_Face>>::const_iterator ft;
+    TopoDS_Compound comp;
+    BRep_Builder builder;
+    builder.MakeCompound(comp);
+
+    for (ft = face_list.begin(); ft != face_list.end(); ++ft) {
+        const std::vector<TopoDS_Face>& w = *ft;
+        for (const auto& wt : w) {
+            if (!wt.IsNull()) {
+                builder.Add(comp, wt);
+            }
+        }
+    }
+    return comp;
+}
 TopoDS_Compound TopoShape::slices(const Base::Vector3d& dir, const std::vector<double>& d) const
 {
+
     std::vector<std::list<TopoDS_Wire>> wire_list;
     CrossSection cs(dir.x, dir.y, dir.z, this->_Shape);
     for (double jt : d) {
@@ -3420,14 +3442,7 @@ TopoDS_Shape TopoShape::removeSplitter() const
 void  TopoShape::getDomainfaces(std::vector<Domain>& domains, double accuracy)const {
     if (this->_Shape.IsNull())
         return;
-    // create or use the mesh on the data structure
-    Standard_Real AngDeflectionRads = Base::toRadians(defaultAngularDeflection(accuracy));
-    IMeshTools_Parameters meshParams;
-    meshParams.Deflection = accuracy;
-    meshParams.Relative = Standard_False;
-    meshParams.Angle = AngDeflectionRads;
-    meshParams.InParallel = Standard_True;
-    meshParams.AllowQualityDecrease = Standard_True;
+
     // Clear triangulation and PCurves from geometry which can slow down the process
 #if OCC_VERSION_HEX < 0x070600
     BRepTools::Clean(this->_Shape);
@@ -3450,29 +3465,50 @@ void TopoShape::getDomains(std::vector<Domain>& domains) const
         ++countFaces;
     }
     domains.reserve(countFaces);
+   
 
     for (TopExp_Explorer xp(this->_Shape, TopAbs_FACE); xp.More(); xp.Next()) {
         TopoDS_Face face = TopoDS::Face(xp.Current());
+        int id=this->findAncestor(face, TopAbs_SOLID);
 
         std::vector<gp_Pnt> points;
         std::vector<gp_Vec> normals;
+        std::vector<gp_Pnt2d>uvs;
         std::vector<Poly_Triangle> facets;
-        if (!Tools::getTriangulation(face, points,normals, facets)) {
+        if (!Tools::getTriangulation(face, points,uvs,normals, facets)) {
             // For a face that cannot be meshed append an empty domain.
             // It's important for some algorithms (e.g. color mapping) that the numbers of
             // faces and domains match
             Domain domain;
+            domain.id = id;
             domains.push_back(domain);
         }
         else {
             Domain domain;
+            domain.id = id;
             // copy the points
             domain.points.reserve(points.size());
             domain.normals.reserve(points.size());
+            domain.uvs.reserve(points.size());
             for (const auto& it : points) {
                 Standard_Real X, Y, Z;
                 it.Coord(X, Y, Z);
                 domain.points.emplace_back(X, Y, Z);
+            }
+			Standard_Real mUin=DOUBLE_MAX, mVmin = DOUBLE_MAX, mUmax= DOUBLE_MIN, mVmax= DOUBLE_MIN;
+            for (const auto& it : uvs) {
+                Standard_Real X, Y;
+                it.Coord(X,Y);
+				mUin = std::min(mUin, X);
+				mVmin = std::min(mVmin, Y);
+				mUmax = std::max(mUmax, X);
+                mVmax = std::max(mVmax,Y);
+                domain.uvs.emplace_back(X,Y);
+            }
+            double rangeU = (mUmax - mUin);
+            double rangeV = (mVmax - mVmin);
+            for (int i = 0;i < domain.uvs.size();i++) {
+				domain.uvs[i] = Base::Vector2d((domain.uvs[i].x - mUin) / rangeU, (domain.uvs[i].y - mVmin) /rangeV);
             }
             for (const auto& it : normals) {
                 Standard_Real X, Y, Z;

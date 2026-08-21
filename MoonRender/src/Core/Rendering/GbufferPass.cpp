@@ -29,7 +29,7 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 	ssaoMaterial.SetShader(GetShaderService[":Shaders\\ssao.ovfx"]);
 	ssaoMaterial.SetBackfaceCulling(false);
 	ssaoblurMaterial.SetShader(GetShaderService[":Shaders\\ssaoblur.ovfx"]);
-	ssaoblurMaterial.SetBackfaceCulling(false);
+	//ssaoblurMaterial.AddFeature("k15x15");
 
 	{
 		::Rendering::Settings::TextureDesc colorDesc{
@@ -224,12 +224,8 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		m_renderer.DrawEntity(p_pso, drawable);
 		ssaobuffer.Unbind();
 		//blur ssao
-		ssaoblurbuffer.Bind();
-		m_renderer.Clear(true, false, false, Maths::FVector4(1, 1, 1, 1.0));
 		ssaoblurMaterial.SetProperty("ssaoInput", gbufferData.occlusion.get());
-		drawable.material = ssaoblurMaterial;
-		m_renderer.DrawEntity(p_pso, drawable);
-		ssaoblurbuffer.Unbind();
+		m_renderer.Blit(p_pso, ssaobuffer,ssaoblurbuffer, ssaoblurMaterial);
 	}
 	
 
@@ -243,6 +239,6 @@ void Core::Rendering::GbufferPass::ResizeRenderer(int width, int height)
 {
 	gbuffer.Resize(width, height);
 	ssaobuffer.Resize(width,height);
-	ssaoblurbuffer.Resize(width,height);
+	ssaoblurbuffer.Resize(width, height);
 }
 

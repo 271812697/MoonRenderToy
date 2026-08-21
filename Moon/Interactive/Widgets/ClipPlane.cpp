@@ -39,9 +39,9 @@ namespace MOON {
 
 	class ClipPlane::ClipPlaneInternal {
 	public:
-		ClipPlaneInternal(ClipPlane* clip):mSelf(clip) {
-			clickObserver = mSelf->Interactor->AddObserver(ExecuteCommand::LeftButtonReleaseEvent, this, &ClipPlane::ClipPlaneInternal::onMouseLeftClick, 0.0f);		
-	
+		ClipPlaneInternal(ClipPlane* clip) :mSelf(clip) {
+			clickObserver = mSelf->Interactor->AddObserver(ExecuteCommand::LeftButtonReleaseEvent, this, &ClipPlane::ClipPlaneInternal::onMouseLeftClick, 0.0f);
+
 		}
 		~ClipPlaneInternal() {
 			delete clickObserver.command;
@@ -71,21 +71,21 @@ namespace MOON {
 		}
 		void onMouseLeftClick() {
 			if (mSelf->m_sceneView->IsSelectActor()) {
-				auto acptr=mSelf->m_sceneView->GetSelectedActor();
-				while (!acptr->HasComponent("Model Renderer")&&acptr->HasParent()) {
+				auto acptr = mSelf->m_sceneView->GetSelectedActor();
+				while (!acptr->HasComponent("Model Renderer") && acptr->HasParent()) {
 					acptr = acptr->GetParent();
 				}
 
-				if (acptr&&acptr!=ac) {
+				if (acptr && acptr != ac) {
 					ac = acptr;
 					auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
 					if (modelRenderer) {
 						auto model = modelRenderer->GetModel();
 						if (model) {
-							auto& box=model->GetBoundingBox();
+							auto& box = model->GetBoundingBox();
 							auto transform = ac->GetComponent<::Core::ECS::Components::CTransform>();
-							auto bbox=box.transform(transform->GetWorldMatrix());
-							setupBox({ bbox.pmin.x,bbox.pmin.y,bbox.pmin.z }, { bbox.pmax.x,bbox.pmax.y,bbox.pmax.z });						
+							auto bbox = box.transform(transform->GetWorldMatrix());
+							setupBox({ bbox.pmin.x,bbox.pmin.y,bbox.pmin.z }, { bbox.pmax.x,bbox.pmax.y,bbox.pmax.z });
 						}
 					}
 				}
@@ -103,13 +103,13 @@ namespace MOON {
 		friend class ClipPlane;
 		ClipPlane* mSelf = nullptr;
 		Core::ECS::Actor* ac = nullptr;
-		Eigen::Vector3f center = {0,0,0};
+		Eigen::Vector3f center = { 0,0,0 };
 		Eigen::Vector3f normal = { 0,1,0 };
-		Eigen::Vector3f xAxis = {1,0,0};
+		Eigen::Vector3f xAxis = { 1,0,0 };
 		Eigen::Vector3f yAxis = { 0,1,0 };
 		Eigen::Vector3f zAxis = { 0,0,1 };
-		Eigen::Vector3f boxMin = {0,0,0};
-		Eigen::Vector3f boxMax = {0,0,0};
+		Eigen::Vector3f boxMin = { 0,0,0 };
+		Eigen::Vector3f boxMax = { 0,0,0 };
 		float cirleDetectRadius = 5.0f;
 		float extent = 1.0f;
 		ExecuteCommandPair clickObserver;
@@ -122,10 +122,10 @@ namespace MOON {
 		GizmoPlaneTranslate planeTPick;
 		GizmoAxisRotate axisRPick;
 	};
-	
+
 	ClipPlane::ClipPlane(const std::string& name) :EventWidget(name)
-	, m_internal(new ClipPlaneInternal(this)),mState(Stop){
-	
+		, m_internal(new ClipPlaneInternal(this)), mState(Stop) {
+
 	}
 	ClipPlane::~ClipPlane()
 	{
@@ -138,20 +138,20 @@ namespace MOON {
 		}
 		if (mState == AxisR)
 		{
-			float angle=m_internal->axisRPick.getRotationAngle();
+			float angle = m_internal->axisRPick.getRotationAngle();
 			float degree = -angle * 180 / 3.14159265358979323846f;
 			std::string text = std::to_string(degree) + " degree\n";
-			auto pos=renderer->getFrameParam().cursor;
-			ImGui::GetForegroundDrawList()->AddText({ pos.x(),pos.y()-20 }, IM_COL32(255, 255, 0, 255), text.c_str());
+			auto pos = renderer->getFrameParam().cursor;
+			ImGui::GetForegroundDrawList()->AddText({ pos.x(),pos.y() - 20 }, IM_COL32(255, 255, 0, 255), text.c_str());
 			auto seg = m_internal->axisRPick.getRotationArc();
 			if (seg.size() > 0) {
 				renderer->pushColor({ 255,255,255,0 });
-			
-				for (int i = 0; i < seg.size()-1; i++) {
-					renderer->drawLine(seg[i],seg[i+1],5);
+
+				for (int i = 0; i < seg.size() - 1; i++) {
+					renderer->drawLine(seg[i], seg[i + 1], 5);
 				}
 				renderer->popColor();
-				renderer->pushColor({255,0,255,255});
+				renderer->pushColor({ 255,0,255,255 });
 				renderer->drawLine(seg[0], m_internal->center, 4);
 				renderer->drawLine(seg.back(), m_internal->center, 4);
 				renderer->popColor();
@@ -160,7 +160,7 @@ namespace MOON {
 
 		renderer->drawOneMesh(
 			m_internal->center,
-			RotationMatrix(m_internal->xAxis,m_internal->yAxis,m_internal->zAxis),
+			RotationMatrix(m_internal->xAxis, m_internal->yAxis, m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"TransformAxis");
 
@@ -176,13 +176,13 @@ namespace MOON {
 		if (m_internal->updateEngineUbo)
 		{
 			m_internal->updateEngineUbo = false;
-			auto& feature=m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+			auto& feature = m_sceneView->GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
 			feature.SetClipPlane(
 				m_internal->zAxis.x(),
 				m_internal->zAxis.y(),
 				m_internal->zAxis.z(),
 				-m_internal->zAxis.dot(m_internal->center)
-				);
+			);
 		}
 	}
 
@@ -199,32 +199,32 @@ namespace MOON {
 	void ClipPlane::onLeftMousePressed()
 	{
 		if (mState == Hot) {
-			
+
 			bool active = false;
-			if (table[mPickMesh].meshId == PickMeshId::YAxis|| table[mPickMesh].meshId == PickMeshId::XAxis|| table[mPickMesh].meshId == PickMeshId::ZAxis) {
+			if (table[mPickMesh].meshId == PickMeshId::YAxis || table[mPickMesh].meshId == PickMeshId::XAxis || table[mPickMesh].meshId == PickMeshId::ZAxis) {
 				mState = AxisT;
 				Eigen::Vector3f axis = table[mPickMesh].meshId == PickMeshId::YAxis ?
 					m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::XAxis ? m_internal->xAxis : m_internal->zAxis);
-				m_internal->transLatePick.startPick(axis,m_internal->center);
+				m_internal->transLatePick.startPick(axis, m_internal->center);
 				active = true;
 			}
 			else if (table[mPickMesh].meshId == PickMeshId::XNormalPlane || table[mPickMesh].meshId == PickMeshId::YNormalPlane || table[mPickMesh].meshId == PickMeshId::ZNormalPlane) {
 				mState = PlaneT;
-				Eigen::Vector3f normal= table[mPickMesh].meshId == PickMeshId::XNormalPlane ?
+				Eigen::Vector3f normal = table[mPickMesh].meshId == PickMeshId::XNormalPlane ?
 					m_internal->xAxis : (table[mPickMesh].meshId == PickMeshId::YNormalPlane ? m_internal->yAxis : m_internal->zAxis);
-				float w=-m_internal->center.dot(normal);
+				float w = -m_internal->center.dot(normal);
 				Eigen::Vector4f planeEqu = { normal.x(),normal.y(),normal.z(),w };
-				m_internal->planeTPick.startPick(planeEqu,m_internal->center);
+				m_internal->planeTPick.startPick(planeEqu, m_internal->center);
 				active = true;
 			}
 			else if (table[mPickMesh].meshId == PickMeshId::XNormalRotate || table[mPickMesh].meshId == PickMeshId::YNormalRotate || mPickMesh == PickMeshId::ZNormalRotate) {
 				mState = AxisR;
-				Eigen::Vector3f normal = table[mPickMesh].meshId == PickMeshId::XNormalRotate?
-					m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate? m_internal->zAxis : m_internal->xAxis);
+				Eigen::Vector3f normal = table[mPickMesh].meshId == PickMeshId::XNormalRotate ?
+					m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate ? m_internal->zAxis : m_internal->xAxis);
 				Eigen::Vector3f refDir = table[mPickMesh].meshId == PickMeshId::XNormalRotate ?
 					m_internal->xAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate ? m_internal->yAxis : m_internal->zAxis);
-				
-				m_internal->axisRPick.startPick(normal,m_internal->center,refDir, m_internal->center+refDir);
+
+				m_internal->axisRPick.startPick(normal, m_internal->center, refDir, m_internal->center + refDir);
 				active = true;
 			}
 			if (active) {
@@ -235,14 +235,14 @@ namespace MOON {
 
 	void ClipPlane::onLeftMouseReleased()
 	{
-		if (mState == AxisT||mState==PlaneT||mState==AxisR) {
+		if (mState == AxisT || mState == PlaneT || mState == AxisR) {
 			mState = Hot;
 			TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
-			PickMeshId id=table[mPickMesh].meshId;
-			bool updateFlag = (id != PickMeshId::XAxis)&& (id != PickMeshId::YAxis)&&
-				(id != PickMeshId::ZNormalPlane)&&(id != PickMeshId::YNormalRotate);
+			PickMeshId id = table[mPickMesh].meshId;
+			bool updateFlag = (id != PickMeshId::XAxis) && (id != PickMeshId::YAxis) &&
+				(id != PickMeshId::ZNormalPlane) && (id != PickMeshId::YNormalRotate);
 			if (updateFlag) {
-				updateSection();			
+				updateSection();
 			}
 		}
 	}
@@ -252,7 +252,7 @@ namespace MOON {
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;
-			for (int i = 0;i < meshInfoCnt;i++) {
+			for (int i = 0; i < meshInfoCnt; i++) {
 				if (renderer->isSelectPolygon("TransformAxis", table[i].blockName)) {
 					mPickMesh = i;
 					selectFlag = true;
@@ -266,7 +266,7 @@ namespace MOON {
 		}
 		else if (mState == Hot) {
 			bool selectFlag = false;
-			for (int i = 0;i < meshInfoCnt;i++) {
+			for (int i = 0; i < meshInfoCnt; i++) {
 				if (renderer->isSelectPolygon("TransformAxis", table[i].blockName)) {
 					selectFlag = true;
 					break;
@@ -275,22 +275,22 @@ namespace MOON {
 			if (!selectFlag) {
 				mState = Stop;
 				TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), table[mPickMesh].blockColor);
-			    mPickMesh = PickMeshId::None;
+				mPickMesh = PickMeshId::None;
 			}
 		}
 		else if (mState == AxisT) {
-			auto&param=renderer->getFrameParam();
-			m_internal->transLatePick.apply(param.rayDirection,param.rayOrigin,m_internal->center);
+			auto& param = renderer->getFrameParam();
+			m_internal->transLatePick.apply(param.rayDirection, param.rayOrigin, m_internal->center);
 		}
-		else if (mState==PlaneT) {
+		else if (mState == PlaneT) {
 			auto& param = renderer->getFrameParam();
 			m_internal->planeTPick.apply(param.rayDirection, param.rayOrigin, m_internal->center);
 		}
-		else if (mState==AxisR) {
+		else if (mState == AxisR) {
 			auto& param = renderer->getFrameParam();
 			Eigen::Vector3f dir = table[mPickMesh].meshId == PickMeshId::XNormalRotate ?
 				m_internal->yAxis : (table[mPickMesh].meshId == PickMeshId::YNormalRotate ? m_internal->zAxis : m_internal->xAxis);
-			m_internal->axisRPick.applyDir(param.rayDirection, param.rayOrigin,dir);
+			m_internal->axisRPick.applyDir(param.rayDirection, param.rayOrigin, dir);
 			if (table[mPickMesh].meshId == PickMeshId::XNormalRotate) {
 				m_internal->xAxis = dir;
 				m_internal->zAxis = m_internal->xAxis.cross(m_internal->yAxis);
@@ -341,7 +341,7 @@ namespace MOON {
 							shape = shape.makeElementFace("Part::FaceMakerCheese");
 							m_internal->sectionActor->setTopoShape(shape);
 						}
-						catch (const Base::Exception&e)
+						catch (const Base::Exception& e)
 						{
 						}
 					}

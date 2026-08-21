@@ -7,6 +7,8 @@
 #include <Rendering/Resources/Texture.h>
 
 #include <Tools/Utils/OptRef.h>
+#include "Core/Global/ServiceLocator.h"
+#include "Core/ResourceManagement/TextureManager.h"
 
 namespace
 {
@@ -92,7 +94,6 @@ void Rendering::Data::Material::UpdateProperties()
 {
 	// Collect all uniform names currently used by the shader
 	std::unordered_set<std::string> usedUniforms;
-
 	auto variants_view = m_shader->GetVariants()
 		| std::views::values
 		| std::views::join
@@ -103,7 +104,6 @@ void Rendering::Data::Material::UpdateProperties()
 		for (const auto& [name, uniformInfo] : variant->GetUniforms())
 		{
 			usedUniforms.insert(name);
-
 			if (!m_properties.contains(name))
 			{
 				m_properties.emplace(name, MaterialProperty{
@@ -113,7 +113,6 @@ void Rendering::Data::Material::UpdateProperties()
 			}
 		}
 	}
-
 	std::erase_if(m_properties, [&usedUniforms](const auto& property) {
 		return !usedUniforms.contains(property.first);
 		});
@@ -136,6 +135,15 @@ void Rendering::Data::Material::Bind(
 		p_featureSetOverride.value_or(m_features)
 	);
 
+	if (lateLoadTextures.size() > 0) {
+		for (auto& [name, path] : lateLoadTextures) {
+			auto texture = ::Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path, true);
+			if (texture) {
+				SetProperty(name,texture);
+			}
+		}
+		lateLoadTextures.clear();
+	}
 	program.Bind();
 
 	int textureSlot = 0;
@@ -239,6 +247,17 @@ void Rendering::Data::Material::SetProperty(const std::string p_name, const Mate
 			p_value,
 			p_singleUse
 	};
+}
+
+void Rendering::Data::Material::LateUpdateTexture(const std::string& p_name, const std::string& p_path)
+{
+	if (HasProperty(p_name)) {
+		auto& prop = m_properties[p_name];
+		if (auto texture = std::holds_alternative<Rendering::Resources::Texture*>(prop.value))
+		{
+			lateLoadTextures[p_name] = p_path;
+		}
+	}
 }
 
 bool Rendering::Data::Material::TrySetProperty(const std::string& p_name, const MaterialPropertyType& p_value, bool p_singleUse)

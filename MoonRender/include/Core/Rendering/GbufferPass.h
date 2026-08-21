@@ -2,6 +2,7 @@
 #include <Rendering/Core/ARenderPass.h>
 #include <Rendering/HAL/Framebuffer.h>
 #include <Core/Resources/Material.h>
+#include <Core/Rendering/PingPongFramebuffer.h>
 namespace Core::Rendering
 {
 	struct GbufferTextureData {
@@ -28,8 +29,6 @@ namespace Core::Rendering
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 		virtual void ResizeRenderer(int width, int height) override;
-	
-
 	private:
 		std::shared_ptr<::Rendering::HAL::Texture> noiseTexture;
 		::Core::Resources::Material gbufferMaterial;

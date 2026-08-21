@@ -13,7 +13,7 @@ This is a renderer written based on Qt+Opengl
   - [ ] 2D Gui for interactive on screen
   - [ ] sketcher contraint draw
   - [ ] Global lighting
-  - [ ] shadow on reflect plane
+  - [x] shadow on reflect plane
   - [ ] ssao improve
   - [ ] transparent imporve
 - PathTrace
@@ -31,9 +31,13 @@ This is a renderer written based on Qt+Opengl
 
 ### OCC geometric modeling
 
+![image-20260821131205204](README.assets/image-20260821131205204.png)
+
 ------
 
 ![image-20260521203930108](README.assets/image-20260521203930108.png)
+
+![image-20260821200311617](README.assets/image-20260821200311617.png)
 
 ![image-20260614223107815](README.assets/image-20260614223107815.png)
 
@@ -131,7 +135,9 @@ plans to do:
 
 ## how we design it
 
+### Intersective Widgets
 
+![image-20260819112630072](README.assets/image-20260819112630072.png)
 
 ## Features
 

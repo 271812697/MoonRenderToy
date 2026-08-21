@@ -19,5 +19,6 @@ namespace Rendering::Geometry
 		Maths::FVector3 position;
 		Maths::FVector2 texCoords;
 		Maths::FVector3 normals;
+		Maths::FVector2 domainId;
 	};
 }
