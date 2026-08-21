@@ -84,10 +84,10 @@ namespace Core::ECS::Components
 	{
         auto& instance=MOON::ImRenderer::instance();
         if (mInternal->hoverLine) {
-            instance.drawLineList(mInternal->hoverLineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 255, 255));
+            instance.drawLineList(mInternal->hoverLineSeg, 3.0f, Eigen::Vector4<uint8_t>(255, 0, 180, 255));
         }
         for (int i = 0;i < mInternal->selectLineSeg.size();i++) {
-            instance.drawLineList(mInternal->selectLineSeg[i], 3.0f, Eigen::Vector4<uint8_t>(255, 255, 255, 255));
+            instance.drawLineList(mInternal->selectLineSeg[i], 3.0f, Eigen::Vector4<uint8_t>(255, 0, 130, 255));
         }
         if (mInternal->updateFace|| mInternal->updateEdge) {
             ZoneScoped;

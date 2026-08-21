@@ -398,7 +398,8 @@ namespace QtImGui {
 
 		// Start the frame
 		ImGui::NewFrame();
-		//ImPlotCustom::ColormapScale("lo",1.0,0.0,10.0);
+		ImPlotCustom::AddTextTransform(ImVec2(100, 100), 45.0f/180.0f*3.14159, IM_COL32(255, 0, 0, 255), "HelloWorld");
+	    //ImPlotCustom::ColormapScale("lo",1.0,0.0,10.0);
 		//ImPlot::ShowDemoWindow();
 		//ImGui::ShowDemoWindow();
 		

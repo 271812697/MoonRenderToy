@@ -1,4 +1,4 @@
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
+﻿#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 #include "implotCustom.h"
@@ -12,6 +12,67 @@ namespace ImPlotCustom {
 		ImGui::RenderArrowPointingAt(draw_list, ImVec2(pos.x + half_sz.x, pos.y), half_sz, ImGuiDir_Right, IM_COL32(255, 255, 255, alpha8));
 		ImGui::RenderArrowPointingAt(draw_list, ImVec2(pos.x + bar_w - half_sz.x - 1, pos.y), ImVec2(half_sz.x + 2, half_sz.y + 1), ImGuiDir_Left, IM_COL32(0, 0, 0, alpha8));
 		ImGui::RenderArrowPointingAt(draw_list, ImVec2(pos.x + bar_w - half_sz.x, pos.y), half_sz, ImGuiDir_Left, IM_COL32(255, 255, 255, alpha8));
+	}
+	//y axis is down
+	ImVec2 RotateVec2(ImVec2 pos, float cosVal, float sinVal) {
+		return ImVec2(pos.x*cosVal+pos.y*sinVal,-pos.x*sinVal+pos.y*cosVal);
+	}
+	void AddTextTransform( ImVec2 pos, float angle, ImU32 col, const char* text_begin, const char* text_end)
+	{
+		ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+		if (!text_end)
+			text_end = text_begin + strlen(text_begin);
+		ImGuiContext& g = *GImGui;
+#ifdef IMGUI_HAS_TEXTURES
+		ImFontBaked* font = g.Font->GetFontBaked(g.FontSize);
+		const float scale = g.FontSize / font->Size;
+#else
+		ImFont* font = g.Font;
+		const float scale = g.FontSize / font->FontSize;
+#endif
+		// Align to be pixel perfect
+		pos.x = ImFloor(pos.x);
+		pos.y = ImFloor(pos.y);
+		const char* s = text_begin;
+		int chars_exp = (int)(text_end - s);
+		int chars_rnd = 0;
+		const int vtx_count_max = chars_exp * 4;
+		const int idx_count_max = chars_exp * 6;
+		DrawList->PrimReserve(idx_count_max, vtx_count_max);
+		float cosVal = cosf(angle);
+		float sinVal = sinf(angle);
+		while (s < text_end) {
+			unsigned int c = (unsigned int)*s;
+			if (c < 0x80) {
+				s += 1;
+			}
+			else {
+				s += ImTextCharFromUtf8(&c, s, text_end);
+				if (c == 0) // Malformed UTF-8?
+					break;
+			}
+			const ImFontGlyph* glyph = font->FindGlyph((ImWchar)c);
+			if (glyph == nullptr) {
+				continue;
+			}
+			ImVec2 p0 = RotateVec2(ImVec2(glyph->X0, glyph->Y0), cosVal, sinVal);
+			ImVec2 p1 = RotateVec2(ImVec2(glyph->X1, glyph->Y0), cosVal, sinVal);
+			ImVec2 p2 = RotateVec2(ImVec2(glyph->X1, glyph->Y1), cosVal, sinVal);
+			ImVec2 p3 = RotateVec2(ImVec2(glyph->X0, glyph->Y1), cosVal, sinVal);
+			DrawList->PrimQuadUV(pos + p0 * scale, pos + p1* scale,
+				pos + p2 * scale, pos + p3 * scale,
+				ImVec2(glyph->U0, glyph->V0), ImVec2(glyph->U1, glyph->V0),
+				ImVec2(glyph->U1, glyph->V1), ImVec2(glyph->U0, glyph->V1),
+				col);
+			pos.y -= glyph->AdvanceX * scale*sinVal;
+			pos.x += glyph->AdvanceX * scale * cosVal;
+			chars_rnd++;
+		}
+		// Give back unused vertices
+		int chars_skp = chars_exp - chars_rnd;
+		DrawList->PrimUnreserve(chars_skp * 6, chars_skp * 4);
+		
+
 	}
 	void ColormapScale(const char* label, double val, double scale_min, double scale_max, const ImVec2& pos, const ImVec2& size, const char* format, ImPlotColormapScaleFlags flags, ImPlotColormap cmap)
 	{

@@ -112,17 +112,17 @@ foreach(QtPluginDLL ${QtPluginsDLLs})
     )
 endforeach()
 # Copy OpenCascade 3rd-party DLLs
-foreach(Occ3rdDLL ${OpenCASCADE_3RDPARTY_DLLS})
-    add_custom_command(
-        TARGET ${TARGET_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Occ3rdDLL}" $<TARGET_FILE_DIR:${TARGET_NAME}>
-    )
-endforeach()
+# foreach(Occ3rdDLL ${OpenCASCADE_3RDPARTY_DLLS})
+#     add_custom_command(
+#         TARGET ${TARGET_NAME} POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${Occ3rdDLL}" $<TARGET_FILE_DIR:${TARGET_NAME}>
+#    )
+# endforeach()
 
 # Copy runtime DLLs specified with library IMPORTED_LOCATION property
-add_custom_command(
-   TARGET ${TARGET_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
-    COMMAND_EXPAND_LISTS
-)
+# add_custom_command(
+#    TARGET ${TARGET_NAME} POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#            $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
+#    COMMAND_EXPAND_LISTS
+# )

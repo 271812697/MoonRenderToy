@@ -15,8 +15,8 @@ namespace Core::ECS::Components
 			Transparent=1
 		};
 		Mode mode{ Color };
-		Maths::FVector4 hoverColor = { 1,1,0,1 };
-		Maths::FVector4 selectColor = {1,1,1.0,1};
+		Maths::FVector4 hoverColor = { 1,0.706,0,1 };
+		Maths::FVector4 selectColor = {1,0.510,0,1};
 	};
 	class CTopoShape : public AComponent
 	{
