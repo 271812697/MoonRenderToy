@@ -260,6 +260,8 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 
 
 out vec4 FRAGMENT_COLOR;
+uniform vec3 lineNormal;
+uniform vec3 planeOrigin;
 
 void main()
 {
@@ -288,9 +290,11 @@ void main()
     float stripePeriod=0.2f;
     float stripeBand=0.04f;
     float stripeBandS=0.02f;
-    vec3 origin=ubo_plane.xyz;
     float fade=0.0;//clamp(length(ubo_ViewPos-fs_in.FragPos)/50.0,0,1);
-    float dist=length(origin-fs_in.FragPos);
+    //circle
+    //float dist=length(ubo_plane.xyz-fs_in.FragPos);
+    vec3 offset=fs_in.FragPos-planeOrigin;
+    float dist=dot(offset,lineNormal);
     float kth = floor(dist / stripePeriod);
     float center = kth * stripePeriod + stripePeriod * 0.5;
     float modDist = abs(dist - center);

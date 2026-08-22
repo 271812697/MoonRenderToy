@@ -70,7 +70,7 @@ namespace MOON {
 				faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
 			}
 			{
-				edgeMat->SetLineWidth(5.0);
+				edgeMat->SetLineWidth(4.0);
 				edgeMat->SetProperty("color",Maths::FVector3(1,0,1));
 				edgeMat->RemoveFeature("CLIP_PLANE");
 			}
@@ -189,6 +189,14 @@ namespace MOON {
 				m_internal->zAxis.z(),
 				-m_internal->zAxis.dot(m_internal->center)
 			);
+			
+		
+			
+			Eigen::Vector3f lineNormal = (m_internal->xAxis - m_internal->yAxis).normalized();
+			auto faceMat = m_internal->sectionActor->GetChild("Face")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
+			faceMat->SetProperty("lineNormal",Maths::FVector3(lineNormal.x(), lineNormal.y(), lineNormal.z()));
+			faceMat->SetProperty("planeOrigin",Maths::FVector3(m_internal->center.x(), m_internal->center.y(), m_internal->center.z()));
+
 		}
 	}
 
