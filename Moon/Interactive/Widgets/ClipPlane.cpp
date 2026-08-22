@@ -51,6 +51,7 @@ namespace MOON {
 			sectionActor = new TopoActor("Section", "Geomerty", true);
 			auto faceMat = sectionActor->GetChild("Face")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
 			faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\SectionFace.ovfx"]);
+			auto edgeMat = sectionActor->GetChild("Edge")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
 			auto& renderer = GetSceneView.GetRenderer();;
 			{
 				faceMat->SetBackfaceCulling(false);
@@ -67,6 +68,11 @@ namespace MOON {
 				faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
 				faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
 				faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
+			}
+			{
+				edgeMat->SetLineWidth(5.0);
+				edgeMat->SetProperty("color",Maths::FVector3(1,0,1));
+				edgeMat->RemoveFeature("CLIP_PLANE");
 			}
 		}
 		void onMouseLeftClick() {
@@ -317,32 +323,35 @@ namespace MOON {
 
 	void ClipPlane::updateSection()
 	{
-		m_internal->updateEngineUbo = true;
 		Core::ECS::Actor* selectActor = m_internal->ac;
-		while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
-		{
-			selectActor = selectActor->GetParent();
-		}
-		if (selectActor)
-		{
-			Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-			if (topoComp) {
-				auto& topoShape = topoComp->GetTopoShape();
-				double offset = m_internal->zAxis.dot(m_internal->center);
-				Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-				{
-					ZoneScopedN("clip");
-					auto wires = topoShape.slices(dir, std::vector<double>{ offset });
-					Part::TopoShape shape(wires);
-					if (!shape.isNull()) {
-						try
-						{
-							ZoneScopedN("makeFace");
-							shape = shape.makeElementFace("Part::FaceMakerCheese");
-							m_internal->sectionActor->setTopoShape(shape);
-						}
-						catch (const Base::Exception& e)
-						{
+		if (selectActor) {
+			m_internal->updateEngineUbo = true;
+		
+			while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
+			{
+				selectActor = selectActor->GetParent();
+			}
+			if (selectActor)
+			{
+				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
+				if (topoComp) {
+					auto& topoShape = topoComp->GetTopoShape();
+					double offset = m_internal->zAxis.dot(m_internal->center);
+					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
+					{
+						ZoneScopedN("clip");
+						auto wires = topoShape.slices(dir, std::vector<double>{ offset });
+						Part::TopoShape shape(wires);
+						if (!shape.isNull()) {
+							try
+							{
+								ZoneScopedN("makeFace");
+								shape = shape.makeElementFace("Part::FaceMakerCheese");
+								m_internal->sectionActor->setTopoShape(shape);
+							}
+							catch (const Base::Exception& e)
+							{
+							}
 						}
 					}
 				}

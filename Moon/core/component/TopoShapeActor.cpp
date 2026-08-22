@@ -102,6 +102,7 @@ namespace MOON {
 				lineMat->SetCastShadows(false);
 				lineMat->SetReceiveShadows(false);
 				lineMat->SetLineWidth(3.0);
+				lineMat->AddFeature("CLIP_PLANE");
 				
 			}
 
