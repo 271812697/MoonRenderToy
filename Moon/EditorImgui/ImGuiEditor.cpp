@@ -247,12 +247,13 @@ void ImGuiEditor::DrawHierarchyPanel()
 
 void ImGuiEditor::DrawActorNode(Core::ECS::Actor& actor)
 {
+    const bool isLeaf = actor.GetChildren().empty();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
         | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (mImpl->selectedActorId == actor.GetID()) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
-    if (actor.GetChildren().empty()) {
+    if (isLeaf) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
@@ -262,7 +263,9 @@ void ImGuiEditor::DrawActorNode(Core::ECS::Actor& actor)
         mImpl->sceneView.SelectActor(actor);
     }
 
-    if (opened) {
+    // Leaf nodes use NoTreePushOnOpen and never push an ID scope, so they
+    // must not be paired with TreePop().
+    if (opened && !isLeaf) {
         for (Core::ECS::Actor* child : actor.GetChildren()) {
             if (child) {
                 DrawActorNode(*child);
