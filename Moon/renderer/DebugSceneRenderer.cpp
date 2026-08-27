@@ -19,6 +19,7 @@
 #include "OutlineRenderFeature.h"
 #include "PickingRenderPass.h"
 #include "PathTraceRenderPass.h"
+#include "core/EditorMode.h"
 
 #include "Core/Global/ServiceLocator.h"
 #include "Settings/DebugSetting.h"
@@ -686,7 +687,12 @@ Editor::Rendering::DebugSceneRenderer::DebugSceneRenderer(::Rendering::Context::
 	AddPass<PathTraceRenderPass>("Path Tracing", ::Rendering::Settings::ERenderPassOrder::PathTrace).SetEnabled(false);
 	AddPass<GizmoRenderPass>("ImRenderer", ::Rendering::Settings::ERenderPassOrder::Last);
 	AddPass<PickingRenderPass>("Picking", ::Rendering::Settings::ERenderPassOrder::Last);
-    //AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last).SetEnabled(false);
+	// The outline/gizmo highlight pass is normally toggled through the
+	// "debugElements" setting in the Qt settings panel (disabled by default).
+	// The ImGui editor has no settings panel yet, so enable it there directly.
+	auto& debugActorPass =
+		AddPass<DebugActorRenderPass>("Debug Actor", ::Rendering::Settings::ERenderPassOrder::Last);
+	debugActorPass.SetEnabled(MOON::IsImGuiEditorMode());
 
 
 }

@@ -64,7 +64,10 @@ private:
     void DrawHierarchyPanel();
     void DrawPropertyPanel();
     void DrawLogPanel();
+    void DrawSettingsPanel();
     void DrawActorNode(Core::ECS::Actor& actor);
+    void SyncHoverSelection();
+    void SyncClickSelection();
 
     struct Impl;
     Impl* mImpl = nullptr;

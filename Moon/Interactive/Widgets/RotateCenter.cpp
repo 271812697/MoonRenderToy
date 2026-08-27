@@ -10,6 +10,7 @@
 #include "Core/Global/ServiceLocator.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "core/SelectionManager.h"
+#include "core/EditorMode.h"
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -67,25 +68,33 @@ namespace MOON {
 			{
 				auto actor = *pval;
 				if (actor) {	
-					GetTreeView.highlightByActor(&actor.value());
+					if (!MOON::IsImGuiEditorMode()) {
+						GetTreeView.highlightByActor(&actor.value());
+					}
 					MOON::SelectionManager::instance().select({ actor.value().GetID() });
 				}
 				else
 				{
 					MOON::SelectionManager::instance().select({});
-					GetTreeView.clearHighlight();
+					if (!MOON::IsImGuiEditorMode()) {
+						GetTreeView.clearHighlight();
+					}
 				}
 			}
 			else
 			{
 				MOON::SelectionManager::instance().select({});
-				GetTreeView.clearHighlight();
+				if (!MOON::IsImGuiEditorMode()) {
+					GetTreeView.clearHighlight();
+				}
 			}
 		}
 		else
 		{
 			MOON::SelectionManager::instance().select({});
-			GetTreeView.clearHighlight();
+			if (!MOON::IsImGuiEditorMode()) {
+				GetTreeView.clearHighlight();
+			}
 		}
 	}
 	void RotateCenter::onLeftMouseReleased()

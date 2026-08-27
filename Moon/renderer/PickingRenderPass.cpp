@@ -8,6 +8,8 @@
 #include "PickingRenderPass.h"
 #include "Interactive/Im3DRenderer.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "core/EditorMode.h"
+#include "core/log.h"
 #include <Rendering/HAL/Profiling.h>
 
 namespace
@@ -74,6 +76,22 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 		::Rendering::Settings::EPixelDataType::UNSIGNED_BYTE,
 		pixel
 	);
+	if (MOON::IsImGuiEditorMode()) {
+		auto [fbWidth, fbHeight] = m_actorPickingFramebuffer.GetSize(
+			::Rendering::Settings::EFramebufferAttachment::COLOR
+		);
+		LOG_INFO(
+			"ImguiDbg pixel: rgba=(%d,%d,%d,%d) @(%u,%u) fbsize=(%u,%u)",
+			pixel[0],
+			pixel[1],
+			pixel[2],
+			pixel[3],
+			p_x,
+			p_y,
+			fbWidth,
+			fbHeight
+		);
+	}
 	if (pixel[3] == 255) {
 		gizmoInstance.resetSelectPolygon();
 		uint32_t actorID = (0 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | (pixel[0] << 0);

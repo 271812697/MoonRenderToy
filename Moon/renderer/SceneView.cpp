@@ -9,6 +9,8 @@
 #include "renderer/GizmoRenderPass.h"
 #include "Interactive/Widgets/ClipPlane.h"
 #include "core/component/CTopoShape.h"
+#include "core/EditorMode.h"
+#include "core/log.h"
 #include <iostream>
 #include <QMouseEvent>
 
@@ -379,6 +381,19 @@ void Editor::Panels::SceneView::HandleActorPicking()
 			static_cast<uint32_t>(mouseX),
 			static_cast<uint32_t>(mouseY)
 		,isSeletedSomething);
+	if (MOON::IsImGuiEditorMode()
+		&& input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT)) {
+		LOG_INFO(
+			"ImguiDbg pick: size=(%u,%u) mouse=(%d,%d) yflip=%.0f hasValue=%d isSelected=%d",
+			GetSafeSize().first,
+			GetSafeSize().second,
+			mouseX,
+			mouseY,
+			mousePos.second,
+			pickingResult.has_value() ? 1 : 0,
+			isSeletedSomething ? 1 : 0
+		);
+	}
 
 	if (!m_gizmoOperations.IsPicking())
 	{

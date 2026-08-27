@@ -33,18 +33,6 @@ namespace MOON {
 			return (void*)ctx->getProcAddress(name);
 		}
 	};
-	bool ViewerWidget::sImGuiEditorMode = false;
-
-	bool ViewerWidget::IsImGuiEditorMode()
-	{
-		return sImGuiEditorMode;
-	}
-
-	void ViewerWidget::SetImGuiEditorMode(bool enable)
-	{
-		sImGuiEditorMode = enable;
-	}
-
 	class ViewerWidget::ViewerWindowInternal {
 	public:
 		ViewerWindowInternal(ViewerWidget* view) :mSelf(view) {
@@ -274,6 +262,22 @@ namespace MOON {
 				// popup.
 				const bool forward = mInternal->mImGuiEditor->IsViewportHovered()
 					&& !mInternal->mImGuiEditor->IsImGuiInteracting();
+				if (type == QEvent::MouseButtonPress) {
+					float originX = 0.0f;
+					float originY = 0.0f;
+					mInternal->mImGuiEditor->GetViewportOrigin(originX, originY);
+					auto* mouseEvent = static_cast<QMouseEvent*>(evt);
+					LOG_INFO(
+						"ImguiDbg press: fwd=%d hover=%d interact=%d origin=(%.0f,%.0f) local=(%.0f,%.0f)",
+						forward ? 1 : 0,
+						mInternal->mImGuiEditor->IsViewportHovered() ? 1 : 0,
+						mInternal->mImGuiEditor->IsImGuiInteracting() ? 1 : 0,
+						originX,
+						originY,
+						mouseEvent->localPos().x(),
+						mouseEvent->localPos().y()
+					);
+				}
 				if (!forward) {
 					return QOpenGLWidget::event(evt);
 				}

@@ -6,6 +6,7 @@ namespace MOON
 ImGuiLogOutput::ImGuiLogOutput(size_t maxEntries)
     : LogOutput("ImGuiLogOutput")
     , m_maxEntries(maxEntries)
+    , m_file("moon_imgui_log.txt", std::ios::out | std::ios::app)
 {
 }
 
@@ -15,6 +16,10 @@ void ImGuiLogOutput::logMessage(Level level, const std::string& msg)
     m_entries.emplace_front(Entry{ level, msg });
     if (m_entries.size() > m_maxEntries) {
         m_entries.resize(m_maxEntries);
+    }
+    if (m_file.is_open()) {
+        m_file << msg << '\n';
+        m_file.flush();
     }
 }
 

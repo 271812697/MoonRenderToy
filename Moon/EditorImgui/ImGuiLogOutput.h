@@ -3,6 +3,7 @@
 #include "core/logOutput.h"
 
 #include <deque>
+#include <fstream>
 #include <mutex>
 #include <string>
 #include <utility>
@@ -40,6 +41,7 @@ private:
     mutable std::mutex m_mutex;
     std::deque<Entry> m_entries;
     size_t m_maxEntries;
+    std::ofstream m_file;
 };
 
 } // namespace MOON

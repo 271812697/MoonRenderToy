@@ -4,12 +4,16 @@
 
 #include <Core/ECS/Actor.h>
 #include <Core/ECS/Components/CTransform.h>
+#include <Core/Rendering/SceneRenderer.h>
+#include <Core/SceneSystem/BvhService.h>
 #include <Core/SceneSystem/Scene.h>
 #include <Rendering/Settings/EProjectionMode.h>
+#include <Settings/DebugSetting.h>
 
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/imgui/imgui_internal.h"
 #include "renderer/SceneView.h"
+#include "core/SelectionManager.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -49,6 +53,7 @@ struct ImGuiEditor::Impl
     Rect hierarchyRect;
     Rect viewportRect;
     Rect propertyRect;
+    Rect settingsRect;
     Rect logRect;
 };
 
@@ -129,9 +134,25 @@ void ImGuiEditor::Draw()
     mImpl->hierarchyRect = { ImVec2(workPos.x, workPos.y), ImVec2(leftWidth, sideHeight) };
     mImpl->viewportRect
         = { ImVec2(workPos.x + leftWidth, workPos.y), ImVec2(centerWidth, sideHeight) };
-    mImpl->propertyRect
-        = { ImVec2(workPos.x + leftWidth + centerWidth, workPos.y), ImVec2(rightWidth, sideHeight) };
+    mImpl->propertyRect = {
+        ImVec2(workPos.x + leftWidth + centerWidth, workPos.y),
+        ImVec2(rightWidth, sideHeight * 0.55f)
+    };
+    mImpl->settingsRect = {
+        ImVec2(workPos.x + leftWidth + centerWidth, workPos.y + sideHeight * 0.55f),
+        ImVec2(rightWidth, sideHeight * 0.45f)
+    };
     mImpl->logRect = { ImVec2(workPos.x, workPos.y + sideHeight), ImVec2(workSize.x, bottomHeight) };
+
+    // Hover: preselect highlight through SelectionManager (CTopoShape
+    // domain-color face/edge highlight).
+    SyncHoverSelection();
+
+    // Left click in the viewport: commit the picked actor to the
+    // SelectionManager, replicating the old RotateCenter flow.
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && mImpl->viewportHovered) {
+        SyncClickSelection();
+    }
 
     // Sync the hierarchy selection with the view (viewport picking / gizmo).
     if (mImpl->sceneView.IsSelectActor()) {
@@ -146,11 +167,131 @@ void ImGuiEditor::Draw()
     DrawViewportPanel();
     DrawHierarchyPanel();
     DrawPropertyPanel();
+    DrawSettingsPanel();
     DrawLogPanel();
 
     if (mImpl->showDemoWindow) {
         ImGui::ShowDemoWindow(&mImpl->showDemoWindow);
     }
+}
+
+void ImGuiEditor::SyncHoverSelection()
+{
+    const auto pick = mImpl->sceneView.GetPickResult();
+    if (pick.has_value()) {
+        if (const auto* pval
+            = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pick.value())) {
+            const auto actor = *pval;
+            if (actor) {
+                MOON::SelectionManager::instance().setPreselect({ actor.value().GetID() });
+                return;
+            }
+        }
+    }
+    MOON::SelectionManager::instance().clearPreselect();
+}
+
+void ImGuiEditor::SyncClickSelection()
+{
+    const auto pick = mImpl->sceneView.GetPickResult();
+    if (pick.has_value()) {
+        if (const auto* pval
+            = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pick.value())) {
+            const auto actor = *pval;
+            if (actor) {
+                MOON::SelectionManager::instance().select({ actor.value().GetID() });
+                return;
+            }
+        }
+    }
+    MOON::SelectionManager::instance().select({});
+}
+
+void ImGuiEditor::DrawSettingsPanel()
+{
+    const ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::SetNextWindowPos(mImpl->settingsRect.pos);
+    ImGui::SetNextWindowSize(mImpl->settingsRect.size);
+    ImGui::Begin("Settings", nullptr, flags);
+
+    // ---- Render pass enable/disable toggles (mirrors PassSettingWidget) ----
+    if (ImGui::CollapsingHeader("Passes", ImGuiTreeNodeFlags_DefaultOpen)) {
+        auto& passes = mImpl->sceneView.GetRenderer().GetPasses();
+        for (auto& [order, entry] : passes) {
+            auto& name = entry.first;
+            auto& pass = entry.second;
+            bool enabled = pass->IsEnabled();
+            if (ImGui::Checkbox(name.c_str(), &enabled)) {
+                pass->SetEnabled(enabled);
+            }
+        }
+    }
+
+    // ---- Debug settings tree (mirrors DebugSettingWidget) ----
+    if (ImGui::CollapsingHeader("Debug Settings")) {
+        auto& groups = MOON::DebugSettings::instance().getGroup();
+        auto& registry = MOON::DebugSettings::instance().getRegistry();
+        for (auto& [group, indices] : groups) {
+            if (ImGui::CollapsingHeader(group.c_str())) {
+                for (int index : indices) {
+                    MOON::NodeBase* node = registry[index];
+                    if (!node) {
+                        continue;
+                    }
+                    const std::string type = node->getType();
+                    const std::string& label = node->getName();
+                    if (type == "bool") {
+                        bool value = node->getData<bool>();
+                        if (ImGui::Checkbox(label.c_str(), &value)) {
+                            node->setData<bool>(value);
+                        }
+                    }
+                    else if (type == "float") {
+                        float value = node->getData<float>();
+                        if (ImGui::DragFloat(label.c_str(), &value, 0.01f)) {
+                            node->setData<float>(value);
+                        }
+                    }
+                    else if (type == "int") {
+                        int value = node->getData<int>();
+                        if (ImGui::DragInt(label.c_str(), &value, 0.1f)) {
+                            node->setData<int>(value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- PathTrace material editor (mirrors RenderSettingWidget) ----
+    if (Core::SceneSystem::Scene* scene = mImpl->sceneView.GetScene()) {
+        if (auto* bvhService = scene->GetBvhService()) {
+            if (ImGui::CollapsingHeader("PathTrace Materials")) {
+                for (size_t i = 0; i < bvhService->materials.size(); ++i) {
+                    auto& material = bvhService->materials[i];
+                    const std::string label = "Material " + std::to_string(i);
+                    if (ImGui::CollapsingHeader(label.c_str())) {
+                        ImGui::ColorEdit3("BaseColor", &material.baseColor.x);
+                        ImGui::ColorEdit3("Emission", &material.emission.x);
+                        ImGui::SliderFloat("Opacity", &material.opacity, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Roughness", &material.roughness, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Metallic", &material.metallic, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Anisotropic", &material.anisotropic, -1.0f, 1.0f);
+                        ImGui::SliderFloat("Clearcoat", &material.clearcoat, 0.0f, 1.0f);
+                        ImGui::SliderFloat("ClearcoatGloss", &material.clearcoatGloss, 0.0f, 1.0f);
+                        ImGui::DragFloat("Ior", &material.ior, 0.01f, 1.0f, 3.0f);
+                        ImGui::SliderFloat("MediumDensity", &material.mediumDensity, 0.0f, 10.0f);
+                        ImGui::SliderFloat("MediumAnisotropy", &material.mediumAnisotropy, -1.0f, 1.0f);
+                        ImGui::ColorEdit3("MediumColor", &material.mediumColor.x);
+                        ImGui::SliderFloat("AlphaCutOff", &material.alphaCutoff, 0.0f, 1.0f);
+                    }
+                }
+            }
+        }
+    }
+
+    ImGui::End();
 }
 
 void ImGuiEditor::DrawMainMenuBar()
@@ -375,26 +516,20 @@ void ImGuiEditor::DrawLogPanel()
     ImGui::SetNextWindowSize(mImpl->logRect.size);
     ImGui::Begin("Log", nullptr, flags);
 
+    // Read-only multiline: makes the log text selectable/copyable.
+    std::string buffer;
     const std::vector<ImGuiLogOutput::Entry> entries = mImpl->logOutput.GetEntries();
     for (const auto& entry : entries) {
-        ImVec4 color(0.8f, 0.8f, 0.8f, 1.0f);
-        switch (entry.level) {
-            case MOON::LogOutput::LL_ERROR:
-            case MOON::LogOutput::LL_FATAL:
-                color = ImVec4(1.0f, 0.35f, 0.35f, 1.0f);
-                break;
-            case MOON::LogOutput::LL_WARNING:
-                color = ImVec4(1.0f, 0.85f, 0.3f, 1.0f);
-                break;
-            case MOON::LogOutput::LL_DEBUG:
-                color = ImVec4(0.55f, 0.55f, 0.55f, 1.0f);
-                break;
-            default:
-                color = ImVec4(0.8f, 0.9f, 0.8f, 1.0f);
-                break;
-        }
-        ImGui::TextColored(color, "%s", entry.message.c_str());
+        buffer += entry.message;
+        buffer += '\n';
     }
+    ImGui::InputTextMultiline(
+        "##LogText",
+        buffer.data(),
+        buffer.size() + 1,
+        ImVec2(-FLT_MIN, -FLT_MIN),
+        ImGuiInputTextFlags_ReadOnly
+    );
 
     ImGui::End();
 }
