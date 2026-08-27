@@ -60,6 +60,7 @@ public:
 
 private:
     void DrawMainMenuBar();
+    void DrawToolbar();
     void DrawViewportPanel();
     void DrawHierarchyPanel();
     void DrawPropertyPanel();

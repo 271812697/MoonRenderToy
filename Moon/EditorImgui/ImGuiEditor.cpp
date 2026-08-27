@@ -3,15 +3,20 @@
 #include "ImGuiLogOutput.h"
 
 #include <Core/ECS/Actor.h>
+#include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/ECS/Components/CTransform.h>
+#include <Core/Rendering/EngineBufferRenderFeature.h>
 #include <Core/Rendering/SceneRenderer.h>
 #include <Core/SceneSystem/BvhService.h>
 #include <Core/SceneSystem/Scene.h>
 #include <Rendering/Settings/EProjectionMode.h>
 #include <Settings/DebugSetting.h>
+#include <core/log.h>
 
 #include "Qtimgui/imgui/imgui.h"
 #include "Qtimgui/imgui/imgui_internal.h"
+#include "renderer/GizmoRenderPass.h"
+#include "renderer/PointRenderPass.h"
 #include "renderer/SceneView.h"
 #include "core/SelectionManager.h"
 
@@ -44,6 +49,15 @@ struct ImGuiEditor::Impl
     float viewportWidth = 0.0f;
     float viewportHeight = 0.0f;
     ImVec2 viewportImageMin { 0.0f, 0.0f };
+
+    bool wireframe = false;
+    bool points = false;
+    bool measure = false;
+    bool clipPlane = false;
+    bool primitiveBox = false;
+    bool primitiveCone = false;
+    bool primitiveCylinder = false;
+    bool primitiveSphere = false;
 
     struct Rect
     {
@@ -115,16 +129,19 @@ void ImGuiEditor::Draw()
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     const ImVec2 displaySize = viewport->Size;
     const float menuHeight = ImGui::GetFrameHeightWithSpacing();
+    const float toolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
     if (ImGui::BeginMainMenuBar()) {
         DrawMainMenuBar();
         ImGui::EndMainMenuBar();
     }
 
+    DrawToolbar();
+
     // Fixed manual layout (this ImGui build has no docking support and no
     // ImVec2 math operators).
-    const ImVec2 workPos(viewport->Pos.x, viewport->Pos.y + menuHeight);
-    const ImVec2 workSize(displaySize.x, displaySize.y - menuHeight);
+    const ImVec2 workPos(viewport->Pos.x, viewport->Pos.y + menuHeight + toolbarHeight);
+    const ImVec2 workSize(displaySize.x, displaySize.y - menuHeight - toolbarHeight);
     const float leftWidth = workSize.x * 0.20f;
     const float rightWidth = workSize.x * 0.24f;
     const float bottomHeight = workSize.y * 0.26f;
@@ -205,6 +222,112 @@ void ImGuiEditor::SyncClickSelection()
         }
     }
     MOON::SelectionManager::instance().select({});
+}
+
+void ImGuiEditor::DrawToolbar()
+{
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const float menuHeight = ImGui::GetFrameHeightWithSpacing();
+    const float toolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+
+    ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + menuHeight));
+    ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, toolbarHeight));
+    ImGui::Begin(
+        "##Toolbar",
+        nullptr,
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar
+            | ImGuiWindowFlags_NoBringToFrontOnFocus
+    );
+
+    Editor::Panels::SceneView& view = mImpl->sceneView;
+    auto fit = [&view](const Maths::FVector3& dir) {
+        view.FitToSelectedActor(dir);
+    };
+
+    // Camera alignment (mirrors ViewerWindowTitleBar / CameraFitCommand).
+    if (ImGui::Button("X-")) { fit({ -1, 0, 0 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("X+")) { fit({ 1, 0, 0 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("Y-")) { fit({ 0, -1, 0 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("Y+")) { fit({ 0, 1, 0 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("Z-")) { fit({ 0, 0, -1 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("Z+")) { fit({ 0, 0, 1 }); }
+    ImGui::SameLine();
+    if (ImGui::Button("Iso")) {
+        fit(Maths::FVector3::Normalize(Maths::FVector3(1, 1, 1)));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Fit")) {
+        fit(view.GetCamera()->GetTransform().GetWorldForward());
+    }
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(12.0f, 0.0f));
+    ImGui::SameLine();
+
+    // View toggles (Wire/Points/Measure/Clip from ViewerWindowTitleBar).
+    if (ImGui::Checkbox("Wire", &mImpl->wireframe)) {
+        if (view.IsSelectActor()) {
+            if (auto* matList
+                = view.GetSelectedActor()->GetComponent<Core::ECS::Components::CMaterialRenderer>()) {
+                auto material = matList->GetMaterialAtIndex(0);
+                if (material && material->SupportsFeature("WITH_EDGE")) {
+                    material->EnableFeature("WITH_EDGE", mImpl->wireframe);
+                }
+            }
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Points", &mImpl->points)) {
+        view.GetRenderer().GetPass<Editor::Rendering::PointRenderPass>("PointDraw")
+            .SetEnabled(mImpl->points);
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Measure", &mImpl->measure)) {
+        view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer")
+            .enableGizmoWidget("Measure", mImpl->measure);
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Clip", &mImpl->clipPlane)) {
+        view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer")
+            .enableGizmoWidget("ClipPlane", mImpl->clipPlane);
+        view.GetRenderer().GetFeature<::Core::Rendering::EngineBufferRenderFeature>()
+            .EnableClip(mImpl->clipPlane);
+    }
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(12.0f, 0.0f));
+    ImGui::SameLine();
+
+    // Primitive creation tools (mirrors PrimitiveToolbar).
+    auto primitiveToggle = [&view](const char* label, bool& value, const std::string& widgetName) {
+        if (ImGui::Checkbox(label, &value)) {
+            view.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer")
+                .enableGizmoWidget(widgetName, value);
+        }
+        ImGui::SameLine();
+    };
+    primitiveToggle("Box", mImpl->primitiveBox, "PrimitiveBox");
+    primitiveToggle("Cone", mImpl->primitiveCone, "PrimitiveCone");
+    primitiveToggle("Cylinder", mImpl->primitiveCylinder, "PrimitiveCylinder");
+    primitiveToggle("Sphere", mImpl->primitiveSphere, "PrimitiveSphere");
+    ImGui::Dummy(ImVec2(12.0f, 0.0f));
+    ImGui::SameLine();
+
+    // Design modeling tasks (mirrors DesignModelingToolbar). The Qt task
+    // dialogs are not available in the ImGui editor yet.
+    const char* designTasks[] = { "Pad", "Revolve", "Thickness", "Fillet", "Pocket", "Groove" };
+    for (const char* task : designTasks) {
+        if (ImGui::Button(task)) {
+            LOG_INFO("Design modeling task '%s' is not available in the ImGui editor yet.", task);
+        }
+        ImGui::SameLine();
+    }
+
+    ImGui::End();
 }
 
 void ImGuiEditor::DrawSettingsPanel()
