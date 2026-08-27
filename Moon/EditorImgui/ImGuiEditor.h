@@ -37,11 +37,14 @@ public:
     /// True when the viewport panel has keyboard focus (used for input routing).
     bool IsViewportFocused() const;
 
-    /// True when ImGui wants to capture mouse input.
-    bool WantsCaptureMouse() const;
+    /// True while ImGui is interacting with a widget or has an open popup/menu.
+    bool IsImGuiInteracting() const;
 
     /// True when ImGui wants to capture keyboard input.
     bool WantsCaptureKeyboard() const;
+
+    /// Returns the top-left corner of the viewport panel in window coordinates.
+    void GetViewportOrigin(float& x, float& y) const;
 
     /// Callback invoked from the File menu (host shows a file dialog and loads the file).
     void SetFileOpenCallback(std::function<void()> callback);

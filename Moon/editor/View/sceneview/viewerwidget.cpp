@@ -266,13 +266,45 @@ namespace MOON {
 				|| type == QEvent::Wheel || type == QEvent::HoverMove
 				|| type == QEvent::TabletMove || type == QEvent::TabletPress
 				|| type == QEvent::TabletRelease;
-			const bool capture = isMouse
-				? mInternal->mImGuiEditor->WantsCaptureMouse()
-				: mInternal->mImGuiEditor->WantsCaptureKeyboard();
-			if (capture || !(isMouse
-				? mInternal->mImGuiEditor->IsViewportHovered()
-				: mInternal->mImGuiEditor->IsViewportFocused())) {
-				return QOpenGLWidget::event(evt);
+			if (isMouse) {
+				// io.WantCaptureMouse is true whenever the mouse hovers any
+				// ImGui window (including our viewport), so it cannot be used
+				// to gate viewport input. Forward only while the mouse is over
+				// the viewport and ImGui is not interacting with a widget or
+				// popup.
+				const bool forward = mInternal->mImGuiEditor->IsViewportHovered()
+					&& !mInternal->mImGuiEditor->IsImGuiInteracting();
+				if (!forward) {
+					return QOpenGLWidget::event(evt);
+				}
+				if (type >= QEvent::MouseButtonPress && type <= QEvent::MouseMove) {
+					// Translate to viewport-local coordinates: the renderer is
+					// sized to the viewport panel, not the whole window.
+					float originX = 0.0f;
+					float originY = 0.0f;
+					mInternal->mImGuiEditor->GetViewportOrigin(originX, originY);
+					auto* mouseEvent = static_cast<QMouseEvent*>(evt);
+					const QPointF local = mouseEvent->localPos() - QPointF(originX, originY);
+					QMouseEvent translated(
+						mouseEvent->type(),
+						local,
+						mouseEvent->windowPos(),
+						mouseEvent->screenPos(),
+						mouseEvent->button(),
+						mouseEvent->buttons(),
+						mouseEvent->modifiers(),
+						mouseEvent->source()
+					);
+					mInternal->event(&translated);
+					return QOpenGLWidget::event(evt);
+				}
+			}
+			else {
+				const bool forward = mInternal->mImGuiEditor->IsViewportFocused()
+					&& !mInternal->mImGuiEditor->WantsCaptureKeyboard();
+				if (!forward) {
+					return QOpenGLWidget::event(evt);
+				}
 			}
 		}
 		mInternal->event(evt);

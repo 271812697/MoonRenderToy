@@ -8,6 +8,7 @@
 #include <Rendering/Settings/EProjectionMode.h>
 
 #include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/imgui/imgui_internal.h"
 #include "renderer/SceneView.h"
 
 #include <cstdint>
@@ -80,14 +81,27 @@ bool ImGuiEditor::IsViewportFocused() const
     return mImpl->viewportFocused;
 }
 
-bool ImGuiEditor::WantsCaptureMouse() const
+bool ImGuiEditor::IsImGuiInteracting() const
 {
-    return ImGui::GetIO().WantCaptureMouse;
+    const ImGuiContext* context = ImGui::GetCurrentContext();
+    if (context == nullptr) {
+        return false;
+    }
+    if (context->ActiveId != 0) {
+        return true;
+    }
+    return context->OpenPopupStack.Size > 0;
 }
 
 bool ImGuiEditor::WantsCaptureKeyboard() const
 {
     return ImGui::GetIO().WantCaptureKeyboard;
+}
+
+void ImGuiEditor::GetViewportOrigin(float& x, float& y) const
+{
+    x = mImpl->viewportRect.pos.x;
+    y = mImpl->viewportRect.pos.y;
 }
 
 void ImGuiEditor::Draw()
