@@ -11,6 +11,7 @@
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
 #include "core/SelectionManager.h"
 #include "core/EditorMode.h"
+#include "core/log.h"
 namespace MOON {
 	int eid = -1;
 	uint64_t actorId = 0;
@@ -33,6 +34,9 @@ namespace MOON {
 	{
 		if (drawCenter) {
 			auto rc = m_sceneView->GetRoaterCenter();
+			if (MOON::IsImGuiEditorMode()) {
+				LOG_INFO("RotateCenter: drawing center at (%.2f,%.2f,%.2f)", rc.x, rc.y, rc.z);
+			}
 			Eigen::Vector3f center = { rc.x,rc.y,rc.z };
 			renderer->drawOneMesh(
 				center,
@@ -56,6 +60,9 @@ namespace MOON {
 	}
 	void RotateCenter::onLeftMousePressed()
 	{
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("RotateCenter: left pressed");
+		}
 		drawRect = true;
 		auto it = m_sceneView->getInutState().GetMousePosition();
 		sx = it.first;
@@ -99,6 +106,9 @@ namespace MOON {
 	}
 	void RotateCenter::onLeftMouseReleased()
 	{
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("RotateCenter: left released");
+		}
 		drawRect = false;
 	/*	
 	    auto [w, h] = m_sceneView->GetSafeSize();
@@ -133,10 +143,16 @@ namespace MOON {
 	void RotateCenter::onRightMousePressed()
 	{		
 		drawCenter = true;
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("RotateCenter: right pressed, drawCenter=true");
+		}
 	}
 	void RotateCenter::onRightMouseReleased()
 	{
 		drawCenter = false;
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("RotateCenter: right released, drawCenter=false");
+		}
 	}
 
 	void RotateCenter::onMouseMove()

@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 
 	const bool imguiEditor = QApplication::arguments().contains("--imgui");
 	int res = 0;
-	if (imguiEditor) {
+	if (true) {
 		// ImGui editor mode: host the renderer + ImGui editor UI in a plain
 		// window, without any Qt widget UI (menus, docks, toolbars).
 		MOON::ViewerWidget::SetImGuiEditorMode(true);

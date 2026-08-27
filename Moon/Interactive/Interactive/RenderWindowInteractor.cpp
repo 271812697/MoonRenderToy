@@ -1,6 +1,7 @@
 ﻿#include "RenderWindowInteractor.h"
 #include "ExecuteCommand.h" 
 #include "core/log.h"
+#include "core/EditorMode.h"
 #include <QMouseEvent>
 #include <map>
 #include <mutex>
@@ -278,6 +279,16 @@ void RenderWindowInteractor::ReceiveEvent(QEvent*e) {
 	{
 
 		QMouseEvent* e2 = static_cast<QMouseEvent*>(e);
+		if (MOON::IsImGuiEditorMode()
+			&& (t == QEvent::MouseButtonPress || t == QEvent::MouseButtonRelease)) {
+			LOG_INFO(
+				"RWI: %s button=%d pos=(%d,%d)",
+				t == QEvent::MouseButtonPress ? "press" : "release",
+				(int)e2->button(),
+				e2->x(),
+				e2->y()
+			);
+		}
 		auto x = e2->x();
 		auto y = e2->y();
 		SetEventInformationFlipY(

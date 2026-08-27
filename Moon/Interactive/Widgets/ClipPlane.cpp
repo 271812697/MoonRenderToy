@@ -11,6 +11,8 @@
 #include "Interactive/GizmoBehaviour.h"
 #include "Qtimgui/imgui/imgui.h"
 #include "core/ViewTool.h"
+#include "core/EditorMode.h"
+#include "core/log.h"
 
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include "Core/Global/ServiceLocator.h"
@@ -212,6 +214,9 @@ namespace MOON {
 
 	void ClipPlane::onLeftMousePressed()
 	{
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("ClipPlane: left pressed, mState=%d mPickMesh=%d", (int)mState, (int)mPickMesh);
+		}
 		if (mState == Hot) {
 
 			bool active = false;
@@ -249,6 +254,9 @@ namespace MOON {
 
 	void ClipPlane::onLeftMouseReleased()
 	{
+		if (MOON::IsImGuiEditorMode()) {
+			LOG_INFO("ClipPlane: left released, mState=%d", (int)mState);
+		}
 		if (mState == AxisT || mState == PlaneT || mState == AxisR) {
 			mState = Hot;
 			TransformAxis().setBlockColor(TransformAxis().getBlockId(table[mPickMesh].blockName), hotColor);
@@ -263,6 +271,9 @@ namespace MOON {
 
 	void ClipPlane::onMouseMove()
 	{
+		if (MOON::IsImGuiEditorMode() && mState != Stop) {
+			LOG_INFO("ClipPlane: mouse move, mState=%d", (int)mState);
+		}
 		if (mState == Stop) {
 			bool selectFlag = false;
 			mPickMesh = PickMeshId::None;

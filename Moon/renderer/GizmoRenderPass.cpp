@@ -60,6 +60,12 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerRotate"] = new MOON::DrawSketchHandlerRotate("DrawSketchHandlerRotate");
 			mWidgets["DrawSketchHandlerTrimming"] = new MOON::DrawSketchHandlerTrimming("DrawSketchHandlerTrimming");
 			mWidgets["DrawSketchHandlerTrimming"]->setActive(false);
+
+			// RotateCenter is meant to be always-on: it registers its mouse
+			// event observers only when setActive(true) is called (see
+			// AbstractWidget::SetEnabled). Without this, it never receives
+			// any interactor events.
+			mWidgets["RotateCenter"]->setActive(true);
 			
 			mWidgets["ClipPlane"]->setActive(false);
 			mWidgets["SplitScreen"]->setActive(false);

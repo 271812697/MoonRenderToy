@@ -22,9 +22,45 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <unordered_map>
+
+#include "feature/Feature.h"
+#include "feature/SketcherFeature.h"
+#include "Interactive/Interactive/EventObject.h"
+#include "Interactive/Widgets/SketchPlane.h"
+#include "Sketcher/SketchePlane2D.h"
+#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "TopoShape.h"
+#include "core/ViewTool.h"
+#include <gp_Pln.hxx>
 
 namespace MOON
 {
+
+namespace
+{
+const char* kSketchToolNames[] = {
+    "DrawSketchHandlerPoint", "DrawSketchHandlerLine", "DrawSketchHandlerLineSet",
+    "DrawSketchHandlerCircle", "DrawSketchHandlerArc", "DrawSketchHandlerBSpline",
+    "DrawSketchHandlerRectangle", "DrawSketchHandlerRotate", "DrawSketchHandlerSymmetry",
+    "DrawSketchHandlerTrimming", "DrawSketchHandlerFillet"
+};
+}
+
+class SketchPlaneListener : public MOON::EventObject
+{
+public:
+    std::function<void()> onPlaneSelected;
+
+    void OnPlaneSelected()
+    {
+        if (onPlaneSelected) {
+            onPlaneSelected();
+        }
+    }
+};
 
 struct ImGuiEditor::Impl
 {
@@ -58,6 +94,12 @@ struct ImGuiEditor::Impl
     bool primitiveCone = false;
     bool primitiveCylinder = false;
     bool primitiveSphere = false;
+
+    MOON::SketcherFeature* currentSketcher = nullptr;
+    MOON::SketchPlane* sketchPlanePicker = nullptr;
+    SketchPlaneListener* sketchPlaneListener = nullptr;
+    bool sketchPlanePendingDelete = false;
+    std::unordered_map<std::string, bool> sketchTools;
 
     struct Rect
     {
@@ -129,7 +171,8 @@ void ImGuiEditor::Draw()
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     const ImVec2 displaySize = viewport->Size;
     const float menuHeight = ImGui::GetFrameHeightWithSpacing();
-    const float toolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+    const float mainToolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+    const float sketchToolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
     if (ImGui::BeginMainMenuBar()) {
         DrawMainMenuBar();
@@ -137,11 +180,18 @@ void ImGuiEditor::Draw()
     }
 
     DrawToolbar();
+    DrawSketchToolbar();
 
     // Fixed manual layout (this ImGui build has no docking support and no
     // ImVec2 math operators).
-    const ImVec2 workPos(viewport->Pos.x, viewport->Pos.y + menuHeight + toolbarHeight);
-    const ImVec2 workSize(displaySize.x, displaySize.y - menuHeight - toolbarHeight);
+    const ImVec2 workPos(
+        viewport->Pos.x,
+        viewport->Pos.y + menuHeight + mainToolbarHeight + sketchToolbarHeight
+    );
+    const ImVec2 workSize(
+        displaySize.x,
+        displaySize.y - menuHeight - mainToolbarHeight - sketchToolbarHeight
+    );
     const float leftWidth = workSize.x * 0.20f;
     const float rightWidth = workSize.x * 0.24f;
     const float bottomHeight = workSize.y * 0.26f;
@@ -330,6 +380,62 @@ void ImGuiEditor::DrawToolbar()
     ImGui::End();
 }
 
+void ImGuiEditor::DrawSketchToolbar()
+{
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const float menuHeight = ImGui::GetFrameHeightWithSpacing();
+    const float mainToolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+    const float sketchToolbarHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+
+    ImGui::SetNextWindowPos(
+        ImVec2(viewport->Pos.x, viewport->Pos.y + menuHeight + mainToolbarHeight)
+    );
+    ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, sketchToolbarHeight));
+    ImGui::Begin(
+        "##SketchToolbar",
+        nullptr,
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar
+            | ImGuiWindowFlags_NoBringToFrontOnFocus
+    );
+
+    if (ImGui::Button("New Sketch")) {
+        StartSketch();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Finish Sketch")) {
+        FinishSketch();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel Sketch")) {
+        CancelSketch();
+    }
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(12.0f, 0.0f));
+    ImGui::SameLine();
+
+    const bool sketchActive = mImpl->currentSketcher != nullptr;
+    ImGui::BeginDisabled(!sketchActive);
+    auto& gizmoPass
+        = mImpl->sceneView.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
+    for (const char* tool : kSketchToolNames) {
+        bool& value = mImpl->sketchTools[tool];
+        // Keep the checkbox in sync with the actual widget state: the handler
+        // may quit itself (e.g. after completing a draw).
+        const bool actuallyActive = gizmoPass.isEnableGizmoWidget(tool);
+        if (actuallyActive != value) {
+            value = actuallyActive;
+        }
+        if (ImGui::Checkbox(tool + 17, &value)) {
+            ToggleSketchTool(tool, value);
+        }
+        ImGui::SameLine();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::End();
+}
+
 void ImGuiEditor::DrawSettingsPanel()
 {
     const ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
@@ -451,13 +557,32 @@ void ImGuiEditor::DrawMainMenuBar()
     }
 
     if (ImGui::BeginMenu("Sketch")) {
-        ImGui::MenuItem("New Sketch", nullptr, false, false);
+        if (ImGui::MenuItem("New Sketch")) {
+            StartSketch();
+        }
+        if (ImGui::MenuItem("Finish Sketch")) {
+            FinishSketch();
+        }
+        if (ImGui::MenuItem("Cancel Sketch")) {
+            CancelSketch();
+        }
         ImGui::EndMenu();
     }
 }
 
 void ImGuiEditor::HandlePendingActions()
 {
+    // The SketchPlane widget deletes itself after firing SelectPlane, but it
+    // is still executing its own event handler when the observer runs, so the
+    // deletion must be deferred to outside of the frame/event dispatch.
+    if (mImpl->sketchPlanePendingDelete) {
+        mImpl->sketchPlanePendingDelete = false;
+        delete mImpl->sketchPlaneListener;
+        mImpl->sketchPlaneListener = nullptr;
+        delete mImpl->sketchPlanePicker;
+        mImpl->sketchPlanePicker = nullptr;
+    }
+
     if (mImpl->fileOpenRequested) {
         mImpl->fileOpenRequested = false;
         if (mImpl->fileOpenCallback) {
@@ -655,6 +780,135 @@ void ImGuiEditor::DrawLogPanel()
     );
 
     ImGui::End();
+}
+
+void ImGuiEditor::DisableAllSketchHandlers()
+{
+    auto& gizmoPass
+        = mImpl->sceneView.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
+    for (const char* name : kSketchToolNames) {
+        gizmoPass.enableGizmoWidget(name, false);
+        mImpl->sketchTools[name] = false;
+    }
+}
+
+void ImGuiEditor::ToggleSketchTool(const char* name, bool value)
+{
+    if (!mImpl->currentSketcher) {
+        LOG_INFO("Start a sketch first (Sketch -> New Sketch).");
+        mImpl->sketchTools[name] = false;
+        return;
+    }
+    auto& gizmoPass
+        = mImpl->sceneView.GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer");
+    gizmoPass.enableGizmoWidget(name, value);
+    if (value) {
+        for (const char* other : kSketchToolNames) {
+            if (std::strcmp(other, name) != 0) {
+                gizmoPass.enableGizmoWidget(other, false);
+                mImpl->sketchTools[other] = false;
+            }
+        }
+    }
+}
+
+void ImGuiEditor::StartSketch()
+{
+    if (mImpl->sketchPlanePicker) {
+        LOG_INFO("Sketch is already waiting for a plane selection.");
+        return;
+    }
+    if (mImpl->currentSketcher) {
+        FinishSketch();
+    }
+
+    MOON::SketcherFeature* feature = MOON::SketcherObjManager::instance().CreateSketcherFeature();
+    MOON::Feature* baseFeature = nullptr;
+    std::vector<std::string> subValues;
+    if (MOON::ViewTool::getSelectedBasedFeature(baseFeature, subValues) && baseFeature) {
+        // Use the selected face as the sketch plane.
+        feature->setBaseFeature(baseFeature);
+        feature->setSubValues(subValues);
+        Part::TopoShape face = feature->getBaseTopoFaceShape();
+        gp_Pln planeEquation;
+        face.findPlane(planeEquation);
+        MOON::SketcherPlane2D plane;
+        plane.normal = Base::Vector3d {
+            planeEquation.Axis().Direction().X(),
+            planeEquation.Axis().Direction().Y(),
+            planeEquation.Axis().Direction().Z()
+        };
+        plane.origin = Base::Vector3d {
+            planeEquation.Location().X(),
+            planeEquation.Location().Y(),
+            planeEquation.Location().Z()
+        };
+        plane.xAxis = Base::Vector3d {
+            planeEquation.XAxis().Direction().X(),
+            planeEquation.XAxis().Direction().Y(),
+            planeEquation.XAxis().Direction().Z()
+        };
+        plane.yAxis = Base::Vector3d {
+            planeEquation.YAxis().Direction().X(),
+            planeEquation.YAxis().Direction().Y(),
+            planeEquation.YAxis().Direction().Z()
+        };
+        feature->getSketcherObj()->setPlane(plane);
+        feature->getSketcherObj()->beginEdit();
+        LOG_INFO("Sketch started on the selected face.");
+    }
+    else {
+        // No base face selected: let the user pick X/Y/Z plane with the gizmo.
+        mImpl->sketchPlanePicker = new MOON::SketchPlane("selectPlane");
+        mImpl->sketchPlaneListener = new SketchPlaneListener();
+        mImpl->sketchPlaneListener->onPlaneSelected = [this, feature]() {
+            MOON::SketcherPlane2D plane = mImpl->sketchPlanePicker->getSelectPlane();
+            feature->getSketcherObj()->setPlane(plane);
+            feature->getSketcherObj()->beginEdit();
+            // The picker is still inside its own event handler; defer cleanup.
+            mImpl->sketchPlanePendingDelete = true;
+            LOG_INFO("Sketch plane selected; use the sketch tools to draw.");
+        };
+        mImpl->sketchPlanePicker->AddObserver(
+            MOON::SketchPlaneEvent::SelectPlane,
+            mImpl->sketchPlaneListener,
+            &SketchPlaneListener::OnPlaneSelected
+        );
+        LOG_INFO("Pick a sketch plane (X/Y/Z gizmo).");
+    }
+
+    MOON::SketcherObjManager::instance().setCurrentActiveSketcherFeature(feature);
+    mImpl->currentSketcher = feature;
+}
+
+void ImGuiEditor::FinishSketch()
+{
+    if (!mImpl->currentSketcher) {
+        return;
+    }
+    mImpl->currentSketcher->getSketcherObj()->makeDone();
+    mImpl->currentSketcher->execute();
+    mImpl->currentSketcher->makeDone();
+    DisableAllSketchHandlers();
+    mImpl->currentSketcher = nullptr;
+    LOG_INFO("Sketch finished.");
+}
+
+void ImGuiEditor::CancelSketch()
+{
+    if (mImpl->sketchPlanePicker) {
+        delete mImpl->sketchPlaneListener;
+        mImpl->sketchPlaneListener = nullptr;
+        delete mImpl->sketchPlanePicker;
+        mImpl->sketchPlanePicker = nullptr;
+        mImpl->sketchPlanePendingDelete = false;
+    }
+    if (mImpl->currentSketcher) {
+        mImpl->currentSketcher->getSketcherObj()->setActive(false);
+        DisableAllSketchHandlers();
+        mImpl->currentSketcher = nullptr;
+    }
+    LOG_INFO("Sketch cancelled.");
 }
 
 } // namespace MOON

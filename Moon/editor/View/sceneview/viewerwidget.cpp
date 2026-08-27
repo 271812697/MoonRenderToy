@@ -16,6 +16,7 @@
 #include "core/log.h"
 #include "Core/Rendering/GbufferPass.h"
 #include "Qtimgui/imgui/imgui.h"
+#include "Qtimgui/imgui/imgui_internal.h"
 #include "Interactive/Im2DRenderer.h"
 #include "Settings/DebugSetting.h"
 #include "core/SelectionManager.h"
@@ -255,23 +256,28 @@ namespace MOON {
 				|| type == QEvent::TabletMove || type == QEvent::TabletPress
 				|| type == QEvent::TabletRelease;
 			if (isMouse) {
-				// io.WantCaptureMouse is true whenever the mouse hovers any
-				// ImGui window (including our viewport), so it cannot be used
-				// to gate viewport input. Forward only while the mouse is over
-				// the viewport and ImGui is not interacting with a widget or
-				// popup.
-				const bool forward = mInternal->mImGuiEditor->IsViewportHovered()
-					&& !mInternal->mImGuiEditor->IsImGuiInteracting();
-				if (type == QEvent::MouseButtonPress) {
+				// Widget events must flow through RenderWindowInteractor
+				// directly (Qt events -> ViewerWidget -> interactor -> widget
+				// callbacks), exactly like the original editor. ImGui's
+				// internal state (ActiveId/popups) must NOT gate them, or
+				// releases get swallowed and widgets stay stuck. The only
+				// filter needed is that the mouse is over the viewport panel,
+				// since the ImGui panels share the same widget.
+				const bool forward = mInternal->mImGuiEditor->IsViewportHovered();
+				if (type == QEvent::MouseButtonPress || type == QEvent::MouseButtonRelease) {
 					float originX = 0.0f;
 					float originY = 0.0f;
 					mInternal->mImGuiEditor->GetViewportOrigin(originX, originY);
 					auto* mouseEvent = static_cast<QMouseEvent*>(evt);
+					const ImGuiContext* imguiCtx = ImGui::GetCurrentContext();
 					LOG_INFO(
-						"ImguiDbg press: fwd=%d hover=%d interact=%d origin=(%.0f,%.0f) local=(%.0f,%.0f)",
+						"ImguiDbg %s: fwd=%d hover=%d interact=%d activeId=0x%X popup=%d origin=(%.0f,%.0f) local=(%.0f,%.0f)",
+						type == QEvent::MouseButtonPress ? "press" : "release",
 						forward ? 1 : 0,
 						mInternal->mImGuiEditor->IsViewportHovered() ? 1 : 0,
 						mInternal->mImGuiEditor->IsImGuiInteracting() ? 1 : 0,
+						imguiCtx ? imguiCtx->ActiveId : 0,
+						imguiCtx ? (int)imguiCtx->OpenPopupStack.Size : 0,
 						originX,
 						originY,
 						mouseEvent->localPos().x(),

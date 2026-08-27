@@ -6,6 +6,7 @@
 #include "Interactive/Widgets/DrawSketchHandler.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/ViewTool.h"
+#include "core/EditorMode.h"
 #include "Sketcher/SketcheTool2D.h"
 #include "base/Tools.h"
 #include "core/log.h"
@@ -298,7 +299,11 @@ namespace MOON {
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
         doneFaceShape = toShape();
-        GetService(SketchToolbar).disableAllHandlers();
+        // SketchToolbar is a Qt service that is not registered in the ImGui
+        // editor; the editor disables the sketch handlers itself.
+        if (!MOON::IsImGuiEditorMode()) {
+            GetService(SketchToolbar).disableAllHandlers();
+        }
     }
     int SketcherObj::solve(bool updateGeoAfterSolving)
     {

@@ -9,14 +9,19 @@
 #include "feature/SketcherFeature.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "core/Global/ServiceLocator.h"
+#include "core/EditorMode.h"
 namespace MOON
 {
 
     void DrawSketchHandler::quit()
     {
         this->setActive(false);
-        auto& sketchToolBar=GetService(MOON::SketchToolbar);
-        sketchToolBar.setUncheckedAction(getName());
+        // SketchToolbar is a Qt service not registered in the ImGui editor;
+        // the editor keeps its own toolbar checkbox state in sync.
+        if (!MOON::IsImGuiEditorMode()) {
+            auto& sketchToolBar = GetService(MOON::SketchToolbar);
+            sketchToolBar.setUncheckedAction(getName());
+        }
     }
     void DrawSketchHandler::clearEdit()
     {

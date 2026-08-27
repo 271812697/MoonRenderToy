@@ -61,6 +61,7 @@ public:
 private:
     void DrawMainMenuBar();
     void DrawToolbar();
+    void DrawSketchToolbar();
     void DrawViewportPanel();
     void DrawHierarchyPanel();
     void DrawPropertyPanel();
@@ -69,6 +70,11 @@ private:
     void DrawActorNode(Core::ECS::Actor& actor);
     void SyncHoverSelection();
     void SyncClickSelection();
+    void StartSketch();
+    void FinishSketch();
+    void CancelSketch();
+    void ToggleSketchTool(const char* name, bool value);
+    void DisableAllSketchHandlers();
 
     struct Impl;
     Impl* mImpl = nullptr;
