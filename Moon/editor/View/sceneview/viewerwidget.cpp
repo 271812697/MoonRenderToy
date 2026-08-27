@@ -165,6 +165,9 @@ namespace MOON {
 			}
 			Render2D::Im2DRender::instance().endFrame();
 			ImRenderer::instance().endImgui();
+			if (mImGuiEditor) {
+				mImGuiEditor->HandlePendingActions();
+			}
 			mSceneView->getInutState().ClearEvents();
 		}
 		bool event(QEvent* evt)

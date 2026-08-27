@@ -29,6 +29,8 @@ struct ImGuiEditor::Impl
 
     std::function<void()> fileOpenCallback;
     std::function<void()> quitCallback;
+    bool fileOpenRequested = false;
+    bool quitRequested = false;
 
     int64_t selectedActorId = -1;
     bool showDemoWindow = false;
@@ -130,16 +132,12 @@ void ImGuiEditor::DrawMainMenuBar()
 {
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-            if (mImpl->fileOpenCallback) {
-                mImpl->fileOpenCallback();
-            }
+            mImpl->fileOpenRequested = true;
         }
         ImGui::MenuItem("Export...", nullptr, false, false);
         ImGui::Separator();
         if (ImGui::MenuItem("Quit", "Alt+F4")) {
-            if (mImpl->quitCallback) {
-                mImpl->quitCallback();
-            }
+            mImpl->quitRequested = true;
         }
         ImGui::EndMenu();
     }
@@ -166,6 +164,22 @@ void ImGuiEditor::DrawMainMenuBar()
     if (ImGui::BeginMenu("Sketch")) {
         ImGui::MenuItem("New Sketch", nullptr, false, false);
         ImGui::EndMenu();
+    }
+}
+
+void ImGuiEditor::HandlePendingActions()
+{
+    if (mImpl->fileOpenRequested) {
+        mImpl->fileOpenRequested = false;
+        if (mImpl->fileOpenCallback) {
+            mImpl->fileOpenCallback();
+        }
+    }
+    if (mImpl->quitRequested) {
+        mImpl->quitRequested = false;
+        if (mImpl->quitCallback) {
+            mImpl->quitCallback();
+        }
     }
 }
 

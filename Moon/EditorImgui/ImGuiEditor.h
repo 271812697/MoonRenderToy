@@ -49,6 +49,12 @@ public:
     /// Callback invoked from the File menu (host quits the application).
     void SetQuitCallback(std::function<void()> callback);
 
+    /// Process deferred menu actions (file open / quit). Must be called AFTER
+    /// ImGui::Render(), outside of the ImGui frame, because opening a modal
+    /// file dialog inside a frame runs a nested event loop that corrupts the
+    /// frame state (re-entrant NewFrame()).
+    void HandlePendingActions();
+
 private:
     void DrawMainMenuBar();
     void DrawViewportPanel();
