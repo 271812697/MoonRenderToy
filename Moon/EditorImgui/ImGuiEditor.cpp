@@ -39,6 +39,7 @@ struct ImGuiEditor::Impl
     bool viewportFocused = false;
     float viewportWidth = 0.0f;
     float viewportHeight = 0.0f;
+    ImVec2 viewportImageMin { 0.0f, 0.0f };
 
     struct Rect
     {
@@ -100,8 +101,8 @@ bool ImGuiEditor::WantsCaptureKeyboard() const
 
 void ImGuiEditor::GetViewportOrigin(float& x, float& y) const
 {
-    x = mImpl->viewportRect.pos.x;
-    y = mImpl->viewportRect.pos.y;
+    x = mImpl->viewportImageMin.x;
+    y = mImpl->viewportImageMin.y;
 }
 
 void ImGuiEditor::Draw()
@@ -131,6 +132,16 @@ void ImGuiEditor::Draw()
     mImpl->propertyRect
         = { ImVec2(workPos.x + leftWidth + centerWidth, workPos.y), ImVec2(rightWidth, sideHeight) };
     mImpl->logRect = { ImVec2(workPos.x, workPos.y + sideHeight), ImVec2(workSize.x, bottomHeight) };
+
+    // Sync the hierarchy selection with the view (viewport picking / gizmo).
+    if (mImpl->sceneView.IsSelectActor()) {
+        if (Core::ECS::Actor* actor = mImpl->sceneView.GetSelectedActor()) {
+            mImpl->selectedActorId = actor->GetID();
+        }
+    }
+    else {
+        mImpl->selectedActorId = -1;
+    }
 
     DrawViewportPanel();
     DrawHierarchyPanel();
@@ -232,12 +243,19 @@ void ImGuiEditor::DrawViewportPanel()
             ImVec2(0.0f, 1.0f),
             ImVec2(1.0f, 0.0f)
         );
+        // Exact screen-space origin of the rendered image. Used to translate
+        // window mouse events into viewport-local coordinates so picking and
+        // camera deltas match the render target size.
+        mImpl->viewportImageMin = ImGui::GetItemRectMin();
         if (ImGui::IsItemHovered()) {
             mImpl->viewportHovered = true;
         }
     }
     else {
         ImGui::Text("No render target");
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+        mImpl->viewportImageMin = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
     }
 
     const ImGuiIO& io = ImGui::GetIO();
