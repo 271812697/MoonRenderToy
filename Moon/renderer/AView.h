@@ -29,6 +29,8 @@ namespace Editor {
 			void Resize(int width, int height);
 			InputState& getInutState();
 			void ClearEvents();
+			/// Returns the GL texture id of the final color attachment, 0 if not available yet.
+			uint32_t GetRenderedTextureID();
 			Maths::FVector3 GetRoaterCenter();
 			void SetRotaterCenter(const Maths::FVector3&center);
 			virtual ::Core::ECS::Actor* GetSelectedActor();

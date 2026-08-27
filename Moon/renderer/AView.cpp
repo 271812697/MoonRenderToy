@@ -4,6 +4,8 @@
 #include <Rendering/HAL/Profiling.h>
 #include "Rendering/HAL/Common/TFramebuffer.h"
 #include "Rendering/HAL/Common/TTexture.h"
+#include "Rendering/HAL/Texture.h"
+#include <variant>
 #include "Core/Global/ServiceLocator.h"
 #include "renderer/Context.h"
 #include <QMouseEvent>
@@ -91,6 +93,17 @@ std::pair<uint16_t, uint16_t> Editor::Panels::AView::GetSafeSize() const
  Core::Rendering::SceneRenderer& Editor::Panels::AView::GetRenderer() 
 {
 	return *m_renderer.get();
+}
+
+uint32_t Editor::Panels::AView::GetRenderedTextureID()
+{
+	auto attachment = m_framebuffer.GetAttachment<Rendering::HAL::GLTexture>(
+		Rendering::Settings::EFramebufferAttachment::COLOR, 0
+	);
+	if (!attachment) {
+		return 0;
+	}
+	return attachment->GetID();
 }
 
 Core::Rendering::SceneRenderer::SceneDescriptor Editor::Panels::AView::CreateSceneDescriptor()

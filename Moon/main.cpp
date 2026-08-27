@@ -4,7 +4,9 @@
 #include "core/JobSystem.h"
 #include <QApplication>
 #include <QFontDatabase>
+#include <QVBoxLayout>
 #include <editor/editor.h>
+#include <editor/View/sceneview/viewerwidget.h>
 
 int main(int argc, char* argv[])
 {
@@ -22,11 +24,31 @@ int main(int argc, char* argv[])
 	MOON::System::JobSystem::OnInit(2);
 	
 	QApplication::setFont(font);
-	MOON::Editor editor;
-	editor.setWindowTitle("MOON");
-	editor.resize(1920, 1080);
-	editor.show();
-	int res = QApplication::exec();
+
+	const bool imguiEditor = QApplication::arguments().contains("--imgui");
+	int res = 0;
+	if (imguiEditor) {
+		// ImGui editor mode: host the renderer + ImGui editor UI in a plain
+		// window, without any Qt widget UI (menus, docks, toolbars).
+		MOON::ViewerWidget::SetImGuiEditorMode(true);
+		QWidget window;
+		window.setWindowTitle("MOON - ImGui Editor");
+		auto* layout = new QVBoxLayout(&window);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
+		layout->addWidget(new MOON::ViewerWidget(&window));
+		window.resize(1920, 1080);
+		window.show();
+		res = QApplication::exec();
+	}
+	else {
+		MOON::Editor editor;
+		editor.setWindowTitle("MOON");
+		editor.resize(1920, 1080);
+		editor.show();
+		res = QApplication::exec();
+	}
+
 	MOON::System::JobSystem::Release();
 	MOON::Log::Shutdown();
 	return 0;

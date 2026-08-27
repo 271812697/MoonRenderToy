@@ -20,6 +20,11 @@
 #include "Settings/DebugSetting.h"
 #include "core/SelectionManager.h"
 #include "renderer/GizmoRenderPass.h"
+#include "EditorImgui/ImGuiEditor.h"
+#include "EditorImgui/ImGuiLogOutput.h"
+
+#include <QApplication>
+#include <QFileDialog>
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -28,30 +33,65 @@ namespace MOON {
 			return (void*)ctx->getProcAddress(name);
 		}
 	};
+	bool ViewerWidget::sImGuiEditorMode = false;
+
+	bool ViewerWidget::IsImGuiEditorMode()
+	{
+		return sImGuiEditorMode;
+	}
+
+	void ViewerWidget::SetImGuiEditorMode(bool enable)
+	{
+		sImGuiEditorMode = enable;
+	}
+
 	class ViewerWidget::ViewerWindowInternal {
 	public:
 		ViewerWindowInternal(ViewerWidget* view) :mSelf(view) {
 
 		}
 		void initializeGL() {
-			auto& tree = GetService(TreeViewPanel);
-			
-			
-			QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
-			QObject::connect(&tree, &TreeViewPanel::itemHovered, mSelf, &onActorHovered);
-
-			QObject::connect(&tree, &TreeViewPanel::itemLeave, mSelf, &onActorHoverLeaved);
+			if (!MOON::ViewerWidget::IsImGuiEditorMode()) {
+				auto& tree = GetService(TreeViewPanel);
+				QObject::connect(&tree, &TreeViewPanel::setSelectActor, mSelf, &onActorSelected);
+				QObject::connect(&tree, &TreeViewPanel::itemHovered, mSelf, &onActorHovered);
+				QObject::connect(&tree, &TreeViewPanel::itemLeave, mSelf, &onActorHoverLeaved);
+			}
 			mEditorContext = new Editor::Core::Context("", "");
 			mEditorContext->sceneManager.LoadDefaultScene();
 			
 			mSceneView = new Editor::Panels::SceneView("SceneView");
-			GetService(RenderPassSettingWidget).Refresh();
+			if (!MOON::ViewerWidget::IsImGuiEditorMode()) {
+				GetService(RenderPassSettingWidget).Refresh();
+			}
 			parser->ParseFile(mReadFilePath.toStdString());
 			
 			ImRenderer::instance().init();
 
+			if (MOON::ViewerWidget::IsImGuiEditorMode()) {
+				mImGuiLogOutput = new MOON::ImGuiLogOutput();
+				MOON::Log::intance().addOutput(mImGuiLogOutput);
+				mImGuiEditor = new MOON::ImGuiEditor(*mSceneView, *mImGuiLogOutput);
+				mImGuiEditor->SetFileOpenCallback([this]() {
+					const QString path = QFileDialog::getOpenFileName(
+						mSelf,
+						"Open File",
+						"",
+						"Supported files (*.obj *.gltf *.glb *.step *.stp);;All files (*)"
+					);
+					if (!path.isEmpty()) {
+						onReadFile(path);
+					}
+				});
+				mImGuiEditor->SetQuitCallback([]() {
+					QApplication::quit();
+				});
+			}
+
 		}
 		~ViewerWindowInternal() {
+			delete mImGuiEditor;
+			delete mImGuiLogOutput;
 			delete mEditorContext;
 			delete mSceneView;
 		}
@@ -106,6 +146,27 @@ namespace MOON {
 			ImRenderer::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
 		}
+		void paintImguiEditorGL() {
+			ImRenderer::instance().newImgui();
+			Render2D::Im2DRender::instance().newFrame();
+			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").IsEnabled()) {
+				ImRenderer::instance().newFrame(mSceneView);
+			}
+			mSceneView->Update(0.01);
+			if (mDoReadFile) {
+				mDoReadFile = false;
+				parser->ParseFile(mReadFilePath.toStdString());
+				mSceneView->UnselectActor();
+			}
+			mSceneView->Render();
+			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
+			if (mImGuiEditor) {
+				mImGuiEditor->Draw();
+			}
+			Render2D::Im2DRender::instance().endFrame();
+			ImRenderer::instance().endImgui();
+			mSceneView->getInutState().ClearEvents();
+		}
 		bool event(QEvent* evt)
 		{
 			if (mSceneView != nullptr)
@@ -117,9 +178,11 @@ namespace MOON {
 		{
 			mViewWidth = event->size().width();
 			mViewHeight = event->size().height();
-			if (mSceneView != nullptr)
-				mSceneView->Resize(mViewWidth, mViewHeight);
-			RenderWindowInteractor::Instance()->UpdateSize(mViewWidth,mViewHeight);
+			if (!MOON::ViewerWidget::IsImGuiEditorMode()) {
+				if (mSceneView != nullptr)
+					mSceneView->Resize(mViewWidth, mViewHeight);
+				RenderWindowInteractor::Instance()->UpdateSize(mViewWidth,mViewHeight);
+			}
 		}
 		void onReadFile(const QString& path)
 		{
@@ -131,6 +194,8 @@ namespace MOON {
 		ViewerWidget* mSelf = nullptr;
 		Editor::Core::Context* mEditorContext = nullptr;
 		Editor::Panels::SceneView* mSceneView = nullptr;
+		MOON::ImGuiEditor* mImGuiEditor = nullptr;
+		MOON::ImGuiLogOutput* mImGuiLogOutput = nullptr;
 		std::vector<Core::ECS::Actor*>mAddActors;
 		std::vector<Core::ECS::Actor*>mRemoveActors;
 		std::vector<Core::ECS::Actor*>mModifyActors;
@@ -183,11 +248,30 @@ namespace MOON {
 	void ViewerWidget::paintGL()
 	{
 		CallBackManager::instance().exectue();
+		if (IsImGuiEditorMode()) {
+			mInternal->paintImguiEditorGL();
+			return;
+		}
 		mInternal->paintGL();
 	}
 
 	bool ViewerWidget::event(QEvent* evt)
 	{
+		if (IsImGuiEditorMode() && mInternal->mImGuiEditor != nullptr) {
+			const QEvent::Type type = evt->type();
+			const bool isMouse = (type >= QEvent::MouseButtonPress && type <= QEvent::MouseMove)
+				|| type == QEvent::Wheel || type == QEvent::HoverMove
+				|| type == QEvent::TabletMove || type == QEvent::TabletPress
+				|| type == QEvent::TabletRelease;
+			const bool capture = isMouse
+				? mInternal->mImGuiEditor->WantsCaptureMouse()
+				: mInternal->mImGuiEditor->WantsCaptureKeyboard();
+			if (capture || !(isMouse
+				? mInternal->mImGuiEditor->IsViewportHovered()
+				: mInternal->mImGuiEditor->IsViewportFocused())) {
+				return QOpenGLWidget::event(evt);
+			}
+		}
 		mInternal->event(evt);
 		return QOpenGLWidget::event(evt);
 	}

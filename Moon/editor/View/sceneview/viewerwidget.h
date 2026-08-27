@@ -15,6 +15,9 @@ namespace MOON {
 	public:
 		explicit ViewerWidget(QWidget* parent);
 		~ViewerWidget();
+		/// Whether this widget hosts the ImGui editor instead of the Qt widget UI.
+		static bool IsImGuiEditorMode();
+		static void SetImGuiEditorMode(bool enable);
 		void initializeGL() override;
 		void timerEvent(QTimerEvent* e) override;
 		void paintGL() override;
@@ -39,6 +42,7 @@ namespace MOON {
 		void refreshTreeView();
 
 	private:
+		static bool sImGuiEditorMode;
 		class ViewerWindowInternal;
 		ViewerWindowInternal* mInternal = nullptr;
 	};
