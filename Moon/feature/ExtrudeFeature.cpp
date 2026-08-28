@@ -150,6 +150,10 @@ namespace MOON {
                 CORE_ERROR(e.getMessage());
                 return false;
             }
+            catch (...) {
+                CORE_ERROR("Unknow Exception throw");
+                return false;
+            }
         }
         return false;
 	}

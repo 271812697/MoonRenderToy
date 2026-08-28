@@ -538,7 +538,7 @@ void ExtrusionHelper::createTaperedPrismOffset(
             //    "This means most probably that the along taper angle is too large or small.\n"
             //);
         }
-        Standard_Failure::Raise("Extrusion: end face of tapered extrusion is empty");
+        throw Base::ValueError("Extrusion: end face of tapered extrusion is empty");
     }
     // assure we return a wire and no edge
     TopAbs_ShapeEnum type = offsetShape.ShapeType();
@@ -691,14 +691,20 @@ void ExtrusionHelper::makeElementDraft(
                 /*ruled=*/Standard_True
             );
             for (auto& s : list_of_sections) {
+                if (s.isNull()) { 
+                   
+                    Standard_Failure::Raise("Null Wire to add ThruSections");
+                }
                 mkGenerator.AddWire(TopoDS::Wire(s.getShape()));
             }
 
-            mkGenerator.Build();
-            drafts.push_back(TopoShape(0, hasher).makeElementShape(mkGenerator, list_of_sections));
+            mkGenerator.Build(); 
+            TopoShape shape(0, hasher);
+            TopoShape res= shape.makeElementShape(mkGenerator, list_of_sections);
+            drafts.push_back(res);
         }
-        catch (Standard_Failure&) {
-            throw;
+        catch (Standard_Failure&e) {
+            throw Base::ValueError(e.GetMessageString());
         }
         catch (...) {
             throw Base::CADKernelError("Unknown exception from BRepOffsetAPI_ThruSections");
