@@ -10,6 +10,8 @@ layout (location = 1) in vec2 geo_TexCoords;
 layout (location = 2) in vec3 geo_Normal;
 layout (location = 3) in vec2 geo_DomainId;
 
+uniform float u_DepthBias = 1e-5;
+
 out VS_OUT
 {
     vec3 FragPos;
@@ -24,6 +26,7 @@ void main()
     vs_out.DomainId=geo_TexCoords;
     lineId=int(round(geo_TexCoords.x));
     gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
+    gl_Position.z -= u_DepthBias * gl_Position.w;
 }
 
 

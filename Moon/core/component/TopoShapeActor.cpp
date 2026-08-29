@@ -60,6 +60,9 @@ namespace MOON {
 				faceMat->SetBackfaceCulling(false);
 				faceMat->SetCastShadows(false);
 				faceMat->SetReceiveShadows(false);
+				// 把面在深度上往远处推一点（glPolygonOffset，按斜率缩放），这样凹角、
+				// 小夹角处与面共面/贴近的交线也能画在面之上。
+				faceMat->SetPolygonOffsetFill(true);
 				//tempMat->SetBlendable(true);
 				//tempMat->SetDepthWriting(false);
 				faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\GeomertySurface.ovfx"]);
@@ -101,7 +104,10 @@ namespace MOON {
 				lineMat->SetBackfaceCulling(false);
 				lineMat->SetCastShadows(false);
 				lineMat->SetReceiveShadows(false);
-				lineMat->SetLineWidth(2.0);
+				// Edge lines are coplanar with their faces: never write depth so
+				// they don't z-fight with the faces (the line pass uses LEQUAL).
+				lineMat->SetDepthWriting(false);
+				lineMat->SetLineWidth(1.5);
 				lineMat->AddFeature("CLIP_PLANE");
 				
 			}

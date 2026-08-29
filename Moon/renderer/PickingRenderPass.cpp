@@ -56,6 +56,8 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 	m_actorPickingFallbackMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("PickingFallback"));
 	m_TopoShapePickingFallbackMaterial.SetShader(GetShaderService[":Shaders\\GeomertySurfacePick.ovfx"]);
 	m_TopoShapePickingFallbackMaterial.SetBackfaceCulling(false);
+	// 拾取缓冲里线和面同样共面：把面在深度上推远，线的 ID 才能赢过自己的面。
+	m_TopoShapePickingFallbackMaterial.SetPolygonOffsetFill(true);
 	m_TopoShapePickingFallbackMaterial.SetLineWidth(8);
 }
 
@@ -197,6 +199,10 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 				// Prioritize using the actual material state mask.
 				//m_TopoShapePickingFallbackMaterial.SetDepthTest(false);
 
+				// 与主渲染一致：线与共面的面深度相等（甚至因精度略大），
+				// 用 LEQUAL 并跳过深度写入，保证拾取到的是线而不是面。
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+
 				auto stateMask = m_TopoShapePickingFallbackMaterial.GenerateStateMask();
 
 				::Rendering::Entities::Drawable finalDrawable = drawable;
@@ -205,6 +211,7 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 				finalDrawable.stateMask = stateMask;
 				finalDrawable.stateMask.frontfaceCulling = false;
 				finalDrawable.stateMask.backfaceCulling = false;
+				finalDrawable.stateMask.depthWriting = false;
 				m_renderer.DrawEntity(p_pso, finalDrawable);
 			}
 			else
