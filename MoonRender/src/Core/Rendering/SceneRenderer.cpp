@@ -146,7 +146,7 @@ namespace
 				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
 				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32F,
 				.useMipMaps = false,
 				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 					.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,

@@ -266,10 +266,17 @@ uniform vec3 planeOrigin;
 void main()
 {
 #if defined(Transparents)
-  ivec2 coords=ivec2(gl_FragCoord.xy);
-  float prevDepth = texelFetch(DepthPeelTex, coords,0).r;
-  float opaqueDepth=texelFetch(OpaqueDepthTex, coords,0).r;
-  if(gl_FragCoord.z <= prevDepth || gl_FragCoord.z>=opaqueDepth) discard;
+  // Compare linear view-space depth instead of window depth. In an ortho
+  // projection the whole [near, far] range is linearly compressed into [0, 1],
+  // so close transparent layers can quantize to the same window depth and the
+  // <= / >= comparisons swallow layers. Unprojecting both sides keeps the
+  // peeling consistent in perspective and ortho.
+  const mat4 invProj = inverse(ubo_Projection);
+  ivec2 coords = ivec2(gl_FragCoord.xy);
+  float prevDepth = -(invProj * vec4(0.0, 0.0, texelFetch(DepthPeelTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float opaqueDepth = -(invProj * vec4(0.0, 0.0, texelFetch(OpaqueDepthTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float fragDepth = -(invProj * vec4(0.0, 0.0, gl_FragCoord.z * 2.0 - 1.0, 1.0)).z;
+  if (fragDepth <= prevDepth || fragDepth >= opaqueDepth) discard;
 #endif
 
 
