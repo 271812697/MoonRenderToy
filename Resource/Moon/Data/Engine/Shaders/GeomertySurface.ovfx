@@ -220,6 +220,7 @@ uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
 uniform float u_environmentIntensity=0.5f;
 uniform sampler2D occlusionTex;
+uniform float u_AoStrength = 1.0;
 
 
 uniform samplerBuffer domainColorTex;
@@ -367,7 +368,9 @@ void main()
     ndcpos.xyz=ndcpos.xyz/ndcpos.w;
     ndcpos.xy=(ndcpos.xy+1.0)/2.0;
     float ssao=texture(occlusionTex, ndcpos.xy).r;
-    const float ao = ssao;
+    // Strength boost: 1.0 keeps the raw SSAO value, values > 1.0 darken the
+    // occlusion further (e.g. 1.5-2.0), 0.0 disables the effect.
+    const float ao = mix(1.0, ssao, u_AoStrength);
 #else
     const float ao = texture(u_AmbientOcclusionMap, texCoords).r;
 #endif

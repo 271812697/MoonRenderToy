@@ -10,6 +10,8 @@ layout (location = 1) in vec2 geo_TexCoords;
 layout (location = 2) in vec3 geo_Normal;
 layout (location = 3) in vec2 geo_DomainId;
 
+// Nudge the NDC depth of the line slightly toward the camera so it always
+// passes the depth test against its coplanar faces (z-fighting).
 uniform float u_DepthBias = 1e-5;
 
 out VS_OUT

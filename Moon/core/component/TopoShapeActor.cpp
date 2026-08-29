@@ -60,8 +60,9 @@ namespace MOON {
 				faceMat->SetBackfaceCulling(false);
 				faceMat->SetCastShadows(false);
 				faceMat->SetReceiveShadows(false);
-				// 把面在深度上往远处推一点（glPolygonOffset，按斜率缩放），这样凹角、
-				// 小夹角处与面共面/贴近的交线也能画在面之上。
+				// Push the faces back in depth (glPolygonOffset, slope scaled) so
+				// edge lines that are coplanar with / close to their faces (concave
+				// folds, small dihedral angles) stay visible on top.
 				faceMat->SetPolygonOffsetFill(true);
 				//tempMat->SetBlendable(true);
 				//tempMat->SetDepthWriting(false);

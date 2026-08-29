@@ -43,7 +43,19 @@ void main()
     vec2 noiseScale=vec2(screensize.x/4,screensize.y/4);
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
     // create TBN change-of-basis matrix: from tangent-space to view-space
-    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+    vec3 tangent = randomVec - normal * dot(randomVec, normal);
+    if (length(tangent) < 1e-4)
+    {
+        // When randomVec is (anti-)parallel to the normal, the tangent degenerates
+        // to zero and normalize(0) yields NaN (black speckles). Fall back to an
+        // axis that is not aligned with the normal.
+        vec3 axis = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        tangent = normalize(cross(normal, axis));
+    }
+    else
+    {
+        tangent = normalize(tangent);
+    }
     vec3 bitangent = cross(normal, tangent);
     mat3 TBN = mat3(tangent, bitangent, normal);
     // iterate over the sample kernel and calculate occlusion factor
