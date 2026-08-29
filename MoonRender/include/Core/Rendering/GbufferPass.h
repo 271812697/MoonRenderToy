@@ -16,6 +16,7 @@ namespace Core::Rendering
 	{
 		float radius = 2.05;
 		float bias = 0.025;
+		float blurTolerance = 0.2f;
 	};
 	struct GbufferParam {
 		SSAOParam ssaoParam;

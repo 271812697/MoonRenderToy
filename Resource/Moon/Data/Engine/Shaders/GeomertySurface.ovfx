@@ -220,7 +220,7 @@ uniform samplerCube _PrefilterCube;
 uniform sampler2D _BRDFLut;
 uniform float u_environmentIntensity=0.5f;
 uniform sampler2D occlusionTex;
-uniform float u_AoStrength = 1.0;
+uniform float u_AoStrength = 3.0;
 
 
 uniform samplerBuffer domainColorTex;

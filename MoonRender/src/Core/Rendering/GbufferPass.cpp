@@ -230,9 +230,9 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		ssaobuffer.Unbind();
 		//blur ssao
 		ssaoblurMaterial.SetProperty("ssaoInput", gbufferData.occlusion.get());
-		// Scale the depth tolerance with the SSAO radius so it follows the
-		// scene scale the user tunes.
-		ssaoblurMaterial.SetProperty("u_BlurDepthTolerance", gbufferParam.ssaoParam.radius * 0.25f);
+		// Depth tolerance of the bilateral blur, in view-space units. Smaller
+		// values keep AO edges sharp, larger values smooth the interior more.
+		ssaoblurMaterial.SetProperty("u_BlurDepthTolerance", gbufferParam.ssaoParam.blurTolerance);
 		m_renderer.Blit(p_pso, ssaobuffer,ssaoblurbuffer, ssaoblurMaterial);
 	}
 	
