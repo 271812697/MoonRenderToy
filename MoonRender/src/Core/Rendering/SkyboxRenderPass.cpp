@@ -57,7 +57,8 @@ Core::Rendering::SkyboxRenderPass::SkyboxRenderPass(::Rendering::Core::Composite
 
 ::Rendering::HAL::Texture* Core::Rendering::SkyboxRenderPass::GetBrdfTexture()
 {
-	return &brdfBuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value();
+	auto attachment = brdfBuffer.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0);
+	return attachment.has_value() ? &attachment.value() : nullptr;
 }
 	
 
@@ -75,12 +76,14 @@ void Core::Rendering::SkyboxRenderPass::Draw(::Rendering::Data::PipelineState p_
 	{
 		output.value().Bind();
 	}
+	// computeSkyTexture() overwrites the engine UBO with the sky capture camera,
+	// so the real camera must always be restored regardless of the sky mode.
+	engineBufferRenderFeature.SetCamera(frameDescriptor.camera.value());
 	//draw skybox
 	if(mSetting.mode==SkyMode::SkyBox)
 	{
 		//visible skybox
 		m_skyboxMaterial.RemoveFeature("SKY_Convert");
-		engineBufferRenderFeature.SetCamera(frameDescriptor.camera.value());
 
 		// Draw skybox
 		::Rendering::Entities::Drawable skyboxDrawable;
@@ -224,10 +227,14 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 					);
 				}
 
-				// Depth buffer
+				// Depth buffer (must match the 32x32 irradiance cube size, otherwise the FBO is incomplete)
 				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
 				const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
-				renderbuffer->Allocate(resolution, resolution, internalFormat);
+				renderbuffer->Allocate(
+					static_cast<uint16_t>(irradianceCube->GetDesc().width),
+					static_cast<uint16_t>(irradianceCube->GetDesc().height),
+					internalFormat
+				);
 				irradianceBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
 				// Validation
 				irradianceBuffer.Validate();
@@ -244,11 +251,8 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 					);
 				}
 
-				// Depth buffer
-				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
-				const auto internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT;
-				renderbuffer->Allocate(resolution, resolution, internalFormat);
-				prefilterBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+				// No depth buffer here: each prefilter mip has a different size, so the depth
+				// renderbuffer is attached per-mip inside the prefilter loop below.
 				// Validation
 				prefilterBuffer.Validate();
 			}
@@ -320,6 +324,9 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 				m_renderer.DrawEntity(p_pso, skyboxDrawable);
 			}
 			irradianceBuffer.Unbind();
+			// The irradiance cube is sampled with implicit LOD (mipmapped min filter),
+			// so the mip chain must be generated after the convolution.
+			irradianceCube->GenerateMipmaps();
 			m_renderer.SetViewport(0, 0, frameDescriptor.renderWidth, frameDescriptor.renderHeight);
 		}
 		//prefilter
@@ -331,7 +338,7 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 			skyCamera.SetPosition({ 0.0f, 0.0f, 0.0f });
 			skyCamera.SetFov(90.0f);
 			const auto [width, height] = prefilterBuffer.GetSize();
-			const uint32_t maxMipLevels = 11;
+			const uint32_t maxMipLevels = static_cast<uint32_t>(std::floor(std::log2(width))) + 1u;
 			prefilterBuffer.Bind();
 			for (uint32_t mip = 0; mip < maxMipLevels; ++mip)
 			{
@@ -339,6 +346,16 @@ void Core::Rendering::SkyboxRenderPass::computeSkyTexture()
 				uint32_t mipHeight = static_cast<uint32_t>(height * std::pow(0.5f, mip));
 				m_renderer.SetViewport(0, 0, mipWidth, mipHeight);
 				float roughness = (float)mip / (float)(maxMipLevels - 1);
+
+				// Depth buffer must match the current mip size, otherwise the FBO is incomplete.
+				const auto renderbuffer = std::make_shared<::Rendering::HAL::Renderbuffer>(false);
+				renderbuffer->Allocate(
+					static_cast<uint16_t>(mipWidth),
+					static_cast<uint16_t>(mipHeight),
+					::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT
+				);
+				prefilterBuffer.Attach(renderbuffer, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
+
 				for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
 				{
 					skyCamera.SetRotation(Maths::FQuaternion{ kFaceRotations[faceIndex] });
