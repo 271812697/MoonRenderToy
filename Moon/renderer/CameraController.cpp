@@ -195,13 +195,11 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 		HandleCameraFPSKeyboard(p_deltaTime);
 	}
 }
-Maths::FVector3 RemoveRoll(const Maths::FVector3& p_ypr);
 void Editor::Core::CameraController::HandleFirstMouse()
 {
-	m_ypr = Maths::FQuaternion::EulerAngles(m_camera.GetRotation());
-	m_ypr = RemoveRoll(m_ypr);
-	m_orbitStartOffset = -Maths::FVector3::Forward * Maths::FVector3::Distance(m_view.GetRoaterCenter(), m_camera.GetPosition());
-	
+	m_orbitStartOffset = m_camera.GetPosition() - m_view.GetRoaterCenter();
+	m_orbitStartRotation = m_camera.GetRotation();
+	m_orbitRotation = Maths::FQuaternion::Identity;
 }
 
 void Editor::Core::CameraController::MoveToTarget(::Core::ECS::Actor& p_target)
@@ -291,23 +289,6 @@ void Editor::Core::CameraController::HandleCameraPanning(const Maths::FVector2& 
 	m_camera.HandleCameraPanning(p_mouseOffset, m_cameraDragSpeed);
 }
 
-Maths::FVector3 RemoveRoll(const Maths::FVector3& p_ypr)
-{
-	Maths::FVector3 result = p_ypr;
-
-	if (result.z >= 179.0f || result.z <= -179.0f)
-	{
-		result.x += result.z;
-		result.y = 180.0f - result.y;
-		result.z = 0.0f;
-	}
-
-	if (result.x > 180.0f) result.x -= 360.0f;
-	if (result.x < -180.0f) result.x += 360.0f;
-
-	return result;
-}
-
 void Editor::Core::CameraController::HandleCameraOrbit(
 	const Maths::FVector3& center,
 	const Maths::FVector2& p_mouseOffset,
@@ -315,28 +296,28 @@ void Editor::Core::CameraController::HandleCameraOrbit(
 )
 {
 	auto mouseOffset = p_mouseOffset * m_cameraOrbitSpeed;
-	float oldpry = m_ypr.y;
-	float oldprx = m_ypr.x;
-	m_ypr.y +=-mouseOffset.x;
-	m_ypr.x +=-mouseOffset.y;
-	//m_ypr.x = std::max(std::min(m_ypr.x, 90.0f), -90.0f);
-	float offsetY =  m_ypr.x - oldprx;
-	float offsetX =  m_ypr.y - oldpry;
-	Maths::FTransform pivotTransform(center);
-	Maths::FTransform cameraTransform=m_camera.GetTransform();
-	cameraTransform.SetParent(pivotTransform);
-	cameraTransform.SetLocalPosition(m_camera.GetPosition()-center);
-	auto yAxis =  m_camera.GetTransform().GetWorldUp();
+
+	const float offsetX = -mouseOffset.x;	// yaw delta in degrees (around camera up)
+	const float offsetY = -mouseOffset.y;	// pitch delta in degrees (around camera right)
+
+	auto yAxis = m_camera.GetTransform().GetWorldUp();
 	auto xAxis = m_camera.GetTransform().GetWorldRight();
-	float ratio = m_camera.GetRatio();
-	//There's no need to correct the aspect ratio.
-	auto rAXis = yAxis * offsetX + xAxis*offsetY ;
-	float angleRad = rAXis.Length() / 180.0*3.14157;// -mouseOffset.x / 180.0f * 3.14157;// rAXis.Length() / 100.0;
-	rAXis = rAXis.Normalize();
-	auto quat = Maths::FQuaternion(rAXis, angleRad);
-	pivotTransform.RotateWorld(quat);
-	m_camera.SetPosition(cameraTransform.GetWorldPosition());
-	m_camera.SetRotation(cameraTransform.GetWorldRotation());
+	auto rAxis = yAxis * offsetX + xAxis * offsetY;
+
+	constexpr float kPi = 3.14159265359f;
+	float angleRad = rAxis.Length() / 180.0f * kPi;
+	rAxis = rAxis.Normalize();
+
+	auto quat = Maths::FQuaternion(rAxis, angleRad);
+
+	// Accumulate the orbit rotation in world space, then rebuild the camera pose
+	// from the captured start offset/rotation instead of chaining from the
+	// previous frame's position. This avoids float32 error accumulation and the
+	// jitter of the rotation center when the orbit radius / coordinates are large.
+	m_orbitRotation = Maths::FQuaternion::Normalize(quat * m_orbitRotation);
+
+	m_camera.SetPosition(center + m_orbitRotation * m_orbitStartOffset);
+	m_camera.SetRotation(m_orbitRotation * m_orbitStartRotation);
 }
 
 void Editor::Core::CameraController::HandleCameraZoom()
