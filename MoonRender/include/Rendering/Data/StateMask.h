@@ -17,6 +17,7 @@ namespace Rendering::Data
 				uint8_t depthTest : 1;
 				uint8_t backfaceCulling : 1;
 				uint8_t frontfaceCulling : 1;
+				uint8_t polygonOffsetFill : 1;
 			};
 
 			uint8_t mask;

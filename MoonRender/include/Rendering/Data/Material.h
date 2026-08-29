@@ -66,6 +66,7 @@ namespace Rendering::Data
 		void SetUserInterface(bool p_userInterface);
 		void SetBackfaceCulling(bool p_backfaceCulling);
 		void SetFrontfaceCulling(bool p_frontfaceCulling);
+		void SetPolygonOffsetFill(bool p_polygonOffsetFill);
 		void SetDepthTest(bool p_depthTest);
 		void SetDepthWriting(bool p_depthWriting);
 		void SetColorWriting(bool p_colorWriting);
@@ -119,6 +120,7 @@ namespace Rendering::Data
 		bool m_transparent = false;
 		bool m_backfaceCulling = true;
 		bool m_frontfaceCulling = false;
+		bool m_polygonOffsetFill = false;
 		bool m_depthTest = true;
 		bool m_depthWriting = true;
 		bool m_colorWriting = true;

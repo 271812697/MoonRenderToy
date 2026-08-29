@@ -30,9 +30,10 @@ Maths::FQuaternion::FQuaternion(float p_x, float p_y, float p_z, float p_w) :
 
 Maths::FQuaternion::FQuaternion(FVector3 axis, float angleRad)
 {
-	w = cos(angleRad /2 );
-	float len=sqrt(1 - w * w);
-	FVector3 op=axis.Normalize()*len;
+	const float halfAngle = angleRad * 0.5f;
+	w = cos(halfAngle);
+	const float sinHalfAngle = sin(halfAngle);
+	FVector3 op = axis.Normalize() * sinHalfAngle;
 	x = op.x;
 	y = op.y;
 	z = op.z;

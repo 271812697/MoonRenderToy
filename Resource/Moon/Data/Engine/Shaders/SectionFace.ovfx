@@ -260,20 +260,28 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 
 
 out vec4 FRAGMENT_COLOR;
+uniform vec3 lineNormal;
+uniform vec3 planeOrigin;
 
 void main()
 {
 #if defined(Transparents)
-  ivec2 coords=ivec2(gl_FragCoord.xy);
-  float prevDepth = texelFetch(DepthPeelTex, coords,0).r;
-  float opaqueDepth=texelFetch(OpaqueDepthTex, coords,0).r;
-  if(gl_FragCoord.z <= prevDepth || gl_FragCoord.z>=opaqueDepth) discard;
+  // Compare linear view-space depth instead of window depth. In an ortho
+  // projection the whole [near, far] range is linearly compressed into [0, 1],
+  // so close transparent layers can quantize to the same window depth and the
+  // <= / >= comparisons swallow layers. Unprojecting both sides keeps the
+  // peeling consistent in perspective and ortho.
+  const mat4 invProj = inverse(ubo_Projection);
+  ivec2 coords = ivec2(gl_FragCoord.xy);
+  float prevDepth = -(invProj * vec4(0.0, 0.0, texelFetch(DepthPeelTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float opaqueDepth = -(invProj * vec4(0.0, 0.0, texelFetch(OpaqueDepthTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float fragDepth = -(invProj * vec4(0.0, 0.0, gl_FragCoord.z * 2.0 - 1.0, 1.0)).z;
+  if (fragDepth <= prevDepth || fragDepth >= opaqueDepth) discard;
 #endif
 
 
     vec2 texCoords = TileAndOffsetTexCoords(fs_in.TexCoords, u_TextureTiling, u_TextureOffset);
     vec4 albedo = texture(u_AlbedoMap, texCoords) * u_Albedo;
-    vec3 albedoReflect=albedo.rgb;
     albedo.a *= texture(u_MaskMap, texCoords).r;
     if (albedo.a < u_AlphaClippingThreshold)
     {
@@ -288,9 +296,11 @@ void main()
     float stripePeriod=0.2f;
     float stripeBand=0.04f;
     float stripeBandS=0.02f;
-    vec3 origin=ubo_plane.xyz;
     float fade=0.0;//clamp(length(ubo_ViewPos-fs_in.FragPos)/50.0,0,1);
-    float dist=length(origin-fs_in.FragPos);
+    //circle
+    //float dist=length(ubo_plane.xyz-fs_in.FragPos);
+    vec3 offset=fs_in.FragPos-planeOrigin;
+    float dist=dot(offset,lineNormal);
     float kth = floor(dist / stripePeriod);
     float center = kth * stripePeriod + stripePeriod * 0.5;
     float modDist = abs(dist - center);
@@ -349,18 +359,21 @@ void main()
     pbr = mix(pbr, pbr / (pbr + vec3(1.0)), u_BuiltInToneMapping);
     pbr = mix(pbr, pow(pbr, vec3(1.0 / 2.2)), u_BuiltInGammaCorrection);
 
+    // Albedo textures are stored as sRGB (RGBA8, no hardware decode), so decode to
+    // linear before using it for IBL, matching PBRLighting()'s internal handling.
+    const vec3 linearAlbedo = pow(albedo.rgb, vec3(2.2));
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, albedoReflect, metallic);
+    F0 = mix(F0, linearAlbedo, metallic);
     vec3 F = fresnelSchlickRoughness(max(dot(normal, VD), 0.0), F0, roughness);
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;	
 
     vec3 irradiance = texture(_IrradianceCube, normal).rgb;
-    vec3 diffuse      = irradiance * albedo.rgb;
+    vec3 diffuse      = irradiance * linearAlbedo;
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    const float MAX_REFLECTION_LOD = 10.0;
+    const float MAX_REFLECTION_LOD = float(textureQueryLevels(_PrefilterCube) - 1);
     vec3 R = reflect(-VD, normal); 
     vec3 prefilteredColor = textureLod(_PrefilterCube, R,  roughness * MAX_REFLECTION_LOD).rgb;    
     vec2 brdf  = texture(_BRDFLut, vec2(max(dot(normal, VD), 0.0), roughness)).rg;

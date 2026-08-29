@@ -297,10 +297,17 @@ out vec4 FRAGMENT_COLOR;
 void main()
 {
 #if defined(Transparents)
-  ivec2 coords=ivec2(gl_FragCoord.xy);
-  float prevDepth = texelFetch(DepthPeelTex, coords,0).r;
-  float opaqueDepth=texelFetch(OpaqueDepthTex, coords,0).r;
-  if(gl_FragCoord.z <= prevDepth || gl_FragCoord.z>=opaqueDepth) discard;
+  // Compare linear view-space depth instead of window depth. In an ortho
+  // projection the whole [near, far] range is linearly compressed into [0, 1],
+  // so close transparent layers can quantize to the same window depth and the
+  // <= / >= comparisons swallow layers. Unprojecting both sides keeps the
+  // peeling consistent in perspective and ortho.
+  const mat4 invProj = inverse(ubo_Projection);
+  ivec2 coords = ivec2(gl_FragCoord.xy);
+  float prevDepth = -(invProj * vec4(0.0, 0.0, texelFetch(DepthPeelTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float opaqueDepth = -(invProj * vec4(0.0, 0.0, texelFetch(OpaqueDepthTex, coords, 0).r * 2.0 - 1.0, 1.0)).z;
+  float fragDepth = -(invProj * vec4(0.0, 0.0, gl_FragCoord.z * 2.0 - 1.0, 1.0)).z;
+  if (fragDepth <= prevDepth || fragDepth >= opaqueDepth) discard;
 #endif
 
     if(ubo_enableClip==1){
@@ -313,7 +320,6 @@ void main()
 
     vec2 texCoords = TileAndOffsetTexCoords(fs_in.TexCoords, u_TextureTiling, u_TextureOffset);
     vec4 albedo = texture(u_AlbedoMap, texCoords) * u_Albedo;
-    vec3 albedoReflect=albedo.rgb;
     albedo.a *= texture(u_MaskMap, texCoords).r;
     if (albedo.a < u_AlphaClippingThreshold)
     {
@@ -407,8 +413,11 @@ void main()
     pbr = mix(pbr, pbr / (pbr + vec3(1.0)), u_BuiltInToneMapping);
     pbr = mix(pbr, pow(pbr, vec3(1.0 / 2.2)), u_BuiltInGammaCorrection);
 
+    // Albedo textures are stored as sRGB (RGBA8, no hardware decode), so decode to
+    // linear before using it for IBL, matching PBRLighting()'s internal handling.
+    const vec3 linearAlbedo = pow(albedo.rgb, vec3(2.2));
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, albedoReflect, metallic);
+    F0 = mix(F0, linearAlbedo, metallic);
     
     vec3 F = fresnelSchlickRoughness(max(dot(gnormal, VD), 0.0), F0, roughness);
     vec3 kS = F;
@@ -416,10 +425,10 @@ void main()
     kD *= 1.0 - metallic;	
 
     vec3 irradiance = texture(_IrradianceCube, gnormal).rgb;
-    vec3 diffuse      = irradiance * albedo.rgb;
+    vec3 diffuse      = irradiance * linearAlbedo;
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    const float MAX_REFLECTION_LOD = 10.0;
+    const float MAX_REFLECTION_LOD = float(textureQueryLevels(_PrefilterCube) - 1);
     vec3 R = reflect(-VD, gnormal); 
     vec3 prefilteredColor = textureLod(_PrefilterCube, R,  roughness * MAX_REFLECTION_LOD).rgb;    
     vec2 brdf  = texture(_BRDFLut, vec2(max(dot(gnormal, VD), 0.0), roughness)).rg;

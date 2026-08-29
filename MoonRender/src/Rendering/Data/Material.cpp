@@ -324,6 +324,11 @@ void Rendering::Data::Material::SetBackfaceCulling(bool p_backfaceCulling)
 	m_backfaceCulling = p_backfaceCulling;
 }
 
+void Rendering::Data::Material::SetPolygonOffsetFill(bool p_polygonOffsetFill)
+{
+	m_polygonOffsetFill = p_polygonOffsetFill;
+}
+
 void Rendering::Data::Material::SetFrontfaceCulling(bool p_frontfaceCulling)
 {
 	m_frontfaceCulling = p_frontfaceCulling;
@@ -448,6 +453,7 @@ const Rendering::Data::StateMask Rendering::Data::Material::GenerateStateMask() 
 	stateMask.depthTest = m_depthTest;
 	stateMask.frontfaceCulling = m_frontfaceCulling;
 	stateMask.backfaceCulling = m_backfaceCulling;
+	stateMask.polygonOffsetFill = m_polygonOffsetFill;
 	stateMask.lineWidth = lineWitdh;
 	return stateMask;
 }

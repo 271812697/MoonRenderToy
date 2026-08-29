@@ -57,10 +57,11 @@ namespace Editor::Core
 
 		Maths::FTransform* m_orbitTarget = nullptr;
 		Maths::FVector3 m_orbitStartOffset;
+		Maths::FQuaternion m_orbitStartRotation;
+		Maths::FQuaternion m_orbitRotation;
 		bool m_firstMouse = true;
 		double m_lastMousePosX = 0.0;
 		double m_lastMousePosY = 0.0;
-		Maths::FVector3 m_ypr;
 		float m_mouseSensitivity = 0.12f;
 		float m_cameraDragSpeed = 0.03f;
 		float m_cameraOrbitSpeed = 0.5f;

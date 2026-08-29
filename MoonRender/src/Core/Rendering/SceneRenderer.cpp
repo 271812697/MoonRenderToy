@@ -92,10 +92,18 @@ namespace
 
 			PrepareStencilBuffer(p_pso);
 
+			// Mesh edge lines are coplanar with the faces they outline. With the
+			// default strict LESS depth test they fail at equal depth, so the faces
+			// hide the lines. The line pass runs after the opaque pass, so use
+			// LEQUAL and skip depth writes: coplanar lines win, and lines never
+			// occlude anything behind them.
+			p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 
-			for (const auto& drawable : drawables.lines | std::views::values)
+			for (auto drawable : drawables.lines | std::views::values)
 			{
+				drawable.stateMask.depthWriting = false;
 				m_renderer.DrawEntity(p_pso, drawable);
 			}
 		}
@@ -146,7 +154,7 @@ namespace
 				.magFilter = ::Rendering::Settings::ETextureFilteringMode::NEAREST,
 				.horizontalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
 				.verticalWrap = ::Rendering::Settings::ETextureWrapMode::REPEAT,
-				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32,
+				.internalFormat = ::Rendering::Settings::EInternalFormat::DEPTH_COMPONENT32F,
 				.useMipMaps = false,
 				.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
 					.format = ::Rendering::Settings::EFormat::DEPTH_COMPONENT,

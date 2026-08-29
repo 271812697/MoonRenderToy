@@ -18,9 +18,18 @@ out VS_OUT
 void main()
 {
     vs_out.dir = geo_Pos;
-    mat4 p=ubo_Projection;
-    if(ubo_CameraType==0){
-       p=Perspective(60.0,1.5,0.1,1000.0);
+    mat4 p = ubo_Projection;
+    if (ubo_CameraType == 0)
+    {
+        // The unit skybox cube is centered on the camera. An ortho camera's near plane
+        // would clip it, so use a unit ortho projection that exactly fits the cube
+        // (it always fills the viewport, just like a skybox at infinity should).
+        p = mat4(
+            2.0, 0.0, 0.0, 0.0,
+            0.0, 2.0, 0.0, 0.0,
+            0.0, 0.0, 2.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        );
     }
     gl_Position = p *ubo_View  * vec4(ubo_ViewPos +  geo_Pos, 1.0);
 }

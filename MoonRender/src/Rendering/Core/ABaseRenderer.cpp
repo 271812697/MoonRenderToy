@@ -354,6 +354,7 @@ void Rendering::Core::ABaseRenderer::DrawEntity(
 	p_pso.culling = p_drawable.stateMask.frontfaceCulling || p_drawable.stateMask.backfaceCulling;
 	p_pso.depthTest = p_drawable.stateMask.depthTest;
 	p_pso.lineWidth = p_drawable.stateMask.lineWidth;
+	p_pso.polygonOffsetFill = p_drawable.stateMask.polygonOffsetFill;
 	
 	if (p_pso.culling)
 	{

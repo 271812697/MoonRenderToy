@@ -47,7 +47,9 @@ namespace Core::Rendering::FramebufferUtil
 		if (p_useDepth || p_useStencil)
 		{
 			const auto renderbuffer = std::make_shared<Renderbuffer>(useMulSample);
-			const auto internalFormat = p_useStencil ? EInternalFormat::DEPTH_STENCIL : EInternalFormat::DEPTH_COMPONENT;
+			const auto internalFormat = p_useStencil
+				? (useMulSample ? EInternalFormat::DEPTH32F_STENCIL8 : EInternalFormat::DEPTH_STENCIL)
+				: EInternalFormat::DEPTH_COMPONENT;
 			renderbuffer->Allocate(p_textureDesc.width, p_textureDesc.height, internalFormat);
 			if (p_useStencil)
 			{
