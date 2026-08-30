@@ -329,9 +329,71 @@ GPU 侧（`SectionCapRenderPass` / `SectionContourRenderPass`）每帧读 `ubo_p
 
 ---
 
-## 7. 几何交互算法（GizmoBehaviour）
+## 7. WidgetViewData 风格控件：使用与状态机
 
-### 7.1 GizmoAxisTranslate（沿轴拖）
+### 7.1 使用流程（以 FilletTask 使用 AxisTranslationWidget 为例）
+
+倒圆角任务为两条边各创建一个半径箭头，拖拽箭头改变 `feature->radius`：
+
+```cpp
+axisBehaviour1 = new AxisTranslationWidget("fillet");
+axisBehaviour1->setUpScale(feature->len);                       // 相对模型大小的基数
+axisBehaviour1->setLength(feature->radius);                     // 当前长度 = 半径
+axisBehaviour1->setUpOrigin(origin1.x, origin1.y, origin1.z);   // 锚点
+axisBehaviour1->setUpDir(dir1.x, dir1.y, dir1.z);               // 轴向（箭头朝向）
+axisBehaviour1->AddObserver(AxisTranslationEvent::LengthChange,
+                            self, &FilletTask::onWidgetLengthInvoke1);
+```
+
+事件回调里读取长度并同步业务与 UI：
+
+```cpp
+void FilletTask::onWidgetLengthInvoke1()
+{
+    mInternal->feature->radius = mInternal->axisBehaviour1->getLength();
+    mInternal->radiusProp->updateWidgetValue(mInternal->feature->radius);
+}
+```
+
+反向同步（属性面板改半径 → 更新手柄）：`setParamValue("Fillet:Radius", v)` 里设置 `feature->radius` 后调用 `axisBehaviour1->setLength(v)` / `axisBehaviour2->setLength(v)`。
+
+通用使用模式：
+
+1. 构造（自动注册到 `ImRenderer` 与 `RenderWindowInteractor`）；
+2. `setUpOrigin` / `setUpDir` / `setUpScale` / `setLength`（或 `setAngle`）设置初始几何；
+3. `AddObserver(XXXEvent::YYYChange, ...)` 订阅交互结果；
+4. 交互中/结束时在回调里用 `getLength()` / `getAngle()` 读值；
+5. 业务侧改值后用 `setLength` / `setAngle` 反向同步手柄。
+
+### 7.2 状态机
+
+三个控件共用轻量状态模式：**Stop（未命中）→ Hot（悬停）→ 操作态（按下拖拽）→ Hot（松开）**。命中检测用 §5.3 的 CPU 射线拾取（`hitFace` / `hitPoint`）。
+
+| 控件 | 命中手柄 | 操作态 | 拖拽几何 | 交互事件 |
+| --- | --- | --- | --- | --- |
+| `AxisTranslationWidget` | Arrow（箭头） | `AxisT` | 沿轴平移 center（`transLatePick`） | `LengthChange` |
+| `ArrowRotateWidget` | Arrow（箭头） | `Rotate` | 绕轴旋转 curPos（`rotatePick.applyPos`） | `AngleChange` |
+| `PadTaskWidget` | Arrow（箭头）/ Point（点） | `AxisT` / `Rotate` | 平移 center / 旋转 rotDir | `LengthChange` / `AngleChange` |
+
+![WidgetViewData 风格控件状态机](images/widget_widgetdata_states.svg)
+
+**AxisTranslationWidget**：`Stop` 下 `hitFace` 命中 `"Arrow"` → `Hot`（红色高亮）；`Hot` 下移出 → `Stop`，按下 → `AxisT`（品红 + `transLatePick.startPick`）；`AxisT` 中 `onMouseMove` 用 `transLatePick.apply` 更新 center 并刷新箭头位置，`mImInvoke` 为真时每帧发 `LengthChange`；松开 → `Hot`（恢复白色），非 ImInvoke 时补发 `LengthChange`。
+
+**ArrowRotateWidget**：`Stop`/`Hot` 同上；`Hot` 按下 → `Rotate`（`rotatePick.startPick(axis, center, dir, curPos)`）；`Rotate` 中 `applyPos` 让 curPos 绕 center/axis 旋转，箭头朝向跟随；松开 → `Hot` 并发 `AngleChange`。外部用 `setUpRotateCenter/Axis/OriginPos` 设置，`setAngle` / `getAngle` 读写角度。
+
+**PadTaskWidget**：箭头与 Point 两个手柄。`Stop` 下先 `hitFace` 判 Arrow，未命中再 `hitPoint` 判 Point；`Hot` 下都未命中 → `Stop`；按下 Arrow → `AxisT`（平移 center），按下 Point → `Rotate`（旋转 rotDir，Point 沿圆环移动）；分别发 `LengthChange` / `AngleChange`。`onUpdate` 每帧把 Point 放到缩放后的圆上（见 4.5），保证拾取与绘制一致。
+
+### 7.3 事件与取值约定
+
+- `mImInvoke`（默认 true）：为真时拖拽中每帧触发事件（实时预览）；`setImmediateInvoke(false)` 则只在松开时触发一次；
+- 读：`getLength()`（center 相对锚点的距离）、`getAngle()`（旋转角）；写：`setLength` / `setAngle`（UI 反向同步）；
+- 业务侧不要直接改 widget 内部状态，统一通过事件回调 + getter 取值，避免与拖拽中的更新互相覆盖。
+
+---
+
+## 8. 几何交互算法（GizmoBehaviour）
+
+### 8.1 GizmoAxisTranslate（沿轴拖）
 
 把鼠标射线投影到轴上，取射线上离轴最近的点，维护按下时的初始偏移：
 
@@ -340,7 +402,7 @@ GPU 侧（`SectionCapRenderPass` / `SectionContourRenderPass`）每帧读 `ubo_p
 // 求 min|P(t) - (center + s*axis)| 得到 t，再投影出轴上点
 ```
 
-### 7.2 GizmoPlaneTranslate（平面内拖）
+### 8.2 GizmoPlaneTranslate（平面内拖）
 
 射线与平面求交：
 
@@ -349,7 +411,7 @@ float t = -(eye.dot(n) + d) / ray.dot(n);   // n 为平面法线，d 为平面�
 pos = eye + ray * t;
 ```
 
-### 7.3 GizmoAxisRotate（绕轴旋转）
+### 8.3 GizmoAxisRotate（绕轴旋转）
 
 1. **平面投影**：把射线与过中心的旋转平面求交，交点相对中心的向量投影到平面并归一化（`computePlaneProj`）；
 2. **增量角**：相邻两帧投影方向夹角，用 `atan2(axis·(a×b), a·b)` 带符号累计（`computeAngle`）；
@@ -359,7 +421,7 @@ pos = eye + ray * t;
 
 ---
 
-## 8. 如何扩展一个新 Widget
+## 9. 如何扩展一个新 Widget
 
 1. **继承 `EventWidget`**，构造时传入名字（自动注册到 `ImRenderer` 与 `RenderWindowInteractor`）；
 2. **选择控件风格**：
@@ -373,7 +435,7 @@ pos = eye + ray * t;
 
 ---
 
-## 9. 关键文件
+## 10. 关键文件
 
 | 文件 | 职责 |
 | --- | --- |
@@ -385,6 +447,8 @@ pos = eye + ray * t;
 | `Moon/Interactive/Widgets/ClipPlane.*` | 剖切控件：状态机、手柄表、截面联动（示例） |
 | `Moon/Interactive/ViewData.*` | WidgetViewData 风格控件的几何容器与 CPU 拾取（`hitFace` / `hitEdge` / `hitPoint`） |
 | `Moon/Interactive/Widgets/AxisTranslationWidget.*` | 沿轴拖拽控件：固定屏幕尺寸、CPU 拾取、`LengthChange` 事件 |
+| `Moon/Interactive/Widgets/ArrowRotateWidget.*` | 旋转控件：箭头绕轴旋转、`AngleChange` 事件 |
+| `Moon/Interactive/Widgets/PadTaskWidget.*` | 平板控件：箭头平移 + 圆环点旋转，`LengthChange` / `AngleChange` |
 | `Moon/editor/UI/TaskPanel/FilletTask.cpp` | 倒圆角 UI：用两个 `AxisTranslationWidget` 拖动控制半径 |
 | `Moon/renderer/PickingRenderPass.cpp` | 拾取 framebuffer、像素读回与 `selectPolygon` |
 | `Moon/Interactive/Im3DRenderer.h` | `FrameParam`（射线/光标/视口信息） |
