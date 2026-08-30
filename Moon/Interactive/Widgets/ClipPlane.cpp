@@ -40,89 +40,18 @@ namespace MOON {
 	class ClipPlane::ClipPlaneInternal {
 	public:
 		ClipPlaneInternal(ClipPlane* clip) :mSelf(clip) {
-			clickObserver = mSelf->Interactor->AddObserver(ExecuteCommand::LeftButtonReleaseEvent, this, &ClipPlane::ClipPlaneInternal::onMouseLeftClick, 0.0f);
-
 		}
 		~ClipPlaneInternal() {
-			delete clickObserver.command;
-			//delete moveObserver.command;
-		}
-		void setUp() {
-			sectionActor = new TopoActor("Section", "Geomerty", true);
-			auto faceMat = sectionActor->GetChild("Face")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
-			faceMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\SectionFace.ovfx"]);
-			auto edgeMat = sectionActor->GetChild("Edge")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
-			auto& renderer = GetSceneView.GetRenderer();;
-			{
-				faceMat->SetBackfaceCulling(false);
-				faceMat->SetCastShadows(false);
-				faceMat->SetReceiveShadows(false);
-				faceMat->SetProperty("u_Albedo", Maths::FVector4(1, 1, 1, 1));
-				faceMat->SetProperty("u_AlphaClippingThreshold", 0.0f);
-				faceMat->SetProperty("u_Roughness", 0.25f);
-				faceMat->SetProperty("u_Metallic", 0.75f);
-				// Emission
-				faceMat->SetProperty("u_EmissiveIntensity", 1.0f);
-				faceMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f, 0.0f, 0.0f });
-
-				faceMat->TrySetProperty("_IrradianceCube", renderer.GetIrradianceCube());
-				faceMat->TrySetProperty("_PrefilterCube", renderer.GetPrefilterCube());
-				faceMat->TrySetProperty("_BRDFLut", renderer.GetBrdfTexture());
-			}
-			{
-				edgeMat->SetLineWidth(4.0);
-				edgeMat->SetProperty("color",Maths::FVector3(1,0,1));
-				edgeMat->RemoveFeature("CLIP_PLANE");
-			}
-		}
-		void onMouseLeftClick() {
-			if (mSelf->m_sceneView->IsSelectActor()) {
-				auto acptr = mSelf->m_sceneView->GetSelectedActor();
-				while (!acptr->HasComponent("Model Renderer") && acptr->HasParent()) {
-					acptr = acptr->GetParent();
-				}
-
-				if (acptr && acptr != ac) {
-					ac = acptr;
-					auto modelRenderer = ac->GetComponent<::Core::ECS::Components::CModelRenderer>();
-					if (modelRenderer) {
-						auto model = modelRenderer->GetModel();
-						if (model) {
-							auto& box = model->GetBoundingBox();
-							auto transform = ac->GetComponent<::Core::ECS::Components::CTransform>();
-							auto bbox = box.transform(transform->GetWorldMatrix());
-							setupBox({ bbox.pmin.x,bbox.pmin.y,bbox.pmin.z }, { bbox.pmax.x,bbox.pmax.y,bbox.pmax.z });
-						}
-					}
-				}
-			}
-		}
-		void setupBox(const Eigen::Vector3f& min, const Eigen::Vector3f& max) {
-			boxMin = min;
-			boxMax = max;
-			center = (min + max) * 0.5f;
-			extent = (boxMax - boxMin).norm();
-			cirleDetectRadius = extent / 2;
 		}
 	private:
-		TopoActor* sectionActor = nullptr;
+		
 		friend class ClipPlane;
 		ClipPlane* mSelf = nullptr;
-		Core::ECS::Actor* ac = nullptr;
 		Eigen::Vector3f center = { 0,0,0 };
 		Eigen::Vector3f normal = { 0,1,0 };
 		Eigen::Vector3f xAxis = { 1,0,0 };
 		Eigen::Vector3f yAxis = { 0,1,0 };
 		Eigen::Vector3f zAxis = { 0,0,1 };
-		Eigen::Vector3f boxMin = { 0,0,0 };
-		Eigen::Vector3f boxMax = { 0,0,0 };
-		float cirleDetectRadius = 5.0f;
-		float extent = 1.0f;
-		ExecuteCommandPair clickObserver;
-		ExecuteCommandPair moveObserver;
-		std::vector<Eigen::Vector3f>slicelines;
-		std::vector<Eigen::Vector3f>sectionFace;
-
 		bool updateEngineUbo = false;
 		GizmoAxisTranslate transLatePick;
 		GizmoPlaneTranslate planeTPick;
@@ -139,9 +68,6 @@ namespace MOON {
 	}
 	void ClipPlane::onUpdate()
 	{
-		if (m_internal->sectionActor == nullptr) {
-			m_internal->setUp();
-		}
 		if (mState == AxisR)
 		{
 			float angle = m_internal->axisRPick.getRotationAngle();
@@ -152,7 +78,6 @@ namespace MOON {
 			auto seg = m_internal->axisRPick.getRotationArc();
 			if (seg.size() > 0) {
 				renderer->pushColor({ 255,255,255,0 });
-
 				for (int i = 0; i < seg.size() - 1; i++) {
 					renderer->drawLine(seg[i], seg[i + 1], 5);
 				}
@@ -163,22 +88,11 @@ namespace MOON {
 				renderer->popColor();
 			}
 		}
-
 		renderer->drawOneMesh(
 			m_internal->center,
 			RotationMatrix(m_internal->xAxis, m_internal->yAxis, m_internal->zAxis),
 			Eigen::Vector3f{ 0.1f,0.1f,0.1f },
 			"TransformAxis");
-
-		auto& planeOrigin = m_internal->center;
-		Eigen::Vector3f boxMin = Eigen::Vector3f(std::min(m_internal->boxMin.x(), planeOrigin.x()), std::min(m_internal->boxMin.y(), planeOrigin.y()), std::min(m_internal->boxMin.z(), planeOrigin.z()));
-		Eigen::Vector3f boxMax = Eigen::Vector3f(std::max(m_internal->boxMax.x(), planeOrigin.x()), std::max(m_internal->boxMax.y(), planeOrigin.y()), std::max(m_internal->boxMax.z(), planeOrigin.z()));
-
-		renderer->pushSize(3.0);;
-		renderer->drawAlignedBox(boxMin, boxMax);
-		renderer->popSize();
-
-
 		if (m_internal->updateEngineUbo)
 		{
 			m_internal->updateEngineUbo = false;
@@ -189,14 +103,14 @@ namespace MOON {
 				m_internal->zAxis.z(),
 				-m_internal->zAxis.dot(m_internal->center)
 			);
-			
-		
-			
-			Eigen::Vector3f lineNormal = (m_internal->xAxis - m_internal->yAxis).normalized();
-			auto faceMat = m_internal->sectionActor->GetChild("Face")->GetComponent<::Core::ECS::Components::CMaterialRenderer>()->GetMaterialAtIndex(0);
-			faceMat->SetProperty("lineNormal",Maths::FVector3(lineNormal.x(), lineNormal.y(), lineNormal.z()));
-			faceMat->SetProperty("planeOrigin",Maths::FVector3(m_internal->center.x(), m_internal->center.y(), m_internal->center.z()));
+		}
+	}
 
+	void ClipPlane::onSetActive(bool flag)
+	{
+		if (flag) {
+			 auto center=m_sceneView->GetScene()->GetSceneBoundingBox().center();
+			 m_internal->center = Eigen::Vector3f(center.x,center.y,center.z);
 		}
 	}
 
@@ -213,7 +127,6 @@ namespace MOON {
 	void ClipPlane::onLeftMousePressed()
 	{
 		if (mState == Hot) {
-
 			bool active = false;
 			if (table[mPickMesh].meshId == PickMeshId::YAxis || table[mPickMesh].meshId == PickMeshId::XAxis || table[mPickMesh].meshId == PickMeshId::ZAxis) {
 				mState = AxisT;
@@ -295,10 +208,12 @@ namespace MOON {
 		else if (mState == AxisT) {
 			auto& param = renderer->getFrameParam();
 			m_internal->transLatePick.apply(param.rayDirection, param.rayOrigin, m_internal->center);
+			m_internal->updateEngineUbo = true;
 		}
 		else if (mState == PlaneT) {
 			auto& param = renderer->getFrameParam();
 			m_internal->planeTPick.apply(param.rayDirection, param.rayOrigin, m_internal->center);
+			m_internal->updateEngineUbo = true;
 		}
 		else if (mState == AxisR) {
 			auto& param = renderer->getFrameParam();
@@ -317,53 +232,14 @@ namespace MOON {
 				m_internal->zAxis = dir;
 				m_internal->yAxis = m_internal->zAxis.cross(m_internal->xAxis);
 			}
+			m_internal->updateEngineUbo = true;
 		}
-		//if (mState == AxisT || mState == PlaneT || mState == AxisR) {
-		//
-		//	PickMeshId id = table[mPickMesh].meshId;
-		//	bool updateFlag = (id != PickMeshId::XAxis) && (id != PickMeshId::YAxis) &&
-		//		(id != PickMeshId::ZNormalPlane) && (id != PickMeshId::YNormalRotate);
-		//	if (updateFlag) {
-		//		updateSection();
-		//	}
-		//}
 	}
 
 	void ClipPlane::updateSection()
 	{
-		Core::ECS::Actor* selectActor = m_internal->ac;
-		if (selectActor) {
-			m_internal->updateEngineUbo = true;
-		
-			while (!selectActor->HasComponent("CTopoShape") && selectActor->HasParent())
-			{
-				selectActor = selectActor->GetParent();
-			}
-			if (selectActor)
-			{
-				Core::ECS::Components::CTopoShape* topoComp = selectActor->GetComponent<Core::ECS::Components::CTopoShape>();
-				if (topoComp) {
-					auto& topoShape = topoComp->GetTopoShape();
-					double offset = m_internal->zAxis.dot(m_internal->center);
-					Base::Vector3d dir{ m_internal->zAxis.x(), m_internal->zAxis.y() , m_internal->zAxis.z() };
-					{
-						ZoneScopedN("clip");
-						auto wires = topoShape.slices(dir, std::vector<double>{ offset });
-						Part::TopoShape shape(wires);
-						if (!shape.isNull()) {
-							try
-							{
-								ZoneScopedN("makeFace");
-								shape = shape.makeElementFace("Part::FaceMakerCheese");
-								m_internal->sectionActor->setTopoShape(shape);
-							}
-							catch (const Base::Exception& e)
-							{
-							}
-						}
-					}
-				}
-			}
-		}
+		// The section cap/contour are drawn on the GPU from the clip plane UBO;
+		// onUpdate() refreshes the plane each frame during drag.
+		m_internal->updateEngineUbo = true;
 	}
 }

@@ -160,6 +160,9 @@ Core::Rendering::GbufferPass::GbufferPass(::Rendering::Core::CompositeRenderer& 
 		ssaoMaterial.SetProperty("texNoise", noiseTexture.get());
 		for (unsigned int i = 0; i < 64; ++i)
 			ssaoMaterial.SetProperty("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+		// Depth-aware blur needs the view-space position buffer to weight taps
+		// by depth similarity (bilateral filter).
+		ssaoblurMaterial.SetProperty("gPosition", gbufferData.position.get());
 	}
 }
 
@@ -198,12 +201,14 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 	{
 		::Rendering::Entities::Drawable drawable;
 		drawable.pass = "";
-		drawable.stateMask.depthWriting = true;
+		// The SSAO buffer has no depth attachment, so depth testing/writing here
+		// is meaningless; keep them disabled.
+		drawable.stateMask.depthWriting = false;
 		drawable.stateMask.colorWriting = true;
 		drawable.stateMask.blendable = false;
 		drawable.stateMask.frontfaceCulling = false;
 		drawable.stateMask.backfaceCulling = false;
-		drawable.stateMask.depthTest = true;
+		drawable.stateMask.depthTest = false;
 		drawable.material = ssaoMaterial;
 
 		drawable.mesh = m_renderer.m_unitQuad;
@@ -225,6 +230,9 @@ void Core::Rendering::GbufferPass::Draw(::Rendering::Data::PipelineState p_pso)
 		ssaobuffer.Unbind();
 		//blur ssao
 		ssaoblurMaterial.SetProperty("ssaoInput", gbufferData.occlusion.get());
+		// Depth tolerance of the bilateral blur, in view-space units. Smaller
+		// values keep AO edges sharp, larger values smooth the interior more.
+		ssaoblurMaterial.SetProperty("u_BlurDepthTolerance", gbufferParam.ssaoParam.blurTolerance);
 		m_renderer.Blit(p_pso, ssaobuffer,ssaoblurbuffer, ssaoblurMaterial);
 	}
 	

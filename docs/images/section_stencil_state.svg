@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <text x="480" y="36" text-anchor="middle" font-size="22" fill="#222">图 5　模板缓冲：INVERT 奇偶计数与最终判定</text>
+
+  <!-- pipeline -->
+  <text x="150" y="80" text-anchor="middle" font-size="15" fill="#274a75" font-weight="bold">清空 stencil = 0</text>
+  <line x1="250" y1="74" x2="330" y2="74" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="470" y="80" text-anchor="middle" font-size="15" fill="#274a75" font-weight="bold">每层“比平面近”的表面 → INVERT（0 ↔ 0xFF）</text>
+  <line x1="700" y1="74" x2="780" y2="74" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="870" y="80" text-anchor="middle" font-size="15" fill="#274a75" font-weight="bold">判定 stencil ≠ 0</text>
+
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker></defs>
+
+  <!-- pixel columns -->
+  <g font-size="15">
+    <!-- A -->
+    <rect x="60" y="120" width="180" height="250" rx="10" fill="#f7f7f7" stroke="#c9c9c9"/>
+    <text x="150" y="152" text-anchor="middle" font-weight="bold" fill="#333">像素 A</text>
+    <text x="150" y="190" text-anchor="middle" fill="#555">表面层数：0</text>
+    <text x="150" y="260" text-anchor="middle" font-size="30" font-weight="bold" fill="#888">0</text>
+    <text x="150" y="310" text-anchor="middle" fill="#a33">不画</text>
+
+    <!-- B -->
+    <rect x="280" y="120" width="180" height="250" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="370" y="152" text-anchor="middle" font-weight="bold" fill="#333">像素 B</text>
+    <text x="370" y="190" text-anchor="middle" fill="#555">表面层数：1</text>
+    <text x="370" y="260" text-anchor="middle" font-size="30" font-weight="bold" fill="#2e6b2e">0xFF</text>
+    <text x="370" y="310" text-anchor="middle" fill="#2e6b2e" font-weight="bold">画 ✓</text>
+
+    <!-- C -->
+    <rect x="500" y="120" width="180" height="250" rx="10" fill="#f7f7f7" stroke="#c9c9c9"/>
+    <text x="590" y="152" text-anchor="middle" font-weight="bold" fill="#333">像素 C</text>
+    <text x="590" y="190" text-anchor="middle" fill="#555">表面层数：2</text>
+    <text x="590" y="260" text-anchor="middle" font-size="30" font-weight="bold" fill="#888">0</text>
+    <text x="590" y="310" text-anchor="middle" fill="#a33">不画</text>
+
+    <!-- D -->
+    <rect x="720" y="120" width="180" height="250" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="810" y="152" text-anchor="middle" font-weight="bold" fill="#333">像素 D</text>
+    <text x="810" y="190" text-anchor="middle" fill="#555">表面层数：3</text>
+    <text x="810" y="260" text-anchor="middle" font-size="30" font-weight="bold" fill="#2e6b2e">0xFF</text>
+    <text x="810" y="310" text-anchor="middle" fill="#2e6b2e" font-weight="bold">画 ✓</text>
+  </g>
+
+  <!-- INVERT arrows -->
+  <g stroke="#2e6b2e" stroke-width="2">
+    <line x1="240" y1="245" x2="278" y2="245" marker-end="url(#a)"/>
+    <line x1="460" y1="245" x2="498" y2="245" marker-end="url(#a)"/>
+    <line x1="680" y1="245" x2="718" y2="245" marker-end="url(#a)"/>
+  </g>
+  <text x="259" y="238" text-anchor="middle" font-size="13" fill="#2e6b2e">INVERT</text>
+  <text x="479" y="238" text-anchor="middle" font-size="13" fill="#2e6b2e">INVERT</text>
+  <text x="699" y="238" text-anchor="middle" font-size="13" fill="#2e6b2e">INVERT</text>
+
+  <text x="480" y="420" text-anchor="middle" font-size="14" fill="#666">奇数层 → 0xFF → 画截面；偶数层 → 0 → 不画（空腔 / 外部）</text>
+  <text x="480" y="450" text-anchor="middle" font-size="14" fill="#666">模板判定使用 NOTEQUAL 0，且只在深度测试通过（平面未被保留侧遮挡）时写入</text>
+</svg>

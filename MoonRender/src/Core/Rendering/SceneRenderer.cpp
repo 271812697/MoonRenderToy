@@ -108,6 +108,153 @@ namespace
 			}
 		}
 	};
+	class SectionCapRenderPass : public SceneRenderPass
+	{
+	public:
+		SectionCapRenderPass(Rendering::Core::CompositeRenderer& p_renderer) :
+			SceneRenderPass(p_renderer)
+		{
+			m_capMaterial.SetShader(GetShaderService[":Shaders\\SectionCap.ovfx"]);
+			m_capMaterial.SetBackfaceCulling(false);
+			m_capMaterial.SetFrontfaceCulling(false);
+			m_capMaterial.SetDepthWriting(true);
+			m_capMaterial.SetDepthTest(true);
+
+
+			m_parityMaterial.SetShader(GetShaderService[":Shaders\\SectionParity.ovfx"]);
+			m_parityMaterial.SetBackfaceCulling(false);
+			m_parityMaterial.SetFrontfaceCulling(false);
+			m_parityMaterial.SetDepthWriting(false);
+			m_parityMaterial.SetDepthTest(false);
+			m_parityMaterial.SetColorWriting(false);
+		}
+
+	protected:
+		virtual void Draw(Rendering::Data::PipelineState p_pso) override
+		{
+			auto& feature = m_renderer.GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+			if (feature.IsEnableClip()) {
+				ZoneScoped;
+				TracyGpuZone("SectionCapRenderPass");
+
+				const auto& frameDescriptor = m_renderer.GetFrameDescriptor();
+				if (!frameDescriptor.outputMsaaBuffer) return;
+
+				// Stencil parity fill (same idea as OCCT capping): clear the stencil,
+				// then INVERT it for every model surface closer to the eye than the
+				// clip plane. Odd parity means the plane cuts the model at this pixel.
+				m_renderer.Clear(false, false, true, Maths::FVector4(0.0f, 0.0f, 0.0f, 0.0f));
+
+				p_pso.stencilTest = true;
+				p_pso.stencilWriteMask = 0xFF;
+				p_pso.stencilFuncOp = ::Rendering::Settings::EComparaisonAlgorithm::ALWAYS;
+				p_pso.stencilFuncRef = 0;
+				p_pso.stencilFuncMask = 0xFF;
+				p_pso.stencilOpFail = ::Rendering::Settings::EOperation::KEEP;
+				p_pso.depthOpFail = ::Rendering::Settings::EOperation::KEEP;
+				p_pso.bothOpFail = ::Rendering::Settings::EOperation::INVERT;
+				p_pso.colorWriting.mask = 0x00;
+				p_pso.depthWriting = false;
+				p_pso.depthTest = false;
+
+				const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
+				for (auto drawable : drawables.opaques | std::views::values)
+				{
+					if (drawable.primitiveMode != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) continue;
+					const auto& desc = drawable.GetDescriptor<SceneRenderer::SceneDrawableDescriptor>();
+					if (desc.actor.GetTag() == "SkyBox") continue;
+
+					drawable.pass = "";
+					drawable.material = m_parityMaterial;
+					drawable.stateMask = m_parityMaterial.GenerateStateMask();
+					drawable.stateMask.depthTest = false;
+					drawable.stateMask.depthWriting = false;
+					drawable.stateMask.colorWriting = false;
+					drawable.stateMask.frontfaceCulling = false;
+					drawable.stateMask.backfaceCulling = false;
+					m_renderer.DrawEntity(p_pso, drawable);
+				}
+
+				// Draw the cap where the parity is odd, occluded by kept surfaces in
+				// front of the clip plane (depth test against the scene depth). The
+				// IBL textures are resolved here because the skybox pass allocates
+				// them on its first draw, after this pass is constructed.
+				m_capMaterial.SetProperty("_IrradianceCube", m_renderer.GetIrradianceCube());
+				m_capMaterial.SetProperty("_PrefilterCube", m_renderer.GetPrefilterCube());
+				m_capMaterial.SetProperty("_BRDFLut", m_renderer.GetBrdfTexture());
+				p_pso.stencilFuncOp = ::Rendering::Settings::EComparaisonAlgorithm::NOTEQUAL;
+				p_pso.stencilFuncRef = 0;
+				p_pso.stencilFuncMask = 0xFF;
+				p_pso.stencilOpFail = ::Rendering::Settings::EOperation::KEEP;
+				p_pso.depthOpFail = ::Rendering::Settings::EOperation::KEEP;
+				p_pso.bothOpFail = ::Rendering::Settings::EOperation::KEEP;
+				p_pso.stencilWriteMask = 0x00;
+				p_pso.colorWriting.mask = 0xFF;
+				p_pso.depthWriting = false;
+				p_pso.depthTest = true;
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+
+				Rendering::Entities::Drawable drawable;
+				drawable.mesh = m_renderer.m_unitQuad;
+				drawable.material = m_capMaterial;
+				drawable.stateMask = m_capMaterial.GenerateStateMask();
+				drawable.stateMask.depthWriting = true;
+				drawable.stateMask.frontfaceCulling = false;
+				drawable.stateMask.backfaceCulling = false;
+				m_renderer.DrawEntity(p_pso, drawable);
+
+			}
+		}
+
+	private:
+		Rendering::Data::Material m_capMaterial;
+		Rendering::Data::Material m_parityMaterial;
+	};
+	class SectionContourRenderPass : public SceneRenderPass
+	{
+	public:
+		SectionContourRenderPass(Rendering::Core::CompositeRenderer& p_renderer) :
+			SceneRenderPass(p_renderer)
+		{
+			m_contourMaterial.SetShader(GetShaderService[":Shaders\\SectionContour.ovfx"]);
+			m_contourMaterial.SetBackfaceCulling(false);
+			m_contourMaterial.SetFrontfaceCulling(false);
+			m_contourMaterial.SetDepthWriting(false);
+			m_contourMaterial.SetDepthTest(true);
+			m_contourMaterial.SetLineWidth(3.0);
+			m_contourMaterial.SetProperty("color", Maths::FVector3(1.0f, 0.0f, 1.0f));
+		}
+
+	protected:
+		virtual void Draw(Rendering::Data::PipelineState p_pso) override
+		{
+			auto& feature = m_renderer.GetFeature<::Core::Rendering::EngineBufferRenderFeature>();
+			if (feature.IsEnableClip()) {
+			
+				ZoneScoped;
+				TracyGpuZone("SectionContourRenderPass");
+
+				PrepareStencilBuffer(p_pso);
+
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+
+				const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
+				for (auto drawable : drawables.opaques | std::views::values)
+				{
+					if (drawable.primitiveMode != ::Rendering::Settings::EPrimitiveMode::TRIANGLES) continue;
+					const auto& desc = drawable.GetDescriptor<SceneRenderer::SceneDrawableDescriptor>();
+					if (desc.actor.GetTag() == "SkyBox") continue;
+
+					drawable.pass = "";
+					drawable.material = m_contourMaterial;
+					drawable.stateMask = m_contourMaterial.GenerateStateMask();
+					m_renderer.DrawEntity(p_pso, drawable);
+				}			
+			}
+		}
+	private:
+		Rendering::Data::Material m_contourMaterial;
+	};
 	class TransparentRenderPass : public SceneRenderPass
 	{
 	public:
@@ -408,6 +555,11 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
 	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque-1);
 	AddPass<OpaqueRenderPass>("Opaques", ERenderPassOrder::Opaque, p_stencilWrite);
+
+	AddPass<SectionCapRenderPass>("SectionCap", ERenderPassOrder::SectionCap);
+	AddPass<SectionContourRenderPass>("SectionContour", ERenderPassOrder::SectionContour);
+
+
 	AddPass<LineRenderPass>("Lines", ERenderPassOrder::LineAfterPathTrace, p_stencilWrite);
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);

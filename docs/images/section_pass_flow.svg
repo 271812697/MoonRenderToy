@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+    </marker>
+  </defs>
+  <text x="480" y="38" text-anchor="middle" font-size="22" fill="#222">图 1　渲染 Pass 流程（与截面相关的部分）</text>
+
+  <!-- Section pipeline box -->
+  <rect x="40" y="60" width="300" height="500" rx="12" fill="#f4f7fc" stroke="#c9d6ea"/>
+  <text x="190" y="84" text-anchor="middle" font-size="15" fill="#4a5b73">场景渲染管线（按顺序）</text>
+
+  <!-- Passes -->
+  <g font-size="14">
+    <rect x="60" y="100" width="260" height="58" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+    <text x="76" y="124" font-size="15" font-weight="bold" fill="#274a75">Skybox（10001）</text>
+    <text x="76" y="146" fill="#555">环境背景 · 预计算 IBL 立方体</text>
+
+    <line x1="190" y1="158" x2="190" y2="176" stroke="#666" stroke-width="2" marker-end="url(#arr)"/>
+
+    <rect x="60" y="178" width="260" height="58" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+    <text x="76" y="202" font-size="15" font-weight="bold" fill="#274a75">Opaque（20000）</text>
+    <text x="76" y="224" fill="#555">模型保留侧（f ≤ 0）+ 场景深度</text>
+
+    <line x1="190" y1="236" x2="190" y2="254" stroke="#666" stroke-width="2" marker-end="url(#arr)"/>
+
+    <rect x="60" y="256" width="260" height="58" rx="8" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="76" y="280" font-size="15" font-weight="bold" fill="#2e6b2e">SectionCap（25000）</text>
+    <text x="76" y="302" fill="#444">模板奇偶填充 → 画截面</text>
+
+    <line x1="190" y1="314" x2="190" y2="332" stroke="#666" stroke-width="2" marker-end="url(#arr)"/>
+
+    <rect x="60" y="334" width="260" height="58" rx="8" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="76" y="358" font-size="15" font-weight="bold" fill="#2e6b2e">SectionContour（25001）</text>
+    <text x="76" y="380" fill="#444">GS 逐三角形求交 → 截线</text>
+
+    <line x1="190" y1="392" x2="190" y2="410" stroke="#666" stroke-width="2" marker-end="url(#arr)"/>
+
+    <rect x="60" y="412" width="260" height="58" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+    <text x="76" y="436" font-size="15" font-weight="bold" fill="#274a75">Transparent（30000）</text>
+    <text x="76" y="458" fill="#555">深度剥离透明</text>
+
+    <line x1="190" y1="470" x2="190" y2="488" stroke="#666" stroke-width="2" marker-end="url(#arr)"/>
+
+    <rect x="60" y="490" width="260" height="58" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+    <text x="76" y="514" font-size="15" font-weight="bold" fill="#274a75">PostProcess / UI</text>
+    <text x="76" y="536" fill="#555">40000 / 50000 后处理与界面</text>
+  </g>
+
+  <!-- Section drawing highlight -->
+  <rect x="52" y="248" width="316" height="152" rx="10" fill="none" stroke="#6fa86f" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="372" y="330" text-anchor="middle" font-size="14" fill="#2e6b2e" font-weight="bold">截面绘制</text>
+
+  <!-- Annotations -->
+  <g font-size="14">
+    <text x="410" y="276" font-weight="bold" fill="#2e6b2e">SectionCap 内部步骤：</text>
+    <text x="410" y="302" fill="#444">① 清空 stencil = 0</text>
+    <text x="410" y="324" fill="#444">② 模型表面（比平面近）逐片元 INVERT，</text>
+    <text x="425" y="344" fill="#444">depth/color 关闭，双面渲染</text>
+    <text x="410" y="366" fill="#444">③ 全屏 quad：stencil ≠ 0 且深度通过 →</text>
+    <text x="425" y="386" fill="#444">画截面，写入平面深度</text>
+
+    <text x="410" y="424" font-weight="bold" fill="#2e6b2e">SectionContour 内部步骤：</text>
+    <text x="410" y="450" fill="#444">跨平面的三角形 → 发射交线段</text>
+    <text x="410" y="472" fill="#444">深度向相机偏移，避免与面共面</text>
+  </g>
+
+  <text x="480" y="600" text-anchor="middle" font-size="13" fill="#888">截面由 SectionCap（区域填充）与 SectionContour（轮廓线）两部分共同完成</text>
+</svg>

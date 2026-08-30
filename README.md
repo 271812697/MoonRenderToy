@@ -31,6 +31,8 @@ This is a renderer written based on Qt+Opengl
 
 ### OCC geometric modeling
 
+![image-20260829160311142](README.assets/image-20260829160311142.png)
+
 ![image-20260821131205204](README.assets/image-20260821131205204.png)
 
 ------

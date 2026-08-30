@@ -121,6 +121,11 @@ void Core::Rendering::EngineBufferRenderFeature::EnableClip(bool flag)
 	m_LateUboData->enableClip = flag?1:0;
 }
 
+bool Core::Rendering::EngineBufferRenderFeature::IsEnableClip()
+{
+	return m_LateUboData->enableClip;
+}
+
 void Core::Rendering::EngineBufferRenderFeature::OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
 {
 	assert(p_frameDescriptor.camera.has_value()&&"Camera is not set in the frame descriptor");

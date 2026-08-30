@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 
 namespace Rendering::Settings
@@ -15,6 +15,8 @@ namespace Rendering::Settings
 		static constexpr PassType SkyBox			= 10001U;
 		static constexpr PassType Reflections		= 15000U;
 		static constexpr PassType Opaque			= 20000U;
+		static constexpr PassType SectionCap		= 25000U;
+		static constexpr PassType SectionContour	= 25001U;
 		static constexpr PassType Transparent		= 30000U;
 		static constexpr PassType PostProcessing	= 40000U;
 		static constexpr PassType PathTrace	        = 40001U;

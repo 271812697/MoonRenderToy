@@ -73,6 +73,7 @@ namespace MOON {
 		GbufferPassComponent(::Core::Rendering::GbufferPass* p) :RenderPassComponent(p) {
 			mProperties.push_back(new SliderFloatProperty("SSAO Radius", this, 0.0f, 10.0f));
 			mProperties.push_back(new SliderFloatProperty("SSAO Bias", this, 0.001f, 10.0f));
+			mProperties.push_back(new SliderFloatProperty("SSAO Blur Tolerance", this, 0.0f, 2.0f));
 		}
 		virtual QVariant getPropertyValue(const QString& propertyName)override {
 			auto gbpass = dynamic_cast<::Core::Rendering::GbufferPass*>(pass);
@@ -84,6 +85,9 @@ namespace MOON {
 			}
 			else if (propertyName == "SSAO Bias") {
 				return QVariant::fromValue(gbpass->getGbufferParam().ssaoParam.bias);
+			}
+			else if (propertyName == "SSAO Blur Tolerance") {
+				return QVariant::fromValue(gbpass->getGbufferParam().ssaoParam.blurTolerance);
 			}
 			return QVariant();
 		}
@@ -97,6 +101,9 @@ namespace MOON {
 			}
 			else if (propertyName == "SSAO Bias") {
 				gbpass->getGbufferParam().ssaoParam.bias = value.value<float>();
+			}
+			else if (propertyName == "SSAO Blur Tolerance") {
+				gbpass->getGbufferParam().ssaoParam.blurTolerance = value.value<float>();
 			}
 		}
 	};
