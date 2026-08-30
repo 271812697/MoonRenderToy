@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="660" viewBox="0 0 960 660" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="480" y="36" text-anchor="middle" font-size="22" fill="#222">图 1　交互 Widget 整体架构与数据流（以 ClipPlane 为例）</text>
+
+  <!-- Qt events -->
+  <rect x="300" y="64" width="360" height="54" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="480" y="86" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">Qt 鼠标事件（Press / Move / Release）</text>
+  <text x="480" y="106" text-anchor="middle" font-size="13" fill="#555">QMouseEvent → QWidget 事件过滤器</text>
+
+  <line x1="480" y1="118" x2="480" y2="140" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Interactor -->
+  <rect x="300" y="142" width="360" height="54" rx="8" fill="#eef3fb" stroke="#7f9bc9"/>
+  <text x="480" y="164" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">RenderWindowInteractor（全局事件中心）</text>
+  <text x="480" y="184" text-anchor="middle" font-size="13" fill="#555">ReceiveEvent → SetEventInformationFlipY → InvokeEvent</text>
+
+  <line x1="480" y1="196" x2="480" y2="218" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- EventWidget -->
+  <rect x="300" y="220" width="360" height="54" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="480" y="242" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">EventWidget（基类，观察者 + 回调映射）</text>
+  <text x="480" y="262" text-anchor="middle" font-size="13" fill="#555">CallbackMapper：事件 → WidgetEvent → onLeftMousePressed / onMouseMove …</text>
+
+  <line x1="480" y1="274" x2="480" y2="296" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- ClipPlane -->
+  <rect x="300" y="298" width="360" height="62" rx="8" fill="#eaf4ea" stroke="#6fa86f"/>
+  <text x="480" y="322" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">ClipPlane（子类实现）</text>
+  <text x="480" y="342" text-anchor="middle" font-size="13" fill="#444">状态机 Stop / Hot / AxisT / PlaneT / AxisR</text>
+  <text x="480" y="356" text-anchor="middle" font-size="13" fill="#444">onUpdate 每帧绘制控件与旋转路径</text>
+
+  <!-- branches -->
+  <line x1="360" y1="360" x2="200" y2="392" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="600" y1="360" x2="760" y2="392" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- ImRenderer -->
+  <rect x="60" y="394" width="280" height="88" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="200" y="416" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">ImRenderer（绘制 + 拾取）</text>
+  <text x="200" y="438" text-anchor="middle" font-size="13" fill="#555">drawOneMesh / drawLine / pushColor</text>
+  <text x="200" y="456" text-anchor="middle" font-size="13" fill="#555">drawMeshPick 写入拾取缓冲</text>
+  <text x="200" y="474" text-anchor="middle" font-size="13" fill="#555">isSelectPolygon 命中查询</text>
+
+  <!-- GizmoBehaviour -->
+  <rect x="620" y="394" width="280" height="88" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="760" y="416" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">GizmoBehaviour（几何算法）</text>
+  <text x="760" y="438" text-anchor="middle" font-size="13" fill="#555">AxisTranslate：射线-轴最近点</text>
+  <text x="760" y="456" text-anchor="middle" font-size="13" fill="#555">PlaneTranslate：射线-平面交点</text>
+  <text x="760" y="474" text-anchor="middle" font-size="13" fill="#555">AxisRotate：旋转平面投影 + 角度累积</text>
+
+  <!-- scene -->
+  <line x1="200" y1="482" x2="400" y2="530" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="760" y1="482" x2="560" y2="530" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="300" y="532" width="360" height="62" rx="8" fill="#fdf3e3" stroke="#d9a75c"/>
+  <text x="480" y="556" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a5a12">Scene / 渲染器</text>
+  <text x="480" y="576" text-anchor="middle" font-size="13" fill="#555">EngineBufferRenderFeature.SetClipPlane → GPU 截线 + 截面</text>
+  <text x="480" y="592" text-anchor="middle" font-size="13" fill="#555">PickingRenderPass：gizmo 拾取颜色编码</text>
+
+  <text x="480" y="642" text-anchor="middle" font-size="13" fill="#888">事件从上往下驱动，绘制/拾取/几何计算由子类按需调用</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="480" y="32" text-anchor="middle" font-size="22" fill="#222">WidgetViewData 风格控件状态机</text>
+
+  <!-- column 1: AxisTranslationWidget -->
+  <g>
+    <text x="180" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#274a75">AxisTranslationWidget</text>
+    <rect x="60" y="100" width="240" height="64" rx="10" fill="#f7f7f7" stroke="#999"/>
+    <text x="180" y="138" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Stop</text>
+    <rect x="60" y="240" width="240" height="64" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="180" y="278" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">Hot</text>
+    <rect x="60" y="380" width="240" height="64" rx="10" fill="#ffffff" stroke="#7f9bc9"/>
+    <text x="180" y="418" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">AxisT</text>
+    <text x="180" y="438" text-anchor="middle" font-size="12" fill="#666">沿轴拖拽箭头</text>
+
+    <line x1="304" y1="132" x2="304" y2="236" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="314" y="188" font-size="12" fill="#444">命中 Arrow</text>
+    <line x1="56" y1="236" x2="56" y2="168" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="44" y="206" text-anchor="end" font-size="12" fill="#444">移出</text>
+    <line x1="304" y1="272" x2="304" y2="376" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="314" y="328" font-size="12" fill="#444">按下</text>
+    <line x1="56" y1="376" x2="56" y2="308" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="44" y="346" text-anchor="end" font-size="12" fill="#444">松开</text>
+  </g>
+
+  <!-- column 2: ArrowRotateWidget -->
+  <g>
+    <text x="480" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#274a75">ArrowRotateWidget</text>
+    <rect x="360" y="100" width="240" height="64" rx="10" fill="#f7f7f7" stroke="#999"/>
+    <text x="480" y="138" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Stop</text>
+    <rect x="360" y="240" width="240" height="64" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="480" y="278" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">Hot</text>
+    <rect x="360" y="380" width="240" height="64" rx="10" fill="#ffffff" stroke="#7f9bc9"/>
+    <text x="480" y="418" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">Rotate</text>
+    <text x="480" y="438" text-anchor="middle" font-size="12" fill="#666">绕轴旋转箭头</text>
+
+    <line x1="604" y1="132" x2="604" y2="236" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="614" y="188" font-size="12" fill="#444">命中 Arrow</text>
+    <line x1="356" y1="236" x2="356" y2="168" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="344" y="206" text-anchor="end" font-size="12" fill="#444">移出</text>
+    <line x1="604" y1="272" x2="604" y2="376" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="614" y="328" font-size="12" fill="#444">按下</text>
+    <line x1="356" y1="376" x2="356" y2="308" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="344" y="346" text-anchor="end" font-size="12" fill="#444">松开</text>
+  </g>
+
+  <!-- column 3: PadTaskWidget -->
+  <g>
+    <text x="780" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#274a75">PadTaskWidget</text>
+    <rect x="660" y="100" width="240" height="64" rx="10" fill="#f7f7f7" stroke="#999"/>
+    <text x="780" y="138" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Stop</text>
+    <rect x="660" y="240" width="240" height="64" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+    <text x="780" y="278" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">Hot</text>
+    <rect x="660" y="360" width="240" height="58" rx="10" fill="#ffffff" stroke="#7f9bc9"/>
+    <text x="780" y="392" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">AxisT（箭头）</text>
+    <rect x="660" y="452" width="240" height="58" rx="10" fill="#ffffff" stroke="#7f9bc9"/>
+    <text x="780" y="484" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">Rotate（Point）</text>
+
+    <line x1="904" y1="132" x2="904" y2="236" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="912" y="188" font-size="12" fill="#444">命中 Arrow/Point</text>
+    <line x1="656" y1="236" x2="656" y2="168" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="644" y="206" text-anchor="end" font-size="12" fill="#444">移出</text>
+    <line x1="904" y1="272" x2="904" y2="356" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="912" y="318" font-size="12" fill="#444">按下 Arrow</text>
+    <line x1="904" y1="272" x2="904" y2="448" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="860" y="430" font-size="12" fill="#444">按下 Point</text>
+    <line x1="656" y1="356" x2="656" y2="308" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="644" y="336" text-anchor="end" font-size="12" fill="#444">松开</text>
+    <line x1="656" y1="448" x2="656" y2="308" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="644" y="390" text-anchor="end" font-size="12" fill="#444">松开</text>
+  </g>
+
+  <text x="480" y="540" text-anchor="middle" font-size="13" fill="#888">三者共同模式：Stop（未命中）→ Hot（悬停）→ 操作态（按下拖拽）→ Hot（松开）；松开时恢复颜色并触发事件</text>
+</svg>

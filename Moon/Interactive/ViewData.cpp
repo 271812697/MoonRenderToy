@@ -1,4 +1,4 @@
-﻿#include "Interactive/ViewData.h"
+#include "Interactive/ViewData.h"
 namespace MOON {
 	int WidgetViewData::addPoint(const Eigen::Vector3f& pos, float size, const Eigen::Vector4<uint8_t>& color) {
 		points.emplace_back(pos, size, color);
@@ -161,15 +161,18 @@ namespace MOON {
 		facesStrMap.clear();
 		edgesStrMap.clear();
 	}
-	std::string WidgetViewData::hitFace(const Ray& ray) {
+	std::string WidgetViewData::hitFace(const Ray& ray, float scale) {
+		Eigen::Matrix4f scaleMat = Eigen::Matrix4f::Identity();
+		scaleMat(0, 0) = scaleMat(1, 1) = scaleMat(2, 2) = scale;
 		int res = -1;
 		float minDist = 100000.0f;
 		for (int i = 0; i < faces.size(); i++) {
 			std::vector<Eigen::Vector3f>& tris = faces[i].faces;
 			Eigen::Matrix4f& mat = faces[i].model;
+			const Eigen::Matrix4f worldMat = mat * scaleMat;
 			for (int j = 0; j < tris.size(); j += 3) {
 				float tr;
-				if (Intersect(ray, MatrixMulPoint(mat, tris[j]), MatrixMulPoint(mat, tris[j + 1]), MatrixMulPoint(mat, tris[j + 2]), tr)) {
+				if (Intersect(ray, MatrixMulPoint(worldMat, tris[j]), MatrixMulPoint(worldMat, tris[j + 1]), MatrixMulPoint(worldMat, tris[j + 2]), tr)) {
 					if (tr < minDist) {
 						minDist = tr;
 						res = i;

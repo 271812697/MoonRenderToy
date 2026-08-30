@@ -1,4 +1,4 @@
-﻿#pragma once 
+#pragma once 
 #include "Interactive/MathUtil/MathUtil.h"
 namespace MOON {
 	struct TriangleFace
@@ -63,7 +63,7 @@ namespace MOON {
 		void clearLines();
 		void clearFaces();
 		void clear();
-		std::string hitFace(const Ray& ray);
+		std::string hitFace(const Ray& ray, float scale = 1.0f);
 		std::string hitEdge(const Eigen::Matrix4f& viewPortMat, const Eigen::Vector2f& pos);
 		int hitPoint(const Eigen::Matrix4f& viewPortMat, const Eigen::Vector2f& pos);
 	private:
