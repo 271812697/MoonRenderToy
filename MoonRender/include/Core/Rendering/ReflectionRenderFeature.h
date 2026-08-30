@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Core/ECS/Actor.h>
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/ECS/Components/CReflectionProbe.h>
@@ -62,6 +62,8 @@ namespace Core::Rendering
 			const Core::ECS::Components::CReflectionProbe& p_reflectionProbe
 		);
 
+	private:
+		std::unique_ptr<::Rendering::HAL::UniformBuffer> m_defaultReflectionUbo;
 	protected:
 		virtual void OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor) override;
 		virtual void OnBeforeDraw(::Rendering::Data::PipelineState& p_pso, const ::Rendering::Entities::Drawable& p_drawable);

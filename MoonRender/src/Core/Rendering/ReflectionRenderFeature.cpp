@@ -1,4 +1,4 @@
-﻿#include <tracy/Tracy.hpp>
+#include <tracy/Tracy.hpp>
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Core/Rendering/ReflectionRenderFeature.h>
@@ -137,6 +137,36 @@ Core::Rendering::ReflectionRenderFeature::ReflectionRenderFeature(
 ) :
 	ARenderFeature(p_renderer, p_executionPolicy)
 {
+	m_defaultReflectionUbo = std::make_unique<::Rendering::HAL::UniformBuffer>();
+
+	// Neutral probe data used when the scene has no reflection probe:
+	// brightness 1, infinite box, not local, so image-based lighting still
+	// evaluates with the bound environment map.
+#pragma pack(push, 1)
+	struct
+	{
+		Maths::FVector4 position;
+		Maths::FMatrix4 rotation;
+		Maths::FVector4 boxCenter;
+		Maths::FVector4 boxHalfExtents;
+		float brightness;
+		bool boxProjection;
+		std::byte padding1[3];
+		bool local;
+		std::byte padding2[3];
+	} defaultData{
+		.position = Maths::FVector4(0.0f, 0.0f, 0.0f, 0.0f),
+		.rotation = Maths::FMatrix4::Identity,
+		.boxCenter = Maths::FVector4(0.0f, 0.0f, 0.0f, 0.0f),
+		.boxHalfExtents = Maths::FVector4(1e6f, 1e6f, 1e6f, 0.0f),
+		.brightness = 1.0f,
+		.boxProjection = false,
+		.local = false
+	};
+#pragma pack(pop)
+
+	m_defaultReflectionUbo->Allocate(sizeof(defaultData));
+	m_defaultReflectionUbo->Upload(&defaultData);
 }
 
 void Core::Rendering::ReflectionRenderFeature::PrepareProbe(Core::ECS::Components::CReflectionProbe& p_reflectionProbe)
@@ -206,5 +236,13 @@ void Core::Rendering::ReflectionRenderFeature::OnBeforeDraw(::Rendering::Data::P
 	if (targetProbe)
 	{
 		BindProbe(targetProbe.value());
+	}
+	else
+	{
+		// No reflection probe in the scene: fall back to the skybox prefilter
+		// cube with a neutral probe UBO, so image-based lighting keeps working
+		// for materials like Standard.ovfx.
+		material.SetProperty("_EnvironmentMap", m_renderer.GetPrefilterCube(), true);
+		m_defaultReflectionUbo->Bind(1);
 	}
 }
