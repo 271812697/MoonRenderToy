@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "SettingPanel.h"
 #include "SettingWidget.h"
+#include "editor/UI/DockWidgetTitleBar.h"
 #include "Core/Global/ServiceLocator.h"
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -9,6 +10,7 @@ namespace MOON {
 	SettingPanel::SettingPanel(QWidget* parent):QDockWidget(parent)
 	{
 		RegService(SettingPanel, *this);
+		setTitleBarWidget(new DockWidgetTitleBar(this));
 		SettingWidget* ui =new SettingWidget(this);
 		setWidget(ui);
 	}

@@ -1,5 +1,6 @@
-﻿#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
+#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "Widgets/PropertyQtWidgets.h"
+#include "Widgets/utils.h"
 #include <QToolButton>
 #include <QGridLayout>   // for QGridLayout
 #include <QHBoxLayout>   // for QHBoxLayout
@@ -14,8 +15,13 @@ namespace MOON {
 			auto propertyLayout = std::make_unique<QGridLayout>();
 			propertyLayout->setObjectName("PropertyWidgetLayout");
 			propertyLayout->setAlignment(Qt::AlignTop);
-			
-			propertyLayout->setHorizontalSpacing(0);
+
+			// Match Inviwo's property rows: a visible gap between the label
+			// column and the editor column, with consistent margins and spacing.
+			const auto space = refSpacePx(widget.get());
+			propertyLayout->setContentsMargins(space * 2, space, space, space);
+			propertyLayout->setHorizontalSpacing(space * 2);
+			propertyLayout->setVerticalSpacing(space + 1);
 			
 
 			auto layout = propertyLayout.release();
@@ -55,6 +61,7 @@ namespace MOON {
     )");
 			btnCollapse_->setIcon(QIcon(":/widgets/icons/arrow_right.svg"));
 			label_ = new QLabel("set", mSelf);
+			label_->setObjectName("GroupTitle");
 			updateFocusPolicy();
 			QHBoxLayout* heading = new QHBoxLayout();
 			heading->setContentsMargins(0, 0, 0, 0);
@@ -154,7 +161,10 @@ namespace MOON {
 			//else {  // not a collapsible widget
 				//widget->setNestedDepth(this->getNestedDepth());
 				// property widget should only be added to the left column of the layout
-			layout->addWidget(new QLabel(label,this ), row, 0);
+			auto* labelWidget = new QLabel(label, this);
+			labelWidget->setObjectName("PropertyLabel");
+			labelWidget->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+			layout->addWidget(labelWidget, row, 0);
 			layout->addWidget(widget, row, 1);
 			//}
 
@@ -173,6 +183,13 @@ namespace MOON {
 		else {
 	
 		}
+	}
+	void CollapsibleGroupBoxWidget::addSubWidget(QWidget* widget)
+	{
+		// Embed a full-width widget (e.g. a nested collapsible group) spanning
+		// both columns of the property grid, without a property label.
+		mInternal->propertyWidgetGroupLayout_->addWidget(
+			widget, mInternal->propertyWidgetGroupLayout_->rowCount(), 0, 1, 2);
 	}
 	QSize CollapsibleGroupBoxWidget::sizeHint() const
 	{

@@ -1,91 +1,75 @@
-﻿#include "Widgets/FVec3.h"
+#include "Widgets/FVec3.h"
 #include "Widgets/Property.h"
 namespace MOON {
-Fvec3::Fvec3(QWidget* parent, WidgetProperty* prop) : PropertyQtWidget(parent,prop)
-{
-    m_spinX = new QDoubleSpinBox(this);
-    m_spinY = new QDoubleSpinBox(this);
-    m_spinZ = new QDoubleSpinBox(this);
+Fvec3::Fvec3(QWidget* parent, WidgetProperty* prop) : PropertyQtWidget(parent, prop) {
+    m_spinX = new NumberWidget(this);
+    m_spinY = new NumberWidget(this);
+    m_spinZ = new NumberWidget(this);
 
-    // ========== 【Vec3 浮点配置 核心优化 - 必改】 ==========
-    // 1. 设置浮点数值范围（根据你的业务需求调整，比如3D坐标一般-9999~9999足够）
-    m_spinX->setRange(-9999.99f, 9999.99f);
-    m_spinY->setRange(-9999.99f, 9999.99f);
-    m_spinZ->setRange(-9999.99f, 9999.99f);
+    for (auto* spin : {m_spinX, m_spinY, m_spinZ}) {
+        spin->setRange(-9999.99, 9999.99);
+        spin->setIncrement(0.1);
+        QSizePolicy sp = spin->sizePolicy();
+        sp.setHorizontalPolicy(QSizePolicy::Expanding);
+        spin->setSizePolicy(sp);
+    }
+    m_spinX->setPrefix("x");
+    m_spinY->setPrefix("y");
+    m_spinZ->setPrefix("z");
 
-    // 2. 设置小数位数【重中之重】：Vec3推荐保留2位小数，平衡精度和显示简洁
-    //    可按需修改：1位(0.1)、3位(0.001)，最多支持15位
-    m_spinX->setDecimals(2);
-    m_spinY->setDecimals(2);
-    m_spinZ->setDecimals(2);
-
-    // 3. 设置【单步调整值】：点击上下箭头时，每次增减0.1，符合浮点微调习惯
-    m_spinX->setSingleStep(0.1);
-    m_spinY->setSingleStep(0.1);
-    m_spinZ->setSingleStep(0.1);
-
-    // ========== 【单元格嵌入优化 - 必加，解决显示拥挤问题】 ==========
-    // 去掉上下箭头按钮，节省宽度，让3个控件在单元格里完美并排显示
-    m_spinX->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    m_spinY->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    m_spinZ->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-    // 自适应拉伸，3个控件均分单元格宽度，不会有空白/溢出
-    m_spinX->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_spinY->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_spinZ->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    // ========== 布局优化 ==========
     QHBoxLayout* hLayout = new QHBoxLayout(this);
-    hLayout->setContentsMargins(1, 0, 1, 0); // 极小内边距，贴合单元格
-    hLayout->setSpacing(3);                  // 控件间距适中
+    hLayout->setContentsMargins(0, 0, 0, 0);
+    hLayout->setSpacing(2);
     hLayout->addWidget(m_spinX);
     hLayout->addWidget(m_spinY);
     hLayout->addWidget(m_spinZ);
 
-    this->setLayout(hLayout);
-    //m_spinX;
-    //&QDoubleSpinBox::valueChanged(double);
-    // 正确写法，推荐！
-    QObject::connect(m_spinX, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-        this, &Fvec3::onValueChange);
-    QObject::connect(m_spinY, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-        this, &Fvec3::onValueChange);
-    QObject::connect(m_spinZ, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-        this, &Fvec3::onValueChange);
+    QObject::connect(m_spinX, &NumberWidget::valueChanged, this, &Fvec3::onValueChange);
+    QObject::connect(m_spinY, &NumberWidget::valueChanged, this, &Fvec3::onValueChange);
+    QObject::connect(m_spinZ, &NumberWidget::valueChanged, this, &Fvec3::onValueChange);
 }
 
-Fvec3::Fvec3(QWidget* parent):Fvec3::Fvec3(parent, nullptr)
-{
+Fvec3::Fvec3(QWidget* parent) : Fvec3(parent, nullptr) {
 }
 
-void Fvec3::setVec3Value(float x, float y, float z)
-{
-    m_spinX->setValue(x);
-    m_spinY->setValue(y);
-    m_spinZ->setValue(z);
+void Fvec3::setVec3Value(float x, float y, float z) {
+    m_spinX->initValue(x);
+    m_spinY->initValue(y);
+    m_spinZ->initValue(z);
 }
 
-// 以下所有函数完全不变，你的原代码是正确的
-void Fvec3::setVec3Value(const Maths::FVector3& vec)
-{
+void Fvec3::setVec3Value(const Maths::FVector3& vec) {
     setVec3Value(vec.x, vec.y, vec.z);
 }
+
 void Fvec3::setWidgetValue(const QVariant& value) {
     setVec3Value(value.value<Maths::FVector3>());
 }
+
 QVariant Fvec3::widgetValue() {
     return QVariant::fromValue(getVec3Value());
- }
-
-Maths::FVector3 Fvec3::getVec3Value() const
-{
-    return Maths::FVector3(m_spinX->value(), m_spinY->value(), m_spinZ->value()); // float值直接构造QVector3D，完美适配
 }
 
-void Fvec3::onValueChange(double val) {
+Maths::FVector3 Fvec3::getVec3Value() const {
+    return Maths::FVector3(static_cast<float>(m_spinX->getValue()),
+                           static_cast<float>(m_spinY->getValue()),
+                           static_cast<float>(m_spinZ->getValue()));
+}
+
+float Fvec3::x() const {
+    return static_cast<float>(m_spinX->getValue());
+}
+
+float Fvec3::y() const {
+    return static_cast<float>(m_spinY->getValue());
+}
+
+float Fvec3::z() const {
+    return static_cast<float>(m_spinZ->getValue());
+}
+
+void Fvec3::onValueChange() {
     OnValueChanged();
 }
-
 
 }

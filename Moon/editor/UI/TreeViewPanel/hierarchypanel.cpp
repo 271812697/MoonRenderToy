@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "hierarchypanel.h"
 #include "editor/UI/TreeViewPanel/treeViewpanel.h"
+#include "editor/UI/DockWidgetTitleBar.h"
 #include "Core/Global/ServiceLocator.h"
 #include <QVBoxLayout>
 #include <QPushButton>
@@ -12,6 +13,7 @@ namespace MOON {
 	Hierarchypanel::Hierarchypanel(QWidget* parent) : QDockWidget(parent)
 	{
 		RegService(Hierarchypanel,*this);
+		setTitleBarWidget(new DockWidgetTitleBar(this));
 		QWidget* ui = new QWidget(this);
 		QVBoxLayout* ui_layout = new QVBoxLayout(ui);
 		auto tree = new TreeViewPanel(ui);

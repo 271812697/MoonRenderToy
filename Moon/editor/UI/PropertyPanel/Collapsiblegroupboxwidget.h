@@ -10,6 +10,7 @@ namespace MOON {
 		void addProperty(WidgetProperty* tmpProperty);
 		void insertProperty(WidgetProperty* prop, size_t index);
 		void insertPropertyWidget(const QString& label, PropertyQtWidget* propertyWidget, bool insertAtEnd);
+		void addSubWidget(QWidget* widget);
 		virtual QSize sizeHint() const override;
 		virtual QSize minimumSizeHint() const override;
 		void setCollapsed(bool collapse);

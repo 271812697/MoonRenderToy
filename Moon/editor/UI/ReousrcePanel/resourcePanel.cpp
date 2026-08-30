@@ -2,6 +2,7 @@
 #include "QDirectoryModel.h"
 #include "QPreviewHelper.h"
 #include "QResListView.h"
+#include "editor/UI/DockWidgetTitleBar.h"
 #include "Core/Global/ServiceLocator.h"
 #include <Tools/Utils/PathParser.h>
 #include <QMenuBar>
@@ -184,6 +185,7 @@ namespace MOON {
 	ResPanel::ResPanel(QWidget* parent) : QDockWidget(parent)
 	{
 		RegService(ResPanel,*this);
+		setTitleBarWidget(new DockWidgetTitleBar(this));
 		
 		internal = new ResPanel::ResPanelInternal();
 		internal->ui->setupUi(this);

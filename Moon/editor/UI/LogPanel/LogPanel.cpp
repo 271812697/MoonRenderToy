@@ -1,5 +1,6 @@
 ﻿#include "LogPanel.h"
 #include "core/log.h"
+#include "editor/UI/DockWidgetTitleBar.h"
 #include <QListWidgetItem>
 #include <QMenu>
 #include <QApplication>
@@ -33,7 +34,8 @@ namespace MOON
 		, m_menu(nullptr)
 		, m_currentSelectItem(nullptr)
 	{
-		setupUi(this);
+        setupUi(this);
+        setTitleBarWidget(new DockWidgetTitleBar(this));
         
         // hide mac focus rect
         m_logList->setAttribute(Qt::WA_MacShowFocusRect,0);

@@ -89,6 +89,24 @@ namespace MOON {
         background-color: #7ab2e8;   /* 选中颜色 */
         color: white;
     }
+    QTreeView::branch {
+        background: transparent;
+    }
+    QTreeView::branch:has-siblings:!adjoins-item,
+    QTreeView::branch:has-siblings:adjoins-item,
+    QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+        border-image: none;
+    }
+    QTreeView::branch:has-children:!has-siblings:closed,
+    QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url(:/widgets/icons/arrow_right.svg);
+    }
+    QTreeView::branch:open:has-children:!has-siblings,
+    QTreeView::branch:open:has-children:has-siblings {
+        border-image: none;
+        image: url(:/widgets/icons/arrow_down.svg);
+    }
 )");
 		setMouseTracking(true);
 		setFocusPolicy(Qt::StrongFocus);   // 获得焦点
