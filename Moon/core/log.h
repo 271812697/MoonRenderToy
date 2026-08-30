@@ -42,6 +42,7 @@ namespace MOON {
 		static std::shared_ptr<spdlog::logger> GetLogger() { return logger; }
 		// add log
 		bool addOutput(LogOutput* pLog);
+		void removeOutput(LogOutput* pLog);
 		void logMessage(LogOutput::Level level, const QString& msg);
 		void logMessage(LogOutput::Level level, const char* msg);
 		void logMessage(LogOutput::Level level, const std::wstring& message);

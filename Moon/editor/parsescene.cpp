@@ -1,6 +1,7 @@
-﻿#include "parsescene.h"
+#include "parsescene.h"
 #include "renderer/Context.h"
 #include "editor/View/sceneview/viewerwidget.h"
+#include "renderer/SceneView.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Core/ECS/Components/CMaterialRenderer.h"
 #include "Core/ECS/Components/CPointLight.h"
@@ -155,7 +156,12 @@ namespace MOON {
 					tempMat->SetReceiveShadows(false);
 
 					tempMat->SetShader(Core::Global::ServiceLocator::Get<Editor::Core::Context>().shaderManager[":Shaders\\Standard.ovfx"]);
-					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
+					// Enable the clip plane discard in Standard.ovfx.
+					tempMat->AddFeature("CLIP_PLANE");
+					// IBL: bind the skybox prefilter cube, the same environment
+					// data used by the STEP materials. Standard.ovfx reads it
+					// through the _EnvironmentMap uniform.
+					tempMat->SetProperty("_EnvironmentMap", GetSceneView.GetRenderer().GetPrefilterCube());					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
 					tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
 					tempMat->SetProperty("u_Roughness", 0.1f);

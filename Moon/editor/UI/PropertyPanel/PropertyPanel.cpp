@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "PropertyPanel.h"
 #include "PropertyWidget.h"
+#include "editor/UI/DockWidgetTitleBar.h"
 #include "Core/Global/ServiceLocator.h"
 #include "Widgets/utils.h"
 #include <QVBoxLayout>
@@ -13,6 +14,7 @@ namespace MOON {
 	PropertyPanel::PropertyPanel(QWidget* parent):QDockWidget(parent)
 	{
 		RegService(PropertyPanel, *this);
+		setTitleBarWidget(new DockWidgetTitleBar(this));
 		auto scrollArea_ = new QScrollArea();
 		scrollArea_->setWidgetResizable(true);
 		scrollArea_->setMinimumWidth(emToPx(this, 30));

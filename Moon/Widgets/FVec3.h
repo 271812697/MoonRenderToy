@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "Widgets/PropertyQtWidgets.h"
+#include "Widgets/numberwidget.h"
 #include <Maths/FVector3.h>
 #include <QWidget>
 #include <QHBoxLayout>
-#include <QDoubleSpinBox>
 #include <QVector3D>
 namespace MOON {
 Q_DECLARE_METATYPE(Maths::FVector3);
@@ -22,13 +22,13 @@ public:
     float x() const;
     float y() const;
     float z() const;
-   
+
 public Q_SLOTS:
-    void onValueChange(double val);
+    void onValueChange();
 private:
-    QDoubleSpinBox* m_spinX;
-    QDoubleSpinBox* m_spinY;
-    QDoubleSpinBox* m_spinZ;
+    NumberWidget* m_spinX;
+    NumberWidget* m_spinY;
+    NumberWidget* m_spinZ;
 };
 
 }

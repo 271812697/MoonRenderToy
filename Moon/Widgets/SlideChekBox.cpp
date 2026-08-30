@@ -8,7 +8,9 @@ namespace MOON {
         QHBoxLayout* hLayout = new QHBoxLayout();
 		connect(m_checkBox, &QAbstractButton::toggled, this, &SliderCheckBox::toggle);
         
-        hLayout->addWidget(m_checkBox);
+        // Align the toggle to the right so it lines up with the editors in the
+        // property rows above/below it inside a CollapsibleGroupBoxWidget.
+        hLayout->addWidget(m_checkBox, 0, Qt::AlignRight);
        
         hLayout->setContentsMargins(0, 0, 0, 0);
 		setLayout(hLayout);

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
 #include "core/ECS/Components/CMaterialRenderer.h"
@@ -432,6 +432,55 @@ namespace MOON {
 			// 布局
 			layout_ = new QVBoxLayout(mSelf);
 			layout_->setContentsMargins(0, 0, 0, 0);
+
+			// Light Inviwo-inspired polish on top of the global dark theme:
+			// readable labels and editors with a clear hover/focus state.
+			mSelf->setStyleSheet(R"(
+				QLabel#PropertyLabel {
+					color: #c8ccd0;
+				}
+				QLabel#GroupTitle {
+					color: #e0e0e0;
+					font-weight: 600;
+				}
+				QLineEdit, QDoubleSpinBox, QComboBox {
+					background: #2a2a2d;
+					border: 1px solid #3a3a3e;
+					border-radius: 3px;
+					padding: 2px 4px;
+					color: #c8ccd0;
+					selection-background-color: #268bd2;
+				}
+				QLineEdit:hover, QDoubleSpinBox:hover, QComboBox:hover,
+				QLineEdit:focus, QDoubleSpinBox:focus, QComboBox:focus {
+					background: #333338;
+					border: 1px solid #268bd2;
+				}
+				QLineEdit#NumberWidget {
+					background: transparent;
+					border: 1px solid transparent;
+				}
+				QLineEdit#NumberWidget:hover,
+				QLineEdit#NumberWidget:focus {
+					background: #47474b;
+					border: 1px solid #268bd2;
+				}
+				QLineEdit#NumberWidget[invalid=true] {
+					border: 1px solid #801717;
+				}
+				QComboBox::drop-down {
+					border: none;
+					width: 18px;
+				}
+				QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+					border: none;
+					background: #333338;
+					width: 16px;
+				}
+				QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+					background: #47474b;
+				}
+			)");
 
 			mSelf->setLayout(layout_);
 		}
