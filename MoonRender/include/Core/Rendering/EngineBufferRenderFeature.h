@@ -26,6 +26,7 @@ namespace Core::Rendering
 		void SetMirrorPlane(const Maths::FMatrix4& matrix);
 		void SetViewMatrix(const Maths::FMatrix4& matrix);
 		void EnableClip(bool flag);
+		bool IsEnableClip();
 
 	protected:
 		virtual void OnBeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor) override;

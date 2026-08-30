@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="480" y="36" text-anchor="middle" font-size="22" fill="#222">图 3　实心物体：视线跨越奇偶决定截面像素</text>
+
+  <!-- left panel: center ray -->
+  <g>
+    <text x="240" y="76" text-anchor="middle" font-size="17" font-weight="bold" fill="#2e6b2e">中心射线：1 次跨越（奇数）→ 画截面 ✓</text>
+
+    <line x1="60" y1="330" x2="440" y2="330" stroke="#3b6fd4" stroke-width="3"/>
+    <text x="60" y="320" font-size="14" fill="#3b6fd4">剖切平面（保留侧在上方）</text>
+
+    <circle cx="240" cy="260" r="120" fill="rgba(255,150,0,0.14)" stroke="#d9820b" stroke-width="2"/>
+
+    <line x1="44" y1="192" x2="360" y2="372" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="40" y="178" text-anchor="end" font-size="14" fill="#444">相机（保留侧）</text>
+
+    <circle cx="124" cy="238" r="7" fill="#e0342c"/>
+    <text x="138" y="226" font-size="15" fill="#e0342c" font-weight="bold">① 保留侧表面（比平面近）</text>
+
+    <circle cx="287" cy="330" r="8" fill="#2e9e2e"/>
+    <text x="302" y="322" font-size="15" fill="#2e9e2e" font-weight="bold">平面点在实体内 ✓</text>
+
+    <circle cx="322" cy="350" r="7" fill="#999"/>
+    <text x="334" y="366" font-size="14" fill="#999">移除侧，不计</text>
+
+    <text x="240" y="470" text-anchor="middle" font-size="15" fill="#2e6b2e" font-weight="bold">跨越计数 = 1（奇数）→ 该像素画截面</text>
+  </g>
+
+  <!-- right panel: grazing ray -->
+  <g>
+    <text x="715" y="76" text-anchor="middle" font-size="17" font-weight="bold" fill="#a33">掠射：2 次跨越（偶数）→ 不画 ✗</text>
+
+    <line x1="470" y1="340" x2="890" y2="340" stroke="#3b6fd4" stroke-width="3"/>
+    <text x="470" y="330" font-size="14" fill="#3b6fd4">剖切平面（保留侧在上方）</text>
+
+    <circle cx="700" cy="240" r="120" fill="rgba(255,150,0,0.14)" stroke="#d9820b" stroke-width="2"/>
+
+    <line x1="480" y1="90" x2="840" y2="347" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+    <text x="475" y="78" text-anchor="end" font-size="14" fill="#444">相机</text>
+
+    <circle cx="596" cy="167" r="7" fill="#e0342c"/>
+    <text x="608" y="155" font-size="15" fill="#e0342c" font-weight="bold">① 进入（比平面近）</text>
+
+    <circle cx="783" cy="305" r="7" fill="#e0342c"/>
+    <text x="700" y="324" font-size="15" fill="#e0342c" font-weight="bold">② 离开（仍比平面近）</text>
+
+    <circle cx="830" cy="340" r="8" fill="#a33"/>
+    <text x="700" y="388" font-size="15" fill="#a33" font-weight="bold">平面交点在实体外 ✗</text>
+
+    <text x="715" y="470" text-anchor="middle" font-size="15" fill="#a33" font-weight="bold">跨越计数 = 2（偶数）→ 不画截面</text>
+  </g>
+
+  <text x="480" y="505" text-anchor="middle" font-size="14" fill="#666">原理：统计“眼睛 → 平面交点”之间的表面跨越次数，奇数为实体内部，偶数为外部</text>
+</svg>

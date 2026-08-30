@@ -10,6 +10,7 @@ namespace MOON
 		ClipPlane(const std::string& name);
 		virtual ~ClipPlane();
 		virtual void onUpdate()override;
+		virtual void onSetActive(bool flag)override;
 		Maths::FVector4 getClipPlane();
 		virtual void onLeftMousePressed()override;
 		virtual void onLeftMouseReleased()override;
