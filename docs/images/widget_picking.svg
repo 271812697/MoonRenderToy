@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="480" y="36" text-anchor="middle" font-size="22" fill="#222">图 3　Gizmo 拾取流程</text>
+
+  <!-- 1 -->
+  <rect x="80" y="70" width="800" height="56" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="480" y="94" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">① 每帧/鼠标移动：SceneView 启用 PickingRenderPass</text>
+  <text x="480" y="114" text-anchor="middle" font-size="13" fill="#555">相机未操作且未处于拾取中才启用（SceneView::Update）</text>
+
+  <line x1="480" y1="126" x2="480" y2="148" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- 2 -->
+  <rect x="80" y="150" width="800" height="70" rx="8" fill="#eef3fb" stroke="#7f9bc9"/>
+  <text x="480" y="174" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">② PickingRenderPass::Draw → ImRenderer::drawMeshPick()</text>
+  <text x="480" y="196" text-anchor="middle" font-size="13" fill="#555">gizmo 网格以 PICKING_PASS 特性画进 actorPickingFramebuffer</text>
+  <text x="480" y="212" text-anchor="middle" font-size="13" fill="#555">颜色编码：R=0，G=blockId，B=polygonId，A=254</text>
+
+  <line x1="480" y1="220" x2="480" y2="242" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- 3 -->
+  <rect x="80" y="244" width="800" height="56" rx="8" fill="#ffffff" stroke="#9db8dc"/>
+  <text x="480" y="268" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">③ SceneView::HandleActorPicking → ReadbackPickingResult</text>
+  <text x="480" y="288" text-anchor="middle" font-size="13" fill="#555">读取光标处 1×1 像素</text>
+
+  <line x1="480" y1="300" x2="480" y2="322" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- 4 -->
+  <rect x="80" y="324" width="800" height="56" rx="8" fill="#fdf3e3" stroke="#d9a75c"/>
+  <text x="480" y="348" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a5a12">④ 解码：A==254 → gizmoInstance.selectPolygon(polygonId, blockId)</text>
+  <text x="480" y="368" text-anchor="middle" font-size="13" fill="#555">A!=254 则 resetSelectPolygon（未命中 gizmo）</text>
+
+  <line x1="480" y1="380" x2="480" y2="402" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- 5 -->
+  <rect x="80" y="404" width="800" height="70" rx="8" fill="#eaf4ea" stroke="#6fa86f"/>
+  <text x="480" y="428" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">⑤ ClipPlane::onMouseMove 查询命中</text>
+  <text x="480" y="450" text-anchor="middle" font-size="13" fill="#555">for 9 个手柄块：renderer->isSelectPolygon("TransformAxis", blockName)</text>
+  <text x="480" y="466" text-anchor="middle" font-size="13" fill="#555">命中 → mState=Hot + setBlockColor(hotColor) 高亮</text>
+
+  <text x="480" y="530" text-anchor="middle" font-size="14" fill="#666">多边形 id（TransformAxis=1）与块 id 在 Im3DType::TransformAxis() 构建时分配：switchNextBlock 开启新块、块名用于 isSelectPolygon 比对</text>
+  <text x="480" y="554" text-anchor="middle" font-size="14" fill="#666">块 id 存在顶点 w 分量，拾取片元着色器把 blockId/polygonId 编码进颜色</text>
+</svg>
