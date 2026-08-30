@@ -1,4 +1,4 @@
-﻿#include "Interactive/Widgets/ArrowRotateWidget.h"
+#include "Interactive/Widgets/ArrowRotateWidget.h"
 #include "Interactive/Im3DRenderer.h"
 #include "Interactive/MathUtil/MathUtil.h"
 #include "Core/Global/ServiceLocator.h"
@@ -8,8 +8,35 @@
 #include "Interactive/GizmoBehaviour.h"
 #include "renderer/SceneView.h"
 #include "Interactive/ViewData.h"
+#include <cmath>
 namespace MOON {
-	class ArrowRotateWidget::Internal {
+		// Same FIXED_SCALE ratio as GizmoCell.ovfx (see ClipPlane.cpp for the full
+	// derivation): the widget is scaled by ratio / refRatio so it keeps a
+	// constant screen size as the camera moves. The reference ratio is captured
+	// on the first frame, locking the gizmo to the size it had when it appeared.
+	static float ComputeFixedScaleRatio(
+		Editor::Panels::SceneView& p_view,
+		const Eigen::Vector3f& p_worldPos)
+	{
+		const auto* camera = p_view.GetCamera();
+		if (!camera) return 1.0f;
+
+		const auto& projection = camera->GetProjectionMatrix();
+		const float proj11 = projection(1, 1);
+		const float screenHeight = static_cast<float>(p_view.GetRenderer().GetFrameDescriptor().renderHeight);
+		if (proj11 <= 0.0f || screenHeight <= 0.0f) return 1.0f;
+
+		if (camera->GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC)
+		{
+			return 400.0f / (proj11 * screenHeight);
+		}
+
+		const Maths::FVector3 viewPos = camera->GetViewMatrix().MulPoint(
+			Maths::FVector3{ p_worldPos.x(), p_worldPos.y(), p_worldPos.z() });
+		const float depth = std::abs(viewPos.z);
+		return 400.0f * depth / (proj11 * screenHeight);
+	}
+class ArrowRotateWidget::Internal {
 	public:
 		Internal(ArrowRotateWidget*s):self(s){}
 		~Internal(){}
@@ -25,6 +52,8 @@ namespace MOON {
 		GizmoAxisRotate rotatePick;
 		
 		std::string curHitTarget = "";
+			float mRefScaleRatio = -1.0f;
+		float mLastScale = 1.0f;
 	};
 	ArrowRotateWidget::ArrowRotateWidget(const std::string& name):EventWidget(name), mInternal(new Internal(this)),mState(Stop)
 	{
@@ -53,15 +82,28 @@ namespace MOON {
 	}
 	void ArrowRotateWidget::onUpdate()
 	{
+		const float ratio = ComputeFixedScaleRatio(*m_sceneView, mInternal->rotateCenter);
+		if (mInternal->mRefScaleRatio < 0.0f)
+		{
+			// Lock the gizmo to its current screen size; afterwards it stays
+			// constant no matter how the camera moves.
+			mInternal->mRefScaleRatio = ratio;
+		}
+		const float scale = mInternal->mRefScaleRatio > 0.0f ? ratio / mInternal->mRefScaleRatio : 1.0f;
+		mInternal->mLastScale = scale;
+
+		Eigen::Matrix4f scaleMat = Eigen::Matrix4f::Identity();
+		scaleMat(0, 0) = scaleMat(1, 1) = scaleMat(2, 2) = scale;
+
 		const auto& faces = mInternal->viewData.getFaces();
 		for (int i = 0; i < faces.size(); i++) {
-			renderer->pushMatrix(faces[i].model);
+			renderer->pushMatrix(faces[i].model * scaleMat);
 			renderer->drawTriangleList(faces[i].faces, 1.0, faces[i].color);
 			renderer->popMatrix();
 		}
 		renderer->drawPoint(mInternal->rotateCenter,20, Eigen::Vector4<uint8_t>(255,0,255,255));
 		renderer->pushSize(6);
-		renderer->drawLine(mInternal->rotateCenter, mInternal->rotateCenter+mInternal->rotateAxis*10);
+		renderer->drawLine(mInternal->rotateCenter, mInternal->rotateCenter + mInternal->rotateAxis * (10.0f * scale));
 		renderer->popSize();
 	}
 	void ArrowRotateWidget::setUpRotateCenter(float x, float y, float z)
@@ -178,7 +220,7 @@ namespace MOON {
 		if (mState == Stop) {	
 			auto ray=m_sceneView->GetMouseRay();
 			Ray it(Eigen::Vector3f(ray.origin_.x, ray.origin_.y, ray.origin_.z), Eigen::Vector3f(ray.direction_.x, ray.direction_.y, ray.direction_.z));
-			mInternal->curHitTarget =mInternal->viewData.hitFace(it);
+			mInternal->curHitTarget =mInternal->viewData.hitFace(it, mInternal->mLastScale);
 			if (mInternal->curHitTarget == "Arrow") {
 				mState = Hot;
 				mInternal->viewData.setTriangleFace("Arrow", Eigen::Vector4<uint8_t>(255,0,0,255));
@@ -188,7 +230,7 @@ namespace MOON {
 			
 			auto ray = m_sceneView->GetMouseRay();
 			Ray it(Eigen::Vector3f(ray.origin_.x, ray.origin_.y, ray.origin_.z), Eigen::Vector3f(ray.direction_.x, ray.direction_.y, ray.direction_.z));
-			mInternal->curHitTarget = mInternal->viewData.hitFace(it);
+			mInternal->curHitTarget = mInternal->viewData.hitFace(it, mInternal->mLastScale);
 			if (mInternal->curHitTarget == "") {
 				mState = Stop;
 				mInternal->viewData.setTriangleFace("Arrow", Eigen::Vector4<uint8_t>(255, 255, 255, 0));

@@ -20,6 +20,13 @@
 | 几何层 | `GizmoBehaviour` | 射线与轴/平面/旋转平面的求交算法 |
 | 业务层 | `ClipPlane` 等子类 | 状态机、控件外观、把交互结果写回场景/渲染器 |
 
+现有控件可以归为两种风格，绘制与拾取方式不同：
+
+| 风格 | 代表 | 几何载体 | 绘制路径 | 拾取方式 |
+| --- | --- | --- | --- | --- |
+| ClipPlane 风格 | `ClipPlane` | `PolygonMesh`（块结构） | `drawOneMesh` → `drawMeshList`（FIXED_SCALE） | GPU 颜色编码（`PickingRenderPass`） |
+| WidgetViewData 风格 | `AxisTranslationWidget` / `ArrowRotateWidget` / `PadTaskWidget` | `TriangleFace` / `Edge` / `VertexPoint` | `drawTriangleList` → `vertexData`（立即模式） | CPU 射线求交（`hitFace` / `hitEdge` / `hitPoint`） |
+
 ![交互 Widget 整体架构与数据流](images/widget_architecture.svg)
 
 ---
@@ -159,6 +166,37 @@ gizmo 用 `GizmoCell.ovfx` 的 `FIXED_SCALE` 特性绘制，保证控件在任�
 
 这也是 ClipPlane 旋转圆弧必须用同一个 ratio 缩放的原因——否则控件固定大小、圆弧却随距离缩放，两者会脱节。
 
+WidgetViewData 风格控件不走 FIXED_SCALE 着色器，需要在 C++ 侧用同一个 ratio 手动缩放（见 4.5）。
+
+### 4.5 WidgetViewData 风格控件（以 AxisTranslationWidget 为例）
+
+`WidgetViewData` 是另一套控件几何容器：`TriangleFace`（本地三角形 + 颜色 + 4×4 model 矩阵）、`Edge`（线段）、`VertexPoint`（点）。`AxisTranslationWidget` 用它承载倒圆角半径箭头：
+
+**构造**：加载 `Arrow_Translate` 模型，把顶点乘以 `Scaling(10)` 写入 `TriangleFace`（本地坐标，绕 gizmo 原点分布），再调用 `setTriangleFace("Arrow", f, color)` 注册。
+
+**绘制**：`onUpdate` 对每个 `TriangleFace` 压入 model 矩阵后提交：
+
+```cpp
+renderer->pushMatrix(faces[i].model);            // model = R | t
+renderer->drawTriangleList(faces[i].faces, 1.0, faces[i].color);
+renderer->popMatrix();
+```
+
+`model` 的旋转与平移由外部设置：`setUpOrigin` / `setUpDir`（旋转矩阵 `RotationMatrixZ(normal)`）/ `setLength` 更新平移列；`setUpScale` 通过 `setTriangleFaceScale` 直接缩放本地顶点（模型相对大小）。
+
+**固定屏幕尺寸**：与 ClipPlane 相同的 ratio 公式，在 C++ 侧手动缩放：
+
+```cpp
+const float ratio = ComputeFixedScaleRatio(*m_sceneView, mInternal->center);
+if (mInternal->mRefScaleRatio < 0.0f) mInternal->mRefScaleRatio = ratio;  // 首帧锁定基准
+const float scale = ratio / mInternal->mRefScaleRatio;                    // 之后屏幕尺寸恒定
+Eigen::Matrix4f scaleMat = Eigen::Matrix4f::Identity();
+scaleMat(0, 0) = scaleMat(1, 1) = scaleMat(2, 2) = scale;
+renderer->pushMatrix(faces[i].model * scaleMat);                          // 绕 gizmo 原点缩放
+```
+
+`scale = ratio / mRefScaleRatio` 让控件锁定在“出现时”的大小，此后随相机距离等比缩放、屏幕尺寸不变；正交相机 ratio 为常量，scale 恒为 1。**绘制与拾取必须使用同一个 scale**（见 5.3），否则命中会错位。
+
 ---
 
 ## 5. 拾取系统
@@ -200,6 +238,27 @@ bool hit = renderer->isSelectPolygon("TransformAxis", table[i].blockName);
 ```
 
 ![Gizmo 拾取流程](images/widget_picking.svg)
+
+### 5.3 CPU 射线拾取（WidgetViewData 风格）
+
+WidgetViewData 风格控件不用 GPU 颜色编码，而是在 `onMouseMove` 里直接对 CPU 端三角形做射线求交：
+
+```cpp
+auto ray = m_sceneView->GetMouseRay();                 // 世界空间鼠标射线
+mInternal->curHitTarget = mInternal->viewData.hitFace(it, mInternal->mLastScale);
+```
+
+`WidgetViewData::hitFace(ray, scale)` 把每个 `TriangleFace` 的本地三角形用 `model * Scale(scale)` 变换到世界空间，逐三角形做 Möller–Trumbore 求交（`Intersect`），取最近命中并返回块的**名字**（如 `"Arrow"`）。控件拿到名字后驱动状态机：命中 `"Arrow"` → `Hot` → 按下进入 `AxisT`。
+
+`scale` 参数与绘制时的缩放一致（见 4.5），保证“画在哪、命中就在哪”。`hitEdge` / `hitPoint` 则把线/点经视口矩阵投影到屏幕，按屏幕距离命中，适合 2D 手柄。
+
+两种拾取方式对比：
+
+| GPU 颜色编码（ClipPlane 风格） | CPU 射线求交（WidgetViewData 风格） |
+| --- | --- |
+| 每帧把 gizmo 画进拾取 framebuffer，读 1 像素解码 polygonId/blockId | 直接对 CPU 端三角形做射线求交，返回块名 |
+| 适合复杂、多块的 `PolygonMesh` gizmo | 适合简单三角面控件，无额外 GPU 开销 |
+| 命中信息是数字 id，需要 `isSelectPolygon` 再比对 | 命中即名字，直接驱动状态机 |
 
 ---
 
@@ -303,9 +362,11 @@ pos = eye + ray * t;
 ## 8. 如何扩展一个新 Widget
 
 1. **继承 `EventWidget`**，构造时传入名字（自动注册到 `ImRenderer` 与 `RenderWindowInteractor`）；
-2. **重写 `onUpdate()`**：用 `renderer->drawOneMesh(...)` / `drawLine(...)` 绘制控件，读取 `getFrameParam()` 做逻辑；
-3. **在 `Im3DType` 里构建或复用 gizmo 网格**：`switchNextBlock` 分块、命名，保证每个手柄可拾取；
-4. **重写 `onMouseMove()`**：用 `isSelectPolygon(pname, blockName)` 做悬停检测，切换状态机；
+2. **选择控件风格**：
+   - ClipPlane 风格：在 `Im3DType` 构建 `PolygonMesh`（`switchNextBlock` 分块命名），`onUpdate` 用 `drawOneMesh`，`onMouseMove` 用 `isSelectPolygon` 拾取；
+   - WidgetViewData 风格：用 `viewData.setTriangleFace(...)` 承载三角形，`onUpdate` 用 `pushMatrix + drawTriangleList`，`onMouseMove` 用 `viewData.hitFace(ray, scale)` 拾取（需要固定屏幕尺寸时按 4.5 计算 scale）；
+3. **重写 `onUpdate()`**：绘制控件，读取 `getFrameParam()` 做逻辑；
+4. **重写 `onMouseMove()`**：做悬停检测，切换状态机；
 5. **重写 `onLeftMousePressed()` / `onLeftMouseReleased()`**：进入/退出拖拽，初始化 `GizmoBehaviour`；
 6. **把交互结果写回场景**（如 `SetClipPlane`、`InvokeEvent(自定义事件)` 通知业务层）；
 7. 需要接收键盘时重写 `onKeyPress` / `onKeyRelease`。
@@ -322,5 +383,8 @@ pos = eye + ray * t;
 | `Moon/Interactive/Im3DType.*` | `PolygonMesh` 块结构、`TransformAxis()` 等 gizmo 构建 |
 | `Moon/Interactive/GizmoBehaviour.*` | 轴/平面/旋转几何算法 |
 | `Moon/Interactive/Widgets/ClipPlane.*` | 剖切控件：状态机、手柄表、截面联动（示例） |
+| `Moon/Interactive/ViewData.*` | WidgetViewData 风格控件的几何容器与 CPU 拾取（`hitFace` / `hitEdge` / `hitPoint`） |
+| `Moon/Interactive/Widgets/AxisTranslationWidget.*` | 沿轴拖拽控件：固定屏幕尺寸、CPU 拾取、`LengthChange` 事件 |
+| `Moon/editor/UI/TaskPanel/FilletTask.cpp` | 倒圆角 UI：用两个 `AxisTranslationWidget` 拖动控制半径 |
 | `Moon/renderer/PickingRenderPass.cpp` | 拾取 framebuffer、像素读回与 `selectPolygon` |
 | `Moon/Interactive/Im3DRenderer.h` | `FrameParam`（射线/光标/视口信息） |
