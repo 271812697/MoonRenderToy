@@ -69,7 +69,11 @@
 		    <file>icons/Sketcher_CreateCircle.svg</file>
 		    <file>icons/Sketcher_CreateBSpline.svg</file>
 		    <file>icons/Sketcher_CreateArc.svg</file>
-        <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
+		    <file>icons/Sketcher_CreateArcSlot.svg</file>
+		    <file>icons/Sketcher_CreateEllipseByCenter.svg</file>
+		    <file>icons/Sketcher_CreateRectangle_Constr.svg</file>
+		    <file>icons/Sketcher_CreateRegularPolygon.svg</file>
+		    <file>icons/Sketcher_CreateSlot.svg</file>
 		    <file>icons/Sketcher_Trimming.svg</file>
         <file>icons/Sketcher_CreateLine.svg</file>
         <file>icons/Sketcher_CreatePolyline.svg</file>

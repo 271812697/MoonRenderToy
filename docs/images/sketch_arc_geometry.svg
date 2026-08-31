@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 4　ThreeRim 三点画弧的几何原理</text>
+
+  <circle cx="300" cy="300" r="170" fill="none" stroke="#ccc" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="300" y1="130" x2="300" y2="470" stroke="#eee"/>
+  <line x1="130" y1="300" x2="470" y2="300" stroke="#eee"/>
+  <circle cx="300" cy="300" r="4" fill="#333"/>
+  <text x="312" y="296" font-size="14" font-weight="bold" fill="#333">C</text>
+
+  <circle cx="180" cy="200" r="4" fill="#2b4a6f"/>
+  <text x="160" y="190" font-size="15" font-weight="bold" fill="#2b4a6f">P1</text>
+  <circle cx="420" cy="220" r="4" fill="#2b4a6f"/>
+  <text x="432" y="216" font-size="15" font-weight="bold" fill="#2b4a6f">P2</text>
+  <circle cx="260" cy="430" r="4" fill="#b03a3a"/>
+  <text x="272" y="448" font-size="15" font-weight="bold" fill="#b03a3a">P3</text>
+
+  <path d="M 180 200 A 170 170 0 0 1 260 430" fill="none" stroke="#2e8b57" stroke-width="4"/>
+  <path d="M 260 430 A 170 170 0 0 1 420 220" fill="none" stroke="#c9a35f" stroke-width="4" stroke-dasharray="7 5"/>
+
+  <line x1="300" y1="300" x2="180" y2="200" stroke="#888" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="300" y1="300" x2="420" y2="220" stroke="#888" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="300" y1="300" x2="260" y2="430" stroke="#888" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <path d="M 335 258 A 50 50 0 0 1 360 280" fill="none" stroke="#2b4a6f" stroke-width="1.5"/>
+  <text x="352" y="252" font-size="13" fill="#2b4a6f">α1</text>
+  <text x="330" y="330" font-size="13" fill="#2b4a6f">α2</text>
+  <text x="292" y="372" font-size="13" fill="#b03a3a">α3</text>
+
+  <rect x="540" y="120" width="350" height="330" rx="10" fill="#fafafa" stroke="#ddd"/>
+  <text x="570" y="158" font-size="15" font-weight="bold" fill="#333">算法要点</text>
+  <text x="570" y="192" font-size="13" fill="#444">1. 三点求圆心：</text>
+  <text x="640" y="216" font-size="12" fill="#666">getCircleCenter(P1,P2,P3) 求外接圆圆心 C，</text>
+  <text x="640" y="236" font-size="12" fill="#666">radius = |P3 − C|</text>
+  <text x="570" y="268" font-size="13" fill="#444">2. 起止角：</text>
+  <text x="640" y="292" font-size="12" fill="#666">α1 = angle(P1−C)，α2 = angle(P2−C)，α3 = angle(P3−C)</text>
+  <text x="570" y="324" font-size="13" fill="#444">3. 扫掠方向（恒逆时针）：</text>
+  <text x="640" y="348" font-size="12" fill="#666">α3 落在 α1、α2 之间 → 小弧（绿）；</text>
+  <text x="640" y="368" font-size="12" fill="#666">否则 → 补角大弧（黄虚线）</text>
+  <text x="570" y="402" font-size="13" fill="#444">4. Center 方式：</text>
+  <text x="640" y="426" font-size="12" fill="#666">圆心 → 起点 → 扫掠角，start/end 由 arcAngle 符号决定</text>
+</svg>

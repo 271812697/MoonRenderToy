@@ -19,8 +19,12 @@
 #include "Interactive/Widgets/DrawSketchHandlerCircle.h"
 #include "Interactive/Widgets/DrawSketchHandlerRotate.h"
 #include "Interactive/Widgets/DrawSketchHandlerArc.h"
+#include "Interactive/Widgets/DrawSketchHandlerArcSlot.h"
+#include "Interactive/Widgets/DrawSketchHandlerEllipse.h"
 #include "Interactive/Widgets/DrawSketchHandlerBSpline.h"
 #include "Interactive/Widgets/DrawSketchHandlerRectangle.h"
+#include "Interactive/Widgets/DrawSketchHandlerPolygon.h"
+#include "Interactive/Widgets/DrawSketchHandlerSlot.h"
 #include "Interactive/Widgets/DrawSketchHandlerTrimming.h"
 #include "Interactive/Widgets/DrawSketchHandlerSymmetry.h"
 #include "Interactive/Widgets/DrawSketchHandlerFillet.h"
@@ -48,8 +52,12 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerLineSet"] = new MOON::DrawSketchHandlerLineSet("DrawSketchHandlerLineSet");
 			mWidgets["DrawSketchHandlerCircle"] = new MOON::DrawSketchHandlerCircle("DrawSketchHandlerCircle");
 			mWidgets["DrawSketchHandlerArc"] = new MOON::DrawSketchHandlerArc("DrawSketchHandlerArc");
+			mWidgets["DrawSketchHandlerArcSlot"] = new MOON::DrawSketchHandlerArcSlot("DrawSketchHandlerArcSlot");
+			mWidgets["DrawSketchHandlerEllipse"] = new MOON::DrawSketchHandlerEllipse("DrawSketchHandlerEllipse");
 			mWidgets["DrawSketchHandlerBSpline"] = new MOON::DrawSketchHandlerBSpline("DrawSketchHandlerBSpline");
 			mWidgets["DrawSketchHandlerRectangle"] = new MOON::DrawSketchHandlerRectangle("DrawSketchHandlerRectangle");
+			mWidgets["DrawSketchHandlerPolygon"] = new MOON::DrawSketchHandlerPolygon("DrawSketchHandlerPolygon");
+			mWidgets["DrawSketchHandlerSlot"] = new MOON::DrawSketchHandlerSlot("DrawSketchHandlerSlot");
 			mWidgets["DrawSketchHandlerSymmetry"] = new MOON::DrawSketchHandlerSymmetry("DrawSketchHandlerSymmetry");
 			mWidgets["DrawSketchHandlerFillet"] = new MOON::DrawSketchHandlerFillet("DrawSketchHandlerFillet");
 			mWidgets["PrimitiveBox"] = new MOON::PrimitiveBox("PrimitiveBox");
