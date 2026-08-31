@@ -1,4 +1,4 @@
-#include "Interactive/Widgets/DrawSketchHandlerPolygon.h"
+﻿#include "Interactive/Widgets/DrawSketchHandlerPolygon.h"
 #include "Interactive/Im3DRenderer.h"
 #include "renderer/SceneView.h"
 #include "Qtimgui/imgui/imgui.h"
@@ -41,10 +41,10 @@ namespace MOON {
 	void DrawSketchHandlerPolygon::onKeyPress(const std::string& key)
 	{
 		SupperClass::onKeyPress(key);
-		if (key == "U") {
+		if (key == "A") {
 			numberOfCorners++;
 		}
-		else if (key == "J" && numberOfCorners > 3) {
+		else if (key == "S" && numberOfCorners > 3) {
 			numberOfCorners--;
 		}
 		if (state() == SelectMode::SeekSecond) {

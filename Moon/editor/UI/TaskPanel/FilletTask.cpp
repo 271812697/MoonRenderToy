@@ -135,8 +135,8 @@ namespace MOON {
         if (propertyName == "Fillet:Radius") {
             return QVariant::fromValue(mInternal->feature->radius);
         }
-        else if (propertyName == "Use ALL Edges") {
-            return QVariant::fromValue(mInternal->feature->useAllEdges);
+		else if (propertyName == "Fillet:Use ALL Edges") {
+			return QVariant::fromValue(mInternal->feature->useAllEdges);
         }
         return QVariant();
     }
@@ -153,8 +153,8 @@ namespace MOON {
             updatePreView = true;
         }
        
-        else if (propertyName == "Use ALL Edges") {
-            mInternal->feature->useAllEdges= value.value<bool>();
+		else if (propertyName == "Fillet:Use ALL Edges") {
+			mInternal->feature->useAllEdges= value.value<bool>();
             updatePreView = true;
         }
         if (updatePreView&& mInternal->axisBehaviour1) {
