@@ -4,6 +4,7 @@
 #include "editor/UI/TaskPanel/ExtrudeTaskDialog.h"
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "editor/UI/TaskPanel/FilletTask.h"
+#include "editor/UI/TaskPanel/ChamferTask.h"
 #include "editor/UI/TaskPanel/RevolutionTask.h"
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
@@ -23,6 +24,9 @@ namespace MOON {
 		}
 		if (name == "Fillet") {
 			return new FilletTask();
+		}
+		if (name == "Chamfer") {
+			return new ChamferTask();
 		}
 		if (name == "Pocket") {
 			return new ExtrudeTaskDialog(nullptr, ExtrudeType::Subtractive);
@@ -70,6 +74,8 @@ namespace MOON {
 			thicknessCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Thickness.svg");
 			filletCommand = new DesignModelCommand(self,"Fillet");
 			filletCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Fillet.svg");
+			chamferCommand = new DesignModelCommand(self, "Chamfer");
+			chamferCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Chamfer.svg");
 			pocketCommand = new DesignModelCommand(self,"Pocket");
 			pocketCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Pocket.svg");
 			grooveCommand = new DesignModelCommand(self,"Groove");
@@ -78,6 +84,7 @@ namespace MOON {
 			self->addAction(revolveCommand->action());
 			self->addAction(thicknessCommand->action());
 			self->addAction(filletCommand->action());
+			self->addAction(chamferCommand->action());
 			self->addAction(pocketCommand->action());
 			self->addAction(grooveCommand->action());
 
@@ -87,6 +94,7 @@ namespace MOON {
 			padCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pad", nullptr));
 			thicknessCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Thickness", nullptr));
 			filletCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Fillet", nullptr));
+			chamferCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Chamfer", nullptr));
 			pocketCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pocket", nullptr));
 			revolveCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Revolve", nullptr));
 			grooveCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Groove", nullptr));
@@ -97,6 +105,7 @@ namespace MOON {
 		DesignModelCommand* padCommand = nullptr;
 		DesignModelCommand* thicknessCommand = nullptr;
 		DesignModelCommand* filletCommand = nullptr;
+		DesignModelCommand* chamferCommand = nullptr;
 		DesignModelCommand* pocketCommand = nullptr;
 		DesignModelCommand* revolveCommand = nullptr;
 		DesignModelCommand* grooveCommand = nullptr;

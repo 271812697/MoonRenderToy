@@ -3,7 +3,6 @@
 #include <QDockWidget>
 #include <QString>
 #include <deque>
-#include <string>
 #include <utility>
 
 class QCheckBox;
@@ -12,6 +11,9 @@ class QPushButton;
 
 namespace MOON {
 
+	// Console-style log panel: a Level/Time/Message header row above a
+	// monospace QPlainTextEdit whose lines are padded to line up with the
+	// headers. The level filters sit above the header row.
 	class LogPanel : public QDockWidget, public LogOutput {
 		Q_OBJECT
 	public:
@@ -32,7 +34,7 @@ namespace MOON {
 		void copyLogContent();
 
 	private:
-		void appendMessage(int level, const QString& msg);
+		void appendMessage(int level, const QString& line);
 		bool levelVisible(int level) const;
 
 		QPlainTextEdit* m_logText = nullptr;

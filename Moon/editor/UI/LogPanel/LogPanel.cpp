@@ -5,30 +5,31 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
+#include <QColor>
 #include <QDateTime>
+#include <QFontDatabase>
+#include <QFontMetrics>
+#include <QFrame>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QVBoxLayout>
 
 namespace MOON {
 
 	namespace {
-		QString levelColor(int level) {
-			switch (level) {
-				case LogOutput::LL_WARNING:
-					return "#e5c07b";
-				case LogOutput::LL_ERROR:
-				case LogOutput::LL_FATAL:
-					return "#e06c75";
-				case LogOutput::LL_DEBUG:
-					return "#7f8c98";
-				default:
-					return "#c8ccd0";
-			}
-		}
+		// Field widths in monospace characters; they keep the header and the
+		// log lines aligned column by column.
+		constexpr int LevelFieldWidth = 8;   // "[info]:" + one space
+		constexpr int TimeFieldWidth = 8;    // "21:10:50" + padding
+		constexpr int TimeSepWidth = 3;      // " > " after the timestamp
+
 		QString levelName(int level) {
 			switch (level) {
 				case LogOutput::LL_DEBUG:
@@ -43,6 +44,19 @@ namespace MOON {
 					return "info";
 			}
 		}
+		QColor levelColor(int level) {
+			switch (level) {
+				case LogOutput::LL_WARNING:
+					return QColor("#e5c07b");
+				case LogOutput::LL_ERROR:
+				case LogOutput::LL_FATAL:
+					return QColor("#e06c75");
+				case LogOutput::LL_DEBUG:
+					return QColor("#7f8c98");
+				default:
+					return QColor("#98c379");
+			}
+		}
 	}
 
 	LogPanel::LogPanel(QWidget* parent)
@@ -50,38 +64,62 @@ namespace MOON {
 		setWindowTitle(tr("Log"));
 		setTitleBarWidget(new DockWidgetTitleBar(this));
 
+		QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		mono.setPointSize(mono.pointSize() + 2);
+		const QFontMetrics fm(mono);
+		const int charWidth = fm.horizontalAdvance(QStringLiteral("M"));
+
 		auto* content = new QWidget(this);
-		auto* mainLayout = new QHBoxLayout(content);
+		auto* mainLayout = new QVBoxLayout(content);
 		mainLayout->setContentsMargins(3, 3, 3, 3);
-		mainLayout->setSpacing(3);
+		mainLayout->setSpacing(2);
 
-		// Single rich-text view instead of one widget per log line: keeps the
-		// panel fast even with a high message rate. The block count is capped
-		// so memory stays bounded.
-		m_logText = new QPlainTextEdit(content);
-		m_logText->setReadOnly(true);
-		m_logText->setMaximumBlockCount(10000);
-		m_logText->setContextMenuPolicy(Qt::CustomContextMenu);
-		mainLayout->addWidget(m_logText, 1);
-
-		auto* sideLayout = new QVBoxLayout();
-		sideLayout->setSpacing(3);
+		// Filter row above the header row.
+		auto* filterRow = new QHBoxLayout();
+		filterRow->setSpacing(8);
 		m_debugCheck = new QCheckBox(tr("Debug"), content);
 		m_debugCheck->setChecked(true);
 		m_infoCheck = new QCheckBox(tr("Info"), content);
 		m_infoCheck->setChecked(true);
-		m_errorCheck = new QCheckBox(tr("Error"), content);
-		m_errorCheck->setChecked(true);
 		m_warnCheck = new QCheckBox(tr("Warning"), content);
 		m_warnCheck->setChecked(true);
+		m_errorCheck = new QCheckBox(tr("Error"), content);
+		m_errorCheck->setChecked(true);
 		m_clear = new QPushButton(tr("Clean"), content);
-		sideLayout->addWidget(m_debugCheck);
-		sideLayout->addWidget(m_infoCheck);
-		sideLayout->addWidget(m_errorCheck);
-		sideLayout->addWidget(m_warnCheck);
-		sideLayout->addWidget(m_clear);
-		sideLayout->addStretch();
-		mainLayout->addLayout(sideLayout);
+		for (QWidget* w : {static_cast<QWidget*>(m_debugCheck), static_cast<QWidget*>(m_infoCheck),
+		                   static_cast<QWidget*>(m_warnCheck), static_cast<QWidget*>(m_errorCheck),
+		                   static_cast<QWidget*>(m_clear)}) {
+			w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		}
+		filterRow->addWidget(m_debugCheck);
+		filterRow->addWidget(m_infoCheck);
+		filterRow->addWidget(m_warnCheck);
+		filterRow->addWidget(m_errorCheck);
+		filterRow->addWidget(m_clear);
+		filterRow->addStretch(1);
+		mainLayout->addLayout(filterRow);
+
+		// Header row: widths match the padded monospace content columns.
+		auto* headerRow = new QHBoxLayout();
+		headerRow->setSpacing(0);
+		auto* timeHeader = new QLabel(tr("Time"), content);
+		auto* levelHeader = new QLabel(tr("Level"), content);
+		auto* msgHeader = new QLabel(tr("Message"), content);
+		timeHeader->setFixedWidth((TimeFieldWidth + TimeSepWidth) * charWidth);
+		levelHeader->setFixedWidth(LevelFieldWidth * charWidth);
+		headerRow->addWidget(timeHeader);
+		headerRow->addWidget(levelHeader);
+		headerRow->addWidget(msgHeader, 1);
+		mainLayout->addLayout(headerRow);
+
+		m_logText = new QPlainTextEdit(content);
+		m_logText->setFont(mono);
+		m_logText->setReadOnly(true);
+		m_logText->setMaximumBlockCount(10000);
+		m_logText->document()->setDocumentMargin(0);
+		m_logText->setFrameShape(QFrame::NoFrame);
+		m_logText->setContextMenuPolicy(Qt::CustomContextMenu);
+		mainLayout->addWidget(m_logText, 1);
 
 		setWidget(content);
 
@@ -89,8 +127,8 @@ namespace MOON {
 		connect(m_clear, &QPushButton::clicked, this, &LogPanel::onClearMessage);
 		connect(m_debugCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
 		connect(m_infoCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
-		connect(m_errorCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
 		connect(m_warnCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
+		connect(m_errorCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
 		connect(m_logText, &QPlainTextEdit::customContextMenuRequested,
 		        this, &LogPanel::showMenu);
 
@@ -106,26 +144,37 @@ namespace MOON {
 	}
 
 	void LogPanel::onLogMessage(int level, QString msg) {
-		m_messages.push_back({ level, msg });
+		const QString time = QDateTime::currentDateTime().toString("H:mm:ss");
+		// Left-pad level and time to fixed monospace widths so every line lines
+		// up under the corresponding header.
+		QString levelField = QStringLiteral("[%1]:").arg(levelName(level));
+		if (levelField.size() < LevelFieldWidth) {
+			levelField = levelField.leftJustified(LevelFieldWidth, QLatin1Char(' '));
+		}
+		else {
+			levelField += QLatin1Char(' ');
+		}
+		const QString line = QString("%1%2%3%4")
+		                         .arg(time, -TimeFieldWidth)
+		                         .arg(QStringLiteral(" > "))
+		                         .arg(levelField)
+		                         .arg(msg.trimmed());
+		m_messages.push_back({ level, line });
 		if (static_cast<int>(m_messages.size()) > 10000) {
 			m_messages.pop_front();
 		}
 		if (levelVisible(level)) {
-			appendMessage(level, msg);
+			appendMessage(level, line);
 		}
 	}
 
-	void LogPanel::appendMessage(int level, const QString& msg) {
-		const QString time = QDateTime::currentDateTime().toString("yyyy/M/d H:mm:ss");
-		// Trim the message: trailing/leading whitespace would otherwise be shown
-		// as an HTML entity or collapse when the rich text is imported.
-		const QString text = msg.trimmed();
-		const QString html = QString("<span style='color:%1;'>[%2] > [%3]: %4</span>")
-		                         .arg(levelColor(level))
-		                         .arg(levelName(level))
-		                         .arg(time)
-		                         .arg(text.toHtmlEscaped());
-		m_logText->appendHtml(html);
+	void LogPanel::appendMessage(int level, const QString& line) {
+		QTextCursor cursor(m_logText->document());
+		cursor.movePosition(QTextCursor::End);
+		QTextCharFormat fmt;
+		fmt.setForeground(levelColor(level));
+		cursor.setCharFormat(fmt);
+		cursor.insertText(line + "\n");
 		m_logText->verticalScrollBar()->setValue(m_logText->verticalScrollBar()->maximum());
 	}
 
@@ -148,9 +197,9 @@ namespace MOON {
 	void LogPanel::rebuildView() {
 		m_logText->setUpdatesEnabled(false);
 		m_logText->clear();
-		for (const auto& [level, msg] : m_messages) {
+		for (const auto& [level, line] : m_messages) {
 			if (levelVisible(level)) {
-				appendMessage(level, msg);
+				appendMessage(level, line);
 			}
 		}
 		m_logText->setUpdatesEnabled(true);

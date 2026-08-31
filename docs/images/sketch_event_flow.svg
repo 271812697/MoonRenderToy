@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 3　一次交互的事件与坐标数据流</text>
+
+  <rect x="40" y="90" width="150" height="70" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="115" y="122" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">Qt 鼠标事件</text>
+  <text x="115" y="144" text-anchor="middle" font-size="12" fill="#666">MouseMove/Press…</text>
+
+  <rect x="230" y="90" width="170" height="70" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="315" y="122" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">RenderWindowInteractor</text>
+  <text x="315" y="144" text-anchor="middle" font-size="12" fill="#666">InvokeEvent 按事件分发</text>
+
+  <rect x="440" y="90" width="170" height="70" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="525" y="122" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b4a6f">EventWidget</text>
+  <text x="525" y="144" text-anchor="middle" font-size="12" fill="#666">onLeftMousePressed / onMouseMove（帧节流）</text>
+
+  <rect x="650" y="90" width="230" height="70" rx="10" fill="#f4f8f4" stroke="#6fa86f"/>
+  <text x="765" y="122" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">DrawSketchHandler::onMouseMove</text>
+  <text x="765" y="144" text-anchor="middle" font-size="12" fill="#666">GetMouseRay → 射线与草图平面求交</text>
+
+  <line x1="190" y1="125" x2="230" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="400" y1="125" x2="440" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="610" y1="125" x2="650" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="40" y="260" width="200" height="80" rx="10" fill="#f4f8f4" stroke="#6fa86f"/>
+  <text x="140" y="292" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">onSketchPos（2D）</text>
+  <text x="140" y="316" text-anchor="middle" font-size="12" fill="#666">(x,y) 取两位小数 + snapPoint 吸附</text>
+
+  <rect x="300" y="260" width="200" height="80" rx="10" fill="#faf6ee" stroke="#c9a35f"/>
+  <text x="400" y="292" text-anchor="middle" font-size="15" font-weight="bold" fill="#7a5a1e">状态机推进</text>
+  <text x="400" y="316" text-anchor="middle" font-size="12" fill="#666">onButtonPressed → updateDataAndDrawToPosition + moveToNextMode</text>
+
+  <rect x="560" y="260" width="200" height="80" rx="10" fill="#eaf4ea" stroke="#4f8f4f"/>
+  <text x="660" y="292" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">ShapeGeometry</text>
+  <text x="660" y="316" text-anchor="middle" font-size="12" fill="#666">addArcToShapeGeometry 等工厂</text>
+
+  <rect x="780" y="260" width="120" height="80" rx="10" fill="#eef7ee" stroke="#4f8f4f"/>
+  <text x="840" y="292" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">SketcherObj</text>
+  <text x="840" y="316" text-anchor="middle" font-size="12" fill="#666">addGeometry</text>
+
+  <line x1="240" y1="300" x2="300" y2="300" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="500" y1="300" x2="560" y2="300" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="760" y1="300" x2="780" y2="300" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <line x1="765" y1="160" x2="140" y2="260" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="300" y="420" width="620" height="80" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="610" y="452" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b4a6f">预览绘制（每帧）</text>
+  <text x="610" y="478" text-anchor="middle" font-size="13" fill="#444">CreateAndDrawShapeGeometry → drawEdit → lines → DrawSketchHandler::onUpdate → Im3DRenderer 黄色折线</text>
+  <line x1="660" y1="340" x2="610" y2="420" stroke="#888" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+  <text x="620" y="370" text-anchor="middle" font-size="12" fill="#888">预览数据（同帧回读）</text>
+</svg>

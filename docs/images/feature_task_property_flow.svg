@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="600" viewBox="0 0 920 600" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b03a3a"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 2　任务 UI 与属性系统的两条数据流</text>
+
+  <rect x="40" y="80" width="240" height="90" rx="10" fill="#fdeeee" stroke="#c96a6a"/>
+  <text x="160" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#8b2f2f">AxisTranslationWidget 箭头 ×2</text>
+  <text x="160" y="136" text-anchor="middle" font-size="12" fill="#666">挂在首条边两个相邻面</text>
+  <text x="160" y="156" text-anchor="middle" font-size="12" fill="#666">LengthChange 观察者</text>
+
+  <rect x="360" y="80" width="230" height="90" rx="10" fill="#faf6ee" stroke="#c9a35f"/>
+  <text x="475" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#7a5a1e">FilletTask</text>
+  <text x="475" y="136" text-anchor="middle" font-size="12" fill="#666">onWidgetLengthInvoke1/2</text>
+  <text x="475" y="156" text-anchor="middle" font-size="12" fill="#666">feature->radius = 箭头长度</text>
+
+  <rect x="660" y="80" width="230" height="90" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="775" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b4a6f">SliderFloatProperty 编辑器</text>
+  <text x="775" y="136" text-anchor="middle" font-size="12" fill="#666">FloatSliderWidgetQt</text>
+  <text x="775" y="156" text-anchor="middle" font-size="12" fill="#666">updateWidgetValue(r)</text>
+
+  <line x1="280" y1="125" x2="360" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="590" y1="125" x2="660" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="625" y="112" text-anchor="middle" font-size="12" fill="#888">① 拖箭头回写滑块</text>
+
+  <rect x="660" y="240" width="230" height="90" rx="10" fill="#f4f8f4" stroke="#6fa86f"/>
+  <text x="775" y="272" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">WidgetProperty</text>
+  <text x="775" y="296" text-anchor="middle" font-size="12" fill="#666">setWidgetValue → valueChanged</text>
+  <text x="775" y="316" text-anchor="middle" font-size="12" fill="#666">→ onWidgetValueChange</text>
+  <line x1="775" y1="170" x2="775" y2="240" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="360" y="240" width="230" height="90" rx="10" fill="#eaf4ea" stroke="#4f8f4f"/>
+  <text x="475" y="272" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">ParamComponent / PropertyComponent</text>
+  <text x="475" y="296" text-anchor="middle" font-size="12" fill="#666">setOwnerPropertyValue</text>
+  <text x="475" y="316" text-anchor="middle" font-size="12" fill="#666">→ owner->setPropertyValue("Fillet:Radius")</text>
+  <line x1="660" y1="285" x2="590" y2="285" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="40" y="240" width="240" height="90" rx="10" fill="#eef7ee" stroke="#4f8f4f"/>
+  <text x="160" y="272" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">FilletTask::setParamValue</text>
+  <text x="160" y="296" text-anchor="middle" font-size="12" fill="#666">更新 feature->radius</text>
+  <text x="160" y="316" text-anchor="middle" font-size="12" fill="#666">→ previewShape() + 双箭头 setLength</text>
+  <line x1="360" y1="285" x2="280" y2="285" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="40" y="420" width="850" height="90" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="460" y="452" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">属性系统结构（ParamTaskDialog）</text>
+  <text x="460" y="478" text-anchor="middle" font-size="13" fill="#555">addGroupParam("Fillet") → ParamComponent（组） → addParam(属性) → CollapsibleGroupBoxWidget 网格渲染</text>
+  <text x="460" y="498" text-anchor="middle" font-size="13" fill="#555">属性键名 = "组名:属性名"，get/setParamValue 桥接 UI ↔ Feature</text>
+  <text x="460" y="560" text-anchor="middle" font-size="12" fill="#888">红线 ② = 用户拖滑块/改开关：编辑器 → WidgetProperty → ParamComponent → setParamValue（与 ① 汇合）</text>
+  <line x1="775" y1="330" x2="775" y2="420" stroke="#b03a3a" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#b)"/>
+</svg>
