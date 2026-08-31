@@ -104,6 +104,10 @@ void NumberWidget::setIncrement(double inc) {
     increment_ = inc;
 }
 
+void NumberWidget::setDragIncrement(double inc) {
+    dragIncrement_ = inc;
+}
+
 void NumberWidget::setWrapping(bool wrapping) {
     wrapping_ = wrapping;
 }
@@ -548,7 +552,7 @@ double NumberWidget::getUIIncrement() const {
     if (mode_ == Interaction::NoDragging) {
         return increment_;
     }
-    return (maxValue_ - minValue_) / static_cast<double>(std::max(width(), 1));
+    return dragIncrement_;
 }
 
 std::pair<std::optional<double>, NumberWidget::PercentageBar> NumberWidget::getPercentageBar() const {

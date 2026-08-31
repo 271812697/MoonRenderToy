@@ -2,29 +2,34 @@
 #include "core/log.h"
 #include "editor/UI/DockWidgetTitleBar.h"
 
-#include <QAbstractItemModel>
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
 #include <QColor>
 #include <QDateTime>
+#include <QFontDatabase>
 #include <QFontMetrics>
-#include <QHeaderView>
+#include <QFrame>
 #include <QHBoxLayout>
-#include <QItemSelectionModel>
+#include <QLabel>
 #include <QMenu>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
-#include <QTableView>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QVBoxLayout>
-
-#include <array>
-#include <deque>
-#include <vector>
 
 namespace MOON {
 
 	namespace {
+		// Field widths in monospace characters; they keep the header and the
+		// log lines aligned column by column.
+		constexpr int LevelFieldWidth = 8;   // "[info]:" + one space
+		constexpr int TimeFieldWidth = 8;    // "21:10:50" + padding
+		constexpr int TimeSepWidth = 3;      // " > " after the timestamp
+
 		QString levelName(int level) {
 			switch (level) {
 				case LogOutput::LL_DEBUG:
@@ -54,202 +59,77 @@ namespace MOON {
 		}
 	}
 
-	// ---------------------------------------------------------------------------
-	// LogTableModel: ring buffer of log entries exposed as a three-column table.
-	// ---------------------------------------------------------------------------
-	class LogTableModel : public QAbstractTableModel {
-	public:
-		enum Column { Level = 0, Time = 1, Message = 2 };
-		static constexpr int MaxEntries = 10000;
-
-		explicit LogTableModel(QObject* parent = nullptr)
-			: QAbstractTableModel(parent) {
-			m_visibleByLevel.fill(true);
-		}
-
-		int rowCount(const QModelIndex& parent = QModelIndex()) const override {
-			return parent.isValid() ? 0 : static_cast<int>(m_visible.size());
-		}
-		int columnCount(const QModelIndex& parent = QModelIndex()) const override {
-			return parent.isValid() ? 0 : 3;
-		}
-
-		QVariant data(const QModelIndex& index, int role) const override {
-			if (!index.isValid() || index.row() < 0 ||
-			    index.row() >= static_cast<int>(m_visible.size())) {
-				return {};
-			}
-			const auto& entry = m_entries[m_visible[index.row()]];
-			switch (role) {
-				case Qt::DisplayRole:
-					switch (index.column()) {
-						case Level:
-							return levelName(entry.level);
-						case Time:
-							return entry.time;
-						case Message:
-							return entry.message;
-					}
-					break;
-				case Qt::ForegroundRole:
-					return QBrush(levelColor(entry.level));
-				default:
-					break;
-			}
-			return {};
-		}
-
-		QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
-			if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-				switch (section) {
-					case Level:
-						return "Level";
-					case Time:
-						return "Time";
-					case Message:
-						return "Message";
-				}
-			}
-			return {};
-		}
-
-		void append(int level, const QString& time, const QString& message) {
-			m_entries.push_back({ level, time, message });
-			if (static_cast<int>(m_entries.size()) > MaxEntries) {
-				m_entries.pop_front();
-				rebuildVisible();
-				return;
-			}
-			if (levelVisible(level)) {
-				const int row = static_cast<int>(m_visible.size());
-				beginInsertRows(QModelIndex(), row, row);
-				m_visible.push_back(static_cast<int>(m_entries.size()) - 1);
-				endInsertRows();
-			}
-		}
-
-		void setLevelVisible(int level, bool visible) {
-			if (level >= 0 && level < static_cast<int>(m_visibleByLevel.size()) &&
-			    m_visibleByLevel[level] != visible) {
-				m_visibleByLevel[level] = visible;
-				rebuildVisible();
-			}
-		}
-
-		void clear() {
-			beginResetModel();
-			m_entries.clear();
-			m_visible.clear();
-			endResetModel();
-		}
-
-	private:
-		struct Entry {
-			int level = LogOutput::LL_INFO;
-			QString time;
-			QString message;
-		};
-
-		bool levelVisible(int level) const {
-			if (level < 0 || level >= static_cast<int>(m_visibleByLevel.size())) {
-				return true;
-			}
-			return m_visibleByLevel[level];
-		}
-
-		void rebuildVisible() {
-			beginResetModel();
-			m_visible.clear();
-			for (int i = 0; i < static_cast<int>(m_entries.size()); ++i) {
-				if (levelVisible(m_entries[i].level)) {
-					m_visible.push_back(i);
-				}
-			}
-			endResetModel();
-		}
-
-		std::deque<Entry> m_entries;
-		std::vector<int> m_visible;  // deque indices currently shown
-		std::array<bool, 5> m_visibleByLevel;  // LL_DEBUG..LL_FATAL
-	};
-
-	// ---------------------------------------------------------------------------
-	// LogPanel
-	// ---------------------------------------------------------------------------
 	LogPanel::LogPanel(QWidget* parent)
 		: QDockWidget(parent), LogOutput("LogPanel") {
 		setWindowTitle(tr("Log"));
 		setTitleBarWidget(new DockWidgetTitleBar(this));
 
-		m_model = new LogTableModel(this);
+		QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		mono.setPointSize(mono.pointSize() + 2);
+		const QFontMetrics fm(mono);
+		const int charWidth = fm.horizontalAdvance(QStringLiteral("M"));
 
 		auto* content = new QWidget(this);
-		auto* mainLayout = new QHBoxLayout(content);
+		auto* mainLayout = new QVBoxLayout(content);
 		mainLayout->setContentsMargins(3, 3, 3, 3);
-		mainLayout->setSpacing(3);
+		mainLayout->setSpacing(2);
 
-		m_logView = new QTableView(content);
-		m_logView->setModel(m_model);
-		m_logView->setSelectionBehavior(QAbstractItemView::SelectRows);
-		m_logView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-		m_logView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-		m_logView->setShowGrid(false);
-		m_logView->setWordWrap(false);
-		m_logView->setContextMenuPolicy(Qt::CustomContextMenu);
-		m_logView->verticalHeader()->hide();
-		auto* header = m_logView->horizontalHeader();
-		header->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-		header->setSectionResizeMode(LogTableModel::Level, QHeaderView::ResizeToContents);
-		header->setSectionResizeMode(LogTableModel::Time, QHeaderView::Fixed);
-		header->setSectionResizeMode(LogTableModel::Message, QHeaderView::Stretch);
-		// Wide enough for the full timestamp, plus a visible gap before the
-		// message column.
-		const QFontMetrics fm(m_logView->font());
-		header->resizeSection(LogTableModel::Time,
-		                      fm.horizontalAdvance(QStringLiteral("2026/8/31 0:53:46")) + 40);
-		mainLayout->addWidget(m_logView, 1);
-
-		auto* sideLayout = new QVBoxLayout();
-		sideLayout->setSpacing(3);
+		// Filter row above the header row.
+		auto* filterRow = new QHBoxLayout();
+		filterRow->setSpacing(8);
 		m_debugCheck = new QCheckBox(tr("Debug"), content);
 		m_debugCheck->setChecked(true);
 		m_infoCheck = new QCheckBox(tr("Info"), content);
 		m_infoCheck->setChecked(true);
-		m_errorCheck = new QCheckBox(tr("Error"), content);
-		m_errorCheck->setChecked(true);
 		m_warnCheck = new QCheckBox(tr("Warning"), content);
 		m_warnCheck->setChecked(true);
+		m_errorCheck = new QCheckBox(tr("Error"), content);
+		m_errorCheck->setChecked(true);
 		m_clear = new QPushButton(tr("Clean"), content);
-		sideLayout->addWidget(m_debugCheck);
-		sideLayout->addWidget(m_infoCheck);
-		sideLayout->addWidget(m_errorCheck);
-		sideLayout->addWidget(m_warnCheck);
-		sideLayout->addWidget(m_clear);
-		sideLayout->addStretch();
-		mainLayout->addLayout(sideLayout);
+		for (QWidget* w : {static_cast<QWidget*>(m_debugCheck), static_cast<QWidget*>(m_infoCheck),
+		                   static_cast<QWidget*>(m_warnCheck), static_cast<QWidget*>(m_errorCheck),
+		                   static_cast<QWidget*>(m_clear)}) {
+			w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		}
+		filterRow->addWidget(m_debugCheck);
+		filterRow->addWidget(m_infoCheck);
+		filterRow->addWidget(m_warnCheck);
+		filterRow->addWidget(m_errorCheck);
+		filterRow->addWidget(m_clear);
+		filterRow->addStretch(1);
+		mainLayout->addLayout(filterRow);
+
+		// Header row: widths match the padded monospace content columns.
+		auto* headerRow = new QHBoxLayout();
+		headerRow->setSpacing(0);
+		auto* timeHeader = new QLabel(tr("Time"), content);
+		auto* levelHeader = new QLabel(tr("Level"), content);
+		auto* msgHeader = new QLabel(tr("Message"), content);
+		timeHeader->setFixedWidth((TimeFieldWidth + TimeSepWidth) * charWidth);
+		levelHeader->setFixedWidth(LevelFieldWidth * charWidth);
+		headerRow->addWidget(timeHeader);
+		headerRow->addWidget(levelHeader);
+		headerRow->addWidget(msgHeader, 1);
+		mainLayout->addLayout(headerRow);
+
+		m_logText = new QPlainTextEdit(content);
+		m_logText->setFont(mono);
+		m_logText->setReadOnly(true);
+		m_logText->setMaximumBlockCount(10000);
+		m_logText->document()->setDocumentMargin(0);
+		m_logText->setFrameShape(QFrame::NoFrame);
+		m_logText->setContextMenuPolicy(Qt::CustomContextMenu);
+		mainLayout->addWidget(m_logText, 1);
 
 		setWidget(content);
 
 		connect(this, &LogPanel::postMessage, this, &LogPanel::onLogMessage, Qt::QueuedConnection);
 		connect(m_clear, &QPushButton::clicked, this, &LogPanel::onClearMessage);
-		connect(m_debugCheck, &QCheckBox::toggled, this, [this](bool on) {
-			m_model->setLevelVisible(LogOutput::LL_DEBUG, on);
-			m_logView->scrollToBottom();
-		});
-		connect(m_infoCheck, &QCheckBox::toggled, this, [this](bool on) {
-			m_model->setLevelVisible(LogOutput::LL_INFO, on);
-			m_logView->scrollToBottom();
-		});
-		connect(m_warnCheck, &QCheckBox::toggled, this, [this](bool on) {
-			m_model->setLevelVisible(LogOutput::LL_WARNING, on);
-			m_logView->scrollToBottom();
-		});
-		connect(m_errorCheck, &QCheckBox::toggled, this, [this](bool on) {
-			m_model->setLevelVisible(LogOutput::LL_ERROR, on);
-			m_model->setLevelVisible(LogOutput::LL_FATAL, on);
-			m_logView->scrollToBottom();
-		});
-		connect(m_logView, &QTableView::customContextMenuRequested,
+		connect(m_debugCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
+		connect(m_infoCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
+		connect(m_warnCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
+		connect(m_errorCheck, &QCheckBox::toggled, this, &LogPanel::rebuildView);
+		connect(m_logText, &QPlainTextEdit::customContextMenuRequested,
 		        this, &LogPanel::showMenu);
 
 		Log::intance().addOutput(this);
@@ -264,19 +144,70 @@ namespace MOON {
 	}
 
 	void LogPanel::onLogMessage(int level, QString msg) {
-		// Stick to the bottom if the user is already there.
-		auto* scrollBar = m_logView->verticalScrollBar();
-		const bool stickToBottom =
-			scrollBar->value() >= scrollBar->maximum() - 2 || scrollBar->maximum() == 0;
-		m_model->append(level, QDateTime::currentDateTime().toString("yyyy/M/d H:mm:ss"),
-		                msg.trimmed());
-		if (stickToBottom) {
-			m_logView->scrollToBottom();
+		const QString time = QDateTime::currentDateTime().toString("H:mm:ss");
+		// Left-pad level and time to fixed monospace widths so every line lines
+		// up under the corresponding header.
+		QString levelField = QStringLiteral("[%1]:").arg(levelName(level));
+		if (levelField.size() < LevelFieldWidth) {
+			levelField = levelField.leftJustified(LevelFieldWidth, QLatin1Char(' '));
+		}
+		else {
+			levelField += QLatin1Char(' ');
+		}
+		const QString line = QString("%1%2%3%4")
+		                         .arg(time, -TimeFieldWidth)
+		                         .arg(QStringLiteral(" > "))
+		                         .arg(levelField)
+		                         .arg(msg.trimmed());
+		m_messages.push_back({ level, line });
+		if (static_cast<int>(m_messages.size()) > 10000) {
+			m_messages.pop_front();
+		}
+		if (levelVisible(level)) {
+			appendMessage(level, line);
 		}
 	}
 
+	void LogPanel::appendMessage(int level, const QString& line) {
+		QTextCursor cursor(m_logText->document());
+		cursor.movePosition(QTextCursor::End);
+		QTextCharFormat fmt;
+		fmt.setForeground(levelColor(level));
+		cursor.setCharFormat(fmt);
+		cursor.insertText(line + "\n");
+		m_logText->verticalScrollBar()->setValue(m_logText->verticalScrollBar()->maximum());
+	}
+
+	bool LogPanel::levelVisible(int level) const {
+		switch (level) {
+			case LogOutput::LL_DEBUG:
+				return m_debugCheck->isChecked();
+			case LogOutput::LL_INFO:
+				return m_infoCheck->isChecked();
+			case LogOutput::LL_WARNING:
+				return m_warnCheck->isChecked();
+			case LogOutput::LL_ERROR:
+			case LogOutput::LL_FATAL:
+				return m_errorCheck->isChecked();
+			default:
+				return true;
+		}
+	}
+
+	void LogPanel::rebuildView() {
+		m_logText->setUpdatesEnabled(false);
+		m_logText->clear();
+		for (const auto& [level, line] : m_messages) {
+			if (levelVisible(level)) {
+				appendMessage(level, line);
+			}
+		}
+		m_logText->setUpdatesEnabled(true);
+	}
+
 	void LogPanel::onClearMessage() {
-		m_model->clear();
+		m_messages.clear();
+		m_logText->clear();
 	}
 
 	void LogPanel::showMenu(const QPoint&) {
@@ -287,18 +218,7 @@ namespace MOON {
 	}
 
 	void LogPanel::copyLogContent() {
-		QString text;
-		const auto rows = m_logView->selectionModel()->selectedRows();
-		for (const QModelIndex& row : rows) {
-			const QString level =
-				m_model->data(m_model->index(row.row(), LogTableModel::Level), Qt::DisplayRole).toString();
-			const QString time =
-				m_model->data(m_model->index(row.row(), LogTableModel::Time), Qt::DisplayRole).toString();
-			const QString message =
-				m_model->data(m_model->index(row.row(), LogTableModel::Message), Qt::DisplayRole).toString();
-			text += level + "\t" + time + "\t" + message + "\n";
-		}
-		QApplication::clipboard()->setText(text);
+		QApplication::clipboard()->setText(m_logText->textCursor().selectedText());
 	}
 
 }
