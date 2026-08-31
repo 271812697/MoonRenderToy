@@ -12,7 +12,7 @@ layout (location = 3) in vec2 geo_DomainId;
 
 // Nudge the NDC depth of the line slightly toward the camera so it always
 // passes the depth test against its coplanar faces (z-fighting).
-uniform float u_DepthBias = 1e-5;
+uniform float u_DepthBias = 1e-6;
 
 out VS_OUT
 {
@@ -28,7 +28,7 @@ void main()
     vs_out.DomainId=geo_TexCoords;
     lineId=int(round(geo_TexCoords.x));
     gl_Position = ubo_Projection * ubo_View * vec4(vs_out.FragPos, 1.0);
-    gl_Position.z -= u_DepthBias * gl_Position.w;
+    //gl_Position.z -= u_DepthBias * gl_Position.w;
 }
 
 
