@@ -54,6 +54,8 @@ namespace Core::ECS::Components
         // shell so the TreeView shows the real topology.
         std::vector<std::vector<int>>edgeShells;
         std::map<int, Core::ECS::Actor*>shellGroups;
+        std::map<int, Core::ECS::Actor*>solidGroups;
+        std::map<std::string, Core::ECS::Actor*>fallbackGroups;
         std::vector<Core::ECS::Actor*>topoGroupList;
         /*
         use these two vectors because we may skip some empty domains
@@ -544,15 +546,36 @@ namespace Core::ECS::Components
 
         // Destroy the previous topology leaves and group actors. The batched
         // meshes on the "Face"/"Edge" render children are not touched here.
+        // Leaves are destroyed before their shell/solid parents so each actor
+        // detaches itself from the parent's children list before the parent is
+        // deleted (Actor::~Actor recursively deletes children otherwise).
         std::vector<Core::ECS::Actor*> toDestroy;
         toDestroy.insert(toDestroy.end(), mInternal->faceActors.begin(), mInternal->faceActors.end());
         toDestroy.insert(toDestroy.end(), mInternal->edgeActors.begin(), mInternal->edgeActors.end());
-        toDestroy.insert(toDestroy.end(), mInternal->topoGroupList.begin(), mInternal->topoGroupList.end());
+        std::vector<Core::ECS::Actor*> shells;
+        std::vector<Core::ECS::Actor*> solids;
+        std::vector<Core::ECS::Actor*> fallbacks;
+        for (auto* group : mInternal->topoGroupList) {
+            if (group->GetTag() == "Shell") {
+                shells.push_back(group);
+            }
+            else if (group->GetTag() == "Solid") {
+                solids.push_back(group);
+            }
+            else {
+                fallbacks.push_back(group);
+            }
+        }
+        toDestroy.insert(toDestroy.end(), shells.begin(), shells.end());
+        toDestroy.insert(toDestroy.end(), solids.begin(), solids.end());
+        toDestroy.insert(toDestroy.end(), fallbacks.begin(), fallbacks.end());
         scene.DelayDestroyActor(toDestroy);
         mInternal->faceActors.clear();
         mInternal->edgeActors.clear();
         mInternal->topoGroupList.clear();
         mInternal->shellGroups.clear();
+        mInternal->solidGroups.clear();
+        mInternal->fallbackGroups.clear();
         mInternal->faceSolidShell.clear();
         mInternal->shellSolid.clear();
         mInternal->edgeShells.clear();
@@ -642,15 +665,20 @@ namespace Core::ECS::Components
     {
         auto& scene = *GetService(::Editor::Panels::SceneView).GetScene();
 
+        // Only the registries of the current rebuild are consulted here. The
+        // old groups are still alive (delay-destroyed at the end of the frame);
+        // looking them up by name via GetChild would re-attach the new topology
+        // to actors that are about to be deleted, orphaning the new leaves.
         if (shellIndex < 0) {
             // Faces/edges without a shell ancestor: group them under a single
             // fallback group (e.g. "Faces" / "Edges").
-            auto* group = owner.GetChild(fallbackName);
+            auto* group = mInternal->fallbackGroups[fallbackName];
             if (!group) {
                 auto& actor = scene.CreateActor(fallbackName, "TopoGroup");
                 actor.SetParent(owner);
                 mInternal->topoGroupList.push_back(&actor);
                 group = &actor;
+                mInternal->fallbackGroups[fallbackName] = group;
             }
             return group;
         }
@@ -665,25 +693,26 @@ namespace Core::ECS::Components
             ? mInternal->shellSolid[shellIndex] : -1;
         if (solidIdx >= 0) {
             const std::string solidName = "Solid_" + std::to_string(solidIdx);
-            auto* solidActor = owner.GetChild(solidName);
+            auto* solidActor = mInternal->solidGroups[solidIdx];
             if (!solidActor) {
                 auto& actor = scene.CreateActor(solidName, "Solid");
                 actor.SetParent(owner);
                 mInternal->topoGroupList.push_back(&actor);
                 solidActor = &actor;
+                mInternal->solidGroups[solidIdx] = solidActor;
             }
             parent = solidActor;
         }
 
-        const std::string shellName = "Shell_" + std::to_string(shellIndex);
-        auto* shellActor = parent->GetChild(shellName);
+        auto* shellActor = mInternal->shellGroups[shellIndex];
         if (!shellActor) {
+            const std::string shellName = "Shell_" + std::to_string(shellIndex);
             auto& actor = scene.CreateActor(shellName, "Shell");
             actor.SetParent(*parent);
             mInternal->topoGroupList.push_back(&actor);
             shellActor = &actor;
+            mInternal->shellGroups[shellIndex] = shellActor;
         }
-        mInternal->shellGroups[shellIndex] = shellActor;
         return shellActor;
     }
 
