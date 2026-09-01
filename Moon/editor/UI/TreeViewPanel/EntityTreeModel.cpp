@@ -29,6 +29,11 @@ namespace MOON {
 			mIconMaps["eyeClose"] = QIcon(":/entityTree/icons/pqEyeballClosed.svg");
 			
 			mIconMaps["Geomerty"] = QIcon(":/widgets/icons/Geomerty.png");
+			mIconMaps["Solid"] = QIcon(":/widgets/icons/Model.png");
+			mIconMaps["Shell"] = QIcon(":/widgets/icons/Model.png");
+			mIconMaps["TopoGroup"] = QIcon(":/widgets/icons/Model.png");
+			mIconMaps["TopoFace"] = QIcon(":/widgets/icons/Geomerty.png");
+			mIconMaps["TopoEdge"] = QIcon(":/widgets/icons/Geomerty.png");
 			mIconMaps["PointLight"] = QIcon(":/widgets/icons/PointLight.png");
 			mIconMaps["DirectionalLight"] = QIcon(":/widgets/icons/DirectionalLight.png");
 			mIconMaps["SkyBox"] = QIcon(":/widgets/icons/awesomeface.png");
@@ -397,21 +402,15 @@ namespace MOON {
 				{
 					actor->SetActive(false);
 				}
-				if (actor->HasComponent("CTopoShape")) {
-					auto topoComp = actor->GetComponent<::Core::ECS::Components::CTopoShape>();
-					topoComp->updateChildBuffer();
-				}
-				else if (actor->HasParent()) {
-					auto parent = actor->GetParent();
-					if (parent->HasComponent("CTopoShape")&&actor->GetName()=="Face") {
-						auto topoComp =parent->GetComponent<::Core::ECS::Components::CTopoShape>();
-						topoComp->updateChildBuffer();
-					}else if (parent->HasParent()) {
-						auto grandParent = parent->GetParent();
-						if (grandParent->HasComponent("CTopoShape")&&parent->GetName()=="Face") {
-							auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-							topoComp->updateChildBuffer();
-						}
+				// Walk up the hierarchy and refresh the TopoShape render buffer
+				// whenever any node of a topo actor is toggled. The topology
+				// leaves (Face_*/Edge_*) can now live at arbitrary depth below
+				// the topo actor (Solid/Shell groups), so a plain parent lookup
+				// is no longer enough.
+				for (Core::ECS::Actor* cur = actor; cur; cur = cur->HasParent() ? cur->GetParent() : nullptr) {
+					if (cur->HasComponent("CTopoShape")) {
+						cur->GetComponent<::Core::ECS::Components::CTopoShape>()->updateChildBuffer();
+						break;
 					}
 				}
 			}
@@ -427,6 +426,12 @@ namespace MOON {
 				while (!s.empty()) {
 					Core::ECS::Actor* cur = s.back(); s.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
+					// The Face/Edge render anchors of TopoActors are internal
+					// nodes holding the batched meshes; the topology actors
+					// (Solid/Shell/Face_*/Edge_*) form the visible hierarchy.
+					if (cur->GetTag() == "TopoRender") {
+						continue;
+					}
 					QStandardItem* temp = m_itemPool.acquire();;
 					mInternal->actorToItem[cur] = temp;
 					auto name = cur->GetName();

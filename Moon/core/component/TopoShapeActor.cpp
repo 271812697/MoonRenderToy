@@ -24,6 +24,11 @@ namespace MOON {
 		scene->AddActor(this);
 		Core::ECS::Actor& faceChild=scene->CreateActor("Face");
 		Core::ECS::Actor& edgeChild = scene->CreateActor("Edge");
+		// The Face/Edge children are render anchors holding the batched meshes.
+		// They are hidden from the TreeView (tag "TopoRender"); the topology
+		// actors created by CTopoShape form the visible hierarchy instead.
+		faceChild.SetTag("TopoRender");
+		edgeChild.SetTag("TopoRender");
 		faceChild.SetParent(*this);
 		edgeChild.SetParent(*this);
 		AddComponent<Core::ECS::Components::CTopoShape>();
