@@ -97,7 +97,7 @@ namespace
 			// hide the lines. The line pass runs after the opaque pass, so use
 			// LEQUAL and skip depth writes: coplanar lines win, and lines never
 			// occlude anything behind them.
-			p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+			p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 
 			const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 
@@ -192,7 +192,7 @@ namespace
 				p_pso.colorWriting.mask = 0xFF;
 				p_pso.depthWriting = false;
 				p_pso.depthTest = true;
-				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 
 				Rendering::Entities::Drawable drawable;
 				drawable.mesh = m_renderer.m_unitQuad;
@@ -236,7 +236,7 @@ namespace
 
 				PrepareStencilBuffer(p_pso);
 
-				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 
 				const auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneFilteredDrawablesDescriptor>();
 				for (auto drawable : drawables.opaques | std::views::values)
@@ -315,7 +315,7 @@ namespace
 				auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
 					::Rendering::Settings::ETextureType::TEXTURE_2D,"peeldepth");
 				depthTexture->Allocate(depthDesc);
-				depthTexture->SetBorderColor(Maths::FVector4::One);
+				depthTexture->SetBorderColor(Maths::FVector4::Zero);
 				mLayerFbo[i].Attach<::Rendering::HAL::Texture>(renderTexture, ::Rendering::Settings::EFramebufferAttachment::COLOR);
 				mLayerFbo[i].Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
 				if (!mLayerFbo[i].Validate()) {
@@ -329,7 +329,7 @@ namespace
 			auto depthTexture = std::make_shared<::Rendering::HAL::Texture>(
 				::Rendering::Settings::ETextureType::TEXTURE_2D, "peeldepth");
 			depthTexture->Allocate(depthDesc);
-			depthTexture->SetBorderColor(Maths::FVector4::One);
+			depthTexture->SetBorderColor(Maths::FVector4::Zero);
 			mBlendFbo.Attach<::Rendering::HAL::Texture>(renderTexture, ::Rendering::Settings::EFramebufferAttachment::COLOR);
 			mBlendFbo.Attach<::Rendering::HAL::Texture>(depthTexture, ::Rendering::Settings::EFramebufferAttachment::DEPTH);
 			std::string v = R"(

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#4a6fa5"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="460" fill="#ffffff"/>
+  <text x="480" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b3a55">渲染端消费：按 (material, subRange) 分发 Drawable</text>
+
+  <!-- mesh -->
+  <rect x="40" y="90" width="180" height="150" rx="8" fill="#eaf6ec" stroke="#4f9d69"/>
+  <text x="130" y="118" text-anchor="middle" font-weight="bold" fill="#2b5a3c">合批 Mesh</text>
+  <text x="60" y="150" fill="#335f44">material 0 → range 0</text>
+  <text x="60" y="172" fill="#335f44">material 1 → range 1</text>
+  <text x="60" y="194" fill="#335f44">…</text>
+  <text x="60" y="224" fill="#5d7d69">GetIndexCount(i)</text>
+
+  <!-- ParseScene -->
+  <rect x="320" y="70" width="240" height="190" rx="8" fill="#e8f0fb" stroke="#4a6fa5"/>
+  <text x="440" y="98" text-anchor="middle" font-weight="bold" fill="#2b3a55">SceneRenderer::ParseScene</text>
+  <text x="340" y="130" fill="#33475f">遍历每条材质绑定记录：</text>
+  <text x="340" y="158" fill="#33475f">if (GetIndexCount(range) &lt;= 0)</text>
+  <text x="340" y="178" fill="#33475f">    continue;  // 空区间跳过</text>
+  <text x="340" y="214" fill="#66788f">→ 生成 Drawable{ mesh, material,</text>
+  <text x="340" y="234" fill="#66788f">    subIndexBufferIndex }</text>
+
+  <!-- drawables -->
+  <rect x="660" y="90" width="260" height="170" rx="8" fill="#fdf3e3" stroke="#d19a3e"/>
+  <text x="790" y="118" text-anchor="middle" font-weight="bold" fill="#7a5714">Drawable 列表</text>
+  <text x="680" y="150" fill="#7a5714">drawable(material0, range0)</text>
+  <text x="680" y="174" fill="#7a5714">drawable(material1, range1)</text>
+  <text x="680" y="198" fill="#7a5714">（空区间不产生 drawable）</text>
+  <text x="680" y="232" fill="#a08040">→ 透明 pass / 不透明 pass</text>
+
+  <line x1="220" y1="165" x2="320" y2="165" stroke="#4a6fa5" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="560" y1="165" x2="660" y2="165" stroke="#4a6fa5" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Driver -->
+  <rect x="40" y="330" width="880" height="100" rx="8" fill="#f8fafd" stroke="#b9cbe8"/>
+  <text x="60" y="360" font-weight="bold" fill="#2b3a55">Driver::Draw(pso, mesh, subIndexBufferIndex, mode, instances)</text>
+  <text x="60" y="390" fill="#33475f">mesh.Bind(subIndexBufferIndex) → glDrawElements(mode, GetIndexCount(subIndexBufferIndex))</text>
+  <text x="60" y="416" fill="#33475f">→ 索引被重建为空/子集 = 不画/只画可见部分，渲染端零改动</text>
+</svg>

@@ -47,6 +47,9 @@ namespace Core::ECS::Components
 		virtual void OnDeserialize(tinyxml2::XMLDocument& p_doc, tinyxml2::XMLNode* p_node)override;
 	private:
 		void updateChildMesh();
+		void updateEdgeMesh();
+		void rebuildTopologyTree();
+		Core::ECS::Actor* getOrCreateTopoGroup(int shellIndex, const std::string& fallbackName);
 		class CTopoShapeInternal;
 		CTopoShapeInternal* mInternal = nullptr;
 	};

@@ -4,6 +4,7 @@
 #include <Rendering/HAL/OpenGL/GLTexture.h>
 #include <Rendering/Data/Material.h>
 #include <Maths/FVector3.h>
+#include "OpenImageDenoise/oidn.hpp"
 namespace Rendering {
 	namespace Resources {
 		class Texture;
@@ -79,6 +80,10 @@ namespace Editor::Rendering
 
 		float* denoiserInputFramePtr=nullptr;
 		float* frameOutputPtr=nullptr;
+		oidn::DeviceRef m_denoiserDevice;
+		oidn::FilterRef m_denoiserFilter;
+		Maths::FVector2 m_denoiserSize;
+		bool m_denoiserFilterDirty = true;
 		bool denoised;
 		bool initialized;
 		bool refreshFlag = true;

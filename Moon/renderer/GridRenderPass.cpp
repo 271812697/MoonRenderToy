@@ -166,7 +166,21 @@ void Editor::Rendering::GridRenderPass::Draw(::Rendering::Data::PipelineState p_
 	auto& msaaframebuffer = frameDesc.outputMsaaBuffer.value();
 	msaaframebuffer.Bind();
 	auto pso = m_renderer.CreatePipelineState();
-	constexpr float gridSize = 500.0f;
+	// Size the mirror plane so it stays visible in large scenes: cover the
+	// scene footprint and the camera's view at the plane instead of a fixed
+	// 1000x1000 area, which becomes a tiny speck when the camera is far away.
+	float gridSize = 500.0f;
+	if (m_renderer.HasDescriptor<::Core::Rendering::SceneRenderer::SceneDescriptor>()) {
+		const auto& sceneDescriptor = m_renderer.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDescriptor>();
+		if (auto* bvh = sceneDescriptor.scene.GetBvh()) {
+			const auto& b = bvh->m_bounds;
+			const float sceneExtent = Maths::FVector3::Length(b.pmax - b.pmin);
+			gridSize = std::max(gridSize, sceneExtent * 0.6f);
+		}
+	}
+	const float camDist = Maths::FVector3::Length(
+		frameDesc.camera->GetPosition() - gridDescriptor.mirrorPlaneCenter);
+	gridSize = std::max(gridSize, camDist * 0.8f);
 	Maths::FMatrix4 model = Maths::FMatrix4::ComputeTransformFromYAxisAndOrigin(-gridDescriptor.mirrorPlaneNormal, gridDescriptor.mirrorPlaneCenter, { gridSize * 2.0f, 1.f, gridSize * 2.0f });
 	//Maths::FMatrix4::Translation({ gridDescriptor.viewPosition.x, 0.0f, gridDescriptor.viewPosition.z }) *
 	//Maths::FMatrix4::Scaling({ gridSize * 2.0f, 1.f, gridSize * 2.0f });

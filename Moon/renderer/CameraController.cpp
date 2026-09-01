@@ -103,6 +103,7 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 {
 	HandleMouseReleased();
 	HandleMousePressed();
+	UpdateDepthRange();
 	auto& input = m_view.getInutState();
 	if (m_view.IsSelectActor()) {
 
@@ -195,6 +196,26 @@ void ::Editor::Core::CameraController::HandleInputs(float p_deltaTime)
 		HandleCameraFPSKeyboard(p_deltaTime);
 	}
 }
+
+void ::Editor::Core::CameraController::UpdateDepthRange()
+{
+	// Keep the near/far planes proportional to the camera distance so the
+	// float32 depth buffer keeps enough precision on large models. With a tiny
+	// fixed near plane (0.1) and a huge far plane, surfaces on the far side of
+	// a large model lose precision and z-fight when the camera moves.
+	Maths::FVector3 sceneCenter = m_view.GetRoaterCenter();
+	float sceneRadius = 0.0f;
+	if (auto* bvh = m_view.GetScene()->GetBvh()) {
+		const auto& b = bvh->m_bounds;
+		sceneCenter = (b.pmin + b.pmax) * 0.5f;
+		sceneRadius = Maths::FVector3::Length(b.pmax - b.pmin) * 0.5f;
+	}
+	const float dist = Maths::FVector3::Length(m_camera.GetPosition() - sceneCenter);
+	const float far = std::max(dist + sceneRadius * 2.0f, 1200.0f);
+	const float near = std::max(dist * 0.01f, 0.001f);
+	m_camera.SetNear(near);
+	m_camera.SetFar(far);
+}
 void Editor::Core::CameraController::HandleFirstMouse()
 {
 	m_orbitStartOffset = m_camera.GetPosition() - m_view.GetRoaterCenter();
@@ -285,8 +306,13 @@ std::optional<std::reference_wrapper<Core::ECS::Actor>> Editor::Core::CameraCont
 
 void Editor::Core::CameraController::HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouset)
 {
-
-	m_camera.HandleCameraPanning(p_mouseOffset, m_cameraDragSpeed);
+	// Pass the scene size so the perspective pan scales with the model
+	// (mirrors the zoom behavior which also uses the scene bounds).
+	float sceneSize = 0.0f;
+	if (auto* bvh = m_view.GetScene()->GetBvh()) {
+		sceneSize = bvh->m_bounds.extents().Length();
+	}
+	m_camera.HandleCameraPanning(p_mouseOffset, m_cameraDragSpeed, sceneSize);
 }
 
 void Editor::Core::CameraController::HandleCameraOrbit(

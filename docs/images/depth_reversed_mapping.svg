@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <rect x="0" y="0" width="920" height="460" fill="#ffffff"/>
+  <text x="460" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#2b3a55">Reversed-Z：把“远处”映射到 float32 最精细的区间（窗口深度 ≈ 1）</text>
+
+  <!-- 坐标 -->
+  <line x1="90" y1="60" x2="90" y2="380" stroke="#33475f" stroke-width="2"/>
+  <line x1="90" y1="380" x2="860" y2="380" stroke="#33475f" stroke-width="2"/>
+  <text x="55" y="220" fill="#33475f" text-anchor="middle" transform="rotate(-90 55 220)">窗口深度</text>
+  <text x="475" y="410" fill="#33475f" text-anchor="middle">视图深度 Z（→ 远处）</text>
+  <text x="100" y="395" fill="#8a99ad">near</text>
+  <text x="845" y="395" fill="#8a99ad">far</text>
+  <line x1="100" y1="60" x2="100" y2="380" stroke="#b9cbe8" stroke-dasharray="4,4"/>
+  <line x1="845" y1="60" x2="845" y2="380" stroke="#b9cbe8" stroke-dasharray="4,4"/>
+
+  <!-- 标准深度（虚线，近=0 远=1） -->
+  <path d="M 100,382 C 180,374 300,340 430,270 C 560,190 700,90 845,58"
+        fill="none" stroke="#b9cbe8" stroke-width="2" stroke-dasharray="6,5"/>
+  <text x="300" y="345" fill="#8a99ad">标准：近=0，远=1（远处精度差）</text>
+
+  <!-- 反转深度（实线，近=1 远=0） -->
+  <path d="M 100,58 C 180,66 300,100 430,170 C 560,250 700,350 845,382"
+        fill="none" stroke="#4f9d69" stroke-width="3"/>
+  <text x="560" y="300" fill="#2b5a3c" font-weight="bold">Reversed-Z：近=1，远=0</text>
+
+  <!-- float32 精度带 -->
+  <rect x="680" y="60" width="150" height="55" rx="6" fill="#eaf6ec" stroke="#4f9d69"/>
+  <text x="755" y="82" text-anchor="middle" fill="#2b5a3c" font-weight="bold">窗口深度≈1</text>
+  <text x="755" y="102" text-anchor="middle" fill="#5d7d69">float32 尾数最细</text>
+
+  <rect x="120" y="120" width="150" height="55" rx="6" fill="#fdecea" stroke="#c05b4d"/>
+  <text x="195" y="142" text-anchor="middle" fill="#8c2f24" font-weight="bold">窗口深度≈0</text>
+  <text x="195" y="162" text-anchor="middle" fill="#a05a50">float32 尾数较粗</text>
+
+  <!-- 结论 -->
+  <rect x="90" y="420" width="760" height="32" rx="6" fill="#f8fafd" stroke="#b9cbe8"/>
+  <text x="110" y="441" fill="#2b3a55">δZ ≈ Z × 2⁻²⁴（相对精度），与 near/far 比例无关；远平面 δZ = far × 6e-8</text>
+</svg>

@@ -5,6 +5,52 @@
 #include <unordered_set>
 
 namespace MOON {
+	namespace
+	{
+		// The topology leaves (Face_*/Edge_*) can live at arbitrary depth below
+		// the topo actor (Solid/Shell groups), so resolve the selection by the
+		// leaf name and by walking up to the CTopoShape owner instead of
+		// relying on the old Face/Edge render-children hierarchy.
+		struct TopoSelectionInfo
+		{
+			::Core::ECS::Components::CTopoShape* topo = nullptr;
+			int childId = -1;
+			bool isFace = false;
+			bool isEdge = false;
+		};
+		TopoSelectionInfo ResolveTopoSelection(::Core::ECS::Actor* actor)
+		{
+			TopoSelectionInfo info;
+			if (!actor) {
+				return info;
+			}
+			const std::string& name = actor->GetName();
+			if (name.rfind("Face_", 0) == 0) {
+				info.isFace = true;
+			}
+			else if (name.rfind("Edge_", 0) == 0) {
+				info.isEdge = true;
+			}
+			else {
+				return info;
+			}
+			try {
+				info.childId = std::stoi(name.substr(5));
+			}
+			catch (...) {
+				return info;
+			}
+			for (::Core::ECS::Actor* cur = actor->HasParent() ? actor->GetParent() : nullptr;
+				cur; cur = cur->HasParent() ? cur->GetParent() : nullptr) {
+				if (cur->HasComponent("CTopoShape")) {
+					info.topo = cur->GetComponent<::Core::ECS::Components::CTopoShape>();
+					break;
+				}
+			}
+			return info;
+		}
+	}
+
 	struct SelectIDHash
 	{
 		size_t operator()(const SelectID& id) const noexcept
@@ -27,26 +73,13 @@ namespace MOON {
 			for (auto& id : clearList) {
 				auto actor = GetMainScene->FindActorByID(id);
 				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasParent()) {
-							auto grandParent = parent->GetParent();
-							if (grandParent->HasComponent("CTopoShape")) {
-								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-
-								std::string idString = actor->GetName().substr(5);
-								int childId = std::stoi(idString);
-								if (parent->HasComponent("CBatchMeshTriangle")) {
-									if (childId != -1) {
-										selectFaceMap[topoComp] = 1;
-									}
-								}
-								else if (parent->HasComponent("CBatchMeshLine")) {
-									if (childId != -1) {
-										selectEdgeMap[topoComp] = 1;
-									}
-								}
-							}
+					auto info = ResolveTopoSelection(actor);
+					if (info.topo && info.childId != -1) {
+						if (info.isFace) {
+							selectFaceMap[info.topo] = 1;
+						}
+						else if (info.isEdge) {
+							selectEdgeMap[info.topo] = 1;
 						}
 					}
 				}
@@ -79,25 +112,13 @@ namespace MOON {
 			if (mInternal->preSelect.isValid()) {
 				auto actor = GetMainScene->FindActorByID(mInternal->preSelect);
 				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasParent()) {
-							auto grandParent = parent->GetParent();
-							if (grandParent->HasComponent("CTopoShape")) {
-								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-								std::string idString=actor->GetName().substr(5);
-								int childId = std::stoi(idString);
-								if (parent->HasComponent("CBatchMeshTriangle")) {
-									if (childId != -1) {
-										topoComp->hoverChild(childId);
-									}
-								}
-								else if (parent->HasComponent("CBatchMeshLine")) {
-									if (childId != -1) {
-										topoComp->hoverChildLine(childId);
-									}
-								}					
-							}
+					auto info = ResolveTopoSelection(actor);
+					if (info.topo && info.childId != -1) {
+						if (info.isFace) {
+							info.topo->hoverChild(info.childId);
+						}
+						else if (info.isEdge) {
+							info.topo->hoverChildLine(info.childId);
 						}
 					}
 				}
@@ -132,26 +153,13 @@ namespace MOON {
 			for (auto& id:mInternal->selectIDs) {
 				auto actor = GetMainScene->FindActorByID(id);
 				if (actor) {
-					if (actor->HasParent()) {
-						auto parent = actor->GetParent();
-						if (parent->HasParent()) {
-							auto grandParent = parent->GetParent();
-							if (grandParent->HasComponent("CTopoShape")) {
-								auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-								
-								std::string idString = actor->GetName().substr(5);
-								int childId = std::stoi(idString);
-								if (parent->HasComponent("CBatchMeshTriangle")) {
-									if (childId != -1) {
-										selectFaceMap[topoComp].push_back(childId);
-									}
-								}
-								else if (parent->HasComponent("CBatchMeshLine")) {
-									if (childId != -1) {
-										selectEdgeMap[topoComp].push_back(childId);
-									}
-								}
-							}
+					auto info = ResolveTopoSelection(actor);
+					if (info.topo && info.childId != -1) {
+						if (info.isFace) {
+							selectFaceMap[info.topo].push_back(info.childId);
+						}
+						else if (info.isEdge) {
+							selectEdgeMap[info.topo].push_back(info.childId);
 						}
 					}
 				}
@@ -174,19 +182,13 @@ namespace MOON {
 		if (mInternal->preSelect.isValid()) {
 			auto actor=GetMainScene->FindActorByID(mInternal->preSelect);
 			if (actor) {
-				if (actor->HasParent()) {
-					auto parent=actor->GetParent();
-					if (parent->HasParent()) {
-						auto grandParent = parent->GetParent();
-						if (grandParent->HasComponent("CTopoShape")) {
-							auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-							if (parent->HasComponent("CBatchMeshTriangle")) {
-								topoComp->clearHover();
-							}
-							else if (parent->HasComponent("CBatchMeshLine")) {
-								topoComp->clearHoverLine();
-							}
-						}
+				auto info = ResolveTopoSelection(actor);
+				if (info.topo) {
+					if (info.isFace) {
+						info.topo->clearHover();
+					}
+					else if (info.isEdge) {
+						info.topo->clearHoverLine();
 					}
 				}
 			}

@@ -20,7 +20,7 @@ Rendering::Data::PipelineState::PipelineState() :
 	stencilOpFail(Settings::EOperation::KEEP),
 	depthOpFail(Settings::EOperation::KEEP),
 	bothOpFail(Settings::EOperation::KEEP),
-	depthFunc(Settings::EComparaisonAlgorithm::LESS),
+	depthFunc(Settings::EComparaisonAlgorithm::GREATER),
 	cullFace(Settings::ECullFace::BACK),
 	lineWidthPow2(0x00),
 	blending(false),

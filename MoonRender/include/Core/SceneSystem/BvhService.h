@@ -170,9 +170,9 @@ namespace Core::SceneSystem
 			backgroundCol = Maths::FVector3(1.0f, 1.0f, 1.0f);
 			tileWidth = 100;
 			tileHeight = 100;
-			maxDepth = 2;
+			maxDepth = 8;
 			maxSpp = -1;
-			RRDepth = 2;
+			RRDepth = 3;
 			texArrayWidth = 512;
 			texArrayHeight = 512;
 			denoiserFrameCnt = 20;

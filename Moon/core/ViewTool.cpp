@@ -58,25 +58,25 @@ namespace MOON {
 			return false;
 		}
 		std::vector<SelectID> selectIds = SelectionManager::instance().getSelect();
-		if (actor->HasParent()) {
-			auto parent = actor->GetParent();
-			if (parent->HasParent()) {
-				auto grandParent = parent->GetParent();
-				Feature* feature = dynamic_cast<Feature*>(grandParent);
-				if (feature) {
-					f = feature;
-					subValues.clear();
-					subValues.reserve(selectIds.size());
-					auto& view = GetService(Editor::Panels::SceneView);
-					auto scene = view.GetScene();
-					for (int i = 0;i < selectIds.size();i++) {
-						auto tempActor = scene->FindActorByID(selectIds[i]);
-						if (tempActor) {
-							subValues.emplace_back(tempActor->GetName());
-						}
+		// The topology leaves (Face_*/Edge_*) can live at arbitrary depth below
+		// the Feature (Solid/Shell groups), so walk up the whole chain instead
+		// of assuming the Feature is the grandparent.
+		for (Core::ECS::Actor* cur = actor->HasParent() ? actor->GetParent() : nullptr;
+			cur; cur = cur->HasParent() ? cur->GetParent() : nullptr) {
+			Feature* feature = dynamic_cast<Feature*>(cur);
+			if (feature) {
+				f = feature;
+				subValues.clear();
+				subValues.reserve(selectIds.size());
+				auto& view = GetService(Editor::Panels::SceneView);
+				auto scene = view.GetScene();
+				for (int i = 0;i < selectIds.size();i++) {
+					auto tempActor = scene->FindActorByID(selectIds[i]);
+					if (tempActor) {
+						subValues.emplace_back(tempActor->GetName());
 					}
-					return true;
 				}
+				return true;
 			}
 		}
 		return false;
