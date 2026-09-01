@@ -49,6 +49,7 @@ namespace Editor::Rendering
 		::Rendering::HAL::GLTexture* vertexIndicesTex = nullptr;
 		::Rendering::HAL::GLTexture* verticesTex = nullptr;
 		::Rendering::HAL::GLTexture* normalsTex = nullptr;
+		::Rendering::HAL::GLTexture* triangleDomainColorTex = nullptr;
 		::Rendering::HAL::GLTexture* meshInfoTex = nullptr;
 		::Rendering::HAL::GLTexture* triangleInfoTex = nullptr;
 

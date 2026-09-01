@@ -453,6 +453,18 @@ void main()
 		}
 		normalsTex->Allocate(desc);
 
+		// Per-triangle domain color (one RGBA per triangle, parallel to vertIndices).
+		// Used to tint each solid with a distinct color in the path tracer.
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+		desc.buffetLen = bvhService->triangleDomainColors.size() * sizeof(Maths::FVector4);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.data = bvhService->triangleDomainColors.data()
+		};
+		if (triangleDomainColorTex == nullptr) {
+			triangleDomainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		triangleDomainColorTex->Allocate(desc);
+
 		UpdateGPUMaterial();
 
 		// Transform Texture
@@ -1040,6 +1052,7 @@ void main()
 		pathTraceShader.SetProperty("vertexIndicesTex", vertexIndicesTex);
 		pathTraceShader.SetProperty("verticesTex", verticesTex);
 		pathTraceShader.SetProperty("normalsTex", normalsTex);
+		pathTraceShader.SetProperty("triangleDomainColorTex", triangleDomainColorTex);
 		pathTraceShader.SetProperty("meshTriangleInfoTex", meshInfoTex);
 		pathTraceShader.SetProperty("triangleInfoTex", triangleInfoTex);
 		pathTraceShader.SetProperty("materialsTex", materialsTex);
@@ -1060,6 +1073,7 @@ void main()
 		pathTraceShaderLowRes.SetProperty("vertexIndicesTex", vertexIndicesTex);
 		pathTraceShaderLowRes.SetProperty("verticesTex", verticesTex);
 		pathTraceShaderLowRes.SetProperty("normalsTex", normalsTex);
+		pathTraceShaderLowRes.SetProperty("triangleDomainColorTex", triangleDomainColorTex);
 		pathTraceShaderLowRes.SetProperty("materialsTex", materialsTex);
 		pathTraceShaderLowRes.SetProperty("transformsTex", transformsTex);
 		pathTraceShaderLowRes.SetProperty("lightsTex", lightsTex);
