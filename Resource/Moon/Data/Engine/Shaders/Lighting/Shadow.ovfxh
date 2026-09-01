@@ -49,9 +49,13 @@ float CalculateShadowBias(vec3 normal, vec3 lightDir, float texelSize)
 float CalculateShadow(vec4 fragPosLightSpace, sampler2D shadowMap, vec3 normal, vec3 lightDir)
 {
     const float texelSize = 1.0 / vec2(textureSize(shadowMap, 0)).x;
-    const vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0) return 0.0;
+    // Reversed-Z depth range: the shadow map stores 1 - standard window depth,
+    // so convert the fragment's light-space z to the same reversed space before
+    // comparing. SampleShadow() keeps its original comparison direction.
+    projCoords.z = 1.0 - projCoords.z;
+    if (projCoords.z < 0.0 || projCoords.z > 1.0) return 0.0;
 
     float bias = CalculateShadowBias(normal, lightDir, texelSize);
     float shadow = CalculateSoftShadow(shadowMap, projCoords, bias, texelSize);

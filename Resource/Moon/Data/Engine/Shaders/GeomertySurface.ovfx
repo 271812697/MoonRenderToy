@@ -308,9 +308,11 @@ void main()
   // Note: the unprojected vector is homogeneous (w != 1 in perspective), so
   // the view-space depth must be z / w. Taking .z alone yields a constant
   // (-1) in perspective and silently discards every peeled layer.
-  vec4 unprojPrev = invProj * vec4(0.0, 0.0, texelFetch(DepthPeelTex, coords, 0).r * 2.0 - 1.0, 1.0);
-  vec4 unprojOpaque = invProj * vec4(0.0, 0.0, texelFetch(OpaqueDepthTex, coords, 0).r * 2.0 - 1.0, 1.0);
-  vec4 unprojFrag = invProj * vec4(0.0, 0.0, gl_FragCoord.z * 2.0 - 1.0, 1.0);
+  // Reversed-Z: window depth is 1 at near and 0 at far, so the NDC conversion
+  // flips (1 - 2 * raw) instead of (2 * raw - 1).
+  vec4 unprojPrev = invProj * vec4(0.0, 0.0, 1.0 - texelFetch(DepthPeelTex, coords, 0).r * 2.0, 1.0);
+  vec4 unprojOpaque = invProj * vec4(0.0, 0.0, 1.0 - texelFetch(OpaqueDepthTex, coords, 0).r * 2.0, 1.0);
+  vec4 unprojFrag = invProj * vec4(0.0, 0.0, 1.0 - gl_FragCoord.z * 2.0, 1.0);
   float prevDepth = -unprojPrev.z / unprojPrev.w;
   float opaqueDepth = -unprojOpaque.z / unprojOpaque.w;
   float fragDepth = -unprojFrag.z / unprojFrag.w;

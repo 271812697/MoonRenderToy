@@ -204,7 +204,7 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 				// exceed, due to precision) its coplanar face, so use LEQUAL and
 				// skip depth writes to make sure the picked ID is the line rather
 				// than the face.
-				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+				p_pso.depthFunc = ::Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 
 				auto stateMask = m_TopoShapePickingFallbackMaterial.GenerateStateMask();
 

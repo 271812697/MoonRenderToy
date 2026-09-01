@@ -68,7 +68,9 @@ namespace MOON {
 				faceMat->SetReceiveShadows(false);
 				// Push the faces back in depth (glPolygonOffset, slope scaled) so
 				// edge lines that are coplanar with / close to their faces (concave
-				// folds, small dihedral angles) stay visible on top.
+				// folds, small dihedral angles) stay visible on top. Note: with
+				// the reversed-Z depth range the driver applies a NEGATIVE offset
+				// (see Driver::SetPipelineState), keep the signs consistent.
 				faceMat->SetPolygonOffsetFill(true);
 				//tempMat->SetBlendable(true);
 				//tempMat->SetDepthWriting(false);

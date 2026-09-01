@@ -146,7 +146,11 @@ void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState
 		if (i.polygonOffsetFill != c.polygonOffsetFill) {
 			m_gfxBackend->SetCapability(ERenderingCapability::POLYGON_OFFSET_FILL, i.polygonOffsetFill);
 			if (i.polygonOffsetFill) {
-				m_gfxBackend->PolygonOffset(1.0f, 1.0f);
+				// Reversed-Z depth range: window depth is 1 at near and 0 at far,
+				// so pushing a face "back" requires a NEGATIVE offset (positive
+				// would move it toward the near plane and make it win over
+				// coplanar lines).
+				m_gfxBackend->PolygonOffset(-1.0f, -1.0f);
 			}
 		}
 		//if (i.polygonOffsetLine != c.polygonOffsetLine) {
