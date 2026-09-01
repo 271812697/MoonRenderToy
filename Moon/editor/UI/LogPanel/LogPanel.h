@@ -2,17 +2,18 @@
 #include "core/logOutput.h"
 #include <QDockWidget>
 #include <QString>
+#include <deque>
+#include <utility>
 
 class QCheckBox;
+class QPlainTextEdit;
 class QPushButton;
-class QTableView;
 
 namespace MOON {
 
-	class LogTableModel;
-
-	// Console-style log panel with Level / Time / Message columns. Rows live in
-	// a table model (not one widget per line), so high message rates stay cheap.
+	// Console-style log panel: a Level/Time/Message header row above a
+	// monospace QPlainTextEdit whose lines are padded to line up with the
+	// headers. The level filters sit above the header row.
 	class LogPanel : public QDockWidget, public LogOutput {
 		Q_OBJECT
 	public:
@@ -28,17 +29,22 @@ namespace MOON {
 	private slots:
 		void onLogMessage(int level, QString msg);
 		void onClearMessage();
+		void rebuildView();
 		void showMenu(const QPoint& point);
 		void copyLogContent();
 
 	private:
-		QTableView* m_logView = nullptr;
-		LogTableModel* m_model = nullptr;
+		void appendMessage(int level, const QString& line);
+		bool levelVisible(int level) const;
+
+		QPlainTextEdit* m_logText = nullptr;
 		QCheckBox* m_debugCheck = nullptr;
 		QCheckBox* m_infoCheck = nullptr;
 		QCheckBox* m_errorCheck = nullptr;
 		QCheckBox* m_warnCheck = nullptr;
 		QPushButton* m_clear = nullptr;
+
+		std::deque<std::pair<int, QString>> m_messages;
 	};
 
 }

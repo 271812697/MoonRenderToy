@@ -45,8 +45,12 @@ namespace MOON {
 		"DrawSketchHandlerLineSet",
 		"DrawSketchHandlerCircle",
 		"DrawSketchHandlerArc",
+		"DrawSketchHandlerArcSlot",
+		"DrawSketchHandlerEllipse",
 		"DrawSketchHandlerBSpline",
 		"DrawSketchHandlerRectangle" ,
+		"DrawSketchHandlerPolygon",
+		"DrawSketchHandlerSlot",
 		"DrawSketchHandlerRotate",
 		"DrawSketchHandlerSymmetry",
 		"DrawSketchHandlerTrimming",
@@ -66,8 +70,12 @@ namespace MOON {
 			lineSet = new CreateCurveCommand(self,"DrawSketchHandlerLineSet");
 			circle = new CreateCurveCommand(self, "DrawSketchHandlerCircle");
 			arc = new CreateCurveCommand(self, "DrawSketchHandlerArc");
+			arcSlot = new CreateCurveCommand(self, "DrawSketchHandlerArcSlot");
+			ellipse = new CreateCurveCommand(self, "DrawSketchHandlerEllipse");
 			bspline = new CreateCurveCommand(self, "DrawSketchHandlerBSpline");
 			rectangle = new CreateCurveCommand(self,"DrawSketchHandlerRectangle");
+			polygon = new CreateCurveCommand(self, "DrawSketchHandlerPolygon");
+			slot = new CreateCurveCommand(self, "DrawSketchHandlerSlot");
 			trimming = new CreateCurveCommand(self, "DrawSketchHandlerTrimming");
 			rotate = new CreateCurveCommand(self, "DrawSketchHandlerRotate");
 			symmetry=new CreateCurveCommand(self, "DrawSketchHandlerSymmetry");
@@ -77,8 +85,12 @@ namespace MOON {
 			lineSet->setIcon(":/widgets/icons/Sketcher_CreatePolyline.svg");
 			circle->setIcon(":/widgets/icons/Sketcher_CreateCircle.svg");
 			arc->setIcon(":/widgets/icons/Sketcher_CreateArc.svg");
+			arcSlot->setIcon(":/widgets/icons/Sketcher_CreateArcSlot.svg");
+			ellipse->setIcon(":/widgets/icons/Sketcher_CreateEllipseByCenter.svg");
 			bspline->setIcon(":/widgets/icons/Sketcher_CreateBSpline.svg");
 			rectangle->setIcon(":/widgets/icons/Sketcher_CreateRectangle_Constr.svg");
+			polygon->setIcon(":/widgets/icons/Sketcher_CreateRegularPolygon.svg");
+			slot->setIcon(":/widgets/icons/Sketcher_CreateSlot.svg");
 			trimming->setIcon(":/widgets/icons/Sketcher_Trimming.svg");
 			rotate->setIcon(":/widgets/icons/Sketcher_Rotate.svg");
 			symmetry->setIcon(":/widgets/icons/Sketcher_Symmetry.svg");
@@ -87,9 +99,13 @@ namespace MOON {
 			self->addAction(line->action());
 			self->addAction(lineSet->action());
 			self->addAction(arc->action());
+			self->addAction(arcSlot->action());
+			self->addAction(ellipse->action());
 			self->addAction(bspline->action());
 			self->addAction(circle->action());
 			self->addAction(rectangle->action());
+			self->addAction(polygon->action());
+			self->addAction(slot->action());
 			self->addAction(trimming->action());
 			self->addAction(rotate->action());
 			self->addAction(symmetry->action());
@@ -102,8 +118,12 @@ namespace MOON {
 			lineSet->action()->setText(QCoreApplication::translate("SketchToolbar", "LineSet", nullptr));
 			circle->action()->setText(QCoreApplication::translate("SketchToolbar", "Circle", nullptr));
 			arc->action()->setText(QCoreApplication::translate("SketchToolbar", "Arc", nullptr));
+			arcSlot->action()->setText(QCoreApplication::translate("SketchToolbar", "ArcSlot", nullptr));
+			ellipse->action()->setText(QCoreApplication::translate("SketchToolbar", "Ellipse", nullptr));
 			bspline->action()->setText(QCoreApplication::translate("SketchToolbar", "Bspline", nullptr));
 			rectangle->action()->setText(QCoreApplication::translate("SketchToolbar", "Rectangle", nullptr));
+			polygon->action()->setText(QCoreApplication::translate("SketchToolbar", "Polygon", nullptr));
+			slot->action()->setText(QCoreApplication::translate("SketchToolbar", "Slot", nullptr));
 			trimming->action()->setText(QCoreApplication::translate("SketchToolbar", "Trimming", nullptr));
 			rotate->action()->setText(QCoreApplication::translate("SketchToolbar", "Rotate", nullptr));
 			symmetry->action()->setText(QCoreApplication::translate("SketchToolbar", "Symmetry", nullptr));
@@ -118,8 +138,12 @@ namespace MOON {
 		CreateCurveCommand* circle;
 		CreateCurveCommand* rotate;
 		CreateCurveCommand* arc;
+		CreateCurveCommand* arcSlot;
+		CreateCurveCommand* ellipse;
 		CreateCurveCommand* bspline;
 		CreateCurveCommand* rectangle;
+		CreateCurveCommand* polygon;
+		CreateCurveCommand* slot;
 		CreateCurveCommand* trimming;
 		CreateCurveCommand* symmetry;
 		CreateCurveCommand* fillet;

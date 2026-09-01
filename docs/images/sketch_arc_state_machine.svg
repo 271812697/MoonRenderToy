@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b03a3a"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 2　圆弧工具点击状态机</text>
+
+  <rect x="60" y="100" width="180" height="88" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="150" y="136" text-anchor="middle" font-size="17" font-weight="bold" fill="#333">SeekFirst</text>
+  <text x="150" y="160" text-anchor="middle" font-size="13" fill="#666">第 1 次点击</text>
+
+  <rect x="300" y="100" width="180" height="88" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="390" y="136" text-anchor="middle" font-size="17" font-weight="bold" fill="#333">SeekSecond</text>
+  <text x="390" y="160" text-anchor="middle" font-size="13" fill="#666">第 2 次点击</text>
+
+  <rect x="540" y="100" width="180" height="88" rx="10" fill="#eaf4ea" stroke="#6fa86f"/>
+  <text x="630" y="136" text-anchor="middle" font-size="17" font-weight="bold" fill="#2e6b2e">SeekThird</text>
+  <text x="630" y="160" text-anchor="middle" font-size="13" fill="#666">第 3 次点击</text>
+
+  <rect x="770" y="100" width="120" height="88" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="830" y="136" text-anchor="middle" font-size="17" font-weight="bold" fill="#2b4a6f">End</text>
+  <text x="830" y="160" text-anchor="middle" font-size="13" fill="#666">提交</text>
+
+  <line x1="240" y1="144" x2="300" y2="144" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="270" y="128" text-anchor="middle" font-size="12" fill="#666">左键</text>
+  <line x1="480" y1="144" x2="540" y2="144" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="510" y="128" text-anchor="middle" font-size="12" fill="#666">左键</text>
+  <line x1="720" y1="144" x2="770" y2="144" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="745" y="128" text-anchor="middle" font-size="12" fill="#666">左键</text>
+
+  <rect x="60" y="230" width="830" height="180" rx="10" fill="#fafafa" stroke="#ddd"/>
+  <text x="90" y="262" font-size="15" font-weight="bold" fill="#333">每步捕获的数据（按构造方式区分）</text>
+  <text x="90" y="296" font-size="13" fill="#444">Center（圆心方式）：</text>
+  <text x="230" y="296" font-size="13" fill="#666">点1 → centerPoint；点2 → firstPoint + startAngle + radius；点3 → 扫掠角度 arcAngle</text>
+  <text x="90" y="324" font-size="13" fill="#444">ThreeRim（三点方式）：</text>
+  <text x="230" y="324" font-size="13" fill="#666">点1/点2 → 两端点，圆心取中点、radius 定值；点3 → 三点求圆心并定起止角</text>
+  <text x="90" y="360" font-size="13" fill="#444">守卫 canGoToNextMode：</text>
+  <text x="230" y="360" font-size="13" fill="#666">SeekSecond 要求 radius 有效；SeekThird 要求 |arcAngle| 非零</text>
+  <text x="90" y="388" font-size="13" fill="#444">预览：</text>
+  <text x="230" y="388" font-size="13" fill="#666">SeekSecond 画整圆辅助；SeekThird 生成圆弧并画预览</text>
+
+  <rect x="60" y="440" width="830" height="90" rx="10" fill="#eef7ee" stroke="#6fa86f"/>
+  <text x="90" y="470" font-size="15" font-weight="bold" fill="#2e6b2e">End → finish()</text>
+  <text x="90" y="498" font-size="13" fill="#444">executeCommands() 把 ShapeGeometry 加入 SketcherObj；连续模式 reset() 回到 SeekFirst 继续画下一个</text>
+
+  <line x1="830" y1="188" x2="830" y2="440" stroke="#666" stroke-width="2"/>
+  <line x1="830" y1="440" x2="830" y2="500" stroke="#666" stroke-width="2"/>
+  <line x1="830" y1="500" x2="150" y2="500" stroke="#888" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="150" y1="500" x2="150" y2="188" stroke="#888" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+  <text x="500" y="494" text-anchor="middle" font-size="12" fill="#888">连续模式：重置回 SeekFirst（右键 / Esc 也可触发 reset）</text>
+</svg>

@@ -21,6 +21,8 @@
 #include <GeomAbs_Shape.hxx>
 #include <ShapeFix_ShapeTolerance.hxx>
 #include <BRepAlgo.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
 #include <ShapeAnalysis_Surface.hxx>
 #include <BRepLProp_SLProps.hxx>
 #include <Precision.hxx>
@@ -29,6 +31,8 @@
 #include <TopoDS.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
+
+#include <algorithm>
 
 namespace MOON {
 	FilletFeature::FilletFeature(const std::string& p_name) :Feature(p_name, "Fillet")
@@ -59,7 +63,35 @@ namespace MOON {
                 );
             }
             topoShape->setShape(resShape.getShape());
-            getPreviewShape() = baseShape.makeElementCut(resShape);
+
+            // Determine the cut direction by comparing volumes: filleting a
+            // convex edge removes material (res smaller), filleting a concave
+            // edge adds material (res larger). This performs only one boolean
+            // cut and avoids relying on an empty-result heuristic.
+            GProp_GProps baseProps;
+            GProp_GProps resProps;
+            BRepGProp::VolumeProperties(baseShape.getShape(), baseProps);
+            BRepGProp::VolumeProperties(resShape.getShape(), resProps);
+            const double baseVol = baseProps.Mass();
+            const double resVol = resProps.Mass();
+            const double tol = 1e-7 * std::max(baseVol, 1.0);
+            if (resVol < baseVol - tol) {
+                getPreviewShape() = baseShape.makeElementCut(resShape);  // removed part
+            }
+            else if (resVol > baseVol + tol) {
+                getPreviewShape() = resShape.makeElementCut(baseShape);  // added part
+            }
+            else {
+                // Volumes (nearly) equal or shape not measurable: fall back to
+                // the empty-result heuristic.
+                Part::TopoShape preview = baseShape.makeElementCut(resShape);
+                if (preview.isNull() || preview.isEmpty()) {
+                    getPreviewShape() = resShape.makeElementCut(baseShape);
+                }
+                else {
+                    getPreviewShape() = preview;
+                }
+            }
             return true;
         }
         catch (Standard_Failure& e)

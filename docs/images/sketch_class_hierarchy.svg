@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="620" viewBox="0 0 920 620" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#888"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 1　草图建模 Widget 类层次结构</text>
+
+  <rect x="70" y="70" width="240" height="76" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="190" y="102" text-anchor="middle" font-size="17" font-weight="bold" fill="#2b4a6f">EventWidget</text>
+  <text x="190" y="126" text-anchor="middle" font-size="13" fill="#555">交互 Widget 基类（自研）</text>
+
+  <rect x="70" y="220" width="300" height="84" rx="10" fill="#f4f8f4" stroke="#6fa86f"/>
+  <text x="220" y="254" text-anchor="middle" font-size="17" font-weight="bold" fill="#2e6b2e">DrawSketchHandler</text>
+  <text x="220" y="278" text-anchor="middle" font-size="13" fill="#555">平面投影 / 吸附 / 预览绘制辅助</text>
+  <line x1="190" y1="146" x2="220" y2="220" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="430" y="220" width="190" height="84" rx="10" fill="#faf6ee" stroke="#c9a35f"/>
+  <text x="525" y="254" text-anchor="middle" font-size="17" font-weight="bold" fill="#7a5a1e">StateMachine&lt;T&gt;</text>
+  <text x="525" y="278" text-anchor="middle" font-size="13" fill="#555">点击状态机 Seek…→End</text>
+
+  <rect x="660" y="220" width="230" height="84" rx="10" fill="#faf6ee" stroke="#c9a35f"/>
+  <text x="775" y="254" text-anchor="middle" font-size="17" font-weight="bold" fill="#7a5a1e">ConstructionMethodMachine&lt;T&gt;</text>
+  <text x="775" y="278" text-anchor="middle" font-size="13" fill="#555">构造方式切换（M 键）</text>
+
+  <rect x="130" y="400" width="470" height="100" rx="10" fill="#eaf4ea" stroke="#4f8f4f"/>
+  <text x="365" y="434" text-anchor="middle" font-size="17" font-weight="bold" fill="#1f5c1f">DrawSketchDefaultHandler&lt;HandlerT, ModeT, N, MethodT&gt;</text>
+  <text x="365" y="460" text-anchor="middle" font-size="13" fill="#444">几何工厂 add*ToShapeGeometry / 连续模式 / finish→executeCommands</text>
+  <line x1="220" y1="304" x2="320" y2="400" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="525" y1="304" x2="440" y2="400" stroke="#888" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#b)"/>
+  <line x1="775" y1="304" x2="520" y2="400" stroke="#888" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#b)"/>
+
+  <rect x="250" y="560" width="420" height="0" fill="none"/>
+  <rect x="180" y="530" width="440" height="80" rx="10" fill="#fdeeee" stroke="#c96a6a"/>
+  <text x="400" y="564" text-anchor="middle" font-size="17" font-weight="bold" fill="#8b2f2f">DrawSketchHandlerArc</text>
+  <text x="400" y="588" text-anchor="middle" font-size="13" fill="#555">ThreeSeekEnd × CircleEllipseConstructionMethod（Center / ThreeRim）</text>
+  <line x1="365" y1="500" x2="400" y2="530" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="700" y="540" text-anchor="middle" font-size="13" fill="#777">同类工具：</text>
+  <text x="700" y="562" text-anchor="middle" font-size="13" fill="#777">Line / Circle / BSpline / Rectangle …</text>
+</svg>

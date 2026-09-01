@@ -31,6 +31,8 @@ public:
 
     void setRange(double min, double max);
     void setIncrement(double inc);
+    // Sensitivity of the drag interaction, in value units per pixel.
+    void setDragIncrement(double inc);
     void setWrapping(bool wrapping);
     void setInteractionMode(Interaction mode);
     void setPercentageBarVisible(bool visible);
@@ -89,6 +91,7 @@ private:
     double minValue_{0.0};
     double maxValue_{2.0};
     double increment_{0.1};
+    double dragIncrement_{0.5};
     double initialDragValue_{0.0};
 
     bool wrapping_{false};

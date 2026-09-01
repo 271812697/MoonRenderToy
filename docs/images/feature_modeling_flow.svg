@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b03a3a"/></marker>
+  </defs>
+  <text x="460" y="34" text-anchor="middle" font-size="22" fill="#222">图 1　Feature 建模与预览数据流（以 FilletFeature 为例）</text>
+
+  <rect x="50" y="80" width="230" height="90" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="165" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">baseFeature（上游 Feature）</text>
+  <text x="165" y="136" text-anchor="middle" font-size="12" fill="#666">CTopoShape 持有正式 B-Rep</text>
+  <text x="165" y="156" text-anchor="middle" font-size="12" fill="#666">GetTopoShape / GetTopoEdge(id)</text>
+
+  <rect x="360" y="80" width="240" height="90" rx="10" fill="#eef3fa" stroke="#7a95b8"/>
+  <text x="480" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#2b4a6f">FilletFeature::execute()</text>
+  <text x="480" y="136" text-anchor="middle" font-size="12" fill="#555">makeElementFillet(base, edges, r, r)</text>
+  <text x="480" y="156" text-anchor="middle" font-size="12" fill="#555">体积比较 → 凸凹方向</text>
+
+  <rect x="690" y="80" width="190" height="90" rx="10" fill="#f4f8f4" stroke="#6fa86f"/>
+  <text x="785" y="112" text-anchor="middle" font-size="15" font-weight="bold" fill="#2e6b2e">两份输出</text>
+  <text x="785" y="136" text-anchor="middle" font-size="12" fill="#666">topoShape → 正式几何</text>
+  <text x="785" y="156" text-anchor="middle" font-size="12" fill="#666">previewShape → 差异几何</text>
+
+  <line x1="280" y1="125" x2="360" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+  <text x="320" y="112" text-anchor="middle" font-size="12" fill="#666">subValues 边 id</text>
+  <line x1="600" y1="125" x2="690" y2="125" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="690" y="250" width="190" height="100" rx="10" fill="#eaf4ea" stroke="#4f8f4f"/>
+  <text x="785" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">ShapeHelper::previewShape()</text>
+  <text x="785" y="306" text-anchor="middle" font-size="12" fill="#555">execute() → 取 previewShape</text>
+  <text x="785" y="326" text-anchor="middle" font-size="12" fill="#555">refine 正式几何</text>
+  <line x1="785" y1="170" x2="785" y2="250" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="360" y="250" width="240" height="100" rx="10" fill="#eef7ee" stroke="#4f8f4f"/>
+  <text x="480" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c1f">TopoShapePreview Actor</text>
+  <text x="480" y="306" text-anchor="middle" font-size="12" fill="#555">按名字查找/创建，setShape</text>
+  <text x="480" y="326" text-anchor="middle" font-size="12" fill="#555">discretizationShape() 网格化</text>
+  <line x1="690" y1="300" x2="600" y2="300" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="50" y="250" width="230" height="100" rx="10" fill="#faf6ee" stroke="#c9a35f"/>
+  <text x="165" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#7a5a1e">预览材质</text>
+  <text x="165" y="306" text-anchor="middle" font-size="12" fill="#555">u_Albedo 颜色 / 透明度</text>
+  <text x="165" y="326" text-anchor="middle" font-size="12" fill="#555">混合 / 双面渲染</text>
+  <line x1="360" y1="300" x2="280" y2="300" stroke="#666" stroke-width="2" marker-end="url(#a)"/>
+
+  <rect x="50" y="440" width="820" height="90" rx="10" fill="#f7f7f7" stroke="#999"/>
+  <text x="460" y="472" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">提交 generateFinalShape() / makeDone()</text>
+  <text x="460" y="498" text-anchor="middle" font-size="13" fill="#555">makeDone：加入层级树 + CTopoShape::discretizationShape + FeatureBody::populateFeature（正式几何生效）</text>
+  <text x="460" y="518" text-anchor="middle" font-size="13" fill="#555">删除 TopoShapePreview 预览 Actor；Clear = clearPreviewShape 只删预览</text>
+  <line x1="785" y1="350" x2="785" y2="440" stroke="#b03a3a" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#b)"/>
+  <text x="700" y="420" text-anchor="middle" font-size="12" fill="#b03a3a">OK / Cancel</text>
+</svg>
