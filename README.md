@@ -94,7 +94,9 @@ Build\bin\Release\Moon.exe
 
 ### OCC 几何建模
 
-![image-20260902002221158](README.assets/image-20260902002221158.png)
+![image-20260902011211045](README.assets/image-20260902011211045.png)
+
+![image-20260902011259652](README.assets/image-20260902011259652.png)
 
 ![image-20260902002025784](README.assets/image-20260902002025784.png)
 
