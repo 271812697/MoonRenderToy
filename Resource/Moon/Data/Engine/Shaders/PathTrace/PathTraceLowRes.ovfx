@@ -120,6 +120,8 @@ struct Camera
     float fov;
     float focalDist;
     float aperture;
+    float owidth;
+    float oheight;
 };
 
 struct Light
@@ -266,6 +268,65 @@ float AABBIntersect(vec3 minCorner, vec3 maxCorner, Ray r)
 }
 
 
+    // Watertight ray/triangle intersection (Woop et al. 2013).
+    // Avoids cracks on shared edges and precision loss on sliver triangles.
+    // Outputs hit distance t and barycentric coordinates (u, v).
+    bool IntersectTriangle(Ray r, vec3 v0, vec3 v1, vec3 v2, out float t, out vec2 bary)
+    {
+        vec3 dir = r.direction;
+        vec3 absDir = abs(dir);
+        
+        // Pick the dominant ray axis and permute so it maps to z
+        int kz = (absDir.x >= absDir.y && absDir.x >= absDir.z) ? 0 : (absDir.y >= absDir.z ? 1 : 2);
+        int kx = (kz + 1) % 3;
+        int ky = (kx + 1) % 3;
+        if (kx > ky)
+        {
+            int tmp = kx;
+            kx = ky;
+            ky = tmp;
+        }
+        
+        vec3 d = vec3(dir[kx], dir[ky], dir[kz]);
+        vec3 o = vec3(r.origin[kx], r.origin[ky], r.origin[kz]);
+        vec3 a = vec3(v0[kx], v0[ky], v0[kz]);
+        vec3 b = vec3(v1[kx], v1[ky], v1[kz]);
+        vec3 c = vec3(v2[kx], v2[ky], v2[kz]);
+        
+        // Shear the triangle along the ray so the intersection becomes a 2D edge test
+        float sx = -d.x / d.z;
+        float sy = -d.y / d.z;
+        float sz = 1.0 / d.z;
+        
+        vec2 a2 = a.xy + vec2(sx, sy) * a.z;
+        vec2 b2 = b.xy + vec2(sx, sy) * b.z;
+        vec2 c2 = c.xy + vec2(sx, sy) * c.z;
+        vec2 o2 = o.xy + vec2(sx, sy) * o.z;
+        
+        vec2 e0 = b2 - a2;
+        vec2 e1 = c2 - a2;
+        vec2 t2 = o2 - a2;
+        
+        float det = e0.x * e1.y - e0.y * e1.x;
+        if (det == 0.0)
+        {
+            return false;
+        }
+        
+        float invDet = 1.0 / det;
+        float u = (t2.x * e1.y - t2.y * e1.x) * invDet;
+        float v = (e0.x * t2.y - e0.y * t2.x) * invDet;
+        float w = 1.0 - u - v;
+        
+        if (u < 0.0 || v < 0.0 || w < 0.0)
+        {
+            return false;
+        }
+        
+        t = (a.z - o.z + u * (b.z - a.z) + v * (c.z - a.z)) * sz;
+        bary = vec2(u, v);
+        return t > 0.0;
+    }
 float GTR1(float NDotH, float a)
 {
     if (a >= 1.0)
@@ -661,29 +722,16 @@ bool AnyHit(Ray r, float maxDist)
                 vec4 v1 = texelFetch(verticesTex, vertIndices.y);
                 vec4 v2 = texelFetch(verticesTex, vertIndices.z);
 
-                vec3 e0 = v1.xyz - v0.xyz;
-                vec3 e1 = v2.xyz - v0.xyz;
-                vec3 pv = cross(rTrans.direction, e1);
-                float det = dot(e0, pv);
-
-                vec3 tv = rTrans.origin - v0.xyz;
-                vec3 qv = cross(tv, e0);
-
-                vec4 uvt;
-                uvt.x = dot(tv, pv);
-                uvt.y = dot(rTrans.direction, qv);
-                uvt.z = dot(e1, qv);
-                uvt.xyz = uvt.xyz / det;
-                uvt.w = 1.0 - uvt.x - uvt.y;
-
-                if (all(greaterThanEqual(uvt, vec4(0.0))) && uvt.z < maxDist)
+                float hitT;
+            vec2 hitBary;
+            if (IntersectTriangle(rTrans, v0.xyz, v1.xyz, v2.xyz, hitT, hitBary) && hitT < maxDist)
                 {
 #if defined(OPT_ALPHA_TEST) && !defined(OPT_MEDIUM)
                     vec2 t0 = vec2(v0.w, texelFetch(normalsTex, vertIndices.x).w);
                     vec2 t1 = vec2(v1.w, texelFetch(normalsTex, vertIndices.y).w);
                     vec2 t2 = vec2(v2.w, texelFetch(normalsTex, vertIndices.z).w);
 
-                    vec2 texCoord = t0 * uvt.w + t1 * uvt.x + t2 * uvt.y;
+                    vec2 texCoord = t0 * (1.0 - hitBary.x - hitBary.y) + t1 * hitBary.x + t2 * hitBary.y;
 
                     vec4 texIDs      = texelFetch(materialsTex, ivec2(currMatID * 8 + 6, 0), 0);
                     vec4 alphaParams = texelFetch(materialsTex, ivec2(currMatID * 8 + 7, 0), 0);
@@ -708,15 +756,15 @@ bool AnyHit(Ray r, float maxDist)
         }
         else if (leaf < 0) // Leaf node of TLAS
         {
-            vec4 r1 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 0, 0), 0).xyzw;
-            vec4 r2 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 1, 0), 0).xyzw;
-            vec4 r3 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 2, 0), 0).xyzw;
-            vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 3, 0), 0).xyzw;
+            vec4 r1 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 4, 0), 0).xyzw;
+            vec4 r2 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 5, 0), 0).xyzw;
+            vec4 r3 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 6, 0), 0).xyzw;
+            vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 7, 0), 0).xyzw;
 
-            mat4 transform = mat4(r1, r2, r3, r4);
+            mat4 invTransform = mat4(r1, r2, r3, r4);
 
-            rTrans.origin    = vec3(inverse(transform) * vec4(r.origin, 1.0));
-            rTrans.direction = vec3(inverse(transform) * vec4(r.direction, 0.0));
+            rTrans.origin = vec3(invTransform * vec4(r.origin, 1.0));
+            rTrans.direction = vec3(invTransform * vec4(r.direction, 0.0));
 
             // Add a marker. We'll return to this spot after we've traversed the entire BLAS
             stack[ptr++] = -1;
@@ -882,27 +930,17 @@ if(state.depth > 0)
                 vec4 v1 = texelFetch(verticesTex, vertIndices.y);
                 vec4 v2 = texelFetch(verticesTex, vertIndices.z);
 
-                vec3 e0 = v1.xyz - v0.xyz;
-                vec3 e1 = v2.xyz - v0.xyz;
-                vec3 pv = cross(rTrans.direction, e1);
-                float det = dot(e0, pv);
-
-                vec3 tv = rTrans.origin - v0.xyz;
-                vec3 qv = cross(tv, e0);
-
-                vec4 uvt;
-                uvt.x = dot(tv, pv);
-                uvt.y = dot(rTrans.direction, qv);
-                uvt.z = dot(e1, qv);
-                uvt.xyz = uvt.xyz / det;
-                uvt.w = 1.0 - uvt.x - uvt.y;
-
-                if (all(greaterThanEqual(uvt, vec4(0.0))) && uvt.z < t)
-                {
-                    t = uvt.z;
+                float hitT;
+            vec2 hitBary;
+            if (IntersectTriangle(rTrans, v0.xyz, v1.xyz, v2.xyz, hitT, hitBary) && hitT < t)
+            {
+                    //state.tid=leftIndex + i;
+                    
+                    t = hitT;
                     triID = vertIndices;
                     state.matID = currMatID;
-                    bary = uvt.wxy;
+                    
+                    bary = vec3(1.0 - hitBary.x - hitBary.y, hitBary.x, hitBary.y);
                     vert0 = v0, vert1 = v1, vert2 = v2;
                     transform = transMat;
                 }
@@ -910,15 +948,20 @@ if(state.depth > 0)
         }
         else if (leaf < 0) // Leaf node of TLAS
         {
-            vec4 r1 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 0, 0), 0).xyzw;
-            vec4 r2 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 1, 0), 0).xyzw;
-            vec4 r3 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 2, 0), 0).xyzw;
-            vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 4 + 3, 0), 0).xyzw;
+            vec4 r1 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 0, 0), 0).xyzw;
+            vec4 r2 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 1, 0), 0).xyzw;
+            vec4 r3 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 2, 0), 0).xyzw;
+            vec4 r4 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 3, 0), 0).xyzw;
+            vec4 r5 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 4, 0), 0).xyzw;
+            vec4 r6 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 5, 0), 0).xyzw;
+            vec4 r7 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 6, 0), 0).xyzw;
+            vec4 r8 = texelFetch(transformsTex, ivec2((-leaf - 1) * 8 + 7, 0), 0).xyzw;
 
             transMat = mat4(r1, r2, r3, r4);
+            mat4 invTransMat = mat4(r5, r6, r7, r8);
 
-            rTrans.origin    = vec3(inverse(transMat) * vec4(r.origin, 1.0));
-            rTrans.direction = vec3(inverse(transMat) * vec4(r.direction, 0.0));
+            rTrans.origin = vec3(invTransMat * vec4(r.origin, 1.0));
+            rTrans.direction = vec3(invTransMat * vec4(r.direction, 0.0));
 
             // Add a marker. We'll return to this spot after we've traversed the entire BLAS
             stack[ptr++] = -1;
@@ -1489,7 +1532,7 @@ vec3 EvalTransmittance(Ray r)
         }
 
         // Move ray origin to hit point
-        r.origin = state.fhp + r.direction * EPS;
+        r.origin = state.fhp + r.direction * max(EPS, state.hitDist * 1e-4);
     }
 
     return transmittance;
@@ -1500,7 +1543,7 @@ vec3 DirectLight(in Ray r, in State state, bool isSurface)
 {
     vec3 Ld = vec3(0.0);
     vec3 Li = vec3(0.0);
-    vec3 scatterPos = state.fhp + state.normal * EPS;
+    vec3 scatterPos = state.fhp + state.ffnormal * max(EPS, state.hitDist * 1e-4);
 
     ScatterSampleRec scatterSample;
 
@@ -1781,7 +1824,7 @@ vec4 PathTrace(Ray r)
 
             // Move ray origin to hit point and set direction for next bounce
             r.direction = scatterSample.L;
-            r.origin = state.fhp + r.direction * EPS;
+            r.origin = state.fhp + r.direction * max(EPS, state.hitDist * 1e-4);
 
 #ifdef OPT_MEDIUM
 
@@ -1831,17 +1874,25 @@ void main(void)
     vec2 d = (2.0 * TexCoords - 1.0) + jitter;
 
     float scale = tan(camera.fov * 0.5);
+#if defined(PERSPECTIVE_CAMERA)
     d.y *=  scale;
 	d.x *= resolution.x  /resolution.y *scale;
     vec3 rayDir = normalize(d.x * camera.right + d.y * camera.up + camera.forward);
-
     vec3 focalPoint = camera.focalDist * rayDir;
+#else
+    vec3 offsetVec = d.x * camera.right*camera.owidth*0.5 + d.y * camera.up*camera.oheight*0.5;
+#endif
+
     float cam_r1 = rand() * TWO_PI;
     float cam_r2 = rand() * camera.aperture;
     vec3 randomAperturePos = (cos(cam_r1) * camera.right + sin(cam_r1) * camera.up) * sqrt(cam_r2);
+#if defined(PERSPECTIVE_CAMERA)
     vec3 finalRayDir = normalize(focalPoint - randomAperturePos);
-
     Ray ray = Ray(camera.position + randomAperturePos, finalRayDir);
+#else
+    vec3 finalRayDir = normalize(camera.forward);
+    Ray ray = Ray(camera.position + randomAperturePos + offsetVec, finalRayDir);
+#endif
 
     vec4 pixelColor = PathTrace(ray);
 

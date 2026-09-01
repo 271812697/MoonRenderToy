@@ -94,6 +94,14 @@ Build\bin\Release\Moon.exe
 
 ### OCC 几何建模
 
+![image-20260902002221158](README.assets/image-20260902002221158.png)
+
+![image-20260902002025784](README.assets/image-20260902002025784.png)
+
+![image-20260902001925245](README.assets/image-20260902001925245.png)
+
+![image-20260902001844531](README.assets/image-20260902001844531.png)
+
 ![几何建模示例 1](README.assets/image-20260829160311142.png)
 *草图绘制与 3D 特征建模效果*
 

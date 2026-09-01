@@ -62,7 +62,8 @@ void main()
     // Write the depth of the plane so the cap is occluded correctly by any
     // kept surface in front of it (the depth buffer itself is left untouched).
     vec4 clipPos = ubo_Projection * ubo_View * vec4(hit, 1.0);
-    gl_FragDepth = (clipPos.z / clipPos.w) * 0.5 + 0.5;
+    // Reversed-Z depth range: window depth is 1 at near and 0 at far.
+    gl_FragDepth = 0.5 - (clipPos.z / clipPos.w) * 0.5;
 
     // Hatching stripes, derived from the clip plane alone.
     vec3 n = normalize(ubo_plane.xyz);

@@ -359,10 +359,14 @@ namespace Core::SceneSystem
 			}
 			verticesCnt += vertexData.size();
 		}
-		// Copy transforms
-		transforms.resize(triMeshInstances.size());
+					// Copy transforms: instance transform and its inverse (both transposed),
+		// so the shader can transform rays without a per-hit matrix inverse.
+		transforms.resize(triMeshInstances.size() * 2);
 		for (int i = 0; i < triMeshInstances.size(); i++)
-			transforms[i] = Maths::FMatrix4::Transpose(triMeshInstances[i].transform);
+		{
+			transforms[i * 2 + 0] = Maths::FMatrix4::Transpose(triMeshInstances[i].transform);
+			transforms[i * 2 + 1] = Maths::FMatrix4::Transpose(Maths::FMatrix4::Inverse(triMeshInstances[i].transform));
+		}
 		// Copy Textures
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
@@ -384,7 +388,6 @@ namespace Core::SceneSystem
 				std::copy(textures[i]->texData.begin(), textures[i]->texData.end(), &textureMapsArray[i * texBytes]);
 		}
 		isDirty = true;
-		SaveAsObj("res.obj");
 	}
 	void BvhService::SaveAsObj(const std::string& path)
 	{
