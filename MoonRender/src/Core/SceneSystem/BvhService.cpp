@@ -488,7 +488,7 @@ namespace Core::SceneSystem
 					auto actorId = triMeshInstances[instanceId].actorID;
 					auto actor = scene->FindActorByID(actorId);
 					if (actor->HasComponent("CTopoShape")) {
-						auto matList = actor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+						auto matList = actor->GetChild("AllFaces")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
 						if (matList) {
 							auto mat = matList->GetMaterialAtIndex(0);
 							if (mat) {

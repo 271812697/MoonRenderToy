@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <rect x="0" y="0" width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b3a55">TreeView 中的拓扑树（Actor 父子关系）</text>
+
+  <!-- 根 -->
+  <rect x="420" y="55" width="140" height="36" rx="6" fill="#2b3a55"/>
+  <text x="490" y="78" text-anchor="middle" fill="#ffffff" font-weight="bold">Feature（根）</text>
+
+  <!-- 渲染锚点 -->
+  <rect x="120" y="120" width="110" height="34" rx="6" fill="#d9dee6"/>
+  <text x="175" y="141" text-anchor="middle" fill="#66788f">Face（渲染）</text>
+  <rect x="280" y="120" width="110" height="34" rx="6" fill="#d9dee6"/>
+  <text x="335" y="141" text-anchor="middle" fill="#66788f">Edge（渲染）</text>
+  <text x="195" y="170" text-anchor="middle" fill="#a0aab8" font-size="12">tag=TopoRender，树中隐藏</text>
+  <text x="335" y="170" text-anchor="middle" fill="#a0aab8" font-size="12">合批 mesh 挂在这</text>
+
+  <!-- Solid -->
+  <rect x="420" y="120" width="140" height="36" rx="6" fill="#4a6fa5"/>
+  <text x="490" y="143" text-anchor="middle" fill="#ffffff" font-weight="bold">Solid_0</text>
+  <rect x="620" y="120" width="140" height="36" rx="6" fill="#4a6fa5"/>
+  <text x="690" y="143" text-anchor="middle" fill="#ffffff" font-weight="bold">Solid_1</text>
+
+  <!-- Shell -->
+  <rect x="430" y="200" width="120" height="34" rx="6" fill="#6f8fc9"/>
+  <text x="490" y="222" text-anchor="middle" fill="#ffffff">Shell_0</text>
+  <rect x="640" y="200" width="120" height="34" rx="6" fill="#6f8fc9"/>
+  <text x="700" y="222" text-anchor="middle" fill="#ffffff">Shell_1</text>
+
+  <!-- Faces / Edges -->
+  <rect x="350" y="280" width="100" height="34" rx="6" fill="#9db8e2"/>
+  <text x="400" y="302" text-anchor="middle" fill="#ffffff">Faces</text>
+  <rect x="490" y="280" width="100" height="34" rx="6" fill="#9db8e2"/>
+  <text x="540" y="302" text-anchor="middle" fill="#ffffff">Edges</text>
+  <rect x="640" y="280" width="100" height="34" rx="6" fill="#9db8e2"/>
+  <text x="690" y="302" text-anchor="middle" fill="#ffffff">Faces</text>
+
+  <!-- leaves -->
+  <rect x="250" y="370" width="80" height="30" rx="5" fill="#cfe3d5"/>
+  <text x="290" y="390" text-anchor="middle" fill="#2b5a3c">Face_0</text>
+  <rect x="360" y="370" width="80" height="30" rx="5" fill="#cfe3d5"/>
+  <text x="400" y="390" text-anchor="middle" fill="#2b5a3c">Face_3</text>
+  <rect x="470" y="370" width="80" height="30" rx="5" fill="#f3d9a7"/>
+  <text x="510" y="390" text-anchor="middle" fill="#7a5714">Edge_0</text>
+  <rect x="580" y="370" width="80" height="30" rx="5" fill="#f3d9a7"/>
+  <text x="620" y="390" text-anchor="middle" fill="#7a5714">Edge_11</text>
+  <rect x="700" y="370" width="80" height="30" rx="5" fill="#f3d9a7"/>
+  <text x="740" y="390" text-anchor="middle" fill="#7a5714">Edge_0</text>
+
+  <!-- 连线 -->
+  <line x1="490" y1="91" x2="175" y2="120" stroke="#8a99ad"/>
+  <line x1="490" y1="91" x2="335" y2="120" stroke="#8a99ad"/>
+  <line x1="490" y1="91" x2="490" y2="120" stroke="#8a99ad"/>
+  <line x1="490" y1="91" x2="690" y2="120" stroke="#8a99ad"/>
+  <line x1="490" y1="156" x2="490" y2="200" stroke="#8a99ad"/>
+  <line x1="690" y1="156" x2="700" y2="200" stroke="#8a99ad"/>
+  <line x1="490" y1="234" x2="400" y2="280" stroke="#8a99ad"/>
+  <line x1="490" y1="234" x2="540" y2="280" stroke="#8a99ad"/>
+  <line x1="700" y1="234" x2="690" y2="280" stroke="#8a99ad"/>
+  <line x1="400" y1="314" x2="290" y2="370" stroke="#8a99ad"/>
+  <line x1="400" y1="314" x2="400" y2="370" stroke="#8a99ad"/>
+  <line x1="540" y1="314" x2="510" y2="370" stroke="#8a99ad"/>
+  <line x1="540" y1="314" x2="620" y2="370" stroke="#8a99ad"/>
+  <line x1="690" y1="314" x2="740" y2="370" stroke="#8a99ad"/>
+
+  <!-- 说明 -->
+  <rect x="40" y="440" width="880" height="100" rx="8" fill="#f8fafd" stroke="#b9cbe8"/>
+  <text x="60" y="468" font-weight="bold" fill="#2b3a55">说明：</text>
+  <text x="60" y="494" fill="#33475f">• 叶子 Face_i / Edge_i 是显隐开关：IsActive() 递归考虑祖先 → 勾选组/Shell/Solid 批量隐藏</text>
+  <text x="60" y="518" fill="#33475f">• 共享边在多个 Shell 下各有一个实例（同一几何线，任一实例可见即绘制）</text>
+  <text x="60" y="536" fill="#33475f">• 无 shell 的游离边归到根级 Edges 组（如草图）</text>
+</svg>

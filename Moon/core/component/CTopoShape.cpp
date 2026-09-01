@@ -3,6 +3,7 @@
 #include <Core/ECS/Actor.h>
 #include <map>
 #include <algorithm>
+#include <cmath>
 #include "core/component/CTopoShape.h"
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/Global/ServiceLocator.h>
@@ -21,6 +22,44 @@
 #include <TopoDS.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <TopExp_Explorer.hxx>
+
+namespace
+{
+	Maths::FVector3 HsvToRgb(float p_hue, float p_saturation, float p_value)
+	{
+		const int i = static_cast<int>(p_hue * 6.0f);
+		const float f = p_hue * 6.0f - i;
+		const float p = p_value * (1.0f - p_saturation);
+		const float q = p_value * (1.0f - f * p_saturation);
+		const float t = p_value * (1.0f - (1.0f - f) * p_saturation);
+		switch (i % 6)
+		{
+		case 0: return { p_value, t, p };
+		case 1: return { q, p_value, p };
+		case 2: return { p, p_value, t };
+		case 3: return { p, q, p_value };
+		case 4: return { t, p, p_value };
+		default: return { p_value, p, q };
+		}
+	}
+
+	// Light per-solid color: faces outside any solid get a neutral gray, and
+	// each solid gets a pastel hue spaced by the golden angle so neighboring
+	// solids stay visually distinct.
+	Maths::FVector4 DomainColorForSolid(int p_solidIndex)
+	{
+		if (p_solidIndex < 0) {
+			return Maths::FVector4{ 0.85f, 0.85f, 0.88f, 1.0f };
+		}
+        if (p_solidIndex==0) {
+            return Maths::FVector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+        }
+		const float hue = std::fmod(p_solidIndex * 137.508f, 360.0f) / 360.0f;
+		const auto rgb = HsvToRgb(hue, 0.38f, 0.95f);
+		return Maths::FVector4{ rgb.x, rgb.y, rgb.z, 1.0f };
+	}
+}
+
 namespace Core::ECS::Components
 {
 	class CTopoShape::CTopoShapeInternal {
@@ -57,6 +96,12 @@ namespace Core::ECS::Components
         std::map<int, Core::ECS::Actor*>solidGroups;
         std::map<std::string, Core::ECS::Actor*>fallbackGroups;
         std::vector<Core::ECS::Actor*>topoGroupList;
+        // Edge visibility: the line mesh keeps one index range per valid edge;
+        // updateEdgeMesh re-uploads only the indices of edges whose leaf actors
+        // are active (IsActive already accounts for inactive ancestors).
+        ::Rendering::Resources::Mesh* lineMesh = nullptr;
+        std::vector<std::pair<int, int>>edgeIndexRanges;
+        std::vector<std::vector<Core::ECS::Actor*>>edgeLeafActors;
         /*
         use these two vectors because we may skip some empty domains
          when we generate childMeshInfos       
@@ -207,25 +252,16 @@ namespace Core::ECS::Components
 
                 }
                
-                static Maths::FVector4 colors[] = {
-                { 255.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 237.0 / 255.0f, 28.0f / 255.0f,36.0f / 255.0f, 1.0f },
-                { 0.0 / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0f }, { 0.0 / 255.0f, 162.0f / 255.0f,232.0f / 255.0f, 1.0f },
-                 { 112.0 / 255.0f, 146.0f / 255.0f, 190.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 0.0f / 255.0f,255.0f / 255.0f, 1.0f },
-                  { 0.0 / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f }, { 161.0 / 255.0f, 161.0f / 255.0f,255.0f / 255.0f, 1.0f },
-                   { 171.0 / 255.0f, 128.0f / 255.0f, 84.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 128.0f / 255.0f,191.0f / 255.0f, 1.0f },
-                    { 135.0 / 255.0f, 89.0f / 255.0f, 179.0f / 255.0f, 1.0f }, { 255.0 / 255.0f, 191.0f / 255.0f,128.0f / 255.0f, 1.0f }
-                };
                 std::vector<::Rendering::Geometry::VertexBVH> faceVertices;
                 std::vector<unsigned int>indices;
 
                 std::vector<Maths::FVector4>domainColor;
                 unsigned int vertexOffset = 0;
                 unsigned int indexOffset = 0;
-                int cnt = 0;
                 
                 std::vector<::Rendering::Geometry::bbox>domainBoxs;
                 std::vector<uint32_t>domainRange;
-                auto faceChild = owner.GetChild("Face");
+                auto faceChild = owner.GetChild("AllFaces");
                 int domainIndex = -1;
                 mInternal->domainIndexToFaceChildIndex.resize(domains.size(),-1);
                 std::vector<int>DomainIndexToi(domains.size(), -1);
@@ -247,9 +283,9 @@ namespace Core::ECS::Components
                         actor.SetParent(*getOrCreateTopoGroup(ss.second, "Faces"));
                         mInternal->faceActors.push_back(&actor);
                         domainId.push_back(actor.GetID());
-                        domainColor.push_back(colors[(domains[i].id-1) % 12]);
-                       
-                        cnt = (cnt + 1) % 12;
+                        // ss.first is the 0-based solid ordinal (matches the
+                        // Solid_k actors in the topology tree); -1 = free face.
+                        domainColor.push_back(DomainColorForSolid(ss.first));
                         mInternal->childMeshInfos.push_back(std::make_pair<int, int>(indexOffset, domains[i].facets.size() * 3));
                         domainVertexNum.push_back({vertexOffset, domains[i].points.size() });
                         domainIndexNum.push_back({indexOffset ,domains[i].facets.size() * 3 });
@@ -424,9 +460,12 @@ namespace Core::ECS::Components
                 std::vector<::Rendering::Geometry::VertexBVH> p_vertices;
                 std::vector<uint32_t>lineIndex;
                 std::vector<uint32_t>lineSegmentOffsets;
-                auto edgeChild = owner.GetChild("Edge");
+                auto edgeChild = owner.GetChild("AllEdges");
                 p_vertices.reserve(linePoints.size());
                 lineSegmentOffsets.reserve(LineRanges.size());
+                mInternal->edgeLeafActors.resize(LineRanges.size());
+                mInternal->edgeIndexRanges.clear();
+                mInternal->edgeIndexRanges.reserve(LineRanges.size());
                 for (int i = 0; i < LineRanges.size(); i++) {
                     ZoneScopedN("line");
                     auto& l = LineRanges[i];
@@ -443,11 +482,13 @@ namespace Core::ECS::Components
                     if (shells.empty()) {
                         shells.push_back(-1);
                     }
+                    const int edgeIndexStart = static_cast<int>(lineIndex.size());
                     float subLineId = 0.0f;
                     for (size_t s = 0; s < shells.size(); s++) {
                         auto& actor = scene->CreateActor("Edge_" + std::to_string(i), "TopoEdge");
                         actor.SetParent(*getOrCreateTopoGroup(shells[s], "Edges"));
                         mInternal->edgeActors.push_back(&actor);
+                        mInternal->edgeLeafActors[i].push_back(&actor);
                         if (s == 0) {
                             subLineId = actor.GetID() * 1.0f;
                         }
@@ -469,6 +510,8 @@ namespace Core::ECS::Components
                     p_vertices.emplace_back(v);
 
                     lineSegmentOffsets.emplace_back(lineIndex.size());
+                    mInternal->edgeIndexRanges.emplace_back(
+                        edgeIndexStart, static_cast<int>(lineIndex.size()) - edgeIndexStart);
                 }
                
                 auto lineMesh = new ::Rendering::Resources::Mesh(
@@ -476,6 +519,7 @@ namespace Core::ECS::Components
                     lineIndex,
                     0,
                     ::Rendering::Settings::EPrimitiveMode::LINES);
+                mInternal->lineMesh = lineMesh;
                 //lineMesh->ComputeBoundingSphereAndBox();
                 auto lineModel = edgeChild->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
                 lineModel->GetMaterialNames().emplace_back("Line");
@@ -489,6 +533,7 @@ namespace Core::ECS::Components
                 MOON::System::JobSystem::Execute(ctx, computeBox);
                 auto& lineBacthMesh =*edgeChild->GetComponent<Core::ECS::Components::CBatchMeshLine>();
                 lineBacthMesh.BuildBvh(lineSegmentOffsets);
+                updateEdgeMesh();
             }        
             // The topology actors (Solid/Shell/Face_*/Edge_*) were rebuilt;
             // ask the TreeView to refresh so the new hierarchy is visible.
@@ -576,6 +621,9 @@ namespace Core::ECS::Components
         mInternal->shellGroups.clear();
         mInternal->solidGroups.clear();
         mInternal->fallbackGroups.clear();
+        mInternal->lineMesh = nullptr;
+        mInternal->edgeIndexRanges.clear();
+        mInternal->edgeLeafActors.clear();
         mInternal->faceSolidShell.clear();
         mInternal->shellSolid.clear();
         mInternal->edgeShells.clear();
@@ -684,28 +732,27 @@ namespace Core::ECS::Components
         }
 
         auto it = mInternal->shellGroups.find(shellIndex);
+        Core::ECS::Actor* shellActor = nullptr;
         if (it != mInternal->shellGroups.end()) {
-            return it->second;
+            shellActor = it->second;
         }
-
-        Core::ECS::Actor* parent = &owner;
-        const int solidIdx = (shellIndex >= 0 && shellIndex < static_cast<int>(mInternal->shellSolid.size()))
-            ? mInternal->shellSolid[shellIndex] : -1;
-        if (solidIdx >= 0) {
-            const std::string solidName = "Solid_" + std::to_string(solidIdx);
-            auto* solidActor = mInternal->solidGroups[solidIdx];
-            if (!solidActor) {
-                auto& actor = scene.CreateActor(solidName, "Solid");
-                actor.SetParent(owner);
-                mInternal->topoGroupList.push_back(&actor);
-                solidActor = &actor;
-                mInternal->solidGroups[solidIdx] = solidActor;
+        else {
+            Core::ECS::Actor* parent = &owner;
+            const int solidIdx = (shellIndex >= 0 && shellIndex < static_cast<int>(mInternal->shellSolid.size()))
+                ? mInternal->shellSolid[shellIndex] : -1;
+            if (solidIdx >= 0) {
+                const std::string solidName = "Solid_" + std::to_string(solidIdx);
+                auto* solidActor = mInternal->solidGroups[solidIdx];
+                if (!solidActor) {
+                    auto& actor = scene.CreateActor(solidName, "Solid");
+                    actor.SetParent(owner);
+                    mInternal->topoGroupList.push_back(&actor);
+                    solidActor = &actor;
+                    mInternal->solidGroups[solidIdx] = solidActor;
+                }
+                parent = solidActor;
             }
-            parent = solidActor;
-        }
 
-        auto* shellActor = mInternal->shellGroups[shellIndex];
-        if (!shellActor) {
             const std::string shellName = "Shell_" + std::to_string(shellIndex);
             auto& actor = scene.CreateActor(shellName, "Shell");
             actor.SetParent(*parent);
@@ -713,7 +760,18 @@ namespace Core::ECS::Components
             shellActor = &actor;
             mInternal->shellGroups[shellIndex] = shellActor;
         }
-        return shellActor;
+
+        // The shell actor is always freshly created during this rebuild, so
+        // its sub-groups are fresh as well. Faces and edges are separated into
+        // their own empty parent actors ("Faces" / "Edges") per shell.
+        auto* group = shellActor->GetChild(fallbackName);
+        if (!group) {
+            auto& actor = scene.CreateActor(fallbackName, "TopoGroup");
+            actor.SetParent(*shellActor);
+            mInternal->topoGroupList.push_back(&actor);
+            group = &actor;
+        }
+        return group;
     }
 
 	Part::TopoShape& CTopoShape::GetTopoShape()
@@ -735,7 +793,7 @@ namespace Core::ECS::Components
     {
         
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
-            auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            auto& bacthMesh = *owner.GetChild("AllFaces")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.SetHoverColor(mInternal->domainIndexToFaceChildIndex[childId], mInternal->highOption.hoverColor);
         }
         else if(mInternal->highOption.mode == HighLightOption::Mode::Transparent)
@@ -747,7 +805,7 @@ namespace Core::ECS::Components
     void CTopoShape::selectChildFaces(const std::vector<int>& childIds)
     {
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
-            auto& batchMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            auto& batchMesh = *owner.GetChild("AllFaces")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             std::vector<int>candidates;
             candidates.reserve(childIds.size());
             for (int i = 0;i < childIds.size();i++) {
@@ -770,7 +828,7 @@ namespace Core::ECS::Components
     void CTopoShape::hoverChildLine(int childId)
     {
         mInternal->hoverLine = true;
-        auto& colorBar = *owner.GetChild("Edge")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
+        auto& colorBar = *owner.GetChild("AllEdges")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
         auto vertexArray = colorBar.getLineSeg(childId);
         mInternal->hoverLineSeg.clear();
         mInternal->hoverLineSeg.reserve(vertexArray.size());
@@ -782,7 +840,7 @@ namespace Core::ECS::Components
     void CTopoShape::selectChildLines(const std::vector<int>& childIds)
     {
         mInternal->selectLineSeg.clear();
-        auto& colorBar = *owner.GetChild("Edge")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
+        auto& colorBar = *owner.GetChild("AllEdges")->GetComponent<Core::ECS::Components::CBatchMeshLine>();
         for (int i = 0;i < childIds.size();i++) {
             auto vertexArray = colorBar.getLineSeg(childIds[i]);
             mInternal->selectLineSeg.emplace_back();
@@ -798,7 +856,7 @@ namespace Core::ECS::Components
     void CTopoShape::clearHover()
     {
         if (mInternal->highOption.mode == HighLightOption::Mode::Color) {
-            auto& bacthMesh = *owner.GetChild("Face")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
+            auto& bacthMesh = *owner.GetChild("AllFaces")->GetComponent<Core::ECS::Components::CBatchMeshTriangle>();
             bacthMesh.ClearHoverColor();
         }
         else if (mInternal->highOption.mode == HighLightOption::Mode::Transparent)
@@ -856,9 +914,44 @@ namespace Core::ECS::Components
 				mInternal->curTransparentChildMesh.push_back(mInternal->childMeshInfos[id]);
             }
         }
-        auto model = owner.GetChild("Face")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
+        auto model = owner.GetChild("AllFaces")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel();
         auto mesh = model->GetMesh(0);
         mesh->UploadIndices(mInternal->curOpaqueChildMesh, 0);
         mesh->UploadIndices(mInternal->curTransparentChildMesh, 1);
+        updateEdgeMesh();
+    }
+
+    void CTopoShape::updateEdgeMesh()
+    {
+        if (!mInternal->lineMesh) {
+            return;
+        }
+        const size_t edgeCount = mInternal->edgeIndexRanges.size();
+        if (edgeCount != mInternal->edgeLeafActors.size()) {
+            return;
+        }
+
+        // An edge is visible when at least one of its leaf actors is active;
+        // IsActive already walks up the ancestors, so unchecking an "Edges"
+        // group, a Shell or a Solid hides every edge below it.
+        const auto& allIndices = mInternal->lineMesh->GetIndices();
+        std::vector<uint32_t> visibleIndices;
+        for (size_t i = 0; i < edgeCount; ++i) {
+            bool visible = false;
+            for (auto* actor : mInternal->edgeLeafActors[i]) {
+                if (actor->IsActive()) {
+                    visible = true;
+                    break;
+                }
+            }
+            if (!visible) {
+                continue;
+            }
+            const auto& range = mInternal->edgeIndexRanges[i];
+            for (int k = 0; k < range.second; ++k) {
+                visibleIndices.push_back(allIndices[range.first + k]);
+            }
+        }
+        mInternal->lineMesh->UploadIndices(visibleIndices, 0);
     }
 }

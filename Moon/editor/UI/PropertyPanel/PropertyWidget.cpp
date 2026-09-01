@@ -523,7 +523,7 @@ namespace MOON {
 					// the TreeView, so expose the face material on the topo actor
 					// itself to keep the material panel reachable.
 					if (m_selectedActor->HasComponent("CTopoShape")) {
-						if (auto* face = m_selectedActor->GetChild("Face")) {
+						if (auto* face = m_selectedActor->GetChild("AllFaces")) {
 							if (auto* matComp = face->GetComponent<Core::ECS::Components::CMaterialRenderer>()) {
 								auto* p = transferActorPropertyComponent(matComp);
 								auto* collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);

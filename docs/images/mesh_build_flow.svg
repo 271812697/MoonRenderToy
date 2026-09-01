@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#4a6fa5"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
+  <text x="480" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b3a55">CTopoShape 离散化：把 B-Rep 合并成合批 Mesh</text>
+
+  <!-- 左侧：TopoShape -->
+  <rect x="40" y="80" width="200" height="200" rx="8" fill="#eef1f6" stroke="#8a99ad"/>
+  <text x="140" y="108" text-anchor="middle" font-weight="bold" fill="#2b3a55">Part::TopoShape</text>
+  <text x="60" y="140" fill="#33475f">Solid/Shell/Face/Edge</text>
+  <text x="60" y="165" fill="#33475f">B-Rep 拓扑结构</text>
+
+  <!-- 中间：离散化 -->
+  <rect x="340" y="60" width="260" height="240" rx="8" fill="#e8f0fb" stroke="#4a6fa5"/>
+  <text x="470" y="88" text-anchor="middle" font-weight="bold" fill="#2b3a55">离散化（OnUpdate）</text>
+  <text x="360" y="118" fill="#33475f">getDomainfaces → domains[]</text>
+  <text x="360" y="142" fill="#33475f">（每个面一段三角化）</text>
+  <text x="360" y="176" fill="#33475f">getLines → 每条有效边一段折线</text>
+  <text x="360" y="216" fill="#33475f">记录每段区间：</text>
+  <text x="360" y="240" fill="#33475f">childMeshInfos / edgeIndexRanges</text>
+  <text x="360" y="270" fill="#66788f">同时生成叶子 actor（Face_i / Edge_i）</text>
+
+  <!-- 右侧：合批 mesh -->
+  <rect x="700" y="70" width="230" height="220" rx="8" fill="#eaf6ec" stroke="#4f9d69"/>
+  <text x="815" y="98" text-anchor="middle" font-weight="bold" fill="#2b5a3c">合批 Mesh</text>
+  <text x="720" y="130" fill="#335f44">faceMesh：顶点合并</text>
+  <text x="720" y="152" fill="#335f44"> range0 = 不透明面</text>
+  <text x="720" y="172" fill="#335f44"> range1 = 透明高亮面</text>
+  <text x="720" y="206" fill="#335f44">lineMesh：边顶点合并</text>
+  <text x="720" y="228" fill="#335f44"> range0 = 可见边（可重建）</text>
+  <text x="720" y="262" fill="#5d7d69">每个 domain/edge 一段索引区间</text>
+
+  <line x1="240" y1="180" x2="340" y2="180" stroke="#4a6fa5" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="180" x2="700" y2="180" stroke="#4a6fa5" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 底部：控制 -->
+  <rect x="40" y="360" width="880" height="130" rx="8" fill="#f8fafd" stroke="#b9cbe8"/>
+  <text x="60" y="390" font-weight="bold" fill="#2b3a55">构建产物（每帧只构建一次，交互时只重建索引）：</text>
+  <text x="60" y="420" fill="#33475f">• 叶子 actor（Face_i / Edge_i）→ 承载 ID（拾取）与 IsActive（显隐开关）</text>
+  <text x="60" y="446" fill="#33475f">• 拓扑组 actor（Solid/Shell/Faces/Edges）→ 组织树结构，勾选可批量控制</text>
+  <text x="60" y="472" fill="#33475f">• 合批 mesh → 渲染数据（顶点 + 子区间索引）</text>
+</svg>

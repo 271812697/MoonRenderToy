@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 520" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <rect x="0" y="0" width="920" height="520" fill="#ffffff"/>
+  <text x="460" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#2b3a55">远平面附近的最小可分深度间隔 δZ（越小越好，对数坐标示意）</text>
+
+  <!-- 坐标 -->
+  <line x1="110" y1="60" x2="110" y2="420" stroke="#33475f" stroke-width="2"/>
+  <line x1="110" y1="420" x2="860" y2="420" stroke="#33475f" stroke-width="2"/>
+  <text x="60" y="240" fill="#33475f" text-anchor="middle" transform="rotate(-90 60 240)">δZ（对数）</text>
+  <text x="480" y="455" fill="#33475f" text-anchor="middle">far（对数，模型尺寸增大 →）</text>
+
+  <!-- x 刻度 -->
+  <text x="130" y="440" fill="#8a99ad">1e3</text>
+  <text x="290" y="440" fill="#8a99ad">1e4</text>
+  <text x="480" y="440" fill="#8a99ad">1e5</text>
+  <text x="690" y="440" fill="#8a99ad">1e6</text>
+  <text x="845" y="440" fill="#8a99ad">1e7</text>
+
+  <!-- 修复前曲线：δZ = far² * 6e-7，对数下斜率 2 -->
+  <path d="M 130,404 L 290,375 L 480,295 L 690,115 L 845,70"
+        fill="none" stroke="#c05b4d" stroke-width="3"/>
+  <text x="700" y="100" fill="#8c2f24" font-weight="bold">修复前 near=0.1</text>
+  <text x="700" y="122" fill="#a05a50">δZ ≈ far² × 6e-7</text>
+
+  <!-- 修复后曲线：δZ = far * 1.2e-5，对数下斜率 1 -->
+  <path d="M 130,196 L 290,158 L 480,106 L 690,66 L 845,55"
+        fill="none" stroke="#4f9d69" stroke-width="3"/>
+  <text x="690" y="52" fill="#2b5a3c" font-weight="bold">修复后 near=dist×0.01</text>
+  <text x="690" y="70" fill="#5d7d69">δZ ≈ far × 1.2e-5</text>
+
+  <!-- 关键数值标注 -->
+  <circle cx="480" cy="295" r="4" fill="#c05b4d"/>
+  <text x="430" y="310" fill="#8c2f24">far=1e5：~6000 单位</text>
+  <circle cx="480" cy="106" r="4" fill="#4f9d69"/>
+  <text x="330" y="96" fill="#2b5a3c">far=1e5：~1.2 单位</text>
+
+  <rect x="120" y="460" width="740" height="48" rx="6" fill="#f8fafd" stroke="#b9cbe8"/>
+  <text x="140" y="484" fill="#2b3a55" font-weight="bold">结论：</text>
+  <text x="200" y="484" fill="#33475f">模型越大（far 越大），修复前精度按 far² 恶化，修复后只按 far 线性增长——提升随模型尺寸从 50× 到 50000×</text>
+</svg>

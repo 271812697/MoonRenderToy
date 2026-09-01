@@ -240,14 +240,17 @@ void Rendering::Entities::Camera::ProjectionFitToSphere(Rendering::Geometry::Bou
 	using namespace Rendering::Settings;
 	if (m_projectionMode== EProjectionMode::ORTHOGRAPHIC) {
 		m_size = sphere.radius;
-		m_far = std::max(sphere.radius * 2,m_far);
+		m_far = std::max(sphere.radius * 2.0f + m_near, m_far);
 		//transform->LookAt(sphere.position-dir* m_size,sphere.position);
 
 	}
 	else if (m_projectionMode == EProjectionMode::PERSPECTIVE) {
 		float eff = 3.14159265359f/180.0;
 		float distance = sphere.radius / std::sin(eff*m_fov / 2.0f);
-		m_far = std::max(sphere.radius * 2, m_far);
+		// The far plane must cover the far side of the bounding sphere, so it
+		// needs distance + radius (not just 2 * radius). Otherwise large models
+		// get clipped as soon as the camera rotates around the fit center.
+		m_far = std::max(distance + sphere.radius, m_far);
 		//transform->LookAt(sphere.position - dir * distance, sphere.position);
 	}
 }
@@ -272,11 +275,18 @@ void Rendering::Entities::Camera::OrthZoom(float delta, int x, int y)
 	
 }
 
-void Rendering::Entities::Camera::HandleCameraPanning(const Maths::FVector2& p_mouseOffset, float p_speed)
+void Rendering::Entities::Camera::HandleCameraPanning(const Maths::FVector2& p_mouseOffset, float p_speed, float p_sceneSize)
 {
 	if (m_projectionMode== Rendering::Settings::EProjectionMode::PERSPECTIVE) {
-		auto mouseOffset = p_mouseOffset * p_speed;
-		SetPosition(GetPosition() + transform->GetWorldRight() * mouseOffset.x - transform->GetWorldUp() * mouseOffset.y);
+		// Scale the pan by the model size so dragging feels proportional to the
+		// scene: a full-viewport drag moves roughly one scene length, instead of
+		// a fixed pixel factor that feels too slow when the model is large.
+		const float worldPerPixel = p_sceneSize > 0.0f
+			? p_sceneSize / static_cast<float>(m_windowHeight)
+			: 1.0f;
+		const float dx = p_mouseOffset.x * worldPerPixel * m_ratio * p_speed;
+		const float dy = p_mouseOffset.y * worldPerPixel * p_speed;
+		SetPosition(GetPosition() + transform->GetWorldRight() * dx - transform->GetWorldUp() * dy);
 	}
 	else
 	{

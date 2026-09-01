@@ -22,11 +22,12 @@ namespace MOON {
 		m_scene = scene;
 		SetID(scene->GetAvailableID());
 		scene->AddActor(this);
-		Core::ECS::Actor& faceChild=scene->CreateActor("Face");
-		Core::ECS::Actor& edgeChild = scene->CreateActor("Edge");
+		Core::ECS::Actor& faceChild=scene->CreateActor("AllFaces");
+		Core::ECS::Actor& edgeChild = scene->CreateActor("AllEdges");
 		// The Face/Edge children are render anchors holding the batched meshes.
-		// They are hidden from the TreeView (tag "TopoRender"); the topology
-		// actors created by CTopoShape form the visible hierarchy instead.
+		// They stay visible in the TreeView so the user can select them to hide
+		// or show the whole face/edge layer at once, or fit the camera to them.
+		// The topology actors created by CTopoShape form the per-solid tree.
 		faceChild.SetTag("TopoRender");
 		edgeChild.SetTag("TopoRender");
 		faceChild.SetParent(*this);
@@ -127,8 +128,8 @@ namespace MOON {
 
 	void TopoActor::ClearModel()
 	{
-		GetChild("Face")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
-		GetChild("Edge")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("AllFaces")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("AllEdges")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
 	}
 
 	TopoActor::~TopoActor()
