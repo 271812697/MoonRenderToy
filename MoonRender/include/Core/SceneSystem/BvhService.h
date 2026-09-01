@@ -290,6 +290,7 @@ namespace Core::SceneSystem
 		std::vector<Maths::FVector4> normalsUVY; // Normal + texture Coord (v/t)
 		std::vector<Maths::FMatrix4> transforms;
 		std::vector<TriangleInfo>triangleInfo;
+		std::vector<Maths::FVector4> triangleDomainColors; // Per-triangle domain color, parallel to vertIndices
 		std::vector<MeshTriangleInfo>meshTriangleInfo;
 		std::unordered_map<int, std::vector<TriangleInfo>>triangleInfoMap;
 		// Materials

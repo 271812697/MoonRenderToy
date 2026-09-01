@@ -30,6 +30,7 @@ uniform samplerBuffer BVH;
 uniform isamplerBuffer vertexIndicesTex;
 uniform samplerBuffer verticesTex;
 uniform samplerBuffer normalsTex;
+uniform samplerBuffer triangleDomainColorTex;
 uniform sampler2D materialsTex;
 uniform sampler2D transformsTex;
 uniform sampler2D lightsTex;
@@ -151,6 +152,7 @@ struct State
 
     vec2 texCoord;
     int matID;
+    vec3 domainTint;
     Material mat;
     Medium medium;
 };
@@ -903,6 +905,7 @@ if(state.depth > 0)
     bool BLAS = false;
 
     ivec3 triID = ivec3(-1);
+    state.domainTint = vec3(1.0);
     mat4 transMat;
     mat4 transform;
     vec3 bary;
@@ -939,6 +942,7 @@ if(state.depth > 0)
                     t = hitT;
                     triID = vertIndices;
                     state.matID = currMatID;
+                    state.domainTint = texelFetch(triangleDomainColorTex, leftIndex + i).rgb;
                     
                     bary = vec3(1.0 - hitBary.x - hitBary.y, hitBary.x, hitBary.y);
                     vert0 = v0, vert1 = v1, vert2 = v2;
@@ -1491,6 +1495,7 @@ void GetMaterial(inout State state, in Ray r)
         mat.emission = pow(texture(textureMapsArrayTex, vec3(state.texCoord, texIDs.w)).rgb, vec3(2.2));
 
     float aspect = sqrt(1.0 - mat.anisotropic * 0.9);
+    mat.baseColor.rgb *= state.domainTint;
     mat.ax = max(0.001, mat.roughness / aspect);
     mat.ay = max(0.001, mat.roughness * aspect);
 
