@@ -82,10 +82,6 @@ namespace MOON {
 				mSceneView->UnselectActor();
 				
 			}
-			else if (mRefreshTreeView) {
-				mRefreshTreeView = false;
-				
-			}
 				
 			if (mAddActors.size() > 0|| mRemoveActors.size() > 0||mModifyActors.size()>0) {
 				std::vector<TreeViewPanel::Operation> operations;
@@ -96,6 +92,14 @@ namespace MOON {
 				mAddActors.clear();
 				mRemoveActors.clear();
 				mModifyActors.clear();
+			}
+			else if (mRefreshTreeView) {
+				mRefreshTreeView = false;
+				// TopoShape discretization may rebuild the topology actors
+				// (Solid/Shell/Face_*/Edge_*), so refresh the tree to reflect
+				// the new hierarchy. Runs after the queued adds so a freshly
+				// loaded topo actor is not added twice.
+				GetTreeView.updateTreeViewSceneRoot();
 			}
 			mSceneView->Render();
 			
