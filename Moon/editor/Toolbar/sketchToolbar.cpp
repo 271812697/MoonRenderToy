@@ -54,7 +54,8 @@ namespace MOON {
 		"DrawSketchHandlerRotate",
 		"DrawSketchHandlerSymmetry",
 		"DrawSketchHandlerTrimming",
-		"DrawSketchHandlerFillet"
+		"DrawSketchHandlerFillet",
+		"DrawSketchHandlerOffset"
 	};
 	std::unordered_map<std::string, CreateCurveCommand*> CreateCurveCommand::commandMap;
 	class SketchToolbar::SketchToolbarInternal {
@@ -80,6 +81,7 @@ namespace MOON {
 			rotate = new CreateCurveCommand(self, "DrawSketchHandlerRotate");
 			symmetry=new CreateCurveCommand(self, "DrawSketchHandlerSymmetry");
 			fillet = new CreateCurveCommand(self, "DrawSketchHandlerFillet");
+			offset = new CreateCurveCommand(self, "DrawSketchHandlerOffset");
 			point->setIcon(":/widgets/icons/Sketcher_CreatePoint.svg");
 		    line->setIcon(":/widgets/icons/Sketcher_CreateLine.svg");
 			lineSet->setIcon(":/widgets/icons/Sketcher_CreatePolyline.svg");
@@ -95,6 +97,7 @@ namespace MOON {
 			rotate->setIcon(":/widgets/icons/Sketcher_Rotate.svg");
 			symmetry->setIcon(":/widgets/icons/Sketcher_Symmetry.svg");
 			fillet->setIcon(":/widgets/icons/Sketcher_CreateFillet.svg");
+			offset->setIcon(":/widgets/icons/Sketcher_Offset.svg");
 			self->addAction(point->action());
 			self->addAction(line->action());
 			self->addAction(lineSet->action());
@@ -110,6 +113,7 @@ namespace MOON {
 			self->addAction(rotate->action());
 			self->addAction(symmetry->action());
 			self->addAction(fillet->action());
+			self->addAction(offset->action());
 			retranslateUi();
 		}
 		void retranslateUi() {
@@ -128,6 +132,7 @@ namespace MOON {
 			rotate->action()->setText(QCoreApplication::translate("SketchToolbar", "Rotate", nullptr));
 			symmetry->action()->setText(QCoreApplication::translate("SketchToolbar", "Symmetry", nullptr));
 			fillet->action()->setText(QCoreApplication::translate("SketchToolbar", "Fillet", nullptr));
+			offset->action()->setText(QCoreApplication::translate("SketchToolbar", "Offset", nullptr));
 		}
 	private:
 		friend class SketchToolbar;
@@ -147,6 +152,7 @@ namespace MOON {
 		CreateCurveCommand* trimming;
 		CreateCurveCommand* symmetry;
 		CreateCurveCommand* fillet;
+		CreateCurveCommand* offset;
 		
 	};
 

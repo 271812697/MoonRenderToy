@@ -9,7 +9,7 @@
 
 ### 几何建模（OCC）
 
-- [x] 草图绘制（2D）：点 / 直线 / 多段线 / 圆 / 圆弧 / 椭圆 / 正多边形 / 腰形槽 / 圆弧槽 / 样条 / 矩形 / 旋转 / 对称 / 裁剪 / 圆角
+- [x] 草图绘制（2D）：点 / 直线 / 多段线 / 圆 / 圆弧 / 椭圆 / 正多边形 / 腰形槽 / 圆弧槽 / 样条 / 矩形 / 旋转 / 对称 / 裁剪 / 圆角 / 偏移
 - [x] 草图吸附、构造方式切换（M 键）、连续绘制模式
 - [x] 特征建模（3D）：Pad（拉伸）/ Pocket（切除）/ Revolve / Groove / Thickness（抽壳）/ Fillet（圆角）/ Chamfer（倒角）
 - [x] 特征预览：参数变化实时重建差异几何（半透明品红预览）
@@ -49,7 +49,7 @@
 | [docs/InteractiveWidget.md](docs/InteractiveWidget.md) | 交互 Widget 体系：事件层 / 绘制层 / 拾取 / 状态机（ClipPlane 为例） |
 | [docs/SketchModelingWidget.md](docs/SketchModelingWidget.md) | 草图建模 Handler 深入解析：事件 → 交互 → 曲线 → 预览 → 提交 |
 | [docs/SketchModelingWidgetArchitecture.md](docs/SketchModelingWidgetArchitecture.md) | 草图建模架构总览（分层与依赖、设计模式） |
-| [docs/SketchWidgets/README.md](docs/SketchWidgets/README.md) | 各草图工具专项文档（Point/Line/LineSet/Circle/Ellipse/Polygon/Slot/ArcSlot/BSpline/Rectangle/Fillet/Symmetry/Rotate/Trimming） |
+| [docs/SketchWidgets/README.md](docs/SketchWidgets/README.md) | 各草图工具专项文档（Point/Line/LineSet/Circle/Ellipse/Polygon/Slot/ArcSlot/BSpline/Rectangle/Fillet/Symmetry/Rotate/Offset/Trimming） |
 | [docs/FeatureModeling.md](docs/FeatureModeling.md) | Feature 参数化建模：预览逻辑 / 建模 / 任务 UI / 属性系统 |
 | [docs/SectionRendering.md](docs/SectionRendering.md) | 剖切截面渲染（模板 / 奇偶裁剪） |
 | [docs/ImguiArchitecture.md](docs/ImguiArchitecture.md) | ImGui 集成架构 |

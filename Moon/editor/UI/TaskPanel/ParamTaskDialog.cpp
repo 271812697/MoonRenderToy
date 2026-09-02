@@ -82,6 +82,7 @@ namespace MOON {
         for (int i = 0;i < m_comps.size();i++) {
             auto p = m_comps[i].second;
             auto collpase = m_comps[i].first;
+            collpase->setCollapsed(false);
             mainLayout()->addWidget(collpase);
             for (auto u : p->getProperties()) {
                 collpase->addProperty(u);
