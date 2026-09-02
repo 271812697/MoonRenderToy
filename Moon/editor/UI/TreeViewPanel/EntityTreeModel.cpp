@@ -426,12 +426,6 @@ namespace MOON {
 				while (!s.empty()) {
 					Core::ECS::Actor* cur = s.back(); s.pop_back();
 					QStandardItem* parent = root.back(); root.pop_back();
-					// The Face/Edge render anchors of TopoActors are internal
-					// nodes holding the batched meshes; the topology actors
-					// (Solid/Shell/Face_*/Edge_*) form the visible hierarchy.
-					if (cur->GetTag() == "TopoRender") {
-						continue;
-					}
 					QStandardItem* temp = m_itemPool.acquire();;
 					mInternal->actorToItem[cur] = temp;
 					auto name = cur->GetName();

@@ -138,7 +138,7 @@ namespace MOON {
 				Part::TopoShape& topo = topoComp->GetTopoShape();
 				topo.setShape(mInternal->m_previewShape);
 				topoComp->discretizationShape();
-				auto MatRender = mInternal->m_previewActor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+				auto MatRender = mInternal->m_previewActor->GetChild("AllFaces")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
 				Core::Resources::Material* tempMat = MatRender->GetMaterialAtIndex(0);
 				tempMat->SetProperty("u_Albedo", Maths::FVector4(mPreviewOption.r, mPreviewOption.g, mPreviewOption.b, mPreviewOption.a));
 				if (mPreviewOption.isTransparent) {

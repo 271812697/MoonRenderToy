@@ -453,6 +453,18 @@ void main()
 		}
 		normalsTex->Allocate(desc);
 
+		// Per-triangle domain color (one RGBA per triangle, parallel to vertIndices).
+		// Used to tint each solid with a distinct color in the path tracer.
+		desc.internalFormat = ::Rendering::Settings::EInternalFormat::RGBA32F;
+		desc.buffetLen = bvhService->triangleDomainColors.size() * sizeof(Maths::FVector4);
+		desc.mutableDesc = ::Rendering::Settings::MutableTextureDesc{
+			.data = bvhService->triangleDomainColors.data()
+		};
+		if (triangleDomainColorTex == nullptr) {
+			triangleDomainColorTex = new ::Rendering::HAL::GLTexture(::Rendering::Settings::ETextureType::TEXTURE_BUFFER);
+		}
+		triangleDomainColorTex->Allocate(desc);
+
 		UpdateGPUMaterial();
 
 		// Transform Texture
@@ -897,18 +909,30 @@ void main()
 				glBindTexture(GL_TEXTURE_2D, texture->GetID());
 				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, denoiserInputFramePtr);
 				memcpy(frameOutputPtr, denoiserInputFramePtr, renderSize.x * renderSize.y * 16);
-				oidn::DeviceRef device = oidn::newDevice();
-				device.commit();
-
-
-				oidn::FilterRef filter = device.newFilter("RT"); // generic ray tracing filter
-				filter.setImage("color", denoiserInputFramePtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
-				filter.setImage("output", frameOutputPtr, oidn::Format::Float3, renderSize.x, renderSize.y, 0, 16, 0);
-				filter.set("hdr", false);
-				filter.commit();
-				filter.execute();
-				const char* errorMessage;
-				if (device.getError(errorMessage) != oidn::Error::None)
+				// Reuse the OIDN device/filter across denoise frames, rebuild only
+				// when the render size (and therefore the CPU buffers) changes.
+				if (!m_denoiserDevice)
+				{
+					m_denoiserDevice = oidn::newDevice();
+					m_denoiserDevice.commit();
+				}
+				if (!m_denoiserFilter || m_denoiserSize != renderSize)
+				{
+					m_denoiserFilter = m_denoiserDevice.newFilter("RT"); // generic ray tracing filter
+					m_denoiserFilter.set("hdr", true); // HDR path tracing output
+					m_denoiserSize = renderSize;
+					m_denoiserFilterDirty = true;
+				}
+				if (m_denoiserFilterDirty)
+				{
+					m_denoiserFilter.setImage("color", denoiserInputFramePtr, oidn::Format::Float3, (int)renderSize.x, (int)renderSize.y, 0, 16, 0);
+					m_denoiserFilter.setImage("output", frameOutputPtr, oidn::Format::Float3, (int)renderSize.x, (int)renderSize.y, 0, 16, 0);
+					m_denoiserFilter.commit();
+					m_denoiserFilterDirty = false;
+				}
+				m_denoiserFilter.execute();
+				const char* errorMessage = nullptr;
+				if (m_denoiserDevice.getError(errorMessage) != oidn::Error::None)
 					std::cout << "Error: " << errorMessage << std::endl;
 				glBindTexture(GL_TEXTURE_2D, denoisedTexture->GetID());
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, renderSize.x, renderSize.y, 0, GL_RGBA, GL_FLOAT, frameOutputPtr);
@@ -955,7 +979,7 @@ void main()
 		auto cwf=camera->GetTransform().GetWorldForward();
 		float oheight = camera->GetSize()*2;
 		float owidth = camera->GetRatio()*oheight;
-		float fov = camera->GetFov()/180.0f*3.15157f;
+		float fov = camera->GetFov()/180.0f*3.14159265f;
 		float focalDist = camera->GetNear();
 		float aperture = 0.0f;
 
@@ -998,12 +1022,14 @@ void main()
 		pathTraceShaderLowRes.SetProperty("camera.up", cwu);
 		pathTraceShaderLowRes.SetProperty("camera.forward", cwf);
 		pathTraceShaderLowRes.SetProperty("camera.fov", fov);
+		pathTraceShaderLowRes.SetProperty("camera.owidth", owidth);
+		pathTraceShaderLowRes.SetProperty("camera.oheight", oheight);
 		pathTraceShaderLowRes.SetProperty("camera.focalDist", focalDist);
 		pathTraceShaderLowRes.SetProperty("camera.aperture", aperture);
 		pathTraceShaderLowRes.SetProperty("enableEnvMap", envMap == nullptr ? false : bvhService->renderOptions.enableEnvMap);
 		pathTraceShaderLowRes.SetProperty("envMapIntensity", bvhService->renderOptions.envMapIntensity);
 		pathTraceShaderLowRes.SetProperty("envMapRot", bvhService->renderOptions.envMapRot / 360.0f);
-		pathTraceShaderLowRes.SetProperty("maxDepth", bvhService->renderOptions.maxDepth);
+		pathTraceShaderLowRes.SetProperty("maxDepth", 2); // cheap preview, matches the reference renderer
 		pathTraceShaderLowRes.SetProperty("uniformLightCol", bvhService->renderOptions.uniformLightCol);
 		pathTraceShaderLowRes.SetProperty("roughnessMollificationAmt", bvhService->renderOptions.roughnessMollificationAmt);
 
@@ -1026,6 +1052,7 @@ void main()
 		pathTraceShader.SetProperty("vertexIndicesTex", vertexIndicesTex);
 		pathTraceShader.SetProperty("verticesTex", verticesTex);
 		pathTraceShader.SetProperty("normalsTex", normalsTex);
+		pathTraceShader.SetProperty("triangleDomainColorTex", triangleDomainColorTex);
 		pathTraceShader.SetProperty("meshTriangleInfoTex", meshInfoTex);
 		pathTraceShader.SetProperty("triangleInfoTex", triangleInfoTex);
 		pathTraceShader.SetProperty("materialsTex", materialsTex);
@@ -1046,6 +1073,7 @@ void main()
 		pathTraceShaderLowRes.SetProperty("vertexIndicesTex", vertexIndicesTex);
 		pathTraceShaderLowRes.SetProperty("verticesTex", verticesTex);
 		pathTraceShaderLowRes.SetProperty("normalsTex", normalsTex);
+		pathTraceShaderLowRes.SetProperty("triangleDomainColorTex", triangleDomainColorTex);
 		pathTraceShaderLowRes.SetProperty("materialsTex", materialsTex);
 		pathTraceShaderLowRes.SetProperty("transformsTex", transformsTex);
 		pathTraceShaderLowRes.SetProperty("lightsTex", lightsTex);
@@ -1123,7 +1151,9 @@ void main()
 
 		if (refreshFlag || sampleCounter == 1)
 		{
-			m_renderer.Present(pathTraceFBOLowRes, lineOutputMat);
+			auto& lowResColor = pathTraceFBOLowRes.GetAttachment<::Rendering::HAL::GLTexture>(::Rendering::Settings::EFramebufferAttachment::COLOR, 0).value();
+			tonemapShader.SetProperty("pathTraceTexture", &lowResColor);
+			m_renderer.Present(tonemapShader);
 		}
 		else
 		{

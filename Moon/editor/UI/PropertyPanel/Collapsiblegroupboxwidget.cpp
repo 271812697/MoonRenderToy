@@ -1,4 +1,4 @@
-#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
+﻿#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "Widgets/PropertyQtWidgets.h"
 #include "Widgets/utils.h"
 #include <QToolButton>
@@ -63,7 +63,9 @@ namespace MOON {
 			label_ = new QLabel("set", mSelf);
 			label_->setObjectName("GroupTitle");
 			updateFocusPolicy();
-			QHBoxLayout* heading = new QHBoxLayout();
+			auto* headingWidget = new QWidget(mSelf);
+			headingWidget->setObjectName("GroupTitleBar");
+			QHBoxLayout* heading = new QHBoxLayout(headingWidget);
 			heading->setContentsMargins(0, 0, 0, 0);
 			heading->addWidget(btnCollapse_);
 			heading->setSpacing(5);
@@ -72,9 +74,22 @@ namespace MOON {
 			
 			layout->setContentsMargins(0, 0, 0, 0);
 			layout->setSpacing(0);
-			layout->addLayout(heading);
+			layout->addWidget(headingWidget);
 			layout->addWidget(propertyWidgetGroup_);
 			mSelf->setLayout(layout);
+
+			// Give the title bar its own background so it stays visually distinct
+			// from the content area when the group is expanded (like Inviwo).
+			mSelf->setStyleSheet(R"(
+			QWidget#GroupTitleBar {
+			background: #3d3d42;
+			border-bottom: 1px solid #4a4a50;
+			}
+
+			QWidget#CompositeContents {
+			background: #2e2e32;
+			}
+			)");
 		}
 		~CollapsibleGroupBoxWidgetInternal() {
 

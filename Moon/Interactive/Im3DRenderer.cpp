@@ -4007,7 +4007,7 @@ namespace MOON
 		p_pso.cullFace = Rendering::Settings::ECullFace::FRONT_AND_BACK;
 		p_pso.blendingDestFactor = Rendering::Settings::EBlendingFactor::ONE_MINUS_SRC_ALPHA;
 		p_pso.depthTest = true;
-		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 		driver->SetPipelineState(p_pso);
 		// Enable Depth Test
 		for (int i = 0; i < vertexData[1].size(); ++i)
@@ -4138,7 +4138,7 @@ namespace MOON
 		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
 		p_pso.culling = 0;
 		p_pso.depthTest = true;
-		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 		driver->SetPipelineState(p_pso);
 		mCellMaterial->SetFeatures({"WITH_EDGE","FIXED_SCALE","BLOCK_COLOR"});
 		for (auto& drawMesh : drawMeshList)
@@ -4173,7 +4173,7 @@ namespace MOON
 		p_pso.blendingSrcFactor = Rendering::Settings::EBlendingFactor::SRC_ALPHA;
 		p_pso.culling = 0;
 		p_pso.depthTest = true;
-		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::LESS_EQUAL;
+		p_pso.depthFunc = Rendering::Settings::EComparaisonAlgorithm::GREATER_EQUAL;
 		driver->SetPipelineState(p_pso);
 		mCellMaterial->SetFeatures({ "WITH_EDGE","FIXED_SCALE","BLOCK_COLOR" });
 		

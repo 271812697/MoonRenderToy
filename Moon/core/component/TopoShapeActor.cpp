@@ -22,11 +22,12 @@ namespace MOON {
 		m_scene = scene;
 		SetID(scene->GetAvailableID());
 		scene->AddActor(this);
-		Core::ECS::Actor& faceChild=scene->CreateActor("Face");
-		Core::ECS::Actor& edgeChild = scene->CreateActor("Edge");
+		Core::ECS::Actor& faceChild=scene->CreateActor("AllFaces");
+		Core::ECS::Actor& edgeChild = scene->CreateActor("AllEdges");
 		// The Face/Edge children are render anchors holding the batched meshes.
-		// They are hidden from the TreeView (tag "TopoRender"); the topology
-		// actors created by CTopoShape form the visible hierarchy instead.
+		// They stay visible in the TreeView so the user can select them to hide
+		// or show the whole face/edge layer at once, or fit the camera to them.
+		// The topology actors created by CTopoShape form the per-solid tree.
 		faceChild.SetTag("TopoRender");
 		edgeChild.SetTag("TopoRender");
 		faceChild.SetParent(*this);
@@ -67,7 +68,9 @@ namespace MOON {
 				faceMat->SetReceiveShadows(false);
 				// Push the faces back in depth (glPolygonOffset, slope scaled) so
 				// edge lines that are coplanar with / close to their faces (concave
-				// folds, small dihedral angles) stay visible on top.
+				// folds, small dihedral angles) stay visible on top. Note: with
+				// the reversed-Z depth range the driver applies a NEGATIVE offset
+				// (see Driver::SetPipelineState), keep the signs consistent.
 				faceMat->SetPolygonOffsetFill(true);
 				//tempMat->SetBlendable(true);
 				//tempMat->SetDepthWriting(false);
@@ -127,8 +130,8 @@ namespace MOON {
 
 	void TopoActor::ClearModel()
 	{
-		GetChild("Face")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
-		GetChild("Edge")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("AllFaces")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
+		GetChild("AllEdges")->GetComponent<Core::ECS::Components::CModelRenderer>()->GetModel()->ClearMeshes();
 	}
 
 	TopoActor::~TopoActor()

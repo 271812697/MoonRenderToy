@@ -237,6 +237,13 @@ namespace Rendering::HAL
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glCullFace(GL_BACK);
 
+		// Reversed-Z depth: far maps to window depth 0 and near to 1. With the
+		// float32 depth buffer this gives roughly uniform precision across the
+		// whole near/far range (see docs/DepthPrecision.md). The depth test
+		// direction is flipped accordingly (LESS -> GREATER).
+		glDepthRange(1.0, 0.0);
+		glClearDepth(0.0);
+
 		return RetrieveOpenGLPipelineState();
 	}
 

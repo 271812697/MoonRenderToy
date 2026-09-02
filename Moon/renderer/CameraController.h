@@ -37,6 +37,7 @@ namespace Editor::Core
 		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 		void HandleCameraOrbit(const Maths::FVector3& center, const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
 		void HandleCameraFPSMouse(const Maths::FVector2& p_mouseOffset, bool p_firstMouse);
+		void UpdateDepthRange();
 
 		void HandleCameraZoom();
 		void HandleCameraFPSKeyboard(float p_deltaTime);
@@ -63,7 +64,7 @@ namespace Editor::Core
 		double m_lastMousePosX = 0.0;
 		double m_lastMousePosY = 0.0;
 		float m_mouseSensitivity = 0.12f;
-		float m_cameraDragSpeed = 0.03f;
+		float m_cameraDragSpeed = 1.0f;
 		float m_cameraOrbitSpeed = 0.5f;
 		float m_cameraMoveSpeed = 15.0f;
 		float m_focusDistance = 15.0f;

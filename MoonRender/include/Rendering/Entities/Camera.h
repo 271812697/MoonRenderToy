@@ -59,7 +59,7 @@ namespace Rendering::Entities
 		void ProjectionFitToSphere(Rendering::Geometry::BoundingSphere& sphere,const Maths::FVector3& dir);
 		void PersertiveZoom(float delta);
 		void OrthZoom(float delta, int x, int y);
-		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset,float p_speed);
+		void HandleCameraPanning(const Maths::FVector2& p_mouseOffset,float p_speed,float p_sceneSize);
 		Geometry::Ray GetMouseRay(int x, int y);
 		float GetRatio();
 	private:

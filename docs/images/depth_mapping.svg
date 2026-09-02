@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 480" font-family="Microsoft YaHei, sans-serif" font-size="13">
+  <rect x="0" y="0" width="920" height="480" fill="#ffffff"/>
+  <text x="460" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#2b3a55">透视投影的窗口深度是非线性的：精度集中在近平面附近</text>
+
+  <!-- 坐标系 -->
+  <line x1="90" y1="60" x2="90" y2="400" stroke="#33475f" stroke-width="2"/>
+  <line x1="90" y1="400" x2="870" y2="400" stroke="#33475f" stroke-width="2"/>
+  <text x="60" y="230" fill="#33475f" text-anchor="middle" transform="rotate(-90 60 230)">窗口深度 w</text>
+  <text x="480" y="430" fill="#33475f" text-anchor="middle">视图深度 Z（相机到物体距离，→ 远处）</text>
+  <text x="100" y="415" fill="#8a99ad">near</text>
+  <text x="850" y="415" fill="#8a99ad">far</text>
+
+  <!-- near / far 标记 -->
+  <line x1="100" y1="60" x2="100" y2="400" stroke="#b9cbe8" stroke-dasharray="4,4"/>
+  <line x1="855" y1="60" x2="855" y2="400" stroke="#b9cbe8" stroke-dasharray="4,4"/>
+
+  <!-- 标准深度曲线（近处陡、远处平） -->
+  <path d="M 100,62 C 180,70 300,100 430,160 C 560,240 700,340 855,398"
+        fill="none" stroke="#4a6fa5" stroke-width="3"/>
+
+  <!-- 精度区域标注 -->
+  <rect x="100" y="70" width="150" height="70" rx="6" fill="#eaf6ec" stroke="#4f9d69"/>
+  <text x="175" y="98" text-anchor="middle" fill="#2b5a3c" font-weight="bold">近处：曲线陡</text>
+  <text x="175" y="120" text-anchor="middle" fill="#5d7d69">精度高（好）</text>
+
+  <rect x="600" y="330" width="180" height="60" rx="6" fill="#fdecea" stroke="#c05b4d"/>
+  <text x="690" y="356" text-anchor="middle" fill="#8c2f24" font-weight="bold">远处：曲线几乎水平</text>
+  <text x="690" y="378" text-anchor="middle" fill="#a05a50">窗口深度变化极小 → 精度低（z-fighting）</text>
+
+  <!-- 说明 -->
+  <rect x="90" y="55" width="0" height="0" fill="none"/>
+  <text x="100" y="70" fill="#4a6fa5" font-weight="bold">w(Z) 曲线</text>
+  <text x="470" y="452" fill="#66788f">窗口深度的分辨率 δZ ≈ Z² / near · 2⁻²⁴，与 near 成反比、与距离平方成正比</text>
+</svg>

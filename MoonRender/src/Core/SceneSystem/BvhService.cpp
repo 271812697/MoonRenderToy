@@ -1,4 +1,6 @@
 ﻿#include <algorithm>
+#include <cmath>
+#include <glad/glad.h>
 #include <string>
 #include <tinyxml2.h>
 #include <tracy/Tracy.hpp>
@@ -78,6 +80,40 @@ namespace Core::SceneSystem
 			std::cerr << "❌ 导出失败：" << e.what() << std::endl;
 			return false;
 		}
+	}
+	// Same pastel palette as CTopoShape::DomainColorForSolid, keyed by the
+	// per-vertex domain index (domainId.x) so each solid gets a distinct color.
+	Maths::FVector3 DomainHsvToRgb(float p_hue, float p_saturation, float p_value)
+	{
+	const int i = static_cast<int>(p_hue * 6.0f);
+	const float f = p_hue * 6.0f - i;
+	const float p = p_value * (1.0f - p_saturation);
+	const float q = p_value * (1.0f - f * p_saturation);
+	const float t = p_value * (1.0f - (1.0f - f) * p_saturation);
+	switch (i % 6)
+	{
+	case 0: return { p_value, t, p };
+	case 1: return { q, p_value, p };
+	case 2: return { p, p_value, t };
+	case 3: return { p, q, p_value };
+	case 4: return { t, p, p_value };
+	default: return { p_value, p, q };
+	}
+	}
+
+	Maths::FVector4 DomainColorForTriangle(int p_domainIndex)
+	{
+	if (p_domainIndex < 0)
+	{
+	return Maths::FVector4{ 0.85f, 0.85f, 0.88f, 1.0f };
+	}
+	if (p_domainIndex == 0)
+	{
+	return Maths::FVector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	}
+	const float hue = std::fmod(p_domainIndex * 137.508f, 360.0f) / 360.0f;
+	const auto rgb = DomainHsvToRgb(hue, 0.38f, 0.95f);
+	return Maths::FVector4{ rgb.x, rgb.y, rgb.z, 1.0f };
 	}
 	BvhService::BvhService(Scene* sc):scene(sc)
 	{
@@ -326,19 +362,67 @@ namespace Core::SceneSystem
 			
 		//Copy Mesh vertex data to a batch buffer
 		vertIndices.clear();
+		triangleDomainColors.clear();
 		verticesUVX.clear();
 		normalsUVY.clear();
 		transforms.clear();
 		int verticesCnt = 0;
 		for (int i = 0;i < triMeshes.size();i++) {
+			// Per-mesh domain palette from the owning actor face material.
+			// domainColorTex already maps every domain to its solid color (a solid
+			// owns several domains, all sharing the same color), so reusing it here
+			// gives the path tracer the same per-solid coloring as the raster view.
+			std::vector<Maths::FVector4> meshDomainPalette;
+			// The mesh instance actor is the face mesh owner (e.g. the "AllFaces"
+			// child of a CTopoShape); its material carries the per-domain solid
+			// palette. Walk up to the parent if the actor itself has no material.
+			for (auto& inst : triMeshInstances)
+			{
+				if (inst.meshID != i) continue;
+				auto actor = scene->FindActorByID(inst.actorID);
+				if (!actor) break;
+				auto matList = actor->GetComponent<::Core::ECS::Components::CMaterialRenderer>();
+				if (!matList && actor->GetParent())
+				{
+					matList = actor->GetParent()->GetComponent<::Core::ECS::Components::CMaterialRenderer>();
+				}
+				if (!matList) break;
+				auto mat = matList->GetMaterialAtIndex(0);
+				if (!mat) break;
+				auto prop = mat->GetProperty("domainColorTex");
+				if (!prop.has_value()) break;
+				auto handle = std::get_if<::Rendering::HAL::TextureHandle*>(&prop.value().value);
+				if (!handle || !*handle) break;
+				auto* tex = static_cast<::Rendering::HAL::GLTexture*>(*handle);
+				glBindTexture(GL_TEXTURE_BUFFER, tex->GetID());
+				GLint texSize = 0;
+				glGetTexLevelParameteriv(GL_TEXTURE_BUFFER, 0, GL_TEXTURE_BUFFER_SIZE, &texSize);
+				int colorCount = texSize / static_cast<int>(sizeof(Maths::FVector4));
+				if (colorCount > 0)
+				{
+					meshDomainPalette.resize(colorCount);
+					// glGetTexImage is invalid for texture buffers: read the
+					// underlying GL buffer object instead.
+					GLint bufferId = 0;
+					glGetTexLevelParameteriv(GL_TEXTURE_BUFFER, 0, GL_TEXTURE_BUFFER_DATA_STORE_BINDING, &bufferId);
+					if (bufferId != 0)
+					{
+						glBindBuffer(GL_TEXTURE_BUFFER, bufferId);
+						glGetBufferSubData(GL_TEXTURE_BUFFER, 0, texSize, meshDomainPalette.data());
+						glBindBuffer(GL_TEXTURE_BUFFER, 0);
+					}
+				}
+				glBindTexture(GL_TEXTURE_BUFFER, 0);
+			}
 			int numIndices = triMeshes[i]->GetBvh()->GetNumIndices();
 			const int* triIndices = triMeshes[i]->GetBvh()->GetIndices();
 			auto& indexArr = triMeshes[i]->GetIndices();
 			bool isIndexMesh = indexArr.size() > 0;
+			auto& vertexData = triMeshes[i]->GetVerticesBVH();
 			for (int j = 0; j < numIndices; j++)
 			{
 				int index = triIndices[j];
-				if (isIndexMesh) {	
+				if (isIndexMesh) {
 					int v1 = indexArr[(index * 3 + 0)] + verticesCnt;
 					int v2 = indexArr[(index * 3 + 1)] + verticesCnt;
 					int v3 = indexArr[(index * 3 + 2)] + verticesCnt;
@@ -351,18 +435,31 @@ namespace Core::SceneSystem
 					int v3 = (index * 3 + 2) + verticesCnt;
 					vertIndices.push_back(Indices{ v1, v2, v3 });
 				}
+				// Per-triangle domain color (parallel to vertIndices): the three
+				// vertices of a triangle always share the same domain.
+				int localV0 = isIndexMesh ? indexArr[(index * 3 + 0)] : (index * 3 + 0);
+				float domainIdxF = vertexData[localV0].domainId.x;
+				if (domainIdxF != domainIdxF) domainIdxF = 0.0f; // NaN guard
+				int domainIdx = static_cast<int>(domainIdxF);
+				triangleDomainColors.push_back(
+					(domainIdx >= 0 && domainIdx < static_cast<int>(meshDomainPalette.size()))
+						? meshDomainPalette[domainIdx]
+						: DomainColorForTriangle(domainIdx));
 			}
-			auto& vertexData= triMeshes[i]->GetVerticesBVH();
 			for (int k = 0;k < vertexData.size();k++) {
 				verticesUVX.push_back(Maths::FVector4(vertexData[k].position.x, vertexData[k].position.y, vertexData[k].position.z, vertexData[k].texCoords.x));
 				normalsUVY.push_back(Maths::FVector4(vertexData[k].normals.x, vertexData[k].normals.y, vertexData[k].normals.z, vertexData[k].texCoords.y));
 			}
 			verticesCnt += vertexData.size();
 		}
-		// Copy transforms
-		transforms.resize(triMeshInstances.size());
+					// Copy transforms: instance transform and its inverse (both transposed),
+		// so the shader can transform rays without a per-hit matrix inverse.
+		transforms.resize(triMeshInstances.size() * 2);
 		for (int i = 0; i < triMeshInstances.size(); i++)
-			transforms[i] = Maths::FMatrix4::Transpose(triMeshInstances[i].transform);
+		{
+			transforms[i * 2 + 0] = Maths::FMatrix4::Transpose(triMeshInstances[i].transform);
+			transforms[i * 2 + 1] = Maths::FMatrix4::Transpose(Maths::FMatrix4::Inverse(triMeshInstances[i].transform));
+		}
 		// Copy Textures
 		int reqWidth = renderOptions.texArrayWidth;
 		int reqHeight = renderOptions.texArrayHeight;
@@ -384,7 +481,6 @@ namespace Core::SceneSystem
 				std::copy(textures[i]->texData.begin(), textures[i]->texData.end(), &textureMapsArray[i * texBytes]);
 		}
 		isDirty = true;
-		SaveAsObj("res.obj");
 	}
 	void BvhService::SaveAsObj(const std::string& path)
 	{
@@ -432,6 +528,7 @@ namespace Core::SceneSystem
 		verticesUVX.clear();
 		normalsUVY.clear();
 		vertIndices.clear();
+		triangleDomainColors.clear();
 		triangleInfoMap.clear();
 		curNode = 0;
 		curTriIndex = 0;
@@ -488,7 +585,7 @@ namespace Core::SceneSystem
 					auto actorId = triMeshInstances[instanceId].actorID;
 					auto actor = scene->FindActorByID(actorId);
 					if (actor->HasComponent("CTopoShape")) {
-						auto matList = actor->GetChild("Face")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
+						auto matList = actor->GetChild("AllFaces")->GetComponent<Core::ECS::Components::CMaterialRenderer>();
 						if (matList) {
 							auto mat = matList->GetMaterialAtIndex(0);
 							if (mat) {
