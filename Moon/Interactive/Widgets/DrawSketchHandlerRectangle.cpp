@@ -1,4 +1,4 @@
-﻿#include "Interactive/Widgets/DrawSketchHandlerRectangle.h"
+#include "Interactive/Widgets/DrawSketchHandlerRectangle.h"
 #include "Interactive/Im3DRenderer.h"
 #include "renderer/SceneView.h"
 #include "base/Tools.h"
@@ -10,6 +10,8 @@
 #include "Interactive/Interactive/WidgetEvent.h"
 #include "Interactive/Interactive/WidgetEventTranslator.h"
 #include "Interactive/Interactive/RenderWindowInteractor.h"
+#include "Sketcher/SketcherObjManager.h"
+#include "Sketcher/SketcherObj.h"
 
 namespace MOON {
     static Base::Vector3d toVector3d(const Base::Vector2d& vector2d)
@@ -30,6 +32,12 @@ namespace MOON {
 	}
 	void DrawSketchHandlerRectangle::onSetActive(bool flag)
 	{
+        if (flag) {
+            // Widgets are long-lived singletons reused by the toolbar, so reset
+            // all per-run state when the tool is (re)enabled.
+            reset();
+        }
+        SupperClass::onSetActive(flag);
 	}
 	void DrawSketchHandlerRectangle::updateDataAndDrawToPosition(Base::Vector2d onSketchPos)
 	{
@@ -351,6 +359,346 @@ namespace MOON {
         lengthSign = 0;
         widthSign = 0;
         //toolWidgetManager.resetControls();
+    }
+    void DrawSketchHandlerRectangle::executeCommands()
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        // The new geometry starts right after the current sketch content.
+        firstCurve = Obj->getHighestCurveIndex() + 1;
+
+        // Rebuild the final geometry, including any construction elements that
+        // are only appended on the real (non-preview) build.
+        createShape(false);
+
+        if (ShapeGeometry.empty()) {
+            return;
+        }
+
+        // Commit geometries first; they get the ids firstCurve, firstCurve+1, ...
+        // in ShapeGeometry order.
+        SupperClass::executeCommands();
+
+        // Frame rectangles are not wired in this port; plain and rounded
+        // rectangles get their own constraint sets.
+        if (!makeFrame) {
+            if (radius <= Precision::Confusion()) {
+                addRectangleAutoConstraints();
+            }
+            else {
+                addRoundedRectangleAutoConstraints();
+            }
+            Obj->solve();
+        }
+
+        thickness = 0.;
+    }
+    void DrawSketchHandlerRectangle::addRectangleAutoConstraints()
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        addCornerCoincidences(firstCurve);
+
+        addAlignmentConstraints();
+
+        // Centered variants keep the two opposite corners symmetric about the
+        // center construction point.
+        if (constructionMethod() == ConstructionMethod::CenterAndCorner
+            || constructionMethod() == ConstructionMethod::CenterAnd3Points) {
+            Obj->addConstraint(
+                Sketcher::ConstraintType::Symmetric,
+                firstCurve + 2, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::start,
+                centerPointId, Sketcher::PointPos::start
+            );
+        }
+    }
+    void DrawSketchHandlerRectangle::addCornerCoincidences(int geoId)
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        // Corner coincidences: the end of each side is the start of the next one.
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Coincident,
+            geoId, Sketcher::PointPos::end,
+            geoId + 1, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Coincident,
+            geoId + 1, Sketcher::PointPos::end,
+            geoId + 2, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Coincident,
+            geoId + 2, Sketcher::PointPos::end,
+            geoId + 3, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Coincident,
+            geoId + 3, Sketcher::PointPos::end,
+            geoId, Sketcher::PointPos::start
+        );
+    }
+    void DrawSketchHandlerRectangle::addAlignmentConstraints()
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        // Opposite sides are aligned with the sketch axes (or kept parallel for
+        // the oblique 3-point construction methods).
+        Sketcher::ConstraintType typeA = Sketcher::ConstraintType::Horizontal;
+        Sketcher::ConstraintType typeB = Sketcher::ConstraintType::Vertical;
+        if (Base::sgn(corner3.x - corner1.x) * Base::sgn(corner3.y - corner1.y) < 0) {
+            typeA = Sketcher::ConstraintType::Vertical;
+            typeB = Sketcher::ConstraintType::Horizontal;
+        }
+
+        if (fabs(angle) < Precision::Confusion()
+            || constructionMethod() == ConstructionMethod::Diagonal
+            || constructionMethod() == ConstructionMethod::CenterAndCorner) {
+            Obj->addConstraint(typeA, firstCurve, Sketcher::PointPos::none);
+            Obj->addConstraint(typeA, firstCurve + 2, Sketcher::PointPos::none);
+            Obj->addConstraint(typeB, firstCurve + 1, Sketcher::PointPos::none);
+            Obj->addConstraint(typeB, firstCurve + 3, Sketcher::PointPos::none);
+        }
+        else {
+            Obj->addConstraint(
+                Sketcher::ConstraintType::Parallel,
+                firstCurve, Sketcher::PointPos::none,
+                firstCurve + 2, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::Parallel,
+                firstCurve + 1, Sketcher::PointPos::none,
+                firstCurve + 3, Sketcher::PointPos::none
+            );
+            if (fabs(angle123 - std::numbers::pi / 2) < Precision::Confusion()) {
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::Perpendicular,
+                    firstCurve, Sketcher::PointPos::none,
+                    firstCurve + 1, Sketcher::PointPos::none
+                );
+            }
+        }
+    }
+    void DrawSketchHandlerRectangle::addTangentCoincidences(int geoId)
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        // Tangency at every line/arc joint. Geometry layout: lines 0..3,
+        // arcs 4..7 (arc i starts at the end of line i and runs to the start
+        // of line (i+1)%4).
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId, Sketcher::PointPos::start,
+            geoId + 4, Sketcher::PointPos::end
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId, Sketcher::PointPos::end,
+            geoId + 5, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 1, Sketcher::PointPos::start,
+            geoId + 5, Sketcher::PointPos::end
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 1, Sketcher::PointPos::end,
+            geoId + 6, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 2, Sketcher::PointPos::start,
+            geoId + 6, Sketcher::PointPos::end
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 2, Sketcher::PointPos::end,
+            geoId + 7, Sketcher::PointPos::start
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 3, Sketcher::PointPos::start,
+            geoId + 7, Sketcher::PointPos::end
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Tangent,
+            geoId + 3, Sketcher::PointPos::end,
+            geoId + 4, Sketcher::PointPos::start
+        );
+    }
+    void DrawSketchHandlerRectangle::addArcEqualities()
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        // All four corner arcs share one radius.
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Equal,
+            firstCurve + 4, Sketcher::PointPos::none,
+            firstCurve + 5, Sketcher::PointPos::none
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Equal,
+            firstCurve + 5, Sketcher::PointPos::none,
+            firstCurve + 6, Sketcher::PointPos::none
+        );
+        Obj->addConstraint(
+            Sketcher::ConstraintType::Equal,
+            firstCurve + 6, Sketcher::PointPos::none,
+            firstCurve + 7, Sketcher::PointPos::none
+        );
+    }
+    void DrawSketchHandlerRectangle::addRoundedRectangleAutoConstraints()
+    {
+        SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!Obj) return;
+
+        addTangentCoincidences(firstCurve);
+
+        addAlignmentConstraints();
+
+        addArcEqualities();
+
+        // Construction corner points (ids set by the finishOblong* helpers
+        // during createShape(false)) tie the outer corners to the sides; the
+        // centered variants also mirror opposite corners about the center.
+        switch (constructionMethod()) {
+        case ConstructionMethod::Diagonal:
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve + 3, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointTwoId, Sketcher::PointPos::start,
+                firstCurve + 1, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointTwoId, Sketcher::PointPos::start,
+                firstCurve + 2, Sketcher::PointPos::none
+            );
+            break;
+        case ConstructionMethod::ThreePoints:
+            if (!cornersReversed) {
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve, Sketcher::PointPos::none
+                );
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 1, Sketcher::PointPos::none
+                );
+            }
+            else {
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 2, Sketcher::PointPos::none
+                );
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 3, Sketcher::PointPos::none
+                );
+            }
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve + 3, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointThreeId, Sketcher::PointPos::start,
+                firstCurve + 1, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointThreeId, Sketcher::PointPos::start,
+                firstCurve + 2, Sketcher::PointPos::none
+            );
+            break;
+        case ConstructionMethod::CenterAnd3Points:
+            if (!cornersReversed) {
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve, Sketcher::PointPos::none
+                );
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 1, Sketcher::PointPos::none
+                );
+            }
+            else {
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 2, Sketcher::PointPos::none
+                );
+                Obj->addConstraint(
+                    Sketcher::ConstraintType::PointOnObject,
+                    constructionPointTwoId, Sketcher::PointPos::start,
+                    firstCurve + 3, Sketcher::PointPos::none
+                );
+            }
+            Obj->addConstraint(
+                Sketcher::ConstraintType::Symmetric,
+                firstCurve + 2, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::start,
+                centerPointId, Sketcher::PointPos::start
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve + 3, Sketcher::PointPos::none
+            );
+            break;
+        default:  // CenterAndCorner
+            Obj->addConstraint(
+                Sketcher::ConstraintType::Symmetric,
+                firstCurve + 2, Sketcher::PointPos::start,
+                firstCurve, Sketcher::PointPos::start,
+                centerPointId, Sketcher::PointPos::start
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve + 1, Sketcher::PointPos::none
+            );
+            Obj->addConstraint(
+                Sketcher::ConstraintType::PointOnObject,
+                constructionPointOneId, Sketcher::PointPos::start,
+                firstCurve + 2, Sketcher::PointPos::none
+            );
+            break;
+        }
     }
     int DrawSketchHandlerRectangle::getPointSideOfVector(Base::Vector2d pointToCheck, Base::Vector2d separatingVector, Base::Vector2d pointOnVector)
     {

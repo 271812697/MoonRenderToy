@@ -28,6 +28,7 @@
 #include "Interactive/Widgets/DrawSketchHandlerTrimming.h"
 #include "Interactive/Widgets/DrawSketchHandlerSymmetry.h"
 #include "Interactive/Widgets/DrawSketchHandlerFillet.h"
+#include "Interactive/Widgets/DrawSketchHandlerOffset.h"
 #include "Interactive/Widgets/PrimitiveBox.h"
 #include "Interactive/Widgets/PrimitiveSphere.h"
 #include "Interactive/Widgets/PrimitiveCylinder.h"
@@ -60,6 +61,7 @@ class Editor::Rendering::GizmoRenderPass::GizmoRenderPassInternal {
 			mWidgets["DrawSketchHandlerSlot"] = new MOON::DrawSketchHandlerSlot("DrawSketchHandlerSlot");
 			mWidgets["DrawSketchHandlerSymmetry"] = new MOON::DrawSketchHandlerSymmetry("DrawSketchHandlerSymmetry");
 			mWidgets["DrawSketchHandlerFillet"] = new MOON::DrawSketchHandlerFillet("DrawSketchHandlerFillet");
+			mWidgets["DrawSketchHandlerOffset"] = new MOON::DrawSketchHandlerOffset("DrawSketchHandlerOffset");
 			mWidgets["PrimitiveBox"] = new MOON::PrimitiveBox("PrimitiveBox");
 			mWidgets["PrimitiveSphere"] = new MOON::PrimitiveSphere("PrimitiveSphere");
 			mWidgets["PrimitiveCylinder"] = new MOON::PrimitiveCylinder("PrimitiveCylinder");

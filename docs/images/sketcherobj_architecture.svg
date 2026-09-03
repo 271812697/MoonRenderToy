@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" font-family="'Microsoft YaHei','PingFang SC','Noto Sans CJK SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <text x="500" y="34" text-anchor="middle" font-size="21" fill="#222">图 1　SketcherObj 职责与数据流（FreeCAD SketchObject 的简化合并版）</text>
+
+  <!-- input row -->
+  <rect x="70" y="70" width="300" height="54" rx="8" fill="#eaf2fb" stroke="#7fa6d0"/>
+  <text x="220" y="94" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">事件输入（EventWidget）</text>
+  <text x="220" y="114" text-anchor="middle" font-size="13" fill="#445">鼠标移动 / 按下 / 释放 / 键盘</text>
+
+  <rect x="430" y="70" width="300" height="54" rx="8" fill="#eaf2fb" stroke="#7fa6d0"/>
+  <text x="580" y="94" text-anchor="middle" font-size="15" font-weight="bold" fill="#274a75">建模工具（DrawSketchHandler 等）</text>
+  <text x="580" y="114" text-anchor="middle" font-size="13" fill="#445">画线/圆弧/圆… 预览后提交</text>
+
+  <rect x="790" y="70" width="150" height="54" rx="8" fill="#f7f3e7" stroke="#c9b26a"/>
+  <text x="865" y="94" text-anchor="middle" font-size="15" font-weight="bold" fill="#7a5c1e">外部建模</text>
+  <text x="865" y="114" text-anchor="middle" font-size="13" fill="#7a5c1e">addGeometry 等 API</text>
+
+  <line x1="220" y1="124" x2="300" y2="168" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="580" y1="124" x2="560" y2="168" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="865" y1="124" x2="760" y2="168" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- core container -->
+  <rect x="60" y="176" width="880" height="250" rx="12" fill="#ffffff" stroke="#274a75" stroke-width="2"/>
+  <text x="500" y="202" text-anchor="middle" font-size="17" font-weight="bold" fill="#274a75">SketcherObj：事件驱动的 2D 草图编辑对象（持有草图状态 + 求解 + 输出）</text>
+
+  <!-- sub boxes -->
+  <rect x="85" y="220" width="255" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="212" y="242" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">平面与坐标</text>
+  <text x="212" y="264" text-anchor="middle" font-size="12" fill="#555">mPlane（origin/x/y/normal）</text>
+  <text x="212" y="282" text-anchor="middle" font-size="12" fill="#555">planeTransform：2D ↔ 3D ↔ 屏幕</text>
+
+  <rect x="365" y="220" width="255" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="492" y="242" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">几何数据</text>
+  <text x="492" y="264" text-anchor="middle" font-size="12" fill="#555">mGeoList（GeomCurve/Point…）</text>
+  <text x="492" y="282" text-anchor="middle" font-size="12" fill="#555">mGeoSegment：离散折线 + 关键点缓存</text>
+
+  <rect x="645" y="220" width="270" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="780" y="242" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">约束与求解</text>
+  <text x="780" y="264" text-anchor="middle" font-size="12" fill="#555">mConstraintList + GCS solvedSketch</text>
+  <text x="780" y="282" text-anchor="middle" font-size="12" fill="#555">solve()：求解 → 重建几何</text>
+
+  <rect x="85" y="322" width="255" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="212" y="344" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">选择交互</text>
+  <text x="212" y="366" text-anchor="middle" font-size="12" fill="#555">selectState：Stop/Hot/…</text>
+  <text x="212" y="384" text-anchor="middle" font-size="12" fill="#555">selectIds / preSelectGeoId / snapPoint</text>
+
+  <rect x="365" y="322" width="255" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="492" y="344" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">拓扑结果</text>
+  <text x="492" y="366" text-anchor="middle" font-size="12" fill="#555">toShape() → wire / compound</text>
+  <text x="492" y="384" text-anchor="middle" font-size="12" fill="#555">doneFaceShape / basedTopoShape</text>
+
+  <rect x="645" y="322" width="270" height="86" rx="8" fill="#f7f9fc" stroke="#c9d6e4"/>
+  <text x="780" y="344" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">绘制反馈</text>
+  <text x="780" y="366" text-anchor="middle" font-size="12" fill="#555">draw()：平面轴 / 曲线 / 选中高亮</text>
+  <text x="780" y="384" text-anchor="middle" font-size="12" fill="#555">立即模式 ImRenderer</text>
+
+  <!-- arrows from core to outputs -->
+  <line x1="220" y1="408" x2="160" y2="452" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="500" y1="408" x2="500" y2="452" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="780" y1="408" x2="840" y2="452" stroke="#666" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- outputs -->
+  <rect x="70" y="460" width="210" height="52" rx="8" fill="#eef7ee" stroke="#6fa86f"/>
+  <text x="175" y="482" text-anchor="middle" font-size="14" font-weight="bold" fill="#2e6b2e">交互操作</text>
+  <text x="175" y="501" text-anchor="middle" font-size="12" fill="#2e6b2e">拖动 → solve → 重画</text>
+
+  <rect x="395" y="460" width="210" height="52" rx="8" fill="#eef7ee" stroke="#6fa86f"/>
+  <text x="500" y="482" text-anchor="middle" font-size="14" font-weight="bold" fill="#2e6b2e">拓扑输出</text>
+  <text x="500" y="501" text-anchor="middle" font-size="12" fill="#2e6b2e">TopoDS Wire/Compound</text>
+
+  <rect x="720" y="460" width="210" height="52" rx="8" fill="#eef7ee" stroke="#6fa86f"/>
+  <text x="825" y="482" text-anchor="middle" font-size="14" font-weight="bold" fill="#2e6b2e">驱动 3D 建模</text>
+  <text x="825" y="501" text-anchor="middle" font-size="12" fill="#2e6b2e">Pad/Extrude 等 feature</text>
+
+  <text x="500" y="552" text-anchor="middle" font-size="13" fill="#777">FreeCAD 对照：本类 ≈ SketchObject（几何/约束/求解/toShape）+ ViewProviderSketch（拾取/选择/绘制）</text>
+  <text x="500" y="576" text-anchor="middle" font-size="13" fill="#777">约束 = SketchObjectConstraints；外部引用/构造线等 FreeCAD 子模块暂未移植</text>
+  <text x="500" y="600" text-anchor="middle" font-size="13" fill="#777">注：FreeCAD 中求解更新走 Property 机制（updateGeoAfterSolving），本项目收敛为 solve() 直接重建 mGeoList</text>
+</svg>

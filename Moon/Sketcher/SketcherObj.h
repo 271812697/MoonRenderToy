@@ -38,10 +38,16 @@ namespace MOON {
 		void setPlane(const SketcherPlane2D&plane);
 		void fitCamera();
 		void beginEdit();
+		void setDrawGrid(bool v) { m_drawGrid = v; }
+		bool isDrawGrid() const { return m_drawGrid; }
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
 		void draw();
+		// Sketch backdrop (adaptive background grid, infinite X/Y axes, origin
+		// marker). Kept separate from the geometry pass so background visuals
+		// can be tuned/disabled without touching curve rendering.
+		void drawBackground();
 		void makeDone();
 		int solve(bool updateGeoAfterSolving = true);
 		int addGeometry(std::unique_ptr<Part::Geometry>&ptr);
@@ -154,6 +160,7 @@ namespace MOON {
 		SketcherPlane2D mPlane ;
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
+		bool m_drawGrid = true;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;

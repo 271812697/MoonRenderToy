@@ -3,6 +3,7 @@
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "feature/SketcherFeature.h"
+#include "Widgets/BoolProperty.h"
 #include "core/ViewTool.h"
 #include "Interactive/Widgets/SketchPlane.h"
 #include <QLabel>
@@ -70,6 +71,8 @@ namespace MOON {
     SketchTaskDialog::SketchTaskDialog(QWidget* parent, Feature* feature)
         : ParamTaskDialog(parent),mInternal(new Internal(this)),ShapeHelper(feature)
     {
+        PropertyComponent* sketchGroup = addGroupParam("Sketch");
+        addParam(new BoolProperty("Draw Grid", sketchGroup));
         buildUi();
     }
 
@@ -80,12 +83,17 @@ namespace MOON {
 
     QVariant SketchTaskDialog::getParamValue(const QString& propertyName)
     {
+        if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
+            return QVariant::fromValue(mInternal->feature->getSketcherObj()->isDrawGrid());
+        }
         return QVariant();
     }
 
     void SketchTaskDialog::setParamValue(const QString& propertyName, const QVariant& value)
     {
-
+        if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
+            mInternal->feature->getSketcherObj()->setDrawGrid(value.value<bool>());
+        }
     }
 
     

@@ -24,7 +24,7 @@ layout(line_strip, max_vertices = 2) out;
 
 in vec3 FragPos[];
 
-uniform float u_DepthBias = 1e-5;
+uniform float u_DepthBias = 1e-6;
 
 void main()
 {
