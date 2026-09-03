@@ -5,6 +5,17 @@
 #include "implot_internal.h"
 using namespace ImPlot;
 namespace ImPlotCustom {
+	static ImDrawList* getDrawList(){
+		static ImDrawList* drawList = nullptr;
+		if (drawList == nullptr) {
+			drawList= ImGui::GetForegroundDrawList();
+		}
+		return drawList;
+	}
+	//y axis is down
+	static ImVec2 RotateVec2(ImVec2 pos, float cosVal, float sinVal) {
+		return ImVec2(pos.x * cosVal + pos.y * sinVal, -pos.x * sinVal + pos.y * cosVal);
+	}
 	static void RenderArrowsForVerticalBar(ImDrawList* draw_list, ImVec2 pos, ImVec2 half_sz, float bar_w, float alpha)
 	{
 		ImU32 alpha8 = IM_F32_TO_INT8_SAT(alpha);
@@ -13,15 +24,22 @@ namespace ImPlotCustom {
 		ImGui::RenderArrowPointingAt(draw_list, ImVec2(pos.x + bar_w - half_sz.x - 1, pos.y), ImVec2(half_sz.x + 2, half_sz.y + 1), ImGuiDir_Left, IM_COL32(0, 0, 0, alpha8));
 		ImGui::RenderArrowPointingAt(draw_list, ImVec2(pos.x + bar_w - half_sz.x, pos.y), half_sz, ImGuiDir_Left, IM_COL32(255, 255, 255, alpha8));
 	}
-	//y axis is down
-	ImVec2 RotateVec2(ImVec2 pos, float cosVal, float sinVal) {
-		return ImVec2(pos.x*cosVal+pos.y*sinVal,-pos.x*sinVal+pos.y*cosVal);
-	}
-	void AddTextTransform( ImVec2 pos, float angle, ImU32 col, const char* text_begin, const char* text_end)
+
+	void testImPlotCustom()
 	{
-		ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+
+		ImPlotCustom::AddTextTransform(Transform(100,100,45), IM_COL32(255, 0, 0, 255), "HelloWorld");
+		ImPlotCustom::ColormapScale("lo", 1.0, 0.0, 10.0);
+		AddArrow(Transform(100, 100, 60), IM_COL32(255, 0, 255, 255), 50, 2);
+		ImPlot::ShowDemoWindow();
+		ImGui::ShowDemoWindow();
+	}
+	void AddTextTransform(const Transform& trans, ImU32 col, const char* text_begin, const char* text_end)
+	{
+		ImDrawList* DrawList = getDrawList();
 		if (!text_end)
 			text_end = text_begin + strlen(text_begin);
+
 		ImGuiContext& g = *GImGui;
 #ifdef IMGUI_HAS_TEXTURES
 		ImFontBaked* font = g.Font->GetFontBaked(g.FontSize);
@@ -30,50 +48,66 @@ namespace ImPlotCustom {
 		ImFont* font = g.Font;
 		const float scale = g.FontSize / font->FontSize;
 #endif
-		// Align to be pixel perfect
-		pos.x = ImFloor(pos.x);
-		pos.y = ImFloor(pos.y);
+		Transform transCopy = trans;
+
+		float cosVal, sinVal;
+		trans.getSinCos(sinVal, cosVal);
+
 		const char* s = text_begin;
 		int chars_exp = (int)(text_end - s);
 		int chars_rnd = 0;
 		const int vtx_count_max = chars_exp * 4;
 		const int idx_count_max = chars_exp * 6;
 		DrawList->PrimReserve(idx_count_max, vtx_count_max);
-		float cosVal = cosf(angle);
-		float sinVal = sinf(angle);
-		while (s < text_end) {
+
+		while (s < text_end)
+		{
 			unsigned int c = (unsigned int)*s;
-			if (c < 0x80) {
+			if (c < 0x80)
+			{
 				s += 1;
 			}
-			else {
+			else
+			{
 				s += ImTextCharFromUtf8(&c, s, text_end);
-				if (c == 0) // Malformed UTF-8?
+				if (c == 0)
 					break;
 			}
+
 			const ImFontGlyph* glyph = font->FindGlyph((ImWchar)c);
-			if (glyph == nullptr) {
+			if (glyph == nullptr)
 				continue;
-			}
-			ImVec2 p0 = RotateVec2(ImVec2(glyph->X0, glyph->Y0), cosVal, sinVal);
-			ImVec2 p1 = RotateVec2(ImVec2(glyph->X1, glyph->Y0), cosVal, sinVal);
-			ImVec2 p2 = RotateVec2(ImVec2(glyph->X1, glyph->Y1), cosVal, sinVal);
-			ImVec2 p3 = RotateVec2(ImVec2(glyph->X0, glyph->Y1), cosVal, sinVal);
-			DrawList->PrimQuadUV(pos + p0 * scale, pos + p1* scale,
-				pos + p2 * scale, pos + p3 * scale,
+			
+			ImVec2 p0 = transCopy.value(ImVec2(glyph->X0, glyph->Y0) * scale);
+			ImVec2 p1 = transCopy.value(ImVec2(glyph->X1, glyph->Y0) * scale);
+			ImVec2 p2 = transCopy.value(ImVec2(glyph->X1, glyph->Y1) * scale);
+			ImVec2 p3 = transCopy.value(ImVec2(glyph->X0, glyph->Y1) * scale);
+
+			DrawList->PrimQuadUV(p0,p1 ,p2 ,p3,
 				ImVec2(glyph->U0, glyph->V0), ImVec2(glyph->U1, glyph->V0),
 				ImVec2(glyph->U1, glyph->V1), ImVec2(glyph->U0, glyph->V1),
 				col);
-			pos.y -= glyph->AdvanceX * scale*sinVal;
-			pos.x += glyph->AdvanceX * scale * cosVal;
+			transCopy.move(glyph->AdvanceX * scale * cosVal,-glyph->AdvanceX * scale * sinVal);
 			chars_rnd++;
 		}
-		// Give back unused vertices
+
 		int chars_skp = chars_exp - chars_rnd;
 		DrawList->PrimUnreserve(chars_skp * 6, chars_skp * 4);
-		
-
 	}
+
+	void AddArrow(const Transform& trans, ImU32 col, float length, float thickNess)
+	{
+		ImDrawList* drawList = getDrawList();
+		float scale =2.5 * thickNess;
+		ImVec2 s=trans.value(0.0f, 0.0f);
+		ImVec2 e = trans.value(length,0.0f );
+		ImVec2 a = trans.value(length, scale);
+		ImVec2 b = trans.value(length, -scale);
+		ImVec2 c = trans.value(length+2*scale, 0);
+		drawList->AddLine(s, e, col, thickNess);
+		drawList->AddTriangleFilled(a,b,c,col);
+	}
+	
 	void ColormapScale(const char* label, double val, double scale_min, double scale_max, const ImVec2& pos, const ImVec2& size, const char* format, ImPlotColormapScaleFlags flags, ImPlotColormap cmap)
 	{
 		ImGuiContext& G = *GImGui;
@@ -156,5 +190,22 @@ namespace ImPlotCustom {
 		float y = bb_grad.Min.y + (bb_grad.Max.y - bb_grad.Min.y) * (scale_max - val) / (scale_max - scale_min);
 		RenderArrowsForVerticalBar(&DrawList, ImVec2(bb_grad.Min.x - 1, y), ImVec2(bars_triangles_half_sz + 1, bars_triangles_half_sz), bar_w + 2.0f, 0.8);
 
+	}
+	void Transform::getSinCos(float& outSin, float& outCos) const
+	{
+		outSin = sinf(angleRad);
+		outCos = cosf(angleRad);
+	}
+	ImVec2 Transform::value(float x, float y)const
+	{
+		float sinVal, cosVal;
+		getSinCos(sinVal, cosVal);
+		return RotateVec2(ImVec2(x, y), cosVal, sinVal) + pos;
+	}
+	ImVec2 Transform::value(ImVec2 vec2)const
+	{
+		float sinVal, cosVal;
+		getSinCos(sinVal, cosVal);
+		return RotateVec2(vec2, cosVal, sinVal) + pos;
 	}
 }

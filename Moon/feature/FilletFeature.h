@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "feature/Feature.h"
 namespace MOON { 
-	class FilletFeature :public Feature {
+	class FilletFeature :public Feature3D {
 	public:
 		FilletFeature(const std::string& p_name);
 		virtual ~FilletFeature() override;

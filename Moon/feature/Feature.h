@@ -28,4 +28,30 @@ namespace MOON {
 		class Internal;
 		Internal* mInternal = nullptr;
 	};
+	class Feature3D :public Feature {
+	public:
+		Feature3D(const std::string& p_name, const std::string& tag)
+			:Feature(p_name, tag)
+		{
+
+		}
+	};
+	class DatumFeature :public Feature
+	{
+	public:
+		DatumFeature(const std::string& p_name, const std::string& tag)
+			:Feature(p_name, tag)
+		{
+
+		}
+	};
+	class ProfileFeature :public Feature
+	{
+	public:
+		ProfileFeature(const std::string& p_name, const std::string& tag)
+			:Feature(p_name,tag)
+		{
+
+		}
+	};
 }

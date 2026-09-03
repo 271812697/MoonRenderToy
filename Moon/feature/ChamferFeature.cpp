@@ -1,4 +1,4 @@
-#include "core/component/TopoShapeActor.h"
+﻿#include "core/component/TopoShapeActor.h"
 #include "renderer/SceneView.h"
 #include "core/component/CTopoShape.h"
 #include "TopoShape.h"
@@ -16,7 +16,7 @@
 
 namespace MOON {
 
-	ChamferFeature::ChamferFeature(const std::string& p_name) : Feature(p_name, "Chamfer") {
+	ChamferFeature::ChamferFeature(const std::string& p_name) : Feature3D(p_name, "Chamfer") {
 	}
 
 	ChamferFeature::~ChamferFeature() {

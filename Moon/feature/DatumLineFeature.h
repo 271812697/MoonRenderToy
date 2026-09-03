@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "feature/Feature.h"
 #include <Maths/FVector3.h>
 namespace MOON
@@ -6,7 +6,7 @@ namespace MOON
 	// A datum line is a parametric reference line in 3D space. Unlike boolean
 	// features it does not modify a base shape: it only carries its own edge
 	// geometry so it can be used later as a reference while modeling.
-	class DatumLineFeature : public Feature
+	class DatumLineFeature : public DatumFeature
 	{
 	public:
 		DatumLineFeature(const std::string& p_name);

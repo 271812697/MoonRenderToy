@@ -433,7 +433,8 @@ namespace MOON {
         isInEdit = false;
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(true);
-        doneFaceShape = toShape();
+        doneWireShape = toShape();
+		doneFaceShape = doneWireShape.makeElementFace(nullptr, "Part::FaceMakerBullseye");
         GetService(SketchToolbar).disableAllHandlers();
     }
     int SketcherObj::solve(bool updateGeoAfterSolving)
@@ -1372,10 +1373,6 @@ namespace MOON {
         }
         result.setTransform(planeTransform);
         return result;
-    }
-    void SketcherObj::setBasedTopoShape(Part::TopoShape topoShape)
-    {
-        basedTopoShape = topoShape;
     }
     Base::Matrix4D SketcherObj::getplaneTransform()
     {

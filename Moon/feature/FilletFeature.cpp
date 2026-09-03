@@ -35,7 +35,7 @@
 #include <algorithm>
 
 namespace MOON {
-	FilletFeature::FilletFeature(const std::string& p_name) :Feature(p_name, "Fillet")
+	FilletFeature::FilletFeature(const std::string& p_name) :Feature3D(p_name, "Fillet")
 	{
 	}
 	FilletFeature::~FilletFeature()

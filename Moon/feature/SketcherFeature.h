@@ -3,7 +3,7 @@
 namespace MOON { 
 
 	class SketcherObj;
-	class SketcherFeature :public Feature {
+	class SketcherFeature :public ProfileFeature {
 	public:
 		SketcherFeature(const std::string& p_name);
 		SketcherObj* getSketcherObj();

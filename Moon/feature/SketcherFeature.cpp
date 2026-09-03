@@ -4,22 +4,6 @@
 #include "core/log.h"
 #include "Sketcher/SketcherObj.h"
 
-#include <gp_Pln.hxx>
-#include <BRepTools.hxx>
-#include <BRepAdaptor_Surface.hxx>
-#include <gp_Vec.hxx>
-#include <gp_Dir.hxx>
-#include <GeomAbs_Shape.hxx>
-#include <ShapeFix_ShapeTolerance.hxx>
-#include <BRepAlgo.hxx>
-#include <ShapeAnalysis_Surface.hxx>
-#include <BRepLProp_SLProps.hxx>
-#include <Precision.hxx>
-#include <BRepAdaptor_Curve.hxx>
-#include <BRep_Tool.hxx>
-#include <TopoDS.hxx>
-#include <GeomAPI_ProjectPointOnSurf.hxx>
-#include <BRepClass3d_SolidClassifier.hxx>
 
 namespace MOON {
 	class SketcherFeature::Internal {
@@ -34,7 +18,7 @@ namespace MOON {
 		SketcherFeature* self = nullptr;
 		std::shared_ptr<SketcherObj> sketcher;
 	};
-    SketcherFeature::SketcherFeature(const std::string& p_name) :Feature(p_name, "Sketcher"),mInternal(new Internal(this))
+    SketcherFeature::SketcherFeature(const std::string& p_name) :ProfileFeature(p_name, "Sketcher"),mInternal(new Internal(this))
 	{
 	}
 	SketcherObj* SketcherFeature::getSketcherObj()
@@ -48,7 +32,8 @@ namespace MOON {
 	bool SketcherFeature::execute()
 	{
 		if (mInternal->sketcher.get()) {
-			topoShape->setShape(mInternal->sketcher->getDoneFaceShape());
+			topoShape->setShape(mInternal->sketcher->getDoneWireShape());
+			CORE_INFO("Make a SketcherFeature");
 			return true;
 	    }
         return false;

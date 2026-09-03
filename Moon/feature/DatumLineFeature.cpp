@@ -11,7 +11,7 @@
 namespace MOON
 {
 	DatumLineFeature::DatumLineFeature(const std::string& p_name)
-		: Feature(p_name, "DatumLine")
+		: DatumFeature(p_name, "DatumLine")
 	{
 	}
 

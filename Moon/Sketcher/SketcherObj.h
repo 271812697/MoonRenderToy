@@ -91,12 +91,11 @@ namespace MOON {
 			int refGeoId
 		);
 		Part::TopoShape toShape() const;
-		void setBasedTopoShape(Part::TopoShape topoShape);
-		Part::TopoShape getBasedTopoShape() {
-			return basedTopoShape;
-		}
 		Part::TopoShape getDoneFaceShape() {
 			return doneFaceShape;
+		}
+		Part::TopoShape getDoneWireShape() {
+			return doneWireShape;
 		}
 		Base::Matrix4D getplaneTransform();
 		Base::Vector3d getPlaneOrigin() {
@@ -145,8 +144,7 @@ namespace MOON {
 		std::vector<int> lastPartiallyRedundant;
 		std::vector<int> lastMalformedConstraints;
 	private:
-
-		Part::TopoShape basedTopoShape;
+		Part::TopoShape doneWireShape;
 		Part::TopoShape doneFaceShape;
 		struct CurveSegment;
 		void updateGeoSegment(int id);
