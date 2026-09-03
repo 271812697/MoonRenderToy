@@ -64,7 +64,6 @@ namespace MOON {
                         faceShape = sketchFeature->getSketcherObj()->getDoneFaceShape();
                     }
                 } 
-                
             }
             if (!faceShape.isNull())
             {

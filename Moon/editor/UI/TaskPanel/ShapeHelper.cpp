@@ -114,17 +114,6 @@ namespace MOON {
 		if (feature) {
 			if (feature->execute()) {
 				mInternal->m_previewShape = feature->getPreviewShape();
-				Part::TopoShape& shape=feature->GetTopoShape();
-				try
-				{
-					shape.setShape( shape.makeElementRefine());
-				}
-				catch (Standard_Failure& err)
-				{
-					CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
-				}
-
-
 				if (mInternal->m_previewActor == nullptr) {
 					auto& view = GetService(Editor::Panels::SceneView);
 					auto scene = view.GetScene();
@@ -170,6 +159,17 @@ namespace MOON {
 		ZoneScoped;
 		auto feature = getFeature();
 		if (feature) {
+			//makeRefine for TopoShape
+			Part::TopoShape& shape = feature->GetTopoShape();
+			try
+			{
+				shape.setShape(shape.makeElementRefine());
+			}
+			catch (Standard_Failure& err)
+			{
+				CORE_ERROR("Refine generateShape failed:{}", err.GetMessageString());
+			}
+			//hide other features
 			auto& view = GetService(Editor::Panels::SceneView);
 			auto scene = view.GetScene();	
 			for (auto& ac : scene->GetActors()) {
@@ -178,7 +178,9 @@ namespace MOON {
 					GetViewerWidget.modifyActorInTreeView(ac);
 				}
 			}
+			//add to treeview if not exist and discterize shape
 			feature->makeDone();
+			//clear preview
 			auto preActor = scene->FindActorByName("TopoShapePreview");
 			if (preActor) {
 				GetViewerWidget.removeActorFromTreeView(preActor);
