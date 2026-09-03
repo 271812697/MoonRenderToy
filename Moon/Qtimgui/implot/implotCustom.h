@@ -72,7 +72,9 @@ namespace ImPlotCustom {
         ImVec2 value(ImVec2 vec2)const ;
     };
 	void testImPlotCustom();
-    void AddTextTransform(const Transform& trans, ImU32 col, const char* text_begin, const char* text_end = nullptr);
+	void AddTextTransform(const Transform& trans, ImU32 col, const char* text_begin, const char* text_end = nullptr);
 	void AddArrow(const Transform& trans, ImU32 col, float length ,float thickNess);
+	void drawDoubleArcArrow(const Transform& trans, ImU32 col, float radius, float degree, float thickNess, const char* text = nullptr);
+	void drawDoubleArrow(const Transform& trans, ImU32 col, float length, float thickNess,const char*text=nullptr);
 	void ColormapScale(const char* label,double val, double scale_min, double scale_max, const ImVec2& pos= ImVec2(0, 0),const ImVec2& size = ImVec2(0, 0), const char* format = "%g", ImPlotColormapScaleFlags flags = 0, ImPlotColormap cmap = IMPLOT_AUTO);
 }

@@ -30,5 +30,10 @@ namespace MOON
 		int lengthSign, widthSign;
 		// Direction tracking to check once OVP is locked
 		Base::Vector2d capturedDirection;
+
+		// Continuous (unwrapped) angles accumulated while dragging the second
+		// point, so the sign/direction never jumps at the +/-180 boundary.
+		float m_sketchAngleAccumDeg = 0.0f;   // label: angle vs sketch X axis
+		float m_screenAngleAccumDeg = 0.0f;   // arc: sweep in screen space
 	};
 }
