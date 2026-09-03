@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 	const int font_id = QFontDatabase::addApplicationFont(
 		":/darkstyle/Ubuntu-R.ttf");
 	QFont font(QFontDatabase::applicationFontFamilies(font_id).at(0));
-	font.setPointSize(10);
+	font.setPointSize(9);
 	MOON::Log::Init();
 	CORE_INFO("start ");
 	CORE_INFO("Init Geometry Types");
