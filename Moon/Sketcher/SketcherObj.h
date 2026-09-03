@@ -14,17 +14,14 @@ namespace MOON {
 	class SketcherObj :public EventWidget
 	{
 	public:
-		enum PointPos
-		{
-			None = 0,
-			StartP,
-			EndP,
-			CenterP
-		};
+		// Point positions are provided by the ported Sketcher::PointPos
+		// (GeoEnum.h); keep a short alias for use inside this class and by
+		// code that refers to SketcherObj::PointPos.
+		using PointPos = Sketcher::PointPos;
 		struct SelectGeoId
 		{
 			int GeoId;
-			PointPos pointPos = None;
+			PointPos pointPos = PointPos::none;
 		};
 		SketcherObj();
 		~SketcherObj();
@@ -111,6 +108,14 @@ namespace MOON {
 		int addConstraint(const Sketcher::Constraint* constraint);
 		/// add constraint
 		int addConstraint(std::unique_ptr<Sketcher::Constraint> constraint);
+		int getConstraintCount() const { return static_cast<int>(mConstraintList.size()); }
+		const Sketcher::Constraint* getConstraint(int index) const;
+		// Find an existing constraint with the same type and elements (datum
+		// value ignored), so dimensional values can be edited via setDatum().
+		int findConstraint(const Sketcher::Constraint* pattern) const;
+		// Change the datum of an existing dimensional/tangent/perpendicular
+		// constraint and re-solve; on failure the value is rolled back.
+		int setDatum(int constrId, double datum);
 		// helper function to create a new constraint and move it to the Constraint Property
 		void addConstraint(
 			Sketcher::ConstraintType constrType,
@@ -162,9 +167,10 @@ namespace MOON {
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
-		SelectGeoId preSelectGeoId = {- 1,PointPos::None} ;
+		SelectGeoId preSelectGeoId = {- 1, PointPos::none};
 		std::vector<SelectGeoId> selectIds;
 		bool hasClickSelected = false;
+		bool m_dragSolverInit = false;
 		enum SelectState
 		{
 			Stop,

@@ -1,4 +1,4 @@
-﻿#include "Interactive/Widgets/DrawSketchHandlerLineSet.h"
+#include "Interactive/Widgets/DrawSketchHandlerLineSet.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "Maths/FMatrix4.h"
@@ -18,8 +18,8 @@ namespace MOON {
 		, EditCurve(2)
 		, firstCurve(-1)
 		, previousCurve(-1)
-		, firstPosId(SketcherObj::PointPos::None)
-		, previousPosId(SketcherObj::PointPos::None)
+		, firstPosId(SketcherObj::PointPos::none)
+		, previousPosId(SketcherObj::PointPos::none)
 		, startAngle(0)
 		, endAngle(0)
 		, arcRadius(0)
@@ -158,7 +158,7 @@ namespace MOON {
 
             EditCurve[0] = onSketchPos;  // this may be overwritten if previousCurve is found
             SketcherObj::SelectGeoId preSelectId= obj->testSelect(onSketchPos);
-            if (preSelectId.GeoId != -1&&(preSelectId.pointPos== SketcherObj::PointPos::StartP|| preSelectId.pointPos == SketcherObj::PointPos::EndP)) {
+            if (preSelectId.GeoId != -1&&(preSelectId.pointPos== SketcherObj::PointPos::start|| preSelectId.pointPos == SketcherObj::PointPos::end)) {
                 Part::Geometry* geo= obj->getGeometry(preSelectId.GeoId);
                 if (geo->is<Part::GeomLineSegment>() || geo->is<Part::GeomArcOfCircle>()) {
                     previousCurve = preSelectId.GeoId;
@@ -182,7 +182,7 @@ namespace MOON {
 
             // remember our first point (even if we are doing a transition from a previous curve)
             firstCurve = obj->getHighestCurveIndex() + 1;
-            firstPosId = SketcherObj::PointPos::StartP;
+            firstPosId = SketcherObj::PointPos::start;
 
             if (SegmentMode == SEGMENT_MODE_Line) {
                 EditCurve.resize(TransitionMode == TRANSITION_MODE_Free ? 2 : 3);
@@ -213,8 +213,8 @@ namespace MOON {
                     suppressTransition = false;
                     firstCurve = -1;
                     previousCurve = -1;
-                    firstPosId = SketcherObj::PointPos::None;
-                    previousPosId = SketcherObj::PointPos::None;
+                    firstPosId = SketcherObj::PointPos::none;
+                    previousPosId = SketcherObj::PointPos::none;
                     EditCurve.clear();
                     clearEdit();
                     drawEdit(EditCurve);
@@ -235,7 +235,7 @@ namespace MOON {
 
             Mode = STATUS_Do;
             auto preSelect=obj->getPreSelectGeoId();
-            if (preSelect.GeoId!= -1 && firstPosId != SketcherObj::PointPos::None) {
+            if (preSelect.GeoId!= -1 && firstPosId != SketcherObj::PointPos::none) {
                 if (firstCurve == preSelect.GeoId && firstPosId == firstPosId) {
                     Mode = STATUS_Close;
                 }
@@ -446,8 +446,8 @@ namespace MOON {
                     suppressTransition = false;
                     firstCurve = -1;
                     previousCurve = -1;
-                    firstPosId = SketcherObj::PointPos::None;
-                    previousPosId = SketcherObj::PointPos::None;
+                    firstPosId = SketcherObj::PointPos::none;
+                    previousPosId = SketcherObj::PointPos::none;
                     EditCurve.clear();
                     clearEdit();
                     drawEdit(EditCurve);
@@ -511,8 +511,8 @@ namespace MOON {
                 // remember the vertex for the next rounds constraint..
                 previousCurve = obj->getHighestCurveIndex();
                 previousPosId = (SegmentMode == SEGMENT_MODE_Arc && startAngle > endAngle)
-                    ? SketcherObj::PointPos::StartP
-                    : SketcherObj::PointPos::EndP;  // cw arcs are rendered in reverse
+                    ? SketcherObj::PointPos::start
+                    : SketcherObj::PointPos::end;  // cw arcs are rendered in reverse
 
                 // setup for the next line segment
                 // calculate dirVec and EditCurve[0]
@@ -714,8 +714,8 @@ namespace MOON {
                 suppressTransition = false;
                 firstCurve = -1;
                 previousCurve = -1;
-                firstPosId = SketcherObj::PointPos::None;
-                previousPosId = SketcherObj::PointPos::None;
+                firstPosId = SketcherObj::PointPos::none;
+                previousPosId = SketcherObj::PointPos::none;
                 firstsegment = true;
                 EditCurve.clear();
                 clearEdit();
@@ -737,7 +737,7 @@ namespace MOON {
                 lineSeg->getEndPoint().y - lineSeg->getStartPoint().y,
                 0.f
             );
-            if (PosId == SketcherObj::PointPos::StartP) {
+            if (PosId == SketcherObj::PointPos::start) {
                 dirVec *= -1;
                 EditCurve[0] = Base::Vector2d(lineSeg->getStartPoint().x, lineSeg->getStartPoint().y);
             }
@@ -747,7 +747,7 @@ namespace MOON {
         }
         else if (geom->is<Part::GeomArcOfCircle>()) {
             const Part::GeomArcOfCircle* arcSeg = static_cast<const Part::GeomArcOfCircle*>(geom);
-            if (PosId == SketcherObj::PointPos::StartP) {
+            if (PosId == SketcherObj::PointPos::start) {
                 EditCurve[0] = Base::Vector2d(
                     arcSeg->getStartPoint(/*emulateCCW=*/true).x,
                     arcSeg->getStartPoint(/*emulateCCW=*/true).y

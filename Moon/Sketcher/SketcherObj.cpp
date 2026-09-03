@@ -1,4 +1,4 @@
-﻿#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObj.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
@@ -52,6 +52,10 @@ namespace MOON {
     }
     SketcherObj::~SketcherObj()
     {
+        for (Sketcher::Constraint* c : mConstraintList) {
+            delete c;
+        }
+        mConstraintList.clear();
     }
     void SketcherObj::onUpdate()
     {
@@ -75,13 +79,65 @@ namespace MOON {
                 selectState = Hot;
             }
             else if(selectState== OperationGeo) {
-                bool solveS = false;;
-                for (int i = 0;i < selectIds.size();i++) {
-                    moveGeo(selectIds[i], onSketchPosMove.x - preOnSketchPosMove.x, onSketchPosMove.y - preOnSketchPosMove.y);
+                // Single circle/arc body drag: the solver anchors the center
+                // and the mouse sets the rim point (radius). Everything else
+                // (endpoints, centers, whole lines, group drag) is moved by
+                // relative displacement.
+                bool radiusDrag = selectIds.size() == 1 && selectIds[0].pointPos == PointPos::none;
+                if (radiusDrag) {
+                    Part::Geometry* geo = getGeometry(selectIds[0].GeoId);
+                    radiusDrag = geo
+                        && (geo->is<Part::GeomCircle>() || geo->is<Part::GeomArcOfCircle>());
+                }
+
+                std::vector<Sketcher::GeoElementId> dragIds;
+                dragIds.reserve(selectIds.size());
+                for (const auto& sel : selectIds) {
+                    dragIds.emplace_back(sel.GeoId, sel.pointPos);
+                }
+                if (!m_dragSolverInit) {
+                    solvedSketch.resetInitMove();
+                    m_dragSolverInit = solvedSketch.initMove(dragIds) == 0;
+                }
+                if (m_dragSolverInit) {
+                    Base::Vector3d moveTo;
+                    bool relative = true;
+                    if (radiusDrag) {
+                        moveTo = Base::Vector3d(onSketchPosMove.x, onSketchPosMove.y, 0.0);
+                        relative = false;  // rim follows the mouse, center stays
+                    }
+                    else {
+                        const Base::Vector2d totalDelta = onSketchPosMove - onSketchPosP1;
+                        moveTo = Base::Vector3d(totalDelta.x, totalDelta.y, 0.0);
+                    }
+                    const int status = solvedSketch.moveGeometries(dragIds, moveTo, relative);
+                    if (status == 0) {
+                        for (auto& geo : mGeoList) {
+                            mGeoSegment.erase(geo.get());
+                        }
+                        mGeoList.clear();
+                        std::vector<Part::Geometry*> geomlist = solvedSketch.extractGeometry();
+                        for (Part::Geometry* geo : geomlist) {
+                            addGeometry(geo);
+                        }
+                        for (Part::Geometry* geo : geomlist) {
+                            delete geo;
+                        }
+                    }
+                    return;  // solver path already handled this frame
+                }
+
+                bool solveS = false;
+                for (int i = 0; i < selectIds.size(); i++) {
+                    moveGeo(
+                        selectIds[i],
+                        onSketchPosMove.x - preOnSketchPosMove.x,
+                        onSketchPosMove.y - preOnSketchPosMove.y
+                    );
                     solveS = true;
                 }
                 if (solveS) {
-                    this->solve();
+                    solve();
                 }
             }
             else if (selectState ==Hot&& preSelectGeoId.GeoId == -1) {
@@ -95,6 +151,7 @@ namespace MOON {
         sketchDrawRect = true;
         onSketchPosP1=getMouseHitSketchPlanePoint();
         onSketchPosClicked = onSketchPosP1;
+        m_dragSolverInit = false;
 		if (preSelectGeoId.GeoId == -1) {
             pickGeo();
 		}
@@ -125,6 +182,8 @@ namespace MOON {
         if (!isHaveActiveHandler) {
             if (selectState == OperationGeo) {
                 selectState = Hot;
+                m_dragSolverInit = false;
+                solvedSketch.resetInitMove();
             }
             else if (selectState == DragRect)  {
                 if (selectMode == OverrideSelect) {
@@ -144,7 +203,7 @@ namespace MOON {
 					    }
 				    }
                     if (isInside) {
-                        addSelect({i,PointPos::None});
+                        addSelect({i,PointPos::none});
                     }
                     else
                     {
@@ -171,6 +230,7 @@ namespace MOON {
             }
             deleteGeometries(deletList);
             selectIds.clear();
+            solve();
         }
         else if (key == "CONTROL_L") {
             selectMode = AppendSelect;
@@ -390,7 +450,7 @@ namespace MOON {
 			bool isSelect = false;
 			for (int j = 0;j < selectIds.size();j++) {
 				if (selectIds[j].GeoId == i) {
-                    if (selectIds[j].pointPos == PointPos::None) {
+                    if (selectIds[j].pointPos == PointPos::none) {
                         isSelect = true;
                     }
                     else
@@ -473,16 +533,24 @@ namespace MOON {
             }
         }
         if (err==0) {
-            std::vector<int>GeoIds;
-            for (int i = 0; i < mGeoList.size(); i++) {
-                GeoIds.push_back(i);;
-            } 
-            deleteGeometries(GeoIds);
+            // Replace the geometry in place. FreeCAD keeps the geometry
+            // property list untouched when there is no change; here we rebuild
+            // the internal list directly and never route through
+            // deleteGeometries() (that would wipe constraints referencing the
+            // very elements we just solved).
+            for (auto& geo : mGeoList) {
+                mGeoSegment.erase(geo.get());
+            }
             mGeoList.clear();
             std::vector<Part::Geometry*> geomlist = solvedSketch.extractGeometry();
-            addGeometry(geomlist);        
+            for (Part::Geometry* geo : geomlist) {
+                addGeometry(geo);  // copies into owned storage
+            }
+            for (Part::Geometry* geo : geomlist) {
+                delete geo;        // extractGeometry() hands out clones
+            }
         }
-        return 0;
+        return err;
     }
     int SketcherObj::addGeometry(std::unique_ptr<Part::Geometry>& ptr)
     {
@@ -561,7 +629,7 @@ namespace MOON {
         Base::Vector3d p1 = trans * Base::Vector3d{ pos.x,pos.y,0.0 };
         double deltaTole = 5.0;
         double minDist = 10000.0;
-        SelectGeoId ret = {-1,PointPos::None } ;   
+        SelectGeoId ret = {-1,PointPos::none } ;   
 
         // travel all segments
         for (int i = 0; i < mGeoList.size(); i++) {
@@ -619,7 +687,7 @@ namespace MOON {
 
     void SketcherObj::addSelect(int id)
     {
-        addSelect({id,PointPos::None});
+        addSelect({id,PointPos::none});
     }
 
     void SketcherObj::removeSelect(const std::vector<int>& idList)
@@ -987,24 +1055,64 @@ namespace MOON {
         if (GeoIds.size() == 0) {
             return;
         }
-        std::vector<int>deletePos(mGeoList.size(),0);
+        const int oldSize = static_cast<int>(mGeoList.size());
+        std::vector<int> deletePos(oldSize, 0);
 		for (int i = 0;i < GeoIds.size();i++) {
-			if (GeoIds[i] < mGeoList.size()) {
+			if (GeoIds[i] >= 0 && GeoIds[i] < oldSize) {
 				deletePos[GeoIds[i]] = 1;
 			}
 		}
+        // Map every surviving old index to its new index after removal.
+        std::vector<int> newIndex(oldSize, -1);
+        int nextIndex = 0;
+        for (int i = 0; i < oldSize; ++i) {
+            if (!deletePos[i]) {
+                newIndex[i] = nextIndex++;
+            }
+        }
+
 		auto it = mGeoList.begin();
 		int index = 0;
 		while (it != mGeoList.end()) {
 			if (deletePos[index] == 1) {
 				mGeoSegment.erase((*it).get());
 				it = mGeoList.erase(it);
+                if (index >= oldSize) {
+                    break;
+                }
 			}
 			else {
 				it++;
 			}
 			index++;
 		}
+
+        // FreeCAD deletes every constraint that references a removed geometry
+        // and shifts the GeoIds of all constraints after the deletion point.
+        auto remapGeoId = [&](int& geoId) -> bool {
+            if (geoId >= 0 && geoId < oldSize) {
+                if (deletePos[geoId]) {
+                    return false;  // constraint refers to a deleted element
+                }
+                geoId = newIndex[geoId];
+            }
+            return true;
+        };
+
+        std::vector<Sketcher::Constraint*> keptConstraints;
+        keptConstraints.reserve(mConstraintList.size());
+        for (Sketcher::Constraint* c : mConstraintList) {
+            bool keep = remapGeoId(c->First);
+            keep = keep && remapGeoId(c->Second);
+            keep = keep && remapGeoId(c->Third);
+            if (keep) {
+                keptConstraints.push_back(c);
+            }
+            else {
+                delete c;
+            }
+        }
+        mConstraintList = std::move(keptConstraints);
     }
     void SketcherObj::replaceGeometry(int oldGeoId, std::unique_ptr<Part::Geometry>& newGeo)
     {
@@ -1385,6 +1493,19 @@ namespace MOON {
     }
     int  SketcherObj::addConstraint(std::unique_ptr<Sketcher::Constraint> constraint)
     {
+        if (!constraint) {
+            return -1;
+        }
+
+        // Basic index validation: elements used by a constraint must exist.
+        auto isValidGeoId = [this](int geoId) {
+            return geoId < 0 || (geoId < static_cast<int>(mGeoList.size()));
+        };
+        if (!isValidGeoId(constraint->First) || !isValidGeoId(constraint->Second)
+            || !isValidGeoId(constraint->Third)) {
+            return -2;
+        }
+
         for (int i = 0; i < mConstraintList.size(); i++) {
             if (
                 mConstraintList[i]->Type == constraint->Type &&
@@ -1402,6 +1523,49 @@ namespace MOON {
         Sketcher::Constraint* constNew = constraint.release();
         mConstraintList.push_back(constNew);
         return mConstraintList.size()-1;
+    }
+    const Sketcher::Constraint* SketcherObj::getConstraint(int index) const
+    {
+        if (index < 0 || index >= static_cast<int>(mConstraintList.size())) {
+            return nullptr;
+        }
+        return mConstraintList[index];
+    }
+    int SketcherObj::findConstraint(const Sketcher::Constraint* pattern) const
+    {
+        if (!pattern) {
+            return -1;
+        }
+        for (int i = 0; i < static_cast<int>(mConstraintList.size()); ++i) {
+            const Sketcher::Constraint* c = mConstraintList[i];
+            if (c->Type == pattern->Type && c->First == pattern->First
+                && c->FirstPos == pattern->FirstPos && c->Second == pattern->Second
+                && c->SecondPos == pattern->SecondPos && c->Third == pattern->Third
+                && c->ThirdPos == pattern->ThirdPos) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    int SketcherObj::setDatum(int constrId, double datum)
+    {
+        if (constrId < 0 || constrId >= static_cast<int>(mConstraintList.size())) {
+            return -1;
+        }
+
+        Sketcher::Constraint* c = mConstraintList[constrId];
+        if (!c->isDimensional() && c->Type != Sketcher::ConstraintType::Tangent
+            && c->Type != Sketcher::ConstraintType::Perpendicular) {
+            return -1;
+        }
+
+        const double oldValue = c->getValue();
+        c->setValue(datum);
+        const int err = solve();
+        if (err != 0) {
+            c->setValue(oldValue);  // keep the sketch consistent with the old datum
+        }
+        return err;
     }
     void SketcherObj::addConstraint(Sketcher::ConstraintType constrType, int firstGeoId, Sketcher::PointPos firstPos, int secondGeoId, Sketcher::PointPos secondPos, int thirdGeoId, Sketcher::PointPos thirdPos)
     {
@@ -1456,10 +1620,10 @@ namespace MOON {
         if (Id.GeoId < mGeoList.size()) {
             int geoId = Id.GeoId;
             Part::Geometry* geo = mGeoList[geoId].get();
-            bool isStart = Id.pointPos == PointPos::StartP;
-            bool isEnd = Id.pointPos == PointPos::EndP;
-            bool isCenter= Id.pointPos == PointPos::CenterP;
-            bool isNone = Id.pointPos == PointPos::None;
+            bool isStart = Id.pointPos == PointPos::start;
+            bool isEnd = Id.pointPos == PointPos::end;
+            bool isCenter= Id.pointPos == PointPos::mid;
+            bool isNone = Id.pointPos == PointPos::none;
             Base::Vector3d delta(dx, dy, 0);
             Base::Vector3d mousePos = Base::Vector3d(onSketchPosMove.x,onSketchPosMove.y,0.0);
 
@@ -1571,36 +1735,36 @@ namespace MOON {
         if (geo->isDerivedFrom<Part::GeomCurve>()) {
             if (geo->is<Part::GeomArcOfCircle>()) {
                 Part::GeomArcOfCircle* curve = static_cast<Part::GeomArcOfCircle*>(geo);
-                seg.sepoints.push_back({ curve->getStartPoint(),PointPos::StartP });
-                seg.sepoints.push_back({ curve->getEndPoint() ,PointPos::EndP});
-                seg.sepoints.push_back({ curve->getCenter() ,PointPos::CenterP});
+                seg.sepoints.push_back({ curve->getStartPoint(),PointPos::start });
+                seg.sepoints.push_back({ curve->getEndPoint() ,PointPos::end});
+                seg.sepoints.push_back({ curve->getCenter() ,PointPos::mid});
             }
             else if (geo->is<Part::GeomLineSegment>()) {
                 Part::GeomLineSegment* lineSeg = static_cast<Part::GeomLineSegment*>(geo);
-                seg.sepoints.push_back({ lineSeg->getStartPoint(),PointPos::StartP });
-                seg.sepoints.push_back({ lineSeg->getEndPoint(),PointPos::EndP });
+                seg.sepoints.push_back({ lineSeg->getStartPoint(),PointPos::start });
+                seg.sepoints.push_back({ lineSeg->getEndPoint(),PointPos::end });
             }
             else if (geo->is<Part::GeomArcOfConic>()) {
                 Part::GeomArcOfConic* curve = static_cast<Part::GeomArcOfConic*>(geo);
-                seg.sepoints.push_back({ curve->getStartPoint(),PointPos::StartP });
-                seg.sepoints.push_back({ curve->getEndPoint() ,PointPos::EndP });
-                seg.sepoints.push_back({ curve->getCenter() ,PointPos::CenterP });
+                seg.sepoints.push_back({ curve->getStartPoint(),PointPos::start });
+                seg.sepoints.push_back({ curve->getEndPoint() ,PointPos::end });
+                seg.sepoints.push_back({ curve->getCenter() ,PointPos::mid });
             }
             else if (geo->is<Part::GeomCircle>()) {
                 Part::GeomCircle* curve = static_cast<Part::GeomCircle*>(geo);
-                seg.sepoints.push_back({ curve->getCenter() ,PointPos::CenterP });
+                seg.sepoints.push_back({ curve->getCenter() ,PointPos::mid });
             }
             else if (geo->is<Part::GeomBSplineCurve>()) {
                 Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
                 std::vector<Base::Vector3d>poles= curve->getPoles();
                 for (int i = 0; i < poles.size(); i++) {
-                    seg.sepoints.push_back({ poles[i],PointPos::CenterP });
+                    seg.sepoints.push_back({ poles[i],PointPos::mid });
                 }
             }
         }
         else if (geo->is<Part::GeomPoint>()) {
             Base::Vector3d pos = static_cast<Part::GeomPoint*>(geo)->getPoint();
-            seg.sepoints.push_back({ pos ,PointPos::CenterP });
+            seg.sepoints.push_back({ pos ,PointPos::mid });
         }
         return seg;
     }
