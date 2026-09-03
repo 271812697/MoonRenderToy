@@ -108,8 +108,9 @@
 		    <file>icons/partdesign/PartDesign_Fillet.svg</file>
 		    <file>icons/partdesign/PartDesign_Chamfer.svg</file>
         <file>icons/partdesign/PartDesign_Pocket.svg</file>
-        <file>icons/partdesign/PartDesign_Revolution.svg</file>
-        <file>icons/partdesign/PartDesign_Groove.svg</file>
+		    <file>icons/partdesign/PartDesign_Revolution.svg</file>
+		    <file>icons/partdesign/PartDesign_Groove.svg</file>
+		    <file>icons/partdesign/PartDesign_Line.svg</file>
 
 
 

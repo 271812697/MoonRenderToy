@@ -6,6 +6,7 @@
 #include "editor/UI/TaskPanel/FilletTask.h"
 #include "editor/UI/TaskPanel/ChamferTask.h"
 #include "editor/UI/TaskPanel/RevolutionTask.h"
+#include "editor/UI/TaskPanel/DatumLineTask.h"
 #include "TopoShape.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/ViewTool.h"
@@ -37,6 +38,9 @@ namespace MOON {
 		if (name == "Groove")
 		{
 			return new RevolutionTask(RevolutionType::ReSubtractive,nullptr);
+		}
+		if (name == "DatumLine") {
+			return new DatumLineTask();
 		}
 		return nullptr;
 	}
@@ -80,6 +84,8 @@ namespace MOON {
 			pocketCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Pocket.svg");
 			grooveCommand = new DesignModelCommand(self,"Groove");
 			grooveCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Groove.svg");
+			datumLineCommand = new DesignModelCommand(self, "DatumLine");
+			datumLineCommand->setIcon(":/widgets/icons/partdesign/PartDesign_Line.svg");
 			self->addAction(padCommand->action());			
 			self->addAction(revolveCommand->action());
 			self->addAction(thicknessCommand->action());
@@ -87,6 +93,7 @@ namespace MOON {
 			self->addAction(chamferCommand->action());
 			self->addAction(pocketCommand->action());
 			self->addAction(grooveCommand->action());
+			self->addAction(datumLineCommand->action());
 
 			retranslateUi();
 		}
@@ -98,6 +105,7 @@ namespace MOON {
 			pocketCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Pocket", nullptr));
 			revolveCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Revolve", nullptr));
 			grooveCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Groove", nullptr));
+			datumLineCommand->action()->setText(QCoreApplication::translate("DesignModelingToolbar", "Datum Line", nullptr));
 		}
 	private:
 		friend class DesignModelingToolbarToolbar;
@@ -109,6 +117,7 @@ namespace MOON {
 		DesignModelCommand* pocketCommand = nullptr;
 		DesignModelCommand* revolveCommand = nullptr;
 		DesignModelCommand* grooveCommand = nullptr;
+		DesignModelCommand* datumLineCommand = nullptr;
 	};
 
 	DesignModelingToolbar::DesignModelingToolbar(const QString& title, QWidget* parent)

@@ -5,12 +5,14 @@
 #include "editor/UI/TaskPanel/ThicknessTaskDialog.h"
 #include "editor/UI/TaskPanel/FilletTask.h"
 #include "editor/UI/TaskPanel/RevolutionTask.h"
+#include "editor/UI/TaskPanel/DatumLineTask.h"
 #include "TopoShape.h"
 #include "feature/SketcherFeature.h"
 #include "feature/ExtrudeFeature.h"
 #include "feature/ThicknessFeature.h"
 #include "feature/FilletFeature.h"
 #include "feature/RevolveFeature.h"
+#include "feature/DatumLineFeature.h"
 
 
 namespace MOON {
@@ -40,6 +42,11 @@ namespace MOON {
         RevolveFeature* revolve = dynamic_cast<RevolveFeature*>(feature);
         if (revolve) {
             RevolutionTask* dialog = new RevolutionTask(revolve->addSubType==0? RevolutionType::ReAdditive: RevolutionType::ReSubtractive,nullptr,revolve);
+            return dialog;
+        }
+        DatumLineFeature* datumLine = dynamic_cast<DatumLineFeature*>(feature);
+        if (datumLine) {
+            DatumLineTask* dialog = new DatumLineTask(nullptr, datumLine);
             return dialog;
         }
         return nullptr;

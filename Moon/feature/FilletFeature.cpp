@@ -51,6 +51,9 @@ namespace MOON {
         {
             Part::TopoShape resShape(0);
             resShape.makeElementFillet(baseShape, edges, radius, radius);
+            if (resShape.isNull()) {
+                return false;
+            }
             TopTools_ListOfShape aLarg;
             aLarg.Append(baseShape.getShape());
             if (!BRepAlgo::IsValid(aLarg, baseShape.getShape(), Standard_False, Standard_False)) {
