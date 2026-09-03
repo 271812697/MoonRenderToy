@@ -218,19 +218,155 @@ namespace MOON {
 		p[1] = mPlane.normal.y;
         p[2] = mPlane.normal.z;
     }
+    void SketcherObj::drawBackground()
+    {
+        if (!InEdit()) return;
+
+        // Adaptive background grid: big cells use the darker tone, the smaller
+        // subdivisions inside use the lighter tone. The spacing snaps to a nice
+        // 1/2/5 x 10^n step so the on-screen density stays roughly constant while
+        // zooming, and each line spans the whole visible sketch region.
+        if (m_drawGrid) {
+            const Eigen::Vector4<uint8_t> minorColor(150, 132, 118, 118); // (A,B,G,R) = (255, b,g,r)
+            const Eigen::Vector4<uint8_t> majorColor(255, 66, 56, 56); // (A,B,G,R) = (255, b,g,r)
+            const auto* gridCam = m_sceneView->GetCamera();
+            if (gridCam) {
+                const auto& gProj = gridCam->GetProjectionMatrix();
+                const float gProj11 = gProj(1, 1);
+                const auto& gFd = m_sceneView->GetRenderer().GetFrameDescriptor();
+                const float gScreenH = static_cast<float>(gFd.renderHeight);
+                const float gScreenW = static_cast<float>(gFd.renderWidth);
+                const float gAspect = gScreenH > 0.0f ? gScreenW / gScreenH : 1.0f;
+                if (gProj11 > 0.0f && gScreenH > 0.0f &&
+                    gridCam->GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC) {
+                    const float halfH = 1.0f / gProj11;
+                    const float hx = halfH * gAspect;
+                    const float hy = halfH;
+                    // Visible sketch-space rectangle: project the four viewport corners
+                    // onto the sketch plane (view z is irrelevant for an ortho camera).
+                    const auto& gView = gridCam->GetViewMatrix();
+                    const Maths::FMatrix4 gInvView = Maths::FMatrix4::Inverse(gView);
+                    const float xs[2] = { -hx, hx };
+                    const float ys[2] = { -hy, hy };
+                    float uMin = 1e30f, uMax = -1e30f, vMin = 1e30f, vMax = -1e30f;
+                    for (int i = 0; i < 2; ++i) {
+                        for (int j = 0; j < 2; ++j) {
+                            const Maths::FVector3 wp = gInvView.MulPoint(Maths::FVector3(xs[i], ys[j], 0.0f));
+                            const Base::Vector3d d(wp.x - mPlane.origin.x, wp.y - mPlane.origin.y, wp.z - mPlane.origin.z);
+                            const float u = static_cast<float>(d.Dot(mPlane.xAxis));
+                            const float v = static_cast<float>(d.Dot(mPlane.yAxis));
+                            uMin = std::min(uMin, u); uMax = std::max(uMax, u);
+                            vMin = std::min(vMin, v); vMax = std::max(vMax, v);
+                        }
+                    }
+                    // Nice step: smallest 1/2/5 x 10^n candidate above the target so the
+                    // minor lines are roughly 40 px apart on screen.
+                    const float targetStep = 40.0f * (2.0f * halfH) / gScreenH;
+                    const float mag = std::pow(10.0f, std::floor(std::log10(std::max(targetStep, 1e-6f))));
+                    float step = mag;
+                    if (step < targetStep) step = 2.0f * mag;
+                    if (step < targetStep) step = 5.0f * mag;
+                    if (step < targetStep) step = 10.0f * mag;
+                    const int i0 = static_cast<int>(std::ceil(uMin / step));
+                    const int i1 = static_cast<int>(std::floor(uMax / step));
+                    for (int i = i0; i <= i1; ++i) {
+                        const float g = i * step;
+                        const auto& col = (i % 5) == 0 ? majorColor : minorColor;
+                        renderer->drawLine(mPlane.valueEigen(g, vMin), mPlane.valueEigen(g, vMax), 1.0f, col);
+                    }
+                    const int j0 = static_cast<int>(std::ceil(vMin / step));
+                    const int j1 = static_cast<int>(std::floor(vMax / step));
+                    for (int j = j0; j <= j1; ++j) {
+                        const float g = j * step;
+                        const auto& col = (j % 5) == 0 ? majorColor : minorColor;
+                        renderer->drawLine(mPlane.valueEigen(uMin, g), mPlane.valueEigen(uMax, g), 1.0f, col);
+                    }
+                }
+                else {
+                    // Fallback for non-orthographic views: fixed extent grid.
+                    const float extent = 100.0f;
+                    for (int k = -10; k <= 10; ++k) {
+                        const float g = k * 10.0f;
+                        const auto& col = (k % 5) == 0 ? majorColor : minorColor;
+                        renderer->drawLine(mPlane.valueEigen(g, -extent), mPlane.valueEigen(g, extent), 1.0f, col);
+                        renderer->drawLine(mPlane.valueEigen(-extent, g), mPlane.valueEigen(extent, g), 1.0f, col);
+                    }
+                }
+            }
+        }
+
+        // Infinite X/Y axes: intersect each axis line with the viewport rectangle
+        // and draw the segment between the two crossings so they span the screen.
+        renderer->pushSize(3);
+        const auto* axisCam = m_sceneView->GetCamera();
+        if (axisCam) {
+            const auto& proj = axisCam->GetProjectionMatrix();
+            const float proj11 = proj(1, 1);
+            const auto& fd = m_sceneView->GetRenderer().GetFrameDescriptor();
+            const float screenH = static_cast<float>(fd.renderHeight);
+            const float aspect = screenH > 0.0f ? static_cast<float>(fd.renderWidth) / screenH : 1.0f;
+            if (proj11 > 0.0f && axisCam->GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC) {
+                const auto& viewM = axisCam->GetViewMatrix();
+                const Maths::FVector3 origin3(mPlane.origin.x, mPlane.origin.y, mPlane.origin.z);
+                const Maths::FVector3 v0 = viewM.MulPoint(origin3);
+                const float halfH = 1.0f / proj11;
+                const float hx = halfH * aspect;
+                const float hy = halfH;
+                const Base::Vector3d dirs[2] = { mPlane.xAxis, mPlane.yAxis };
+                const Eigen::Vector4<uint8_t> colors[2] = { {255, 0, 0, 255}, {255, 0, 255, 0} };
+                for (int a = 0; a < 2; ++a) {
+                    const Maths::FVector3 p1 = viewM.MulPoint(Maths::FVector3(
+                        mPlane.origin.x + dirs[a].x, mPlane.origin.y + dirs[a].y, mPlane.origin.z + dirs[a].z));
+                    const Maths::FVector3 dv(p1.x - v0.x, p1.y - v0.y, 0.0f);
+                    const float coords[2] = { v0.x, v0.y };
+                    const float dirC[2] = { dv.x, dv.y };
+                    const float half[2] = { hx, hy };
+                    float lo = -1e9f, hi = 1e9f;
+                    bool crosses = true;
+                    for (int c = 0; c < 2; ++c) {
+                        if (std::abs(dirC[c]) < 1e-9f) {
+                            if (std::abs(coords[c]) > half[c]) { crosses = false; break; }
+                        }
+                        else {
+                            const float t1 = (-half[c] - coords[c]) / dirC[c];
+                            const float t2 = (half[c] - coords[c]) / dirC[c];
+                            lo = std::max(lo, std::min(t1, t2));
+                            hi = std::min(hi, std::max(t1, t2));
+                        }
+                    }
+                    if (crosses && hi >= lo) {
+                        const float ext = std::max((hi - lo) * 0.05f, 1e-3f);
+                        renderer->pushColor(colors[a]);
+                        if (a == 0) {
+                            renderer->drawLine(mPlane.valueEigen(lo - ext, 0.0), mPlane.valueEigen(hi + ext, 0.0));
+                        }
+                        else {
+                            renderer->drawLine(mPlane.valueEigen(0.0, lo - ext), mPlane.valueEigen(0.0, hi + ext));
+                        }
+                        renderer->popColor();
+                    }
+                }
+            }
+            else {
+                renderer->pushColor({ 255,0,0,255 });
+                renderer->drawLine(mPlane.valueEigen(500,0), mPlane.valueEigen(-500,0));
+                renderer->popColor();
+                renderer->pushColor({255,0,255,0});
+                renderer->drawLine(mPlane.valueEigen(0, 500), mPlane.valueEigen(0, -500));
+                renderer->popColor();
+            }
+        }
+        renderer->popSize();
+
+        // Origin marker.
+        renderer->pushColor({ 255,255,255,0 });
+        renderer->drawPoint(mPlane.valueEigen(0,0));
+        renderer->popColor();
+    }
+
     void SketcherObj::draw() {
         if (InEdit()) {
-            renderer->pushSize(3);
-            renderer->pushColor({ 255,0,0,255 });
-            renderer->drawLine(mPlane.valueEigen(100,0),mPlane.valueEigen(-100,0));
-            renderer->popColor();
-            renderer->pushColor({255,0,255,0});
-            renderer->drawLine(mPlane.valueEigen(0, 100), mPlane.valueEigen(0, -100));
-            renderer->popColor();
-            renderer->popSize();
-            renderer->pushColor({ 255,255,255,0 });
-            renderer->drawPoint(mPlane.valueEigen(0,0));
-            renderer->popColor();
+            drawBackground();
         }
         renderer->pushSize(3);
         if (selectState == DragRect && sketchDrawRect&&!isHaveActiveHandler) {

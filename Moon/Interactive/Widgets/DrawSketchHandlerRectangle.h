@@ -14,6 +14,7 @@ namespace MOON
 
 	class DrawSketchHandlerRectangle : public DrawSketchDefaultHandler<DrawSketchHandlerRectangle, StateMachines::FiveSeekEnd,3, RectangleConstructionMethod>
 	{
+		using SupperClass = DrawSketchDefaultHandler<DrawSketchHandlerRectangle, StateMachines::FiveSeekEnd, 3, RectangleConstructionMethod>;
 	public:
 		DrawSketchHandlerRectangle(const std::string& name);
 		virtual ~DrawSketchHandlerRectangle();
@@ -23,15 +24,17 @@ namespace MOON
 		virtual void onButtonPressed(Base::Vector2d onSketchPos) override;
 		bool canGoToNextMode() override;
 		void createShape(bool onlyeditoutline) override;
+		void executeCommands() override;
 		void onReset() override;
 	private:
 		Base::Vector2d center, corner1, corner2, corner3, corner4, frameCorner1, frameCorner2,
 			frameCorner3, frameCorner4, corner2Initial;
 		Base::Vector3d center1, center2, center3, center4;
-		bool roundCorners, makeFrame, cornersReversed;
-		double radius, length, width, thickness, radiusFrame, angle, angle123, angle412;
-		int firstCurve, constructionPointOneId, constructionPointTwoId, constructionPointThreeId,
-			centerPointId, side;
+		bool roundCorners = true, makeFrame = false, cornersReversed = false;
+		double radius = 0., length = 0., width = 0., thickness = 0., radiusFrame = 0., angle = 0.,
+			angle123 = 0., angle412 = 0.;
+		int firstCurve = -1, constructionPointOneId = -1, constructionPointTwoId = -1,
+			constructionPointThreeId = -1, centerPointId = -1, side = 0;
 
 		// Sign tracking for OVP lock fix (issue #23459)
 		// These store the direction sign when OVP is first set to prevent sign flipping
@@ -59,5 +62,11 @@ namespace MOON
 		void finishRectangleFrameCreation();
 		void addRectangleFrameConstructionLines();
 		void finishCenteredRectangleCreation(bool thicknessNotZero);
+		void addRectangleAutoConstraints();
+		void addRoundedRectangleAutoConstraints();
+		void addCornerCoincidences(int geoId);
+		void addAlignmentConstraints();
+		void addTangentCoincidences(int geoId);
+		void addArcEqualities();
 	};
 }

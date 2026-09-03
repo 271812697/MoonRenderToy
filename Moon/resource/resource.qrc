@@ -78,9 +78,10 @@
         <file>icons/Sketcher_CreateLine.svg</file>
         <file>icons/Sketcher_CreatePolyline.svg</file>
         <file>icons/Sketcher_Rotate.svg</file>
-        <file>icons/Sketcher_Symmetry.svg</file>
-        <file>icons/Sketcher_CreateFillet.svg</file>
-        <file>icons/constraint/Constraint_Coincident.svg</file>
+		    <file>icons/Sketcher_Symmetry.svg</file>
+		    <file>icons/Sketcher_CreateFillet.svg</file>
+		    <file>icons/Sketcher_Offset.svg</file>
+		    <file>icons/constraint/Constraint_Coincident.svg</file>
         <file>icons/constraint/Constraint_Horizontal.svg</file>
         <file>icons/constraint/Constraint_Vertical.svg</file>
         <file>icons/constraint/Constraint_Parallel.svg</file>

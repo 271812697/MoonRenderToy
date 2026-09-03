@@ -19,9 +19,10 @@
 | 矩形 Rectangle | DefaultHandler | FiveSeekEnd（按方式跳步） | RectangleConstructionMethod | [DrawSketchHandlerRectangle.md](./DrawSketchHandlerRectangle.md) |
 | 旋转 Rotate | DefaultHandler | ThreeSeekEnd | — | [DrawSketchHandlerRotate.md](./DrawSketchHandlerRotate.md) |
 | 对称 Symmetry | DefaultHandler | OneSeekEnd | — | [DrawSketchHandlerSymmetry.md](./DrawSketchHandlerSymmetry.md) |
+| 偏移 Offset | DefaultHandler | OneSeekEnd | OffsetConstructionMethod（Arc/Intersection，M 键） | [DrawSketchHandlerOffset.md](./DrawSketchHandlerOffset.md) |
 | 裁剪 Trimming | **直接继承 DrawSketchHandler** | 无 | — | [DrawSketchHandlerTrimming.md](./DrawSketchHandlerTrimming.md) |
 
-## 三类实现风格
+## 实现风格
 
 1. **走模板的“几何生成型”**（Point/Line/Circle/Arc/Rectangle/Rotate/Symmetry/BSpline）：
    点击累积数据 → `createShape` 生成 `ShapeGeometry` → `End` 后由 `executeCommands` 提交；
@@ -29,9 +30,12 @@
    已有草图几何做 fillet/对称/旋转，通常重写 `executeCommands` 直接调用 `SketcherObj` 的操作；
 3. **不依赖模板的自定义型**（LineSet/Trimming）：多段线的“续接上一段”语义与裁剪的“无状态
    连续操作”语义不适合三点击状态机，直接继承 `DrawSketchHandler` 自建流程。
+4. **选中几何 + OCC 计算型**（Offset）：先选中已有几何，单击定距后由
+   `BRepOffsetAPI_MakeOffset` 计算新几何，再走基类提交；一次性工具（提交即退出），
+   复用单例时在 `onSetActive` 中重置全部状态。
 
 ## 阅读建议
 
 先读 Point（最简模板用法）→ Line（两点 + 几何生成）→ Circle/Arc（构造方式 + 跳步）→
 BSpline（拖拽编辑热点）→ Rectangle（多状态 + 多方式）→ Rotate/Symmetry/Fillet（操作已有几何）→
-LineSet/Trimming（自建流程）。
+Offset（选中 + OCC 计算 + 一次性退出）→ LineSet/Trimming（自建流程）。
