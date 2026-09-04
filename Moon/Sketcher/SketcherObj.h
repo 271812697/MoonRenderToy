@@ -12,6 +12,7 @@ namespace Part {
 	class  Geometry;
 }
 namespace MOON {
+	void defaultLabelOffsetPx(const Sketcher::Constraint* c, float& dx, float& dy);
 	class SketcherObj :public EventWidget
 	{
 	public:
@@ -220,6 +221,7 @@ namespace MOON {
 		std::vector<SelectGeoId> selectIds;
 		bool hasClickSelected = false;
 		bool m_dragSolverInit = false;
+		bool sketchDrawRect = false;
 		// P0 dimension-label overlay state
 		std::unordered_map<const Sketcher::Constraint*, Base::Vector2d> m_labelManualOffsetPx;
 		// 0..1 parameter of the caption along the straight dimension shaft
