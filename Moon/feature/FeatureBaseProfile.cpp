@@ -4,7 +4,7 @@
 #include "Sketcher/SketcherObj.h"
 namespace MOON {
 	
-	FeatureBaseProfile::FeatureBaseProfile(const std::string& p_name, const std::string& tag) :Feature(p_name,tag)
+	FeatureBaseProfile::FeatureBaseProfile(const std::string& p_name, const std::string& tag) :Feature3D(p_name,tag)
 	{
 
 	}

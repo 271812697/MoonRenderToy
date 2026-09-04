@@ -86,8 +86,8 @@ namespace MOON {
 			for (int i = mInternal->featureList.size()-1;i>=0;i--) {
 				if (mInternal->featureList[i] == target) {
 					for (int k = i - 1; k >= 0; k--) {
-						SketcherFeature* feature = dynamic_cast<SketcherFeature*>(mInternal->featureList[k]);
-						if (!feature) {
+						Feature3D* feature = dynamic_cast<Feature3D*>(mInternal->featureList[k]);
+						if (feature) {
 							return mInternal->featureList[k];
 						}
 					}

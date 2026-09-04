@@ -3,7 +3,7 @@
 #include "TopoShape.h"
 namespace MOON { 
 	class SketcherFeature;
-	class FeatureBaseProfile :public Feature {
+	class FeatureBaseProfile :public Feature3D {
 	public:
 		FeatureBaseProfile(const std::string& p_name,const std::string& tag);
 		virtual ~FeatureBaseProfile() override;

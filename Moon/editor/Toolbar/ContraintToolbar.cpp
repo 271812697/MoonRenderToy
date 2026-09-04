@@ -4,6 +4,7 @@
 #include "renderer/SceneView.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
+#include "Geometry.h"
 #include "core/log.h"
 #include <QCoreApplication>
 #include <QDialog>
@@ -83,20 +84,18 @@ namespace MOON {
 		std::unordered_map<std::string, QDoubleSpinBox*>paramWidgetList;
 		
 	};
-	Sketcher::PointPos convertPointPos(SketcherObj::PointPos pos) {
-	   if (pos == SketcherObj::PointPos::None) {
-		  return Sketcher::PointPos::none;
-	   }
-	   if (pos == SketcherObj::PointPos::CenterP) {
-		   return Sketcher::PointPos::mid;
-	   }
-	   if (pos == SketcherObj::PointPos::StartP) {
-		   return Sketcher::PointPos::start;
-	   }
-	   if (pos == SketcherObj::PointPos::EndP) {
-		   return Sketcher::PointPos::end;
-	   }
-	   return Sketcher::PointPos::none;
+	// If a constraint with the same type/elements already exists, treat the
+	// dialog value as an edit (setDatum) instead of stacking a duplicate.
+	void addOrSetDatumConstraint(SketcherObj* Obj, std::unique_ptr<Sketcher::Constraint> constraint)
+	{
+		const int existing = Obj->findConstraint(constraint.get());
+		if (existing >= 0) {
+			Obj->setDatum(existing, constraint->getValue());
+		}
+		else {
+			Obj->addConstraint(std::move(constraint));
+			Obj->solve();
+		}
 	}
 	class  ConstraintCommand : public Command
 	{
@@ -119,32 +118,32 @@ namespace MOON {
 			if (listOfGeoIds.size() > 1) {
 				if (listOfGeoIds.size() == 2) {
 					Sketcher::ConstraintType constrType = Sketcher::ConstraintType::None;
-					if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+					if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::none && listOfGeoIds[1].pointPos != SketcherObj::PointPos::none) {
 						constrType = Sketcher::ConstraintType::Coincident;
 						Obj->addConstraint(
 							constrType,
 							listOfGeoIds[0].GeoId,
-							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[0].pointPos,
 							listOfGeoIds[1].GeoId,
-							convertPointPos(listOfGeoIds[1].pointPos));
+							listOfGeoIds[1].pointPos);
 					}
-					else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None && listOfGeoIds[1].pointPos != SketcherObj::PointPos::None) {
+					else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none && listOfGeoIds[1].pointPos != SketcherObj::PointPos::none) {
 						constrType = Sketcher::ConstraintType::PointOnObject;
 						Obj->addConstraint(
 							constrType,
 							listOfGeoIds[1].GeoId,
-							convertPointPos(listOfGeoIds[1].pointPos),
+							listOfGeoIds[1].pointPos,
 							listOfGeoIds[0].GeoId,
-							convertPointPos(listOfGeoIds[0].pointPos));
+							listOfGeoIds[0].pointPos);
 					}
-					else if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None && listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+					else if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::none && listOfGeoIds[1].pointPos == SketcherObj::PointPos::none) {
 						constrType = Sketcher::ConstraintType::PointOnObject;
 						Obj->addConstraint(
 							constrType,
 							listOfGeoIds[0].GeoId,
-							convertPointPos(listOfGeoIds[0].pointPos),
+							listOfGeoIds[0].pointPos,
 							listOfGeoIds[1].GeoId,
-							convertPointPos(listOfGeoIds[1].pointPos));
+							listOfGeoIds[1].pointPos);
 
 					}
 					else {
@@ -155,11 +154,11 @@ namespace MOON {
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Coincident,
 						listOfGeoIds[0].GeoId,
-						convertPointPos(listOfGeoIds[0].pointPos),
+						listOfGeoIds[0].pointPos,
 						listOfGeoIds[1].GeoId,
-						convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[1].pointPos,
 						listOfGeoIds[2].GeoId,
-						convertPointPos(listOfGeoIds[2].pointPos)
+						listOfGeoIds[2].pointPos
 					);
 				}
 
@@ -188,8 +187,8 @@ namespace MOON {
 				// two points on the same horizontal line
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Horizontal,
-					listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-					listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos)
+					listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+					listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos
 				);
 				Obj->solve();
 			}
@@ -215,8 +214,8 @@ namespace MOON {
 				// two points on the same vertical line
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Vertical,
-					listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-					listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos)
+					listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+					listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos
 				);
 				Obj->solve();
 			}
@@ -231,6 +230,12 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			if (listOfGeoIds.size() == 2) {
+				const Part::Geometry* g0 = Obj->getGeometry(listOfGeoIds[0].GeoId);
+				const Part::Geometry* g1 = Obj->getGeometry(listOfGeoIds[1].GeoId);
+				if (!g0 || !g1 || !g0->is<Part::GeomLineSegment>() || !g1->is<Part::GeomLineSegment>()) {
+					CORE_ERROR("Parallel is only supported on lines");
+					return;
+				}
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Parallel,
 					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
@@ -250,11 +255,14 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			if (listOfGeoIds.size() == 2) {
-				//we need to make a oritention
+				const bool hasPoint0 = listOfGeoIds[0].pointPos != SketcherObj::PointPos::none;
+				const bool hasPoint1 = listOfGeoIds[1].pointPos != SketcherObj::PointPos::none;
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Tangent,
-					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
-					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+					listOfGeoIds[0].GeoId,
+					hasPoint0 ? listOfGeoIds[0].pointPos : Sketcher::PointPos::none,
+					listOfGeoIds[1].GeoId,
+					hasPoint1 ? listOfGeoIds[1].pointPos : Sketcher::PointPos::none
 				);
 
 				Obj->solve();
@@ -270,22 +278,33 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			if (listOfGeoIds.size() == 2) {
-				//line and line
+				const bool hasPoint0 = listOfGeoIds[0].pointPos != SketcherObj::PointPos::none;
+				const bool hasPoint1 = listOfGeoIds[1].pointPos != SketcherObj::PointPos::none;
+				if (!hasPoint0 && !hasPoint1) {
+					const Part::Geometry* g0 = Obj->getGeometry(listOfGeoIds[0].GeoId);
+					const Part::Geometry* g1 = Obj->getGeometry(listOfGeoIds[1].GeoId);
+					if (!g0 || !g1 || !g0->is<Part::GeomLineSegment>() || !g1->is<Part::GeomLineSegment>()) {
+						CORE_ERROR("Perpendicular is only supported on lines");
+						return;
+					}
+				}
 				Obj->addConstraint(
 					Sketcher::ConstraintType::Perpendicular,
-					listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
-					listOfGeoIds[1].GeoId, Sketcher::PointPos::none
+					listOfGeoIds[0].GeoId,
+					hasPoint0 ? listOfGeoIds[0].pointPos : Sketcher::PointPos::none,
+					listOfGeoIds[1].GeoId,
+					hasPoint1 ? listOfGeoIds[1].pointPos : Sketcher::PointPos::none
 				);
 
 				Obj->solve();
 			}
 			else if (listOfGeoIds.size() == 3) {
-				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::None) {
+				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::none) {
 					//point and point and line
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Perpendicular,
-						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+						listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos,
 						listOfGeoIds[2].GeoId
 					);
 				}
@@ -295,9 +314,9 @@ namespace MOON {
 					//line and line
 					//Obj->addConstraint(
 					//	Sketcher::ConstraintType::Perpendicular,
-					//	listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-					//	listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
-					//	listOfGeoIds[2].GeoId, convertPointPos(listOfGeoIds[2].pointPos)
+					//	listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+					//	listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos,
+					//	listOfGeoIds[2].GeoId, listOfGeoIds[2].pointPos
 					//);
 				}
 
@@ -326,14 +345,13 @@ namespace MOON {
 					double distance = dialog.getParamValue("DistanceX");
 					CORE_INFO("distanceX is {}", distance);
 					if (selectNum == 1) {
-						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none) {
 							//horizontal length
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceX;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else
 						{
@@ -341,10 +359,9 @@ namespace MOON {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceX;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 					else if (selectNum == 2) {
@@ -352,12 +369,11 @@ namespace MOON {
 						auto newConstr = std::make_unique<Sketcher::Constraint>();
 						newConstr->Type = Sketcher::ConstraintType::DistanceX;
 						newConstr->First = listOfGeoIds[0].GeoId;
-						newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+						newConstr->FirstPos = listOfGeoIds[0].pointPos;
 						newConstr->Second = listOfGeoIds[1].GeoId;
-						newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+						newConstr->SecondPos = listOfGeoIds[1].pointPos;
 						newConstr->setValue(distance);
-						Obj->addConstraint(std::move(newConstr));
-						Obj->solve();
+						addOrSetDatumConstraint(Obj, std::move(newConstr));
 					}
 				}
 			}
@@ -384,14 +400,13 @@ namespace MOON {
 					double distance = dialog.getParamValue("DistanceY");
 					CORE_INFO("distanceY is {}", distance);
 					if (selectNum == 1) {
-						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none) {
 							//horizontal length
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceY;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else
 						{
@@ -399,10 +414,9 @@ namespace MOON {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceY;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 					else if (selectNum == 2) {
@@ -410,12 +424,11 @@ namespace MOON {
 						auto newConstr = std::make_unique<Sketcher::Constraint>();
 						newConstr->Type = Sketcher::ConstraintType::DistanceY;
 						newConstr->First = listOfGeoIds[0].GeoId;
-						newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+						newConstr->FirstPos = listOfGeoIds[0].pointPos;
 						newConstr->Second = listOfGeoIds[1].GeoId;
-						newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+						newConstr->SecondPos = listOfGeoIds[1].pointPos;
 						newConstr->setValue(distance);
-						Obj->addConstraint(std::move(newConstr));
-						Obj->solve();
+						addOrSetDatumConstraint(Obj, std::move(newConstr));
 					}
 				}
 			}
@@ -432,7 +445,7 @@ namespace MOON {
 
 			int selectNum = listOfGeoIds.size();
 			if (selectNum == 2) {
-				if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+				if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::none) {
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Equal,
 						listOfGeoIds[0].GeoId, Sketcher::PointPos::none,
@@ -454,11 +467,11 @@ namespace MOON {
 
 			int selectNum = listOfGeoIds.size();
 			if (selectNum == 3) {
-				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::None) {
+				if (listOfGeoIds[2].pointPos == SketcherObj::PointPos::none) {
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Symmetric,
-						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
+						listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+						listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos,
 						listOfGeoIds[2].GeoId
 					);
 					Obj->solve();
@@ -467,9 +480,9 @@ namespace MOON {
 				{
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Symmetric,
-						listOfGeoIds[0].GeoId, convertPointPos(listOfGeoIds[0].pointPos),
-						listOfGeoIds[1].GeoId, convertPointPos(listOfGeoIds[1].pointPos),
-						listOfGeoIds[2].GeoId, convertPointPos(listOfGeoIds[2].pointPos)
+						listOfGeoIds[0].GeoId, listOfGeoIds[0].pointPos,
+						listOfGeoIds[1].GeoId, listOfGeoIds[1].pointPos,
+						listOfGeoIds[2].GeoId, listOfGeoIds[2].pointPos
 					);
 					Obj->solve();
 				}
@@ -495,33 +508,31 @@ namespace MOON {
 					double distance = dialog.getParamValue("Dist");
 					CORE_INFO("distance is {}", distance);
 					if (selectNum == 1) {
-						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none) {
 							//line or arc length
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Distance;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 					else if (selectNum == 2) {
 						// point to line horizontal distance. it needs to make sure Orientation
-						if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::None&&
-							listOfGeoIds[1].pointPos == SketcherObj::PointPos::None
+						if (listOfGeoIds[0].pointPos != SketcherObj::PointPos::none&&
+							listOfGeoIds[1].pointPos == SketcherObj::PointPos::none
 							) {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Distance;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							newConstr->Second = listOfGeoIds[1].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else if 
-							(listOfGeoIds[0].pointPos == SketcherObj::PointPos::None &&
-							listOfGeoIds[1].pointPos == SketcherObj::PointPos::None
+							(listOfGeoIds[0].pointPos == SketcherObj::PointPos::none &&
+							listOfGeoIds[1].pointPos == SketcherObj::PointPos::none
 							) {
 							// circle to circle, circle to
 				            // arc, etc.
@@ -530,23 +541,21 @@ namespace MOON {
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->Second = listOfGeoIds[1].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else if
-							(listOfGeoIds[0].pointPos != SketcherObj::PointPos::None &&
-								listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
+							(listOfGeoIds[0].pointPos != SketcherObj::PointPos::none &&
+								listOfGeoIds[1].pointPos != SketcherObj::PointPos::none
 								) {
 							// point to point distance
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Distance;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							newConstr->Second = listOfGeoIds[1].GeoId;
-							newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							newConstr->SecondPos = listOfGeoIds[1].pointPos;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 				}
@@ -574,14 +583,13 @@ namespace MOON {
 					double distance = dialog.getParamValue("Radius");
 					CORE_INFO("Radius is {}", distance);
 					if (selectNum == 1) {
-						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none) {
 							//horizontal length
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Radius;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 				}
@@ -609,14 +617,13 @@ namespace MOON {
 					double distance = dialog.getParamValue("Diameter");
 					CORE_INFO("Diameter is {}", distance);
 					if (selectNum == 1) {
-						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None) {
+						if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none) {
 							//horizontal length
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Diameter;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 				}
@@ -632,7 +639,7 @@ namespace MOON {
 			SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 			for (int i = 0; i < listOfGeoIds.size(); i++) {
-				if (listOfGeoIds[i].pointPos == SketcherObj::None) {
+				if (listOfGeoIds[i].pointPos == SketcherObj::PointPos::none) {
 					Obj->addConstraint(
 						Sketcher::ConstraintType::Block,
 						listOfGeoIds[i].GeoId, Sketcher::PointPos::none
@@ -665,19 +672,19 @@ namespace MOON {
 					distance = distance * 3.14159265358979323846f / 180.0f;
 					if (selectNum == 3) {
 						if (
-							listOfGeoIds[0].pointPos != SketcherObj::PointPos::None
-							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
-							&& listOfGeoIds[2].pointPos != SketcherObj::PointPos::None
+							listOfGeoIds[0].pointPos != SketcherObj::PointPos::none
+							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::none
+							&& listOfGeoIds[2].pointPos != SketcherObj::PointPos::none
 							) {
 						    
 							//auto newConstr = std::make_unique<Sketcher::Constraint>();
 							//newConstr->Type = Sketcher::ConstraintType::Angle;
 							//newConstr->First = listOfGeoIds[0].GeoId;
-							//newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							//newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							//newConstr->Second = listOfGeoIds[1].GeoId;
-							//newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							//newConstr->SecondPos = listOfGeoIds[1].pointPos;
 							//newConstr->Third = listOfGeoIds[2].GeoId;
-							//newConstr->ThirdPos = convertPointPos(listOfGeoIds[2].pointPos);
+							//newConstr->ThirdPos = listOfGeoIds[2].pointPos;
 							//newConstr->setValue(distance);
 							//Obj->addConstraint(std::move(newConstr));
 							//Obj->solve();
@@ -686,41 +693,38 @@ namespace MOON {
 					else if (selectNum == 2) {
 						// line to line
 						if (
-							listOfGeoIds[0].pointPos != SketcherObj::PointPos::None
-							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::None
+							listOfGeoIds[0].pointPos != SketcherObj::PointPos::none
+							&& listOfGeoIds[1].pointPos != SketcherObj::PointPos::none
 							) {
 
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Angle;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->FirstPos = convertPointPos(listOfGeoIds[0].pointPos);
+							newConstr->FirstPos = listOfGeoIds[0].pointPos;
 							newConstr->Second = listOfGeoIds[1].GeoId;
-							newConstr->SecondPos = convertPointPos(listOfGeoIds[1].pointPos);
+							newConstr->SecondPos = listOfGeoIds[1].pointPos;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
-						else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::None
-							&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::None) {
+						else if (listOfGeoIds[0].pointPos == SketcherObj::PointPos::none
+							&& listOfGeoIds[1].pointPos == SketcherObj::PointPos::none) {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Angle;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->Second = listOfGeoIds[1].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 					else if (selectNum == 1) {
 						if (
-							listOfGeoIds[0].pointPos == SketcherObj::PointPos::None
+							listOfGeoIds[0].pointPos == SketcherObj::PointPos::none
 							) {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::Angle;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->setValue(distance);
-							Obj->addConstraint(std::move(newConstr));
-							Obj->solve();
+							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
 				}

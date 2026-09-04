@@ -8,7 +8,7 @@ namespace MOON {
     // 读取 STEP 模型并返回其形状
     namespace IO {
         void ReadSTEP(const char* filePath, Core::SceneSystem::Scene* scene) {
-            auto topoActor = new Feature("Feature", "Feature");
+            auto topoActor = new Feature3D("Feature", "Feature");
          
             Core::ECS::Components::CTopoShape* topoComp=topoActor->GetComponent<Core::ECS::Components::CTopoShape>();
             static MOON::System::JobSystem::Context ctx;

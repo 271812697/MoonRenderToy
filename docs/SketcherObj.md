@@ -76,7 +76,8 @@ makeDone() ───────► toShape() → doneFaceShape   // 输出拓�
 关键点：
 
 - 只有 `!isHaveActiveHandler && isInEdit` 时状态机才运转（避免和画线/画圆弧工具冲突）；
-- `OperationGeo` 状态下每次鼠标移动都会 `solve()`，是全量删除重建，代价较高；
+- `OperationGeo` 状态下拖动走 GCS DogLeg：`initMove` + `moveGeometries`，每次成功用
+  `extractGeometry()` 原位替换几何（圆/弧本体拖半径时圆心作为锚点）；
 - 框选（`DragRect`）判定：整条曲线的离散点都在框内才选中整条，否则只选中框内的关键点。
 
 ### 3.3 solve 流程（当前实现）
@@ -86,12 +87,13 @@ solvedSketch.resetInitMove()
   → setUpSketch(GeoList, mConstraintList)
   → retrieveSolverDiagnostics()          // 冲突 / 冗余 / 过约束标记
   → 若正常：solvedSketch.solve()
-  → 若成功：deleteGeometries(全部) → mGeoList.clear()
-            → extractGeometry() → addGeometry() 全量重建
+  → 若成功（err==0）：清段缓存 → mGeoList.clear()
+            → extractGeometry() 原位回填（mConstraintList 不参与重建）
+  → 返回 err（0 / -1..-5）
 ```
 
-⚠️ 注意：当前 `solve()` **恒返回 0**（内部算出的 `err` 未返回），且成功路径全量删除重建，
-约束与选择依赖“GeoId 顺序不变”的隐含假设。
+注意：约束与选择仍依赖“GeoId 顺序不变”的隐含假设；求解结果按原索引回填，
+因此顺序必须由 `Sketch::extractGeometry()` 保持。
 
 ---
 
@@ -108,9 +110,9 @@ solvedSketch.resetInitMove()
 | 几何 | isClosedCurve | ✅ 完整 | 圆/椭圆/周期样条 |
 | 拖动 | moveGeo：线/圆弧/圆/样条 | ✅ 完整 | |
 | 拖动 | moveGeo：GeomArcOfConic | ❌ 占位 | 分支为空，圆锥弧拖不动 |
-| 约束 | addConstraint（去重）/ 求解器对接 | ✅ 基本完整 | |
-| 约束 | 析构释放 mConstraintList | ❌ 缺失 | `~SketcherObj()` 为空 → 泄漏 |
-| 求解 | solve + 诊断（冲突/冗余/过约束） | ⚠️ 部分 | err 恒返回 0；全量重建 |
+| 约束 | addConstraint / findConstraint / setDatum / 删除几何联动清理 | ✅ 基本完整 | 尺寸约束编辑失败自动回滚 |
+| 约束 | 析构释放 mConstraintList | ✅ 完整 | 析构统一 delete |
+| 求解 | solve + 诊断（冲突/冗余/过约束） | ✅ 完整 | 返回 err（0 / -1..-5），成功原位回填几何 |
 | 选择 | 点选 / 框选 / 悬停 / 追加选择 / DELETE | ✅ 完整 | |
 | 选择 | End 状态 / hasClickSelected / getPickGeoIndex | ❌ 冗余 | 已定义未使用 |
 | 吸附 | 端点/圆心/原点/坐标轴/曲线上 | ✅ 基本 | 无中点/交点等 |
@@ -124,11 +126,11 @@ solvedSketch.resetInitMove()
 
 ### P0 —— 正确性与资源
 
-- [ ] `solve()` 返回真实错误码（过约束 -4 / 冲突 -3 / 冗余 -2 / 求解失败 -1 / 畸形 -5），
-      调用方（拖动、工具栏）能区分失败并给出提示；
-- [ ] `~SketcherObj()` 释放 `mConstraintList`（或改 `unique_ptr` 持有）；
-- [ ] 拖动的 `solve()` 副作用：拖动中可改用“求解后原位替换几何”或仅求解拖动的图元，避免
-      每帧全量删除重建（GeoId / 选择状态全依赖索引稳定，重建很脆弱）。
+- [x] `solve()` 返回真实错误码（过约束 -4 / 冲突 -3 / 冗余 -2 / 求解失败 -1 / 畸形 -5）；
+- [x] `~SketcherObj()` 释放 `mConstraintList`；
+- [x] 拖动改走 GCS DogLeg（`initMove`/`moveGeometries`），成功用 `extractGeometry()` 原位回填，
+      不再每帧全量删除重建。
+- [ ] 求解失败时把冲突/冗余约束反馈到 UI（当前只有字段与返回码）。
 
 ### P1 —— 功能补全（对照 FreeCAD）
 

@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "feature/Feature.h"
 namespace MOON {
-	class ChamferFeature : public Feature {
+	class ChamferFeature : public Feature3D {
 	public:
 		ChamferFeature(const std::string& p_name);
 		virtual ~ChamferFeature() override;

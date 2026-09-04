@@ -25,10 +25,37 @@
 #include <Precision.hxx>
 #include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
 #include "App/GizmoHelper.h"
+#include <algorithm>
 namespace MOON {
+
+    namespace
+    {
+        // A conservative upper bound for the initial fillet radius. An edge
+        // cannot be filleted with a radius that is larger than a quarter of
+        // its own length (otherwise the two ends of the fillet overlap), so
+        // the shortest selected edge limits the initial value.
+        float safeInitialFilletRadius(
+            const std::vector<Part::TopoShape>& edges,
+            double baseDiagonal
+        )
+        {
+            double radius = baseDiagonal * 0.03;
+            for (const auto& edge : edges) {
+                GProp_GProps props;
+                BRepGProp::LinearProperties(edge.getShape(), props);
+                const double len = props.Mass();
+                if (len > Precision::Confusion()) {
+                    radius = std::min(radius, len * 0.25);
+                }
+            }
+            return static_cast<float>(radius);
+        }
+    }
 
     class FilletTask::Internal {
     public:
@@ -52,7 +79,21 @@ namespace MOON {
                     Part::TopoShape baseShape=feature->getBaseTopoShape();
                     std::vector<Part::TopoShape> shapes = feature->getBaseTopoEdgeShapes();
                     feature->len = baseShape.getBoundBoxOptimal().CalcDiagonalLength() * 0.01;;
-                    feature->radius = baseShape.getBoundBoxOptimal().CalcDiagonalLength() * 0.03;
+                    feature->radius = safeInitialFilletRadius(
+                        shapes,
+                        baseShape.getBoundBoxOptimal().CalcDiagonalLength()
+                    );
+
+                    // Keep shrinking until the radius really produces a fillet.
+                    // execute() only touches the shape once it succeeds, so a
+                    // failed attempt leaves the previous (smaller) result.
+                    int shrinkGuards = 0;
+                    while (feature->radius > 0.001f && !feature->execute()) {
+                        feature->radius *= 0.5f;
+                        if (++shrinkGuards > 24) {
+                            break;
+                        }
+                    }
 
                     // Attach the arrow to the first edge
                     Part::TopoShape edge = shapes[0];
@@ -118,7 +159,7 @@ namespace MOON {
         mPreviewOption.useDomainColor = false;
         PropertyComponent* p=addGroupParam("Fillet");
         mInternal->radiusProp = new SliderFloatProperty("Radius", p);
-        mInternal->radiusProp->setMinMax(0.1,10);
+        mInternal->radiusProp->setMinMax(0.001f, 10.0f);
         addParam(mInternal->radiusProp);
         BoolProperty* intersection = new BoolProperty("Use ALL Edges", p);
         addParam(intersection);

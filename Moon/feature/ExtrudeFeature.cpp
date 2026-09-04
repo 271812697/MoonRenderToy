@@ -127,9 +127,7 @@ namespace MOON {
                     nullptr,
                     Part::TopoShape::SingleShapeCompoundCreationPolicy::returnShape
                 );
-
                 getPreviewShape() = prism;
-
                 Part::TopoShape resShape;
                 if (!baseShape.isNull()) {
                     if (addSubType == 0) {
