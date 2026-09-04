@@ -39,6 +39,37 @@ namespace MOON {
             dy = -22.0f;
         }
     }
+    static bool isCircleArcGeometry(const Part::Geometry* geo)
+    {
+        return geo && (geo->is<Part::GeomCircle>() || geo->is<Part::GeomArcOfCircle>());
+    }
+    static bool getCircleArcInfo(
+        const Part::Geometry* geo,
+        Base::Vector2d& center,
+        double& radius
+    )
+    {
+        if (!geo) {
+            return false;
+        }
+        if (geo->is<Part::GeomCircle>()) {
+            const auto* circle = static_cast<const Part::GeomCircle*>(geo);
+            const Base::Vector3d c = circle->getCenter();
+            center.x = c.x;
+            center.y = c.y;
+            radius = circle->getRadius();
+            return true;
+        }
+        if (geo->is<Part::GeomArcOfCircle>()) {
+            const auto* arc = static_cast<const Part::GeomArcOfCircle*>(geo);
+            const Base::Vector3d c = arc->getCenter();
+            center.x = c.x;
+            center.y = c.y;
+            radius = arc->getRadius();
+            return true;
+        }
+        return false;
+    }
     void SketcherObj::setPlane(const SketcherPlane2D& plane)
     {
         mPlane = plane;
@@ -295,10 +326,26 @@ namespace MOON {
         Eigen::Vector4<uint8_t> preselectColor(255, 0, 255, 255);
         Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
         float pointSize = 12;
-        for (auto& it : mGeoSegment) {
-            auto& sePoints = it.second.sepoints;
+        for (int geoIndex = 0; geoIndex < static_cast<int>(mGeoList.size()); ++geoIndex) {
+            auto& sePoints = mGeoSegment[mGeoList[geoIndex].get()].sepoints;
+            const bool isConstruction = mConstructionGeoIds.count(geoIndex) != 0;
             for (int i = 0;i < sePoints.size();i++) {
-                renderer->drawPoint(mPlane.valueEigen(sePoints[i].coord.x, sePoints[i].coord.y), pointSize + 1, pointColor);
+                if (isConstruction) {
+                    // Construction aids are visible, same size as normal
+                    // points, but drawn lighter so they are easy to tell apart.
+                    renderer->drawPoint(
+                        mPlane.valueEigen(sePoints[i].coord.x, sePoints[i].coord.y),
+                        pointSize + 1,
+                        Eigen::Vector4<uint8_t>(255, 0, 255, 0)
+                    );
+                }
+                else {
+                    renderer->drawPoint(
+                        mPlane.valueEigen(sePoints[i].coord.x, sePoints[i].coord.y),
+                        pointSize + 1,
+                        pointColor
+                    );
+                }
             }
         }
         for (int i = 0;i < mGeoList.size();i++) {
@@ -339,6 +386,7 @@ namespace MOON {
         }
         renderer->popSize();
         drawConstraintLabels();
+        drawTangentIcons();
     }
     // ------------------------------------------------------------------
 // Dimension label overlay (P0)
@@ -567,7 +615,21 @@ namespace MOON {
                 return getGeometryPointSketch(constraint->First, PointPos::start, a)
                     && getGeometryPointSketch(constraint->First, PointPos::end, b);
             }
-            return false;  // coordinate of one point: no shaft to slide on
+            // Coordinate constraint of a single point: DistanceX fixes the
+            // x-coordinate, so the shaft spans from the point to the Y axis;
+            // DistanceY fixes the y-coordinate and spans to the X axis.
+            if (!getGeometryPointSketch(constraint->First, constraint->FirstPos, a)) {
+                return false;
+            }
+            if (constraint->Type == Sketcher::ConstraintType::DistanceX) {
+                b.x = 0.0;
+                b.y = a.y;
+            }
+            else {
+                b.x = a.x;
+                b.y = 0.0;
+            }
+            return true;
         }
         case Sketcher::ConstraintType::Distance: {
             if (constraint->Second == Sketcher::GeoEnum::GeoUndef) {
@@ -1304,6 +1366,225 @@ namespace MOON {
         const int err = setDatum(constrId, datum);
         if (err != 0) {
             CORE_ERROR("Constraint datum change failed, solver error code {}", err);
+        }
+    }
+    bool SketcherObj::computeTangentIconAnchor(
+        const Sketcher::Constraint* constraint,
+        Base::Vector2d& anchorSketch,
+        Base::Vector2d& dirSketch,
+        Base::Vector2d& normalSketch
+    ) const
+    {
+        if (!constraint || constraint->Type != Sketcher::ConstraintType::Tangent) {
+            return false;
+        }
+        auto normalize2d = [](Base::Vector2d& v) {
+            const double len = std::sqrt(v.x * v.x + v.y * v.y);
+            if (len > 1.0e-9) {
+                v.x /= len;
+                v.y /= len;
+                return true;
+            }
+            return false;
+        };
+        // Tangent direction of a geometry at a sketch point.
+        auto tangentDirAt = [this, &normalize2d](int geoId, const Base::Vector2d& pt, Base::Vector2d& dir) {
+            const Part::Geometry* geo = getGeometry(geoId);
+            if (!geo) {
+                return false;
+            }
+            if (geo->is<Part::GeomLineSegment>()) {
+                Base::Vector2d s, e;
+                if (getGeometryPointSketch(geoId, PointPos::start, s)
+                    && getGeometryPointSketch(geoId, PointPos::end, e)) {
+                    dir = e - s;
+                    return normalize2d(dir);
+                }
+                return false;
+            }
+            Base::Vector2d center;
+            double radius = 0.0;
+            if (getCircleArcInfo(geo, center, radius)) {
+                Base::Vector2d radialN(pt.x - center.x, pt.y - center.y);
+                if (normalize2d(radialN)) {
+                    dir = Base::Vector2d(-radialN.y, radialN.x);
+                    return true;
+                }
+            }
+            return false;
+        };
+        // Constraint stored with explicit point elements: anchor there.
+        if (constraint->FirstPos != PointPos::none) {
+            if (getGeometryPointSketch(constraint->First, constraint->FirstPos, anchorSketch)
+                && tangentDirAt(constraint->First, anchorSketch, dirSketch)) {
+                Base::Vector2d center;
+                double radius = 0.0;
+                if (getCircleArcInfo(getGeometry(constraint->First), center, radius)
+                    || getCircleArcInfo(getGeometry(constraint->Second), center, radius)) {
+                    normalSketch = Base::Vector2d(
+                        anchorSketch.x - center.x,
+                        anchorSketch.y - center.y
+                    );
+                    if (normalize2d(normalSketch)) {
+                        return true;
+                    }
+                }
+                normalSketch = Base::Vector2d(-dirSketch.y, dirSketch.x);
+                return true;
+            }
+        }
+        if (constraint->SecondPos != PointPos::none) {
+            if (getGeometryPointSketch(constraint->Second, constraint->SecondPos, anchorSketch)
+                && tangentDirAt(constraint->Second, anchorSketch, dirSketch)) {
+                Base::Vector2d center;
+                double radius = 0.0;
+                if (getCircleArcInfo(getGeometry(constraint->First), center, radius)
+                    || getCircleArcInfo(getGeometry(constraint->Second), center, radius)) {
+                    normalSketch = Base::Vector2d(
+                        anchorSketch.x - center.x,
+                        anchorSketch.y - center.y
+                    );
+                    if (normalize2d(normalSketch)) {
+                        return true;
+                    }
+                }
+                normalSketch = Base::Vector2d(-dirSketch.y, dirSketch.x);
+                return true;
+            }
+        }
+
+        const Part::Geometry* g1 = getGeometry(constraint->First);
+        const Part::Geometry* g2 = getGeometry(constraint->Second);
+        if (!g1 || !g2) {
+            return false;
+        }
+
+        // line + circle/arc: the tangency point is on the circle, on the
+        // normal from the circle centre to the line.
+        const Part::Geometry* lineGeo = nullptr;
+        const Part::Geometry* circleGeo = nullptr;
+        if (g1->is<Part::GeomLineSegment>() && isCircleArcGeometry(g2)) {
+            lineGeo = g1;
+            circleGeo = g2;
+        }
+        else if (g2->is<Part::GeomLineSegment>() && isCircleArcGeometry(g1)) {
+            lineGeo = g2;
+            circleGeo = g1;
+        }
+        if (lineGeo && circleGeo) {
+            Base::Vector2d center;
+            double radius = 0.0;
+            if (getCircleArcInfo(circleGeo, center, radius)) {
+                Base::Vector2d l0, l1;
+                const bool firstIsLine = (g1 == lineGeo);
+                const int lineId = firstIsLine ? constraint->First : constraint->Second;
+                if (getGeometryPointSketch(lineId, PointPos::start, l0)
+                    && getGeometryPointSketch(lineId, PointPos::end, l1)) {
+                    Base::Vector2d u = l1 - l0;
+                    if (normalize2d(u)) {
+                        const double t = (center.x - l0.x) * u.x + (center.y - l0.y) * u.y;
+                        const Base::Vector2d foot(l0.x + t * u.x, l0.y + t * u.y);
+                        const Base::Vector2d radial(foot.x - center.x, foot.y - center.y);
+                        Base::Vector2d radialN = radial;
+                        if (normalize2d(radialN)) {
+                            anchorSketch = Base::Vector2d(
+                                center.x + radialN.x * radius,
+                                center.y + radialN.y * radius
+                            );
+                            dirSketch = Base::Vector2d(-radialN.y, radialN.x);
+                            normalSketch = radialN;
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // circle/arc + circle/arc: contact lies on the centre-to-centre line.
+        Base::Vector2d c1, c2;
+        double r1 = 0.0, r2 = 0.0;
+        if (isCircleArcGeometry(g1) && isCircleArcGeometry(g2)
+            && getCircleArcInfo(g1, c1, r1) && getCircleArcInfo(g2, c2, r2)) {
+            const Base::Vector2d d(c2.x - c1.x, c2.y - c1.y);
+            Base::Vector2d dn = d;
+            if (normalize2d(dn)) {
+                anchorSketch = Base::Vector2d(c1.x + dn.x * r1, c1.y + dn.y * r1);
+                dirSketch = Base::Vector2d(-dn.y, dn.x);
+                normalSketch = dn;
+                return true;
+            }
+        }
+        return false;
+    }
+    void SketcherObj::drawTangentIcons()
+    {
+        if (!InEdit()) {
+            return;
+        }
+        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+        if (!drawList) {
+            return;
+        }
+        for (int i = 0; i < static_cast<int>(mConstraintList.size()); ++i) {
+            const Sketcher::Constraint* c = mConstraintList[i];
+            if (!c || !c->isVisible || c->Type != Sketcher::ConstraintType::Tangent) {
+                continue;
+            }
+            Base::Vector2d anchorSketch;
+            Base::Vector2d dirSketch;
+            Base::Vector2d normalSketch;
+            if (!computeTangentIconAnchor(c, anchorSketch, dirSketch, normalSketch)) {
+                continue;
+            }
+            const bool isError = constraintInError(i);
+            const ImU32 col = isError ? IM_COL32(255, 110, 110, 255)
+                                      : IM_COL32(255, 255, 0, 255);
+            const auto screenOfSketch = [this](const Base::Vector2d& sk) {
+                const Base::Vector3d w = mPlane.origin + sk.x * mPlane.xAxis
+                    + sk.y * mPlane.yAxis;
+                return renderer->worldToScreen(
+                    Eigen::Vector3f(
+                        static_cast<float>(w.x),
+                        static_cast<float>(w.y),
+                        static_cast<float>(w.z)
+                    )
+                );
+            };
+            const Eigen::Vector2f aS = screenOfSketch(anchorSketch);
+            const Eigen::Vector2f dirS = screenOfSketch(
+                Base::Vector2d(anchorSketch.x + dirSketch.x, anchorSketch.y + dirSketch.y)
+            );
+            const Eigen::Vector2f nrmS = screenOfSketch(
+                Base::Vector2d(anchorSketch.x + normalSketch.x, anchorSketch.y + normalSketch.y)
+            );
+            float tx = dirS.x() - aS.x();
+            float ty = dirS.y() - aS.y();
+            float nx = nrmS.x() - aS.x();
+            float ny = nrmS.y() - aS.y();
+            const float tLen = std::sqrt(tx * tx + ty * ty);
+            const float nLen = std::sqrt(nx * nx + ny * ny);
+            if (tLen < 1.0e-3f || nLen < 1.0e-3f) {
+                continue;
+            }
+            tx /= tLen;
+            ty /= tLen;
+            nx /= nLen;
+            ny /= nLen;
+            // FreeCAD style tangent icon: a small circle placed slightly
+            // outside the tangency point with a tangent line touching its
+            // outer side.
+            const float circleR = 6.5f;
+            const float iconOffset = 12.0f;
+            const float lineHalf = 10.0f;
+            const float cx = aS.x() + nx * iconOffset;
+            const float cy = aS.y() + ny * iconOffset;
+            const float lx0 = cx + nx * circleR - tx * lineHalf;
+            const float ly0 = cy + ny * circleR - ty * lineHalf;
+            const float lx1 = cx + nx * circleR + tx * lineHalf;
+            const float ly1 = cy + ny * circleR + ty * lineHalf;
+            drawList->AddCircle(ImVec2(cx, cy), circleR, col, 0, 2.0f);
+            drawList->AddLine(ImVec2(lx0, ly0), ImVec2(lx1, ly1), col, 2.0f);
         }
     }
 }

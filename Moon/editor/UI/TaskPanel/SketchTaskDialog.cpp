@@ -1,5 +1,6 @@
 ﻿#include "SketchTaskDialog.h"
 #include "TaskBox.h"
+#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "feature/SketcherFeature.h"
@@ -13,6 +14,10 @@
 #include <QDoubleSpinBox>
 #include <QGroupBox>
 #include <gp_Pln.hxx>
+#include <QListWidget>
+#include <QStringList>
+#include <QTimer>
+#include <cstdio>
 namespace MOON {
 
     class SketchTaskDialog::Internal
@@ -73,7 +78,30 @@ namespace MOON {
     {
         PropertyComponent* sketchGroup = addGroupParam("Sketch");
         addParam(new BoolProperty("Draw Grid", sketchGroup));
+        addGroupParam("Constraints");
+        addGroupParam("Curves");
         buildUi();
+
+        mConstraintList = new QListWidget(this);
+        mCurveList = new QListWidget(this);
+        mConstraintList->setMinimumHeight(110);
+        mCurveList->setMinimumHeight(110);
+        auto attachList = [this](const QString& groupName, QListWidget* list) {
+            const auto it = groupToIndex.find(groupName);
+            if (it != groupToIndex.end()) {
+                auto* group = m_comps[it->second].first;
+                group->setCollapsed(false);
+                group->addSubWidget(list);
+            }
+        };
+        attachList("Constraints", mConstraintList);
+        attachList("Curves", mCurveList);
+
+        mRefreshTimer = new QTimer(this);
+        mRefreshTimer->setInterval(300);
+        connect(mRefreshTimer, &QTimer::timeout, this, [this]() { refreshLists(); });
+        mRefreshTimer->start();
+        refreshLists();
     }
 
     SketchTaskDialog::~SketchTaskDialog()
@@ -114,5 +142,81 @@ namespace MOON {
         if (mInternal->behaviour) {
             mInternal->feature->getSketcherObj()->setPlane(mInternal->behaviour->getSelectPlane());
         }
+    }
+    void SketchTaskDialog::refreshLists()
+    {
+        if (!mInternal || !mInternal->feature || !mConstraintList || !mCurveList) {
+            return;
+        }
+        SketcherObj* obj = mInternal->feature->getSketcherObj();
+        if (!obj) {
+            return;
+        }
+
+        QStringList constraintLines;
+        for (int i = 0; i < obj->getConstraintCount(); ++i) {
+            const Sketcher::Constraint* c = obj->getConstraint(i);
+            if (!c) {
+                continue;
+            }
+            QString line = QString("%1  %2").arg(i).arg(c->typeToString().c_str());
+            if (c->First != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  F%1/%2").arg(c->First).arg(static_cast<int>(c->FirstPos));
+            }
+            if (c->Second != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  S%1/%2").arg(c->Second).arg(static_cast<int>(c->SecondPos));
+            }
+            if (c->Third != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  T%1/%2").arg(c->Third).arg(static_cast<int>(c->ThirdPos));
+            }
+            if (c->isDimensional()) {
+                char buf[48] = { 0 };
+                std::snprintf(buf, sizeof(buf), " = %.2f", c->getValue());
+                line += buf;
+            }
+            constraintLines << line;
+        }
+
+        QStringList curveLines;
+        for (int i = 0; i <= obj->getHighestCurveIndex(); ++i) {
+            const Part::Geometry* g = obj->getGeometry(i);
+            if (!g) {
+                continue;
+            }
+            QString typeName;
+            if (g->is<Part::GeomLineSegment>()) {
+                typeName = "Line";
+            }
+            else if (g->is<Part::GeomArcOfCircle>()) {
+                typeName = "Arc";
+            }
+            else if (g->is<Part::GeomCircle>()) {
+                typeName = "Circle";
+            }
+            else if (g->is<Part::GeomEllipse>()) {
+                typeName = "Ellipse";
+            }
+            else if (g->is<Part::GeomBSplineCurve>()) {
+                typeName = "BSpline";
+            }
+            else if (g->is<Part::GeomPoint>()) {
+                typeName = "Point";
+            }
+            else {
+                typeName = "Curve";
+            }
+            curveLines << QString("%1  %2").arg(i).arg(typeName);
+        }
+
+        const QString cache = constraintLines.join(QStringLiteral("\n")) + QStringLiteral("|")
+            + curveLines.join(QStringLiteral("\n"));
+        if (cache == mListCache) {
+            return;
+        }
+        mListCache = cache;
+        mConstraintList->clear();
+        mConstraintList->addItems(constraintLines);
+        mCurveList->clear();
+        mCurveList->addItems(curveLines);
     }
 }

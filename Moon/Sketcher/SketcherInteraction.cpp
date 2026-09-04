@@ -54,6 +54,11 @@ namespace MOON {
                     dragIds.emplace_back(sel.GeoId, sel.pointPos);
                 }
                 if (!m_dragSolverInit) {
+                    // Rebuild the solver state from the current geometry list
+                    // before anchoring the drag. Curves committed after the
+                    // last solve would otherwise be missing from solvedSketch
+                    // and would disappear when the drag rebuilds the list.
+                    solve();
                     solvedSketch.resetInitMove();
                     m_dragSolverInit = solvedSketch.initMove(dragIds) == 0;
                 }
@@ -189,8 +194,22 @@ namespace MOON {
                 }
                 Base::Vector2d minPt(std::min(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y));
                 Base::Vector2d maxPt(std::max(onSketchPosP1.x, onSketchPosP2.x), std::max(onSketchPosP1.y, onSketchPosP2.y));
-                for (int i = 0;i < mGeoList.size();i++) {
-                    auto& seg = mGeoSegment[mGeoList[i].get()];
+                std::vector<Base::Vector2d> selectedPointCoords;
+                const auto alreadyPicked = [&selectedPointCoords](const Base::Vector3d& c) {
+                    for (const auto& p : selectedPointCoords) {
+                        const double dx = p.x - c.x;
+                        const double dy = p.y - c.y;
+                        if (dx * dx + dy * dy < 1.0e-8) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+			    for (int i = 0;i < mGeoList.size();i++) {
+                    if (mConstructionGeoIds.count(i)) {
+                        continue;  // construction aids are not user selectable
+                    }
+				    auto& seg = mGeoSegment[mGeoList[i].get()];
                     bool isInside = true;
                     for (int j = 0;j < seg.point.size();j++) {
                         bool flag = seg.point[j].x >= minPt.x && seg.point[j].x <= maxPt.x
@@ -208,8 +227,11 @@ namespace MOON {
                         for (int j = 0; j < seg.sepoints.size(); j++) {
                             bool flag = seg.sepoints[j].coord.x >= minPt.x && seg.sepoints[j].coord.x <= maxPt.x
                                 && seg.sepoints[j].coord.y >= minPt.y && seg.sepoints[j].coord.y <= maxPt.y;
-                            if (flag) {
+                            if (flag && !alreadyPicked(seg.sepoints[j].coord)) {
                                 addSelect({ i,seg.sepoints[j].pointPos });
+                                selectedPointCoords.push_back(
+                                    Base::Vector2d(seg.sepoints[j].coord.x, seg.sepoints[j].coord.y)
+                                );
                                 break;
                             }
                         }
@@ -420,6 +442,9 @@ namespace MOON {
         // travel all segments
         for (int i = 0; i < mGeoList.size(); i++) {
             if (!avoid.count(i)) {
+                if (mConstructionGeoIds.count(i)) {
+                    continue;  // construction aids are not snap targets
+                }
                 Part::Geometry* geo = mGeoList[i].get();
                 auto& segment = mGeoSegment[geo];
                 for (int j = 0;j < segment.sepoints.size();j++) {
@@ -454,6 +479,9 @@ namespace MOON {
             //snap to curve
             for (int i = 0; i < mGeoList.size(); i++) {
                 if (!avoid.count(i)) {
+                    if (mConstructionGeoIds.count(i)) {
+                        continue;
+                    }
                     Part::Geometry* geo = mGeoList[i].get();
                     auto& segment = mGeoSegment[geo];
                     if (geo->isDerivedFrom<Part::GeomCurve>()) {
@@ -499,6 +527,35 @@ namespace MOON {
                 deletePos[GeoIds[i]] = 1;
             }
         }
+        // Construction aids (e.g. rounded-rectangle corner points) that are no
+        // longer referenced by any surviving constraint become garbage after
+        // this deletion; remove them together with the selected geometry so
+        // they cannot be left behind as undeletable points.
+        std::vector<char> survivorReferenced(oldSize, 0);
+        auto referencesDeleted = [&](int geoId) {
+            return geoId >= 0 && geoId < oldSize && deletePos[geoId];
+        };
+        for (Sketcher::Constraint* c : mConstraintList) {
+            if (referencesDeleted(c->First) || referencesDeleted(c->Second)
+                || referencesDeleted(c->Third)) {
+                continue;  // this constraint dies with the selection
+            }
+            if (c->First >= 0 && c->First < oldSize) {
+                survivorReferenced[c->First] = 1;
+            }
+            if (c->Second >= 0 && c->Second < oldSize) {
+                survivorReferenced[c->Second] = 1;
+            }
+            if (c->Third >= 0 && c->Third < oldSize) {
+                survivorReferenced[c->Third] = 1;
+            }
+        }
+        for (int oldId : mConstructionGeoIds) {
+            if (oldId >= 0 && oldId < oldSize && !deletePos[oldId]
+                && !survivorReferenced[oldId]) {
+                deletePos[oldId] = 1;
+            }
+        }
         // Map every surviving old index to its new index after removal.
         std::vector<int> newIndex(oldSize, -1);
         int nextIndex = 0;
@@ -507,8 +564,17 @@ namespace MOON {
                 newIndex[i] = nextIndex++;
             }
         }
+        // Keep construction markers attached to their (surviving) geometry
+        // after the index remap.
+        std::set<int> remappedConstruction;
+        for (int oldId : mConstructionGeoIds) {
+            if (oldId >= 0 && oldId < oldSize && !deletePos[oldId]) {
+                remappedConstruction.insert(newIndex[oldId]);
+            }
+        }
+        mConstructionGeoIds.swap(remappedConstruction);
 
-        auto it = mGeoList.begin();
+		auto it = mGeoList.begin();
         int index = 0;
         while (it != mGeoList.end()) {
             if (deletePos[index] == 1) {
@@ -797,5 +863,14 @@ namespace MOON {
         double y = (hitPos - mPlane.origin).Dot(mPlane.yAxis);
         onSketchPos = Base::Vector2d(int(x * 100) / 100.0, int(y * 100) / 100.0);
         return onSketchPos;
+    }
+    void SketcherObj::setConstruction(int geoId, bool construction)
+    {
+        if (construction) {
+            mConstructionGeoIds.insert(geoId);
+        }
+        else {
+            mConstructionGeoIds.erase(geoId);
+        }
     }
 }

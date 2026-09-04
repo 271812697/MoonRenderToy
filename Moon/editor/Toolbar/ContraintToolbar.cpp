@@ -13,7 +13,162 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QFormLayout>
+#include <cmath>
 namespace MOON {
+	// ---- helpers: derive constraint dialog defaults from the current sketch
+	static double dist2d(const Base::Vector2d& a, const Base::Vector2d& b)
+	{
+		const double dx = a.x - b.x;
+		const double dy = a.y - b.y;
+		return std::sqrt(dx * dx + dy * dy);
+	}
+	static bool lineEnds2d(SketcherObj* obj, int geoId, Base::Vector2d& s, Base::Vector2d& e)
+	{
+		const Part::Geometry* g = obj->getGeometry(geoId);
+		if (!g || !g->is<Part::GeomLineSegment>()) {
+			return false;
+		}
+		const auto* line = static_cast<const Part::GeomLineSegment*>(g);
+		const Base::Vector3d p1 = line->getStartPoint();
+		const Base::Vector3d p2 = line->getEndPoint();
+		s = Base::Vector2d(p1.x, p1.y);
+		e = Base::Vector2d(p2.x, p2.y);
+		return true;
+	}
+	// Returns the signed coordinate difference currently enforced by the
+	// solver for the X/Y distance tools (order follows the selection order).
+	static double signedAxisCurrent(
+		SketcherObj* obj,
+		const std::vector<SketcherObj::SelectGeoId>& sel,
+		bool horizontal
+	)
+	{
+		Base::Vector2d a, b;
+		if (sel.size() == 2) {
+			auto getAny = [&](const SketcherObj::SelectGeoId& item, Base::Vector2d& out) {
+				if (item.pointPos != SketcherObj::PointPos::none) {
+					return obj->getGeometryPoint(item.GeoId, item.pointPos, out);
+				}
+				Base::Vector2d unused;
+				return lineEnds2d(obj, item.GeoId, out, unused);
+			};
+			if (getAny(sel[0], a) && getAny(sel[1], b)) {
+				return horizontal ? a.x - b.x : a.y - b.y;
+			}
+		}
+		else if (sel.size() == 1) {
+			if (sel[0].pointPos == SketcherObj::PointPos::none) {
+				if (lineEnds2d(obj, sel[0].GeoId, a, b)) {
+					return horizontal ? a.x - b.x : a.y - b.y;
+				}
+			}
+			else if (obj->getGeometryPoint(sel[0].GeoId, sel[0].pointPos, a)) {
+				return horizontal ? a.x : a.y;
+			}
+		}
+		return 0.0;
+	}
+	static double lengthCurrent(SketcherObj* obj, const std::vector<SketcherObj::SelectGeoId>& sel)
+	{
+		if (sel.size() == 1 && sel[0].pointPos == SketcherObj::PointPos::none) {
+			const Part::Geometry* g = obj->getGeometry(sel[0].GeoId);
+			if (!g) {
+				return 0.0;
+			}
+			if (g->is<Part::GeomLineSegment>()) {
+				const auto* line = static_cast<const Part::GeomLineSegment*>(g);
+				return dist2d(
+					Base::Vector2d(line->getStartPoint().x, line->getStartPoint().y),
+					Base::Vector2d(line->getEndPoint().x, line->getEndPoint().y)
+				);
+			}
+			if (g->is<Part::GeomArcOfCircle>()) {
+				const auto* arc = static_cast<const Part::GeomArcOfCircle*>(g);
+				double u = 0.0, v = 0.0;
+				arc->getRange(u, v, true);
+				return std::fabs(v - u) * arc->getRadius();
+			}
+		}
+		if (sel.size() == 2) {
+			Base::Vector2d p1, p2;
+			const bool p1ok = sel[0].pointPos != SketcherObj::PointPos::none
+				&& obj->getGeometryPoint(sel[0].GeoId, sel[0].pointPos, p1);
+			const bool p2ok = sel[1].pointPos != SketcherObj::PointPos::none
+				&& obj->getGeometryPoint(sel[1].GeoId, sel[1].pointPos, p2);
+			if (p1ok && p2ok) {
+				return dist2d(p1, p2);
+			}
+			if (p1ok && sel[1].pointPos == SketcherObj::PointPos::none) {
+				const Part::Geometry* g2 = obj->getGeometry(sel[1].GeoId);
+				if (g2 && g2->is<Part::GeomLineSegment>()) {
+					Base::Vector2d s, e;
+					if (lineEnds2d(obj, sel[1].GeoId, s, e)) {
+						Base::Vector2d ab(e.x - s.x, e.y - s.y);
+						const double len2 = ab.x * ab.x + ab.y * ab.y;
+						if (len2 > 1.0e-12) {
+							const double t = ((p1.x - s.x) * ab.x + (p1.y - s.y) * ab.y) / len2;
+							const Base::Vector2d foot(
+								s.x + t * ab.x,
+								s.y + t * ab.y
+							);
+							return dist2d(p1, foot);
+						}
+					}
+				}
+			}
+			// circle/arc to circle/arc: distance between centres
+			auto centerOf = [&](const SketcherObj::SelectGeoId& item, Base::Vector2d& out) {
+				if (item.pointPos == SketcherObj::PointPos::none) {
+					return obj->getGeometryPoint(item.GeoId, SketcherObj::PointPos::mid, out);
+				}
+				return obj->getGeometryPoint(item.GeoId, item.pointPos, out);
+			};
+			if (centerOf(sel[0], p1) && centerOf(sel[1], p2)) {
+				return dist2d(p1, p2);
+			}
+		}
+		return 0.0;
+	}
+	static double radiusCurrent(SketcherObj* obj, const SketcherObj::SelectGeoId& sel)
+	{
+		const Part::Geometry* g = obj->getGeometry(sel.GeoId);
+		if (!g) {
+			return 0.0;
+		}
+		if (g->is<Part::GeomCircle>()) {
+			return static_cast<const Part::GeomCircle*>(g)->getRadius();
+		}
+		if (g->is<Part::GeomArcOfCircle>()) {
+			return static_cast<const Part::GeomArcOfCircle*>(g)->getRadius();
+		}
+		return 0.0;
+	}
+	static double angleCurrentDeg(SketcherObj* obj, const std::vector<SketcherObj::SelectGeoId>& sel)
+	{
+		const double pi = 3.14159265358979323846;
+		if (sel.size() == 1 && sel[0].pointPos == SketcherObj::PointPos::none) {
+			Base::Vector2d s, e;
+			if (lineEnds2d(obj, sel[0].GeoId, s, e)) {
+				double deg = std::atan2(e.y - s.y, e.x - s.x) * 180.0 / pi;
+				if (deg < 0.0) {
+					deg += 360.0;
+				}
+				return deg;
+			}
+		}
+		if (sel.size() == 2) {
+			Base::Vector2d a1, a2, b1, b2;
+			if (lineEnds2d(obj, sel[0].GeoId, a1, a2)
+				&& lineEnds2d(obj, sel[1].GeoId, b1, b2)) {
+				const double cross = (a2.x - a1.x) * (b2.y - b1.y)
+					- (a2.y - a1.y) * (b2.x - b1.x);
+				const double dot = (a2.x - a1.x) * (b2.x - b1.x)
+					+ (a2.y - a1.y) * (b2.y - b1.y);
+				return std::fabs(std::atan2(cross, dot) * 180.0 / pi);
+			}
+		}
+		return 90.0;
+	}
 	class ParamDialog : public QDialog
 	{
 		
@@ -88,13 +243,42 @@ namespace MOON {
 	// dialog value as an edit (setDatum) instead of stacking a duplicate.
 	void addOrSetDatumConstraint(SketcherObj* Obj, std::unique_ptr<Sketcher::Constraint> constraint)
 	{
+		const auto logConstraint = [](const char* action, const Sketcher::Constraint* c) {
+			CORE_INFO(
+				"{} constraint type={} first={}/{} second={}/{} third={}/{} value={}",
+				action,
+				c ? c->typeToString() : "null",
+				c ? c->First : -2000,
+				c ? static_cast<int>(c->FirstPos) : 0,
+				c ? c->Second : -2000,
+				c ? static_cast<int>(c->SecondPos) : 0,
+				c ? c->Third : -2000,
+				c ? static_cast<int>(c->ThirdPos) : 0,
+				c ? c->getValue() : 0.0
+			);
+		};
 		const int existing = Obj->findConstraint(constraint.get());
 		if (existing >= 0) {
-			Obj->setDatum(existing, constraint->getValue());
+			logConstraint("update", constraint.get());
+			const int err = Obj->setDatum(existing, constraint->getValue());
+			if (err != 0) {
+				CORE_WARN("update constraint datum failed, solver error {}", err);
+			}
+			else {
+				CORE_INFO("updated existing constraint id {} to {}", existing, constraint->getValue());
+			}
 		}
 		else {
-			Obj->addConstraint(std::move(constraint));
-			Obj->solve();
+			logConstraint("add", constraint.get());
+			const int id = Obj->addConstraint(std::move(constraint));
+			CORE_INFO("added constraint id {}", id);
+			const int err = Obj->solve();
+			if (err != 0) {
+				CORE_WARN("add constraint failed, solver error {}", err);
+			}
+			else {
+				CORE_INFO("solve ok after add constraint id {}", id);
+			}
 		}
 	}
 	class  ConstraintCommand : public Command
@@ -334,10 +518,40 @@ namespace MOON {
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
 			int selectNum = listOfGeoIds.size();
+			CORE_INFO("DistanceX execute: {} selected", selectNum);
+			for (int k = 0; k < selectNum; ++k) {
+				CORE_INFO(
+					"  sel[{}] geo={} pos={}",
+					k,
+					listOfGeoIds[k].GeoId,
+					static_cast<int>(listOfGeoIds[k].pointPos)
+				);
+			}
+			// Ignore accidental edge/construction selections picked up by a
+			// rubber-band: a point-to-point X distance only needs two points.
+			if (selectNum > 2) {
+				std::vector<SketcherObj::SelectGeoId> pointSel;
+				for (const auto& sel : listOfGeoIds) {
+					if (sel.pointPos != SketcherObj::PointPos::none) {
+						pointSel.push_back(sel);
+					}
+				}
+			if (pointSel.size() <= 2) {
+					listOfGeoIds = pointSel;
+					selectNum = static_cast<int>(pointSel.size());
+				}
+			}
+			const double axisCur = signedAxisCurrent(Obj, listOfGeoIds, true);
+			const double axisSign = axisCur < 0.0 ? -1.0 : 1.0;
+			// GCS stores the difference as second - first, so the datum sign
+			// must follow (second-first), otherwise the points would swap.
+			const double diffSign = axisCur < 0.0 ? 1.0 : -1.0;
 			if (selectNum>0) {
 				ParamDialog dialog("DX");
 
-				dialog.addParamDef(ParamDialog::ParamDef("DistanceX", 0, 100, 5));
+				dialog.addParamDef(
+					ParamDialog::ParamDef("DistanceX", -200, 200, std::fabs(axisCur))
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)
@@ -350,7 +564,7 @@ namespace MOON {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceX;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->setValue(distance);
+							newConstr->setValue(diffSign * distance);
 							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else
@@ -360,7 +574,7 @@ namespace MOON {
 							newConstr->Type = Sketcher::ConstraintType::DistanceX;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->FirstPos = listOfGeoIds[0].pointPos;
-							newConstr->setValue(distance);
+							newConstr->setValue(axisSign * distance);
 							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
@@ -372,7 +586,7 @@ namespace MOON {
 						newConstr->FirstPos = listOfGeoIds[0].pointPos;
 						newConstr->Second = listOfGeoIds[1].GeoId;
 						newConstr->SecondPos = listOfGeoIds[1].pointPos;
-						newConstr->setValue(distance);
+						newConstr->setValue(diffSign * distance);
 						addOrSetDatumConstraint(Obj, std::move(newConstr));
 					}
 				}
@@ -389,10 +603,37 @@ namespace MOON {
 			std::vector<SketcherObj::SelectGeoId> listOfGeoIds = Obj->getSelectGeoPosIds();
 
 			int selectNum = listOfGeoIds.size();
+			CORE_INFO("DistanceY execute: {} selected", selectNum);
+			for (int k = 0; k < selectNum; ++k) {
+				CORE_INFO(
+					"  sel[{}] geo={} pos={}",
+					k,
+					listOfGeoIds[k].GeoId,
+					static_cast<int>(listOfGeoIds[k].pointPos)
+				);
+			}
+			if (selectNum > 2) {
+				std::vector<SketcherObj::SelectGeoId> pointSel;
+				for (const auto& sel : listOfGeoIds) {
+					if (sel.pointPos != SketcherObj::PointPos::none) {
+						pointSel.push_back(sel);
+					}
+				}
+				if (pointSel.size() <= 2) {
+					listOfGeoIds = pointSel;
+					selectNum = static_cast<int>(pointSel.size());
+				}
+			}
+			const double axisCur = signedAxisCurrent(Obj, listOfGeoIds, false);
+			const double axisSign = axisCur < 0.0 ? -1.0 : 1.0;
+			// GCS stores the difference as second - first.
+			const double diffSign = axisCur < 0.0 ? 1.0 : -1.0;
 			if (selectNum > 0) {
 				ParamDialog dialog("DY");
 
-				dialog.addParamDef(ParamDialog::ParamDef("DistanceY", 0, 100, 5));
+				dialog.addParamDef(
+					ParamDialog::ParamDef("DistanceY", -200, 200, std::fabs(axisCur))
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)
@@ -405,7 +646,7 @@ namespace MOON {
 							auto newConstr = std::make_unique<Sketcher::Constraint>();
 							newConstr->Type = Sketcher::ConstraintType::DistanceY;
 							newConstr->First = listOfGeoIds[0].GeoId;
-							newConstr->setValue(distance);
+							newConstr->setValue(diffSign * distance);
 							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 						else
@@ -415,7 +656,7 @@ namespace MOON {
 							newConstr->Type = Sketcher::ConstraintType::DistanceY;
 							newConstr->First = listOfGeoIds[0].GeoId;
 							newConstr->FirstPos = listOfGeoIds[0].pointPos;
-							newConstr->setValue(distance);
+							newConstr->setValue(axisSign * distance);
 							addOrSetDatumConstraint(Obj, std::move(newConstr));
 						}
 					}
@@ -427,7 +668,7 @@ namespace MOON {
 						newConstr->FirstPos = listOfGeoIds[0].pointPos;
 						newConstr->Second = listOfGeoIds[1].GeoId;
 						newConstr->SecondPos = listOfGeoIds[1].pointPos;
-						newConstr->setValue(distance);
+						newConstr->setValue(diffSign * distance);
 						addOrSetDatumConstraint(Obj, std::move(newConstr));
 					}
 				}
@@ -500,7 +741,11 @@ namespace MOON {
 			int selectNum = listOfGeoIds.size();
 			if (selectNum > 0) {
 				ParamDialog dialog("Distance");
-				dialog.addParamDef(ParamDialog::ParamDef("Dist", 0, 1000, 5));
+				dialog.addParamDef(
+					ParamDialog::ParamDef(
+						"Dist", 0, 1000, lengthCurrent(Obj, listOfGeoIds)
+					)
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)
@@ -575,7 +820,11 @@ namespace MOON {
 			if (selectNum > 0) {
 				ParamDialog dialog("Radius");
 
-				dialog.addParamDef(ParamDialog::ParamDef("Radius", 0, 1000, 5));
+				dialog.addParamDef(
+					ParamDialog::ParamDef(
+						"Radius", 0, 1000, radiusCurrent(Obj, listOfGeoIds[0])
+					)
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)
@@ -609,7 +858,11 @@ namespace MOON {
 			if (selectNum > 0) {
 				ParamDialog dialog("Diameter");
 
-				dialog.addParamDef(ParamDialog::ParamDef("Diameter", 0, 1000, 5));
+				dialog.addParamDef(
+					ParamDialog::ParamDef(
+						"Diameter", 0, 1000, 2.0 * radiusCurrent(Obj, listOfGeoIds[0])
+					)
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)
@@ -661,7 +914,11 @@ namespace MOON {
 			int selectNum = listOfGeoIds.size();
 			if (selectNum > 0) {
 				ParamDialog dialog("Angle");
-				dialog.addParamDef(ParamDialog::ParamDef("Angle", 0, 360, 90));
+				dialog.addParamDef(
+					ParamDialog::ParamDef(
+						"Angle", 0, 360, angleCurrentDeg(Obj, listOfGeoIds)
+					)
+				);
 				dialog.setUp();
 				int ret = dialog.exec();
 				if (ret == QDialog::Accepted)

@@ -390,6 +390,20 @@ namespace MOON {
                 addRoundedRectangleAutoConstraints();
             }
             Obj->solve();
+            // Corner/centre anchor points are only construction aids for the
+            // auto constraints; keep them in the solver but hide their dots.
+            if (constructionPointOneId >= 0) {
+                Obj->setConstruction(constructionPointOneId, true);
+            }
+            if (constructionPointTwoId >= 0) {
+                Obj->setConstruction(constructionPointTwoId, true);
+            }
+            if (constructionPointThreeId >= 0) {
+                Obj->setConstruction(constructionPointThreeId, true);
+            }
+            if (centerPointId >= 0) {
+                Obj->setConstruction(centerPointId, true);
+            }
         }
 
         thickness = 0.;

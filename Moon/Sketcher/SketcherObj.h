@@ -2,6 +2,7 @@
 #include<memory>
 #include <unordered_map>
 #include <chrono>
+#include <set>
 #include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
@@ -39,6 +40,10 @@ namespace MOON {
 		void beginEdit();
 		void setDrawGrid(bool v) { m_drawGrid = v; }
 		bool isDrawGrid() const { return m_drawGrid; }
+		// Marks geometry that is only used internally to build a shape (e.g.
+		// rounded-rectangle corner points). Such geometry stays in the solver
+		// but its point markers are hidden in the viewport.
+		void setConstruction(int geoId, bool construction);
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
@@ -54,6 +59,10 @@ namespace MOON {
 		void addGeometry(const std::vector<Part::Geometry*>& curveList);
 		Part::Geometry* getGeometry(int GeoId);
 		const Part::Geometry* getGeometry(int GeoId) const;
+		bool getGeometryPoint(int GeoId, PointPos pos, Base::Vector2d& out) const
+		{
+			return getGeometryPointSketch(GeoId, pos, out);
+		}
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		SelectGeoId testSelect(const Base::Vector2d& pos);
@@ -151,6 +160,9 @@ namespace MOON {
 		) const;
 		int pickConstraintLabelAt(float mouseX, float mouseY) const;
 		void editConstraintValue(int constrId);
+		// Small geometric marker for tangent constraints: a tangent line
+		// segment through the computed tangency point.
+		void drawTangentIcons();
 	private:
 		void retrieveSolverDiagnostics();
 		int lastDoF;
@@ -201,6 +213,12 @@ namespace MOON {
 			float& startDeg,
 			float& sweepDeg
 		) const;
+		bool computeTangentIconAnchor(
+			const Sketcher::Constraint* constraint,
+			Base::Vector2d& anchorSketch,
+			Base::Vector2d& dirSketch,
+			Base::Vector2d& normalSketch
+		) const;
 		Base::Vector2d constraintLabelAnchor(const Sketcher::Constraint* constraint) const;
 		std::string constraintLabelText(const Sketcher::Constraint* constraint) const;
 		bool constraintInError(int constrId) const;
@@ -214,6 +232,7 @@ namespace MOON {
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		bool m_drawGrid = true;
+		std::set<int> mConstructionGeoIds;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
