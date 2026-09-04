@@ -2050,7 +2050,7 @@ namespace MOON {
             return false;
         }
         Base::Vector3d center;
-        if (geo->is<Part::GeomConic>()) {
+        if (geo->isDerivedFrom<Part::GeomConic>()) {
             center = static_cast<const Part::GeomConic*>(geo)->getCenter();
         }
         else if (geo->is<Part::GeomArcOfConic>()) {
