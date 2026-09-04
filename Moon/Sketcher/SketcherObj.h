@@ -260,8 +260,11 @@ namespace MOON {
 		};
 		struct CurveSegment
 		{
+			//point discret of curver
 			std::vector<Base::Vector3d> point;
+			//the param value of point 
 			std::vector<double> params;
+			//the start、center、end position of the curve
 			std::vector<SegPoint>sepoints;
 			CurveSegment() {}
 		};

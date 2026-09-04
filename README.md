@@ -194,3 +194,8 @@ Build\bin\Release\Moon.exe
 
 ![交互 Widget 架构图](README.assets/image-20260819112630072.png)
 *交互 Widget 体系架构*
+
+需要补充：
+
+1. 约束求解后，如何更新原来的几何的细节
+2. 原来的几何和GCS对象，以及映射成参数的

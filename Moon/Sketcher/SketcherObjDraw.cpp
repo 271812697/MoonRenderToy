@@ -47,7 +47,6 @@ namespace MOON {
     }
     void SketcherObj::fitCamera()
     {
-
         auto& view = GetService(Editor::Panels::SceneView);
         view.GetCameraController().EnableRotate(false);
         view.GetCamera()->SetSize(100);
@@ -284,6 +283,7 @@ namespace MOON {
             drawBackground();
         }
         renderer->pushSize(3);
+       
         if (selectState == DragRect && sketchDrawRect && !isHaveActiveHandler) {
             Eigen::Vector3f p1 = mPlane.valueEigen(Base::Vector2d(std::min(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y)));
             Eigen::Vector3f p2 = mPlane.valueEigen(Base::Vector2d(std::max(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y)));
