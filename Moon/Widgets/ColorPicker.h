@@ -1,11 +1,9 @@
 ﻿#pragma once
 #include "Widgets/PropertyQtWidgets.h"
 #include <QColor>
-#include <QColorDialog> 
-class QLabel;
 class QLineEdit;
-class QPushButton;
-class QHBoxLayout;
+class QColorDialog;
+class QToolButton;
 namespace MOON {
 
     class ColorPicker : public PropertyQtWidget
@@ -31,10 +29,10 @@ namespace MOON {
         // 更新UI显示（颜色预览和文本框）
         void updateUI(const QColor& color);
 
-        QLabel* m_colorPreview;    // 颜色预览标签
-        QLineEdit* m_colorEdit;    // 颜色值输入框
-        QPushButton* m_pickButton; // 选择颜色按钮
-        QColor m_selectedColor;    // 当前选中的颜色
+        QToolButton* m_colorButton = nullptr;  // Inviwo style colour swatch
+        QLineEdit* m_colorEdit = nullptr;      // hexadecimal value editor
+        QColorDialog* m_colorDialog = nullptr; // non-modal, live update dialog
+        QColor m_selectedColor;                // 当前选中的颜色
     };
 
 

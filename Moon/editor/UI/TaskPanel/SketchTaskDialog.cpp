@@ -17,8 +17,75 @@
 #include <QListWidget>
 #include <QStringList>
 #include <QTimer>
+#include <QIcon>
 #include <cstdio>
 namespace MOON {
+	static QString constraintIconPath(Sketcher::ConstraintType type)
+	{
+		const QString prefix = ":/widgets/icons/constraint/";
+		switch (type) {
+		case Sketcher::ConstraintType::Coincident:
+			return prefix + "Constraint_Coincident.svg";
+		case Sketcher::ConstraintType::Horizontal:
+			return prefix + "Constraint_Horizontal.svg";
+		case Sketcher::ConstraintType::Vertical:
+			return prefix + "Constraint_Vertical.svg";
+		case Sketcher::ConstraintType::Parallel:
+			return prefix + "Constraint_Parallel.svg";
+		case Sketcher::ConstraintType::Tangent:
+			return prefix + "Constraint_Tangent.svg";
+		case Sketcher::ConstraintType::Distance:
+			return prefix + "Constraint_Length.svg";
+		case Sketcher::ConstraintType::DistanceX:
+			return prefix + "Constraint_DistanceX.svg";
+		case Sketcher::ConstraintType::DistanceY:
+			return prefix + "Constraint_VerticalDistance.svg";
+		case Sketcher::ConstraintType::Angle:
+			return prefix + "Constraint_InternalAngle.svg";
+		case Sketcher::ConstraintType::Perpendicular:
+			return prefix + "Constraint_Perpendicular.svg";
+		case Sketcher::ConstraintType::Radius:
+			return prefix + "Constraint_Radius.svg";
+		case Sketcher::ConstraintType::Equal:
+			return prefix + "Constraint_EqualLength.svg";
+		case Sketcher::ConstraintType::PointOnObject:
+			return prefix + "Constraint_PointOnObject.svg";
+		case Sketcher::ConstraintType::Symmetric:
+			return prefix + "Constraint_Symmetric.svg";
+		case Sketcher::ConstraintType::Diameter:
+			return prefix + "Constraint_Diameter.svg";
+		case Sketcher::ConstraintType::Block:
+			return prefix + "Constraint_Block.svg";
+		default:
+			return QString();
+		}
+	}
+	static QString curveIconPath(const Part::Geometry* g)
+	{
+		if (!g) {
+			return QString();
+		}
+		const QString prefix = ":/widgets/icons/";
+		if (g->is<Part::GeomLineSegment>()) {
+			return prefix + "Sketcher_CreateLine.svg";
+		}
+		if (g->is<Part::GeomArcOfCircle>()) {
+			return prefix + "Sketcher_CreateArc.svg";
+		}
+		if (g->is<Part::GeomCircle>()) {
+			return prefix + "Sketcher_CreateCircle.svg";
+		}
+		if (g->is<Part::GeomEllipse>() || g->is<Part::GeomArcOfEllipse>()) {
+			return prefix + "Sketcher_CreateEllipseByCenter.svg";
+		}
+		if (g->is<Part::GeomBSplineCurve>()) {
+			return prefix + "Sketcher_CreateBSpline.svg";
+		}
+		if (g->is<Part::GeomPoint>()) {
+			return prefix + "Sketcher_CreatePoint.svg";
+		}
+		return QString();
+	}
 
     class SketchTaskDialog::Internal
     {
@@ -77,7 +144,20 @@ namespace MOON {
         : ParamTaskDialog(parent),mInternal(new Internal(this)),ShapeHelper(feature)
     {
         PropertyComponent* sketchGroup = addGroupParam("Sketch");
-        addParam(new BoolProperty("Draw Grid", sketchGroup));
+        addParam(
+            new BoolProperty(
+                "Draw Grid",
+                sketchGroup,
+                BoolProperty::Style::InviwoRect
+            )
+        );
+        addParam(
+            new BoolProperty(
+                "Snap To Grid",
+                sketchGroup,
+                BoolProperty::Style::InviwoRect
+            )
+        );
         addGroupParam("Constraints");
         addGroupParam("Curves");
         buildUi();
@@ -114,6 +194,9 @@ namespace MOON {
         if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
             return QVariant::fromValue(mInternal->feature->getSketcherObj()->isDrawGrid());
         }
+        if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
+            return QVariant::fromValue(mInternal->feature->getSketcherObj()->isSnapToGrid());
+        }
         return QVariant();
     }
 
@@ -121,6 +204,9 @@ namespace MOON {
     {
         if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
             mInternal->feature->getSketcherObj()->setDrawGrid(value.value<bool>());
+        }
+        if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
+            mInternal->feature->getSketcherObj()->setSnapToGrid(value.value<bool>());
         }
     }
 
@@ -154,11 +240,13 @@ namespace MOON {
         }
 
         QStringList constraintLines;
+        QStringList constraintIconPaths;
         for (int i = 0; i < obj->getConstraintCount(); ++i) {
             const Sketcher::Constraint* c = obj->getConstraint(i);
             if (!c) {
                 continue;
             }
+            constraintIconPaths << constraintIconPath(c->Type);
             QString line = QString("%1  %2").arg(i).arg(c->typeToString().c_str());
             if (c->First != Sketcher::GeoEnum::GeoUndef) {
                 line += QString("  F%1/%2").arg(c->First).arg(static_cast<int>(c->FirstPos));
@@ -178,11 +266,13 @@ namespace MOON {
         }
 
         QStringList curveLines;
+        QStringList curveIconPaths;
         for (int i = 0; i <= obj->getHighestCurveIndex(); ++i) {
             const Part::Geometry* g = obj->getGeometry(i);
             if (!g) {
                 continue;
             }
+            curveIconPaths << curveIconPath(g);
             QString typeName;
             if (g->is<Part::GeomLineSegment>()) {
                 typeName = "Line";
@@ -215,8 +305,22 @@ namespace MOON {
         }
         mListCache = cache;
         mConstraintList->clear();
-        mConstraintList->addItems(constraintLines);
+        for (int i = 0; i < constraintLines.size(); ++i) {
+            auto* item = new QListWidgetItem(
+                constraintIconPaths[i].isEmpty()
+                    ? QIcon()
+                    : QIcon(constraintIconPaths[i]),
+                constraintLines[i]
+            );
+            mConstraintList->addItem(item);
+        }
         mCurveList->clear();
-        mCurveList->addItems(curveLines);
+        for (int i = 0; i < curveLines.size(); ++i) {
+            auto* item = new QListWidgetItem(
+                curveIconPaths[i].isEmpty() ? QIcon() : QIcon(curveIconPaths[i]),
+                curveLines[i]
+            );
+            mCurveList->addItem(item);
+        }
     }
 }

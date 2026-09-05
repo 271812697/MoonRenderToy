@@ -308,6 +308,73 @@ namespace MOON {
         renderer->drawPoint(mPlane.valueEigen(0, 0));
         renderer->popColor();
     }
+    bool SketcherObj::snapToGridPoint(Base::Vector2d& pos) const
+    {
+        if (!m_snapToGrid || !m_drawGrid || !m_sceneView) {
+            return false;
+        }
+        // Reuse the same adaptive step as drawBackground(): minor grid lines
+        // are about 40 px apart, snapped to a nice 1/2/5 x 10^n value.
+        const auto* camera = m_sceneView->GetCamera();
+        if (!camera) {
+            return false;
+        }
+        const auto& proj = camera->GetProjectionMatrix();
+        const float proj11 = proj(1, 1);
+        const auto& fd = m_sceneView->GetRenderer().GetFrameDescriptor();
+        const float screenH = static_cast<float>(fd.renderHeight);
+        if (proj11 <= 0.0f || screenH <= 0.0f
+            || camera->GetProjectionMode() != ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC) {
+            return false;
+        }
+        const float halfH = 1.0f / proj11;
+        const float targetStep = 40.0f * (2.0f * halfH) / screenH;
+        if (targetStep <= 1.0e-6f) {
+            return false;
+        }
+        const float mag = std::pow(
+            10.0f,
+            std::floor(std::log10(std::max(targetStep, 1.0e-6f)))
+        );
+        float step = mag;
+        if (step < targetStep) {
+            step = 2.0f * mag;
+        }
+        if (step < targetStep) {
+            step = 5.0f * mag;
+        }
+        if (step < targetStep) {
+            step = 10.0f * mag;
+        }
+        const double gx = std::round(pos.x / step) * step;
+        const double gy = std::round(pos.y / step) * step;
+        const auto worldOf = [this](const Base::Vector2d& sk) {
+            return mPlane.origin + sk.x * mPlane.xAxis + sk.y * mPlane.yAxis;
+        };
+        const auto screenOf = [this, &worldOf](const Base::Vector2d& sk) {
+            const Base::Vector3d w = worldOf(sk);
+            return renderer->worldToScreen(
+                Eigen::Vector3f(
+                    static_cast<float>(w.x),
+                    static_cast<float>(w.y),
+                    static_cast<float>(w.z)
+                )
+            );
+        };
+        const Eigen::Vector2f cursorS = screenOf(pos);
+        const Eigen::Vector2f gridS = screenOf(Base::Vector2d(gx, gy));
+        const float screenDx = cursorS.x() - gridS.x();
+        const float screenDy = cursorS.y() - gridS.y();
+        // Screen-space distance threshold, independent of the grid step.
+        constexpr float kSnapPixels = 10.0f;
+        if (screenDx * screenDx + screenDy * screenDy
+            <= kSnapPixels * kSnapPixels) {
+            pos.x = gx;
+            pos.y = gy;
+            return true;
+        }
+        return false;
+    }
 
     void SketcherObj::draw() {
         if (InEdit()) {

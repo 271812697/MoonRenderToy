@@ -9,7 +9,7 @@
 #include "UI/SettingPanel/SettingPanel.h"
 #include "UI/PropertyPanel/PropertyPanel.h"
 #include "MulViewPanel.h"
-#include "UI/ReousrcePanel/resourcePanel.h"
+//#include "UI/ReousrcePanel/resourcePanel.h"
 #include "UI/LogPanel/LogPanel.h"
 #include "UI/TaskPanel/TaskViewPanel.h"
 #include "editor/Toolbar/sketchToolbar.h"
@@ -68,8 +68,8 @@ namespace MOON {
 			self->addDockWidget(Qt::RightDockWidgetArea,propertyPanel);
 			self->addDockWidget(Qt::RightDockWidgetArea, taskViewPanel);
 
-			auto resourcePanelDock = new ResPanel(self);
-			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);
+			/*auto resourcePanelDock = new ResPanel(self);
+			self->addDockWidget(Qt::RightDockWidgetArea, resourcePanelDock);*/
 			auto logPanelDock = new LogPanel(self);
 			self->addDockWidget(Qt::BottomDockWidgetArea, logPanelDock);
 			//auto debugWidget = new DebugWidget(self);

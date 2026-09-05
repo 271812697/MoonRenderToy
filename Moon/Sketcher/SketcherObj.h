@@ -40,6 +40,8 @@ namespace MOON {
 		void beginEdit();
 		void setDrawGrid(bool v) { m_drawGrid = v; }
 		bool isDrawGrid() const { return m_drawGrid; }
+		void setSnapToGrid(bool v) { m_snapToGrid = v; }
+		bool isSnapToGrid() const { return m_snapToGrid; }
 		// Marks geometry that is only used internally to build a shape (e.g.
 		// rounded-rectangle corner points). Such geometry stays in the solver
 		// but its point markers are hidden in the viewport.
@@ -48,6 +50,7 @@ namespace MOON {
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
 		void draw();
+		bool snapToGridPoint(Base::Vector2d& pos) const;
 		// Sketch backdrop (adaptive background grid, infinite X/Y axes, origin
 		// marker). Kept separate from the geometry pass so background visuals
 		// can be tuned/disabled without touching curve rendering.
@@ -232,6 +235,7 @@ namespace MOON {
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		bool m_drawGrid = true;
+		bool m_snapToGrid = false;
 		std::set<int> mConstructionGeoIds;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;

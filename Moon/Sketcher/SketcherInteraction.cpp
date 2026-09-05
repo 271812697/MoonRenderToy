@@ -504,6 +504,10 @@ namespace MOON {
                 }
             }
         }
+        if (!ret) {
+            // Lowest priority: snap onto the background grid intersection.
+            ret = snapToGridPoint(pos);
+        }
         return ret;
     }
     void SketcherObj::deleteGeometry(int GeoId)
