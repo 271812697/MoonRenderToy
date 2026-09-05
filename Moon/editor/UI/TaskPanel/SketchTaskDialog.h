@@ -3,6 +3,7 @@
 #include "editor/UI/TaskPanel/ShapeHelper.h"
 class QListWidget;
 class QTimer;
+class QEvent;
 namespace MOON {
 	class SketchTaskDialog : public ParamTaskDialog, public ShapeHelper
 	{
@@ -17,11 +18,14 @@ namespace MOON {
 		virtual void clickCancel() override;
 		void onSelectPlane();
 		void refreshLists();
+		void syncCurveListSelection();
+		bool eventFilter(QObject* watched, QEvent* event) override;
 	private:
 		QListWidget* mConstraintList = nullptr;
 		QListWidget* mCurveList = nullptr;
 		QTimer* mRefreshTimer = nullptr;
 		QString mListCache;
+		QWidget* mCurveHoverRow = nullptr;
 		class Internal;
 		Internal* mInternal = nullptr;
 	};

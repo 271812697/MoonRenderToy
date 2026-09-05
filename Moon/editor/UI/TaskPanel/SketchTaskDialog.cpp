@@ -21,9 +21,11 @@
 #include <QToolButton>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QEvent>
 #include <cstdio>
 #include <vector>
 #include <functional>
+#include <set>
 namespace MOON {
 	static QString constraintIconPath(Sketcher::ConstraintType type)
 	{
@@ -186,6 +188,26 @@ namespace MOON {
         mRefreshTimer->setInterval(300);
         connect(mRefreshTimer, &QTimer::timeout, this, [this]() { refreshLists(); });
         mRefreshTimer->start();
+        mCurveList->setMouseTracking(true);
+        mCurveList->viewport()->setMouseTracking(true);
+        mCurveList->setStyleSheet(
+            "QListWidget { background: transparent; border: none; outline: 0; }"
+            "QListWidget::item { height: 20px; padding-left: 2px; }"
+            "QListWidget::item:hover { background-color: #cfe2f5; color: #202020; }"
+            "QListWidget::item:selected { background-color: #7ab2e8; color: white; }"
+        );
+        connect(mCurveList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
+            if (mInternal && mInternal->feature) {
+                const int geoId = item->data(Qt::UserRole).toInt();
+                mInternal->feature->getSketcherObj()->selectGeo(geoId);
+            }
+        });
+        connect(mCurveList, &QListWidget::itemEntered, this, [this](QListWidgetItem* item) {
+            if (mInternal && mInternal->feature) {
+                const int geoId = item->data(Qt::UserRole).toInt();
+                mInternal->feature->getSketcherObj()->setPreselect(geoId);
+            }
+        });
         refreshLists();
     }
 
@@ -309,7 +331,8 @@ namespace MOON {
 
         const QString cache = constraintLines.join(QStringLiteral("\n")) + QStringLiteral("|")
             + curveLines.join(QStringLiteral("\n"));
-        if (cache == mListCache) {
+        if (cache == mListCache && mCurveList->count() == curveLines.size()) {
+            syncCurveListSelection();
             return;
         }
         mListCache = cache;
@@ -320,9 +343,11 @@ namespace MOON {
             const QIcon& typeIcon,
             const QString& text,
             bool visible,
+            int userData,
             const std::function<void(bool)>& onToggled
         ) {
             auto* item = new QListWidgetItem();
+            item->setData(Qt::UserRole, userData);
             auto* row = new QWidget(list);
             auto* rowLayout = new QHBoxLayout(row);
             rowLayout->setContentsMargins(2, 2, 2, 2);
@@ -340,14 +365,30 @@ namespace MOON {
             QLabel* typeLabel = nullptr;
             if (!typeIcon.isNull()) {
                 typeLabel = new QLabel(row);
+                typeLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
                 typeLabel->setPixmap(typeIcon.pixmap(24, 24));
             }
             auto* label = new QLabel(text, row);
+            label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
             rowLayout->addWidget(eye);
             if (typeLabel) {
                 rowLayout->addWidget(typeLabel);
             }
             rowLayout->addWidget(label, 1);
+            if (list == mCurveList) {
+                const QVariant rowRef = QVariant::fromValue<QWidget*>(row);
+                const auto installHoverFilter = [this, &rowRef](QWidget* w) {
+                    w->setProperty("_curveRowWidget", rowRef);
+                    w->installEventFilter(this);
+                };
+                row->setProperty("_curveRowId", userData);
+                installHoverFilter(row);
+                installHoverFilter(eye);
+                if (typeLabel) {
+                    installHoverFilter(typeLabel);
+                }
+                installHoverFilter(label);
+            }
             connect(eye, &QToolButton::toggled, this, [=](bool on) {
                 eye->setIcon(on ? eyeOpen : eyeClosed);
                 onToggled(on);
@@ -365,6 +406,7 @@ namespace MOON {
                 constraintIconPaths[i].isEmpty() ? QIcon() : QIcon(constraintIconPaths[i]),
                 constraintLines[i],
                 constraintVisible[i],
+                i,
                 [obj, i](bool on) { obj->setConstraintVisible(i, on); }
             );
         }
@@ -375,8 +417,62 @@ namespace MOON {
                 curveIconPaths[i].isEmpty() ? QIcon() : QIcon(curveIconPaths[i]),
                 curveLines[i],
                 curveVisible[i],
+                i,
                 [obj, i](bool on) { obj->setGeometryVisible(i, on); }
             );
         }
+        syncCurveListSelection();
+    }
+    void SketchTaskDialog::syncCurveListSelection()
+    {
+        if (!mInternal || !mInternal->feature || !mCurveList) {
+            return;
+        }
+        SketcherObj* obj = mInternal->feature->getSketcherObj();
+        if (!obj) {
+            return;
+        }
+        std::set<int> selected;
+        for (int geoId : obj->getSelectIds()) {
+            selected.insert(geoId);
+        }
+        for (int row = 0; row < mCurveList->count(); ++row) {
+            QListWidgetItem* item = mCurveList->item(row);
+            if (!item) {
+                continue;
+            }
+            const int geoId = item->data(Qt::UserRole).toInt();
+            item->setSelected(selected.count(geoId) != 0);
+        }
+    }
+    bool SketchTaskDialog::eventFilter(QObject* watched, QEvent* event)
+    {
+        if (!watched || (event->type() != QEvent::Enter && event->type() != QEvent::Leave)) {
+            return QWidget::eventFilter(watched, event);
+        }
+        auto* widget = qobject_cast<QWidget*>(watched);
+        if (!widget) {
+            return QWidget::eventFilter(watched, event);
+        }
+        auto* row = widget->property("_curveRowWidget").value<QWidget*>();
+        if (!row) {
+            return QWidget::eventFilter(watched, event);
+        }
+        const int geoId = row->property("_curveRowId").toInt();
+        if (event->type() == QEvent::Enter) {
+            if (mCurveHoverRow && mCurveHoverRow != row) {
+                mCurveHoverRow->setStyleSheet(QString());
+            }
+            mCurveHoverRow = row;
+            row->setStyleSheet("background-color: #cfe2f5;");
+            if (mInternal && mInternal->feature) {
+                mInternal->feature->getSketcherObj()->setPreselect(geoId);
+            }
+        }
+        else if (mCurveHoverRow == row) {
+            row->setStyleSheet(QString());
+            mCurveHoverRow = nullptr;
+        }
+        return QWidget::eventFilter(watched, event);
     }
 }

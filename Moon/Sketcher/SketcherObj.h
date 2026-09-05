@@ -48,6 +48,8 @@ namespace MOON {
 		void setConstruction(int geoId, bool construction);
 		void setConstraintVisible(int constrId, bool visible);
 		void setGeometryVisible(int geoId, bool visible);
+		void selectGeo(int geoId);
+		void setPreselect(int geoId);
 		bool isGeometryVisible(int geoId) const
 		{
 			return mHiddenGeoIds.count(geoId) == 0;

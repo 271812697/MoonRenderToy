@@ -923,4 +923,15 @@ namespace MOON {
             mHiddenGeoIds.insert(geoId);
         }
     }
+    void SketcherObj::selectGeo(int geoId)
+    {
+        clearSelect();
+        if (geoId >= 0 && geoId < static_cast<int>(mGeoList.size())) {
+            addSelect({ geoId, PointPos::none });
+        }
+    }
+    void SketcherObj::setPreselect(int geoId)
+    {
+        preSelectGeoId = { geoId, PointPos::none };
+    }
 }
