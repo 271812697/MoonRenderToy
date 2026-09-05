@@ -206,6 +206,9 @@ namespace MOON {
                     return false;
                 };
 			    for (int i = 0;i < mGeoList.size();i++) {
+                    if (mHiddenGeoIds.count(i)) {
+                        continue;  // hidden geometry is not selectable
+                    }
                     if (mConstructionGeoIds.count(i)) {
                         continue;  // construction aids are not user selectable
                     }
@@ -310,6 +313,9 @@ namespace MOON {
         double minDist = 10000.0;
         // 遍历所有几何图元
         for (int i = 0; i < mGeoList.size(); i++) {
+            if (mHiddenGeoIds.count(i)) {
+                continue;  // hidden geometry is not pickable
+            }
             Part::Geometry* geo = mGeoList[i].get();
             if (geo->isDerivedFrom<Part::GeomCurve>()) {
                 auto& segment = mGeoSegment[geo];
@@ -350,6 +356,9 @@ namespace MOON {
 
         // travel all segments
         for (int i = 0; i < mGeoList.size(); i++) {
+            if (mHiddenGeoIds.count(i)) {
+                continue;
+            }
             Part::Geometry* geo = mGeoList[i].get();
             auto& segment = mGeoSegment[geo];
             for (int j = 0; j < segment.sepoints.size(); j++) {
@@ -363,6 +372,9 @@ namespace MOON {
         }
         if (ret.GeoId == -1) {
             for (int i = 0; i < mGeoList.size(); i++) {
+                if (mHiddenGeoIds.count(i)) {
+                    continue;
+                }
                 Part::Geometry* geo = mGeoList[i].get();
                 auto& segment = mGeoSegment[geo];
                 if (geo->isDerivedFrom<Part::GeomCurve>()) {
@@ -445,6 +457,9 @@ namespace MOON {
                 if (mConstructionGeoIds.count(i)) {
                     continue;  // construction aids are not snap targets
                 }
+                if (mHiddenGeoIds.count(i)) {
+                    continue;  // hidden geometry is not a snap target
+                }
                 Part::Geometry* geo = mGeoList[i].get();
                 auto& segment = mGeoSegment[geo];
                 for (int j = 0;j < segment.sepoints.size();j++) {
@@ -480,6 +495,9 @@ namespace MOON {
             for (int i = 0; i < mGeoList.size(); i++) {
                 if (!avoid.count(i)) {
                     if (mConstructionGeoIds.count(i)) {
+                        continue;
+                    }
+                    if (mHiddenGeoIds.count(i)) {
                         continue;
                     }
                     Part::Geometry* geo = mGeoList[i].get();
@@ -568,6 +586,13 @@ namespace MOON {
                 newIndex[i] = nextIndex++;
             }
         }
+        std::set<int> remappedHidden;
+        for (int oldId : mHiddenGeoIds) {
+            if (oldId >= 0 && oldId < oldSize && !deletePos[oldId]) {
+                remappedHidden.insert(newIndex[oldId]);
+            }
+        }
+        mHiddenGeoIds.swap(remappedHidden);
         // Keep construction markers attached to their (surviving) geometry
         // after the index remap.
         std::set<int> remappedConstruction;
@@ -838,6 +863,12 @@ namespace MOON {
                         Part::GeomBSplineCurve* curve = static_cast<Part::GeomBSplineCurve*>(geo);
                         geo->translate(delta);
                     }
+                    else if (geo->is<Part::GeomPoint>()) {
+                        Part::GeomPoint* point = static_cast<Part::GeomPoint*>(geo);
+                        if (isStart || isCenter || isNone) {
+                            point->setPoint(mousePos);
+                        }
+                    }
                 }
             }
             updateGeoSegment(geoId);
@@ -875,6 +906,21 @@ namespace MOON {
         }
         else {
             mConstructionGeoIds.erase(geoId);
+        }
+    }
+    void SketcherObj::setConstraintVisible(int constrId, bool visible)
+    {
+        if (constrId >= 0 && constrId < static_cast<int>(mConstraintList.size())) {
+            mConstraintList[constrId]->isVisible = visible;
+        }
+    }
+    void SketcherObj::setGeometryVisible(int geoId, bool visible)
+    {
+        if (visible) {
+            mHiddenGeoIds.erase(geoId);
+        }
+        else {
+            mHiddenGeoIds.insert(geoId);
         }
     }
 }

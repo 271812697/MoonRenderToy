@@ -46,6 +46,12 @@ namespace MOON {
 		// rounded-rectangle corner points). Such geometry stays in the solver
 		// but its point markers are hidden in the viewport.
 		void setConstruction(int geoId, bool construction);
+		void setConstraintVisible(int constrId, bool visible);
+		void setGeometryVisible(int geoId, bool visible);
+		bool isGeometryVisible(int geoId) const
+		{
+			return mHiddenGeoIds.count(geoId) == 0;
+		}
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
@@ -166,6 +172,10 @@ namespace MOON {
 		// Small geometric marker for tangent constraints: a tangent line
 		// segment through the computed tangency point.
 		void drawTangentIcons();
+		// Small viewport markers for the remaining geometric constraints
+		// (coincident/horizontal/vertical/parallel/...), placed near the
+		// geometry they act on.
+		void drawConstraintIcons();
 	private:
 		void retrieveSolverDiagnostics();
 		int lastDoF;
@@ -237,6 +247,7 @@ namespace MOON {
 		bool m_drawGrid = true;
 		bool m_snapToGrid = false;
 		std::set<int> mConstructionGeoIds;
+		std::set<int> mHiddenGeoIds;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;

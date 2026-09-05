@@ -131,7 +131,7 @@ namespace MOON {
         }
         else if (geo->is<Part::GeomPoint>()) {
             Base::Vector3d pos = static_cast<Part::GeomPoint*>(geo)->getPoint();
-            seg.sepoints.push_back({ pos ,PointPos::mid });
+            seg.sepoints.push_back({ pos, PointPos::start });
         }
         return seg;
     }
@@ -394,6 +394,9 @@ namespace MOON {
         Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
         float pointSize = 12;
         for (int geoIndex = 0; geoIndex < static_cast<int>(mGeoList.size()); ++geoIndex) {
+            if (mHiddenGeoIds.count(geoIndex)) {
+                continue;  // visibility toggled off from the sketch panel
+            }
             auto& sePoints = mGeoSegment[mGeoList[geoIndex].get()].sepoints;
             const bool isConstruction = mConstructionGeoIds.count(geoIndex) != 0;
             for (int i = 0;i < sePoints.size();i++) {
@@ -416,6 +419,9 @@ namespace MOON {
             }
         }
         for (int i = 0;i < mGeoList.size();i++) {
+            if (mHiddenGeoIds.count(i)) {
+                continue;
+            }
             bool isSelect = false;
             for (int j = 0;j < selectIds.size();j++) {
                 if (selectIds[j].GeoId == i) {
@@ -454,6 +460,7 @@ namespace MOON {
         renderer->popSize();
         drawConstraintLabels();
         drawTangentIcons();
+        drawConstraintIcons();
     }
     // ------------------------------------------------------------------
 // Dimension label overlay (P0)
@@ -1652,6 +1659,254 @@ namespace MOON {
             const float ly1 = cy + ny * circleR + ty * lineHalf;
             drawList->AddCircle(ImVec2(cx, cy), circleR, col, 0, 2.0f);
             drawList->AddLine(ImVec2(lx0, ly0), ImVec2(lx1, ly1), col, 2.0f);
+        }
+    }
+    void SketcherObj::drawConstraintIcons()
+    {
+        if (!InEdit()) {
+            return;
+        }
+        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+        if (!drawList) {
+            return;
+        }
+        const auto anchorOf = [this](const Sketcher::Constraint* c, int idx, Base::Vector2d& out) {
+            const int geoId = idx == 0 ? c->First : (idx == 1 ? c->Second : c->Third);
+            const Sketcher::PointPos pos =
+                idx == 0 ? c->FirstPos : (idx == 1 ? c->SecondPos : c->ThirdPos);
+            if (geoId == Sketcher::GeoEnum::GeoUndef) {
+                return false;
+            }
+            if (pos != Sketcher::PointPos::none) {
+                return getGeometryPointSketch(geoId, pos, out);
+            }
+            return getGeometryCenterSketch(geoId, out);
+        };
+        const auto screenOf = [this](const Base::Vector2d& sk) {
+            return renderer->worldToScreen(mPlane.valueEigen(sk));
+        };
+
+        for (int i = 0; i < static_cast<int>(mConstraintList.size()); ++i) {
+            const Sketcher::Constraint* c = mConstraintList[i];
+            if (!c || !c->isVisible || c->isDimensional()) {
+                continue;
+            }
+            const bool isError = constraintInError(i);
+            const ImU32 col = isError ? IM_COL32(255, 110, 110, 255)
+                                      : IM_COL32(255, 255, 0, 255);
+
+            switch (c->Type) {
+            case Sketcher::ConstraintType::Tangent:
+                continue;  // handled by drawTangentIcons()
+            case Sketcher::ConstraintType::Coincident: {
+                Base::Vector2d a, b;
+                if (anchorOf(c, 0, a)) {
+                    Base::Vector2d p = a;
+                    if (anchorOf(c, 1, b)) {
+                        p = (a + b) * 0.5;
+                    }
+                    const Eigen::Vector2f s = screenOf(p);
+                    // Offset the glyph away from the coincident point, then
+                    // draw a circle with two dots inside.
+                    const ImVec2 centre(s.x() + 16.0f, s.y() + 16.0f);
+                    drawList->AddCircle(centre, 10.0f, col, 0, 1.8f);
+                    drawList->AddCircleFilled(ImVec2(centre.x - 3.0f, centre.y), 2.5f, col);
+                    drawList->AddCircleFilled(ImVec2(centre.x + 3.0f, centre.y), 2.5f, col);
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::PointOnObject: {
+                Base::Vector2d a;
+                if (anchorOf(c, 0, a)) {
+                    const Eigen::Vector2f s = screenOf(a);
+                    // Screen Y grows downwards, so north-west = up-left:
+                    // (-,-). Offset the arc centre away from the point so it
+                    // does not cover it, then sweep 180..270 degrees.
+                    const ImVec2 centre(s.x() - 5.0f, s.y() - 5.0f);
+                    const float radius = 20.0f;
+                    constexpr float kPi = 3.14159265358979f;
+                    const int seg = 8;
+                    ImVec2 arc[seg + 1];
+                    for (int k = 0; k <= seg; ++k) {
+                        const float deg = 180.0f + 90.0f * static_cast<float>(k) / seg;
+                        const float a0 = deg * kPi / 180.0f;
+                        arc[k] = ImVec2(
+                            centre.x + radius * std::cos(a0),
+                            centre.y + radius * std::sin(a0)
+                        );
+                    }
+                    drawList->AddPolyline(arc, seg + 1, col, 0, 1.8f);
+                    const float midDeg = 225.0f * kPi / 180.0f;
+                    drawList->AddCircleFilled(
+                        ImVec2(centre.x + radius * std::cos(midDeg),
+                               centre.y + radius * std::sin(midDeg)),
+                        3.0f,
+                        col
+                    );
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Horizontal:
+            case Sketcher::ConstraintType::Vertical: {
+                Base::Vector2d p, a, b;
+                const bool gotA = anchorOf(c, 0, a);
+                const bool gotB = anchorOf(c, 1, b);
+                if (gotA && gotB) {
+                    p = (a + b) * 0.5;
+                }
+                else if (gotA) {
+                    p = a;
+                }
+                else {
+                    break;
+                }
+                const Eigen::Vector2f s = screenOf(p);
+                const float gap = 14.0f;
+                const float halfLen = 10.0f;
+                if (c->Type == Sketcher::ConstraintType::Horizontal) {
+                    drawList->AddLine(
+                        ImVec2(s.x() - halfLen, s.y() - gap),
+                        ImVec2(s.x() + halfLen, s.y() - gap),
+                        col,
+                        1.8f
+                    );
+                }
+                else {
+                    drawList->AddLine(
+                        ImVec2(s.x() + gap, s.y() - halfLen),
+                        ImVec2(s.x() + gap, s.y() + halfLen),
+                        col,
+                        1.8f
+                    );
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Equal: {
+                Base::Vector2d a, b;
+                char indexText[16];
+                std::snprintf(indexText, sizeof(indexText), "%d", i + 1);
+                const auto drawEqualAt = [&](const Base::Vector2d& p) {
+                    const Eigen::Vector2f s = screenOf(p);
+                    drawList->AddLine(
+                        ImVec2(s.x() - 9.0f, s.y() - 3.0f),
+                        ImVec2(s.x() + 9.0f, s.y() - 3.0f),
+                        col,
+                        1.5f
+                    );
+                    drawList->AddLine(
+                        ImVec2(s.x() - 9.0f, s.y() + 3.0f),
+                        ImVec2(s.x() + 9.0f, s.y() + 3.0f),
+                        col,
+                        1.5f
+                    );
+                    drawList->AddText(
+                        ImVec2(s.x() + 11.0f, s.y() - 8.0f),
+                        col,
+                        indexText
+                    );
+                };
+                if (anchorOf(c, 0, a)) {
+                    drawEqualAt(a);
+                }
+                if (anchorOf(c, 1, b)) {
+                    drawEqualAt(b);
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Parallel: {
+                Base::Vector2d a, b;
+                if (anchorOf(c, 0, a) && anchorOf(c, 1, b)) {
+                    const Base::Vector2d d = b - a;
+                    const double len = std::sqrt(d.x * d.x + d.y * d.y);
+                    if (len < 1.0e-6) {
+                        break;
+                    }
+                    Base::Vector2d dir(d.x / len, d.y / len);
+                    const Base::Vector2d nrm(-dir.y, dir.x);
+                    const Base::Vector2d p = (a + b) * 0.5;
+                    const Eigen::Vector2f s0 = screenOf(
+                        Base::Vector2d(p.x + dir.x * 9.0, p.y + dir.y * 9.0)
+                    );
+                    const Eigen::Vector2f s1 = screenOf(
+                        Base::Vector2d(p.x - dir.x * 9.0, p.y - dir.y * 9.0)
+                    );
+                    const Eigen::Vector2f n0 = screenOf(
+                        Base::Vector2d(p.x + nrm.x * 3.0, p.y + nrm.y * 3.0)
+                    );
+                    const Eigen::Vector2f n1 = screenOf(
+                        Base::Vector2d(p.x - nrm.x * 3.0, p.y - nrm.y * 3.0)
+                    );
+                    const float dx = n0.x() - n1.x();
+                    const float dy = n0.y() - n1.y();
+                    const float dn = std::sqrt(dx * dx + dy * dy);
+                    if (dn < 1.0e-3f) {
+                        break;
+                    }
+                    const float hx = dx / dn * 3.0f;
+                    const float hy = dy / dn * 3.0f;
+                    drawList->AddLine(
+                        ImVec2(s0.x() + hx, s0.y() + hy),
+                        ImVec2(s1.x() + hx, s1.y() + hy),
+                        col,
+                        1.5f
+                    );
+                    drawList->AddLine(
+                        ImVec2(s0.x() - hx, s0.y() - hy),
+                        ImVec2(s1.x() - hx, s1.y() - hy),
+                        col,
+                        1.5f
+                    );
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Perpendicular: {
+                Base::Vector2d a;
+                if (anchorOf(c, 0, a)) {
+                    const Eigen::Vector2f s = screenOf(a);
+                    drawList->AddLine(ImVec2(s.x(), s.y()), ImVec2(s.x() + 9.0f, s.y()), col, 1.5f);
+                    drawList->AddLine(
+                        ImVec2(s.x() + 9.0f, s.y()),
+                        ImVec2(s.x() + 9.0f, s.y() + 9.0f),
+                        col,
+                        1.5f
+                    );
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Symmetric: {
+                Base::Vector2d a, b;
+                if (anchorOf(c, 0, a) && anchorOf(c, 1, b)) {
+                    const Base::Vector2d p = (a + b) * 0.5;
+                    const Eigen::Vector2f s = screenOf(p);
+                    drawList->AddLine(
+                        ImVec2(s.x(), s.y() - 10.0f),
+                        ImVec2(s.x(), s.y() + 10.0f),
+                        col,
+                        1.5f
+                    );
+                    drawList->AddCircleFilled(ImVec2(s.x() - 5.0f, s.y()), 2.0f, col);
+                    drawList->AddCircleFilled(ImVec2(s.x() + 5.0f, s.y()), 2.0f, col);
+                }
+                break;
+            }
+            case Sketcher::ConstraintType::Block: {
+                Base::Vector2d a;
+                if (anchorOf(c, 0, a)) {
+                    const Eigen::Vector2f s = screenOf(a);
+                    drawList->AddRect(
+                        ImVec2(s.x() - 8.0f, s.y() - 8.0f),
+                        ImVec2(s.x() + 8.0f, s.y() + 8.0f),
+                        col,
+                        0.0f,
+                        0,
+                        1.5f
+                    );
+                }
+                break;
+            }
+            default:
+                break;
+            }
         }
     }
 }

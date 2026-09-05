@@ -18,7 +18,12 @@
 #include <QStringList>
 #include <QTimer>
 #include <QIcon>
+#include <QToolButton>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <cstdio>
+#include <vector>
+#include <functional>
 namespace MOON {
 	static QString constraintIconPath(Sketcher::ConstraintType type)
 	{
@@ -241,12 +246,14 @@ namespace MOON {
 
         QStringList constraintLines;
         QStringList constraintIconPaths;
+        std::vector<bool> constraintVisible;
         for (int i = 0; i < obj->getConstraintCount(); ++i) {
             const Sketcher::Constraint* c = obj->getConstraint(i);
             if (!c) {
                 continue;
             }
             constraintIconPaths << constraintIconPath(c->Type);
+            constraintVisible.push_back(c->isVisible);
             QString line = QString("%1  %2").arg(i).arg(c->typeToString().c_str());
             if (c->First != Sketcher::GeoEnum::GeoUndef) {
                 line += QString("  F%1/%2").arg(c->First).arg(static_cast<int>(c->FirstPos));
@@ -267,12 +274,14 @@ namespace MOON {
 
         QStringList curveLines;
         QStringList curveIconPaths;
+        std::vector<bool> curveVisible;
         for (int i = 0; i <= obj->getHighestCurveIndex(); ++i) {
             const Part::Geometry* g = obj->getGeometry(i);
             if (!g) {
                 continue;
             }
             curveIconPaths << curveIconPath(g);
+            curveVisible.push_back(obj->isGeometryVisible(i));
             QString typeName;
             if (g->is<Part::GeomLineSegment>()) {
                 typeName = "Line";
@@ -304,23 +313,70 @@ namespace MOON {
             return;
         }
         mListCache = cache;
+        const QIcon eyeOpen(":/entityTree/icons/pqEyeball.svg");
+        const QIcon eyeClosed(":/entityTree/icons/pqEyeballClosed.svg");
+        const auto addEyeRow = [&](
+            QListWidget* list,
+            const QIcon& typeIcon,
+            const QString& text,
+            bool visible,
+            const std::function<void(bool)>& onToggled
+        ) {
+            auto* item = new QListWidgetItem();
+            auto* row = new QWidget(list);
+            auto* rowLayout = new QHBoxLayout(row);
+            rowLayout->setContentsMargins(2, 2, 2, 2);
+            rowLayout->setSpacing(6);
+            auto* eye = new QToolButton(row);
+            eye->setCheckable(true);
+            eye->setAutoRaise(true);
+            eye->setChecked(visible);
+            eye->setIcon(visible ? eyeOpen : eyeClosed);
+            eye->setToolTip(visible ? "Hide" : "Show");
+            eye->setIconSize(QSize(20, 20));
+            eye->setStyleSheet(
+                "QToolButton { border: none; background: transparent; padding: 0px; }"
+            );
+            QLabel* typeLabel = nullptr;
+            if (!typeIcon.isNull()) {
+                typeLabel = new QLabel(row);
+                typeLabel->setPixmap(typeIcon.pixmap(24, 24));
+            }
+            auto* label = new QLabel(text, row);
+            rowLayout->addWidget(eye);
+            if (typeLabel) {
+                rowLayout->addWidget(typeLabel);
+            }
+            rowLayout->addWidget(label, 1);
+            connect(eye, &QToolButton::toggled, this, [=](bool on) {
+                eye->setIcon(on ? eyeOpen : eyeClosed);
+                onToggled(on);
+            });
+            item->setFlags(item->flags() | Qt::ItemIsSelectable);
+            item->setSizeHint(row->sizeHint());
+            list->addItem(item);
+            list->setItemWidget(item, row);
+        };
+
         mConstraintList->clear();
         for (int i = 0; i < constraintLines.size(); ++i) {
-            auto* item = new QListWidgetItem(
-                constraintIconPaths[i].isEmpty()
-                    ? QIcon()
-                    : QIcon(constraintIconPaths[i]),
-                constraintLines[i]
+            addEyeRow(
+                mConstraintList,
+                constraintIconPaths[i].isEmpty() ? QIcon() : QIcon(constraintIconPaths[i]),
+                constraintLines[i],
+                constraintVisible[i],
+                [obj, i](bool on) { obj->setConstraintVisible(i, on); }
             );
-            mConstraintList->addItem(item);
         }
         mCurveList->clear();
         for (int i = 0; i < curveLines.size(); ++i) {
-            auto* item = new QListWidgetItem(
+            addEyeRow(
+                mCurveList,
                 curveIconPaths[i].isEmpty() ? QIcon() : QIcon(curveIconPaths[i]),
-                curveLines[i]
+                curveLines[i],
+                curveVisible[i],
+                [obj, i](bool on) { obj->setGeometryVisible(i, on); }
             );
-            mCurveList->addItem(item);
         }
     }
 }

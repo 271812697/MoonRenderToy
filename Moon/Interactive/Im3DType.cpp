@@ -271,6 +271,8 @@ namespace MOON {
 		if (viewCube.cellArray.size() == 0) {
 			viewCube.screenPos.viewportSizeX = 125;
 			viewCube.screenPos.viewportSizeY = 125;
+			viewCube.screenPos.startX = 20;
+			viewCube.screenPos.startY = 20;
 			float halflen = 3.0f;
 			float shift = 0.6f;
 			float ratio = 0.5 * shift / halflen;

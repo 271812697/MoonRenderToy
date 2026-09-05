@@ -86,6 +86,7 @@ layout(triangle_strip, max_vertices = 3) out;
 
 #if defined(CUSTOM_VIEWPORT)
 uniform vec2 uViewPortSize;
+uniform vec2 uViewPortStart;
 #endif
 
 uniform usamplerBuffer edgeTexture;
@@ -95,16 +96,12 @@ void main()
 {
     vec2 pos[4];
     
-    #if defined(CUSTOM_VIEWPORT)
-    vec2 viewS=vec2(ubo_ScreenWidth-uViewPortSize.x,ubo_ScreenHeight-uViewPortSize.y);
-    #endif
-    
     for (int i = 0; i < 3; i++)
     {
         pos[i] = gl_in[i].gl_Position.xy/gl_in[i].gl_Position.w;
         pos[i] = pos[i]*vec2(0.5) + vec2(0.5);
         #if defined(CUSTOM_VIEWPORT)
-            pos[i] = pos[i]*uViewPortSize+viewS;
+            pos[i] = pos[i]*uViewPortSize+uViewPortStart;
         #else
             pos[i] = pos[i]*vec2(ubo_ScreenWidth,ubo_ScreenHeight);     
         #endif
