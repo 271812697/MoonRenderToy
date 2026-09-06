@@ -20,8 +20,11 @@ namespace MOON
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
 		bool canGoToNextMode() override;
 		void createShape(bool onlyeditoutline) override;
+		void executeCommands() override;
 	private:
 		void reverseIfNecessary();
+		void addArcSlotAutoConstraints(int firstCurve);
+		void addRectangleSlotAutoConstraints(int firstCurve);
 
 		Base::Vector2d centerPoint, startPoint, endPoint;
 		double startAngle, startAngleBackup, endAngle, arcAngle, r, radius;

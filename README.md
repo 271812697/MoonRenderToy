@@ -96,6 +96,18 @@ Build\bin\Release\Moon.exe
 
 ### OCC 几何建模
 
+![image-20260906182824785](README.assets/image-20260906182824785.png)
+
+![image-20260906182928007](README.assets/image-20260906182928007.png)
+
+![image-20260906182959396](README.assets/image-20260906182959396.png)
+
+![image-20260906183113472](README.assets/image-20260906183113472.png)
+
+
+
+![image-20260906183144170](README.assets/image-20260906183144170.png)
+
 ![image-20260903150404609](README.assets/image-20260903150404609.png)
 
 ![image-20260902011211045](README.assets/image-20260902011211045.png)
@@ -194,3 +206,8 @@ Build\bin\Release\Moon.exe
 
 ![交互 Widget 架构图](README.assets/image-20260819112630072.png)
 *交互 Widget 体系架构*
+
+需要补充：
+
+1. 约束求解后，如何更新原来的几何的细节
+2. 原来的几何和GCS对象，以及映射成参数的

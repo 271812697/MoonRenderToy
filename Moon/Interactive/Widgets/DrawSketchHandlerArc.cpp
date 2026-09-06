@@ -276,7 +276,7 @@ namespace MOON {
         }
 
         if (state() == SelectMode::SeekSecond) {
-            addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius, true);
+            addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius, false);
         }
         else {
             if (fabs(m_internal->arcAngle) < Precision::Confusion()) {
@@ -288,7 +288,7 @@ namespace MOON {
                 m_internal->startAngle,
                 m_internal->endAngle,
                 m_internal->radius,
-                true
+                false
             );
         }
 

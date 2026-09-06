@@ -95,6 +95,27 @@ solvedSketch.resetInitMove()
 注意：约束与选择仍依赖“GeoId 顺序不变”的隐含假设；求解结果按原索引回填，
 因此顺序必须由 `Sketch::extractGeometry()` 保持。
 
+### 3.4 吸附（snapPoint）优先级
+
+`snapPoint()` 是工具（`DrawSketchHandler`）与拾取共用的一条吸附链，全部判定都在**屏幕像素
+距离阈值 10px** 内完成，命中即返回、不再继续尝试后面的优先级：
+
+```text
+① 离散关键点    曲线/圆弧/圆的 Start/End/Center（圆心为 PointPos::mid）等 mGeoSegment.sepoints
+② 原点与坐标轴  原点 → X 轴 → Y 轴（屏幕距离 <= 10px）
+③ 曲线本体      点到离散折线段的最小距离（点会投影到曲线上）
+④ 网格交叉点    仅当 m_drawGrid && m_snapToGrid 且离网格交点 <= 10px 时吸附（最低优先级）
+```
+
+网格吸附要点：
+
+- 网格步长与 `drawBackground()` 完全一致：按正交相机取屏幕高度、算“约 40px 一条次网格线”的目标间距，
+  再向上取到 1/2/5×10ⁿ 的“好看”步长；
+- 候选点为 `round(pos / step) * step` 的交叉点，是否吸附只按该点与鼠标的屏幕像素距离判断，
+  不随缩放改变手感；
+- 由草图面板的 **Snap To Grid** 开关控制（默认关），状态存于 `SketcherObj::m_snapToGrid`；
+- 实现位于 `SketcherObjDraw.cpp::snapToGridPoint()`，调用挂在 `snapPoint()` 所有既有规则之后。
+
 ---
 
 ## 4. 功能清单（当前实现状态）
@@ -115,7 +136,7 @@ solvedSketch.resetInitMove()
 | 求解 | solve + 诊断（冲突/冗余/过约束） | ✅ 完整 | 返回 err（0 / -1..-5），成功原位回填几何 |
 | 选择 | 点选 / 框选 / 悬停 / 追加选择 / DELETE | ✅ 完整 | |
 | 选择 | End 状态 / hasClickSelected / getPickGeoIndex | ❌ 冗余 | 已定义未使用 |
-| 吸附 | 端点/圆心/原点/坐标轴/曲线上 | ✅ 基本 | 无中点/交点等 |
+| 吸附 | 端点/圆心/原点/坐标轴/曲线上/网格点 | ✅ 基本 | 网格吸附可开关、最低优先级；无中点/交点等 |
 | 输出 | toShape → wire/compound + transform | ✅ 完整 | 不生成 Face；闭合校验弱 |
 | 绘制 | 平面轴 / 曲线 / 选中高亮 / 框选矩形 | ✅ 基本 | 无约束符号/尺寸标注 |
 | 撤销 | undo / redo | ❌ 缺失 | |
@@ -143,6 +164,7 @@ solvedSketch.resetInitMove()
 
 ### P2 —— 体验与清理
 
+- [x] 网格吸附：自适应步长 + 10px 像素阈值 + UI 开关（SketchTaskDialog → Snap To Grid）；
 - [ ] 去掉 `End` / `hasClickSelected` / `getPickGeoIndex` 等未用字段；
 - [ ] 交互坐标去掉 0.01 量化或改为可配置网格吸附；
 - [ ] 绘制补约束符号、尺寸、构造线样式（construction）；

@@ -193,8 +193,18 @@ namespace MOON {
             Mode = STATUS_SEEK_Second;
         }
         else if (Mode == STATUS_SEEK_Second) {
-            // exit on clicking exactly at the same position (e.g. double click)
-            if (onSketchPos == EditCurve[0]) {
+            // Detect that the user clicks back onto the start vertex of the
+            // polyline so the next segment closes the loop. The generic
+            // SketcherObj preselect is stale while a draw handler is active,
+            // therefore the geometry points are compared directly here.
+            if (firstCurve != -1 && firstPosId != SketcherObj::PointPos::none) {
+                if (isAtFirstPoint(onSketchPos)) {
+                    Mode = STATUS_Close;
+                }
+            }
+            // exit on clicking exactly at the same position (e.g. double click),
+            // but never when the click already closed the loop
+            if (Mode != STATUS_Close && onSketchPos == EditCurve[0]) {
                 //unsetCursor();
                 //resetPositionText();
                 EditCurve.clear();
@@ -215,6 +225,7 @@ namespace MOON {
                     previousCurve = -1;
                     firstPosId = SketcherObj::PointPos::none;
                     previousPosId = SketcherObj::PointPos::none;
+                    firstsegment = true;
                     EditCurve.clear();
                     clearEdit();
                     drawEdit(EditCurve);
@@ -233,27 +244,9 @@ namespace MOON {
                 }
             }
 
-            Mode = STATUS_Do;
-            auto preSelect=obj->getPreSelectGeoId();
-            if (preSelect.GeoId!= -1 && firstPosId != SketcherObj::PointPos::none) {
-                if (firstCurve == preSelect.GeoId && firstPosId == firstPosId) {
-                    Mode = STATUS_Close;
-                }
-                //int GeoId;
-                //Sketcher::PointPos PosId;
-                //sketchgui->getSketchObject()->getGeoVertexIndex(getPreselectPoint(), GeoId, PosId);
-                //if (sketchgui->getSketchObject()
-                //    ->arePointsCoincident(GeoId, PosId, firstCurve, firstPosId)) {
-                //    Mode = STATUS_Close;
-                //}
+            if (Mode != STATUS_Close) {
+                Mode = STATUS_Do;
             }
-            //else if (getPreselectCross() == 0 && firstPosId != Sketcher::PointPos::none) {
-            //    // close line started at root point
-            //    if (sketchgui->getSketchObject()
-            //        ->arePointsCoincident(-1, Sketcher::PointPos::start, firstCurve, firstPosId)) {
-            //        Mode = STATUS_Close;
-            //    }
-            //}
         }
 
         //updateHint();
@@ -317,75 +310,62 @@ namespace MOON {
             }
 
             int lastCurve = obj->getHighestCurveIndex();
-            // issue the constraint
-            //if (addedGeometry && (previousPosId != Sketcher::PointPos::none)) {
-            //    Sketcher::PointPos lastStartPosId = (SegmentMode == SEGMENT_MODE_Arc
-            //        && startAngle > endAngle)
-            //        ? Sketcher::PointPos::end
-            //        : Sketcher::PointPos::start;
-            //    Sketcher::PointPos lastEndPosId = (SegmentMode == SEGMENT_MODE_Arc
-            //        && startAngle > endAngle)
-            //        ? Sketcher::PointPos::start
-            //        : Sketcher::PointPos::end;
-            //    // in case of a tangency constraint, the coincident constraint is redundant
-            //    std::string constrType = "Coincident";
-            //    if (!suppressTransition && previousCurve != -1) {
-            //        if (TransitionMode == TRANSITION_MODE_Tangent) {
-            //            constrType = "Tangent";
-            //        }
-            //        else if (
-            //            TransitionMode == TRANSITION_MODE_Perpendicular_L
-            //            || TransitionMode == TRANSITION_MODE_Perpendicular_R
-            //            ) {
-            //            constrType = "Perpendicular";
-            //        }
-            //    }
-            //    Gui::cmdAppObjectArgs(
-            //        sketchgui->getObject(),
-            //        "addConstraint(Sketcher.Constraint('%s',%i,%i,%i,%i)) ",
-            //        constrType.c_str(),
-            //        previousCurve,
-            //        static_cast<int>(previousPosId),
-            //        lastCurve,
-            //        static_cast<int>(lastStartPosId)
-            //    );
-
-            //    if (SnapMode == SNAP_MODE_45Degree && Mode != STATUS_Close) {
-            //        // -360, -315, -270, -225, -180, -135, -90, -45,  0, 45,  90, 135, 180, 225,
-            //        // 270, 315, 360
-            //        //  N/A,    a, perp,    a,  par,    a,perp,   a,N/A,  a,perp,   a, par, a,perp,
-            //        //  a, N/A
-
-            //        // #3974: if in radians, the printf %f defaults to six decimals, which leads to
-            //        // loss of precision
-            //        double arcAngle = abs(
-            //            round((endAngle - startAngle) / (std::numbers::pi / 4)) * 45
-            //        );  // in degrees
-
-            //        Gui::cmdAppObjectArgs(
-            //            sketchgui->getObject(),
-            //            "addConstraint(Sketcher.Constraint('Angle',%i,App.Units."
-            //            "Quantity('%f deg'))) ",
-            //            lastCurve,
-            //            arcAngle
-            //        );
-            //    }
-            //    if (Mode == STATUS_Close) {
-            //        // close the loop by constrain to the first curve point
-            //        Gui::cmdAppObjectArgs(
-            //            sketchgui->getObject(),
-            //            "addConstraint(Sketcher.Constraint('Coincident',%i,%i,%i,%i)) ",
-            //            lastCurve,
-            //            static_cast<int>(lastEndPosId),
-            //            firstCurve,
-            //            static_cast<int>(firstPosId)
-            //        );
-            //        firstsegment = true;
-            //    }
-            //    commitCommand();
-
-            //    tryAutoRecomputeIfNotSolve(sketchgui->getObject<Sketcher::SketchObject>());
-            //}
+            // Issue the constraints that keep the polyline connected.  Every
+            // regular segment starts exactly on the free endpoint of the
+            // previous one, so the shared vertex is pinned with either a
+            // coincidence (free/transition-suppressed joints) or the
+            // point-wise Tangent/Perpendicular used for the transition modes.
+            // The port normalises every arc to the counter-clockwise range
+            // before storing, which swaps start/end for arcs that were swept
+            // clockwise, so the connection vertex is derived per-direction
+            // below (lastStartPosId).
+            Sketcher::ConstraintType constrType = Sketcher::ConstraintType::Coincident;
+            if (!suppressTransition && previousCurve != -1) {
+                if (TransitionMode == TRANSITION_MODE_Tangent) {
+                    constrType = Sketcher::ConstraintType::Tangent;
+                }
+                else if (
+                    TransitionMode == TRANSITION_MODE_Perpendicular_L
+                    || TransitionMode == TRANSITION_MODE_Perpendicular_R
+                    ) {
+                    constrType = Sketcher::ConstraintType::Perpendicular;
+                }
+            }
+            // The joint constraint connects the new segment's start vertex to
+            // the free endpoint of the previous segment.  The constraint type
+            // is Coincident for ordinary free joints and Tangent/Perpendicular
+            // when the segment was drawn with one of the transition modes (a
+            // point-wise tangent/perp also carries the coincidence).  When the
+            // user closes the loop the free endpoint is additionally tied to
+            // the first vertex of the polyline.
+            if (addedGeometry && previousPosId != SketcherObj::PointPos::none) {
+                // The vertex where the new segment touches the previous curve
+                // depends on the drawn direction: arcs that were swept
+                // clockwise are stored reversed (start/end swapped), so the
+                // connection vertex is their end point instead of their start.
+                const SketcherObj::PointPos lastStartPosId =
+                    (SegmentMode == SEGMENT_MODE_Arc && startAngle > endAngle)
+                    ? SketcherObj::PointPos::end
+                    : SketcherObj::PointPos::start;
+                obj->addConstraint(
+                    constrType,
+                    previousCurve, previousPosId,
+                    lastCurve, lastStartPosId
+                );
+                if (Mode == STATUS_Close) {
+                    const SketcherObj::PointPos lastEndPosId =
+                        (SegmentMode == SEGMENT_MODE_Arc && startAngle > endAngle)
+                        ? SketcherObj::PointPos::start
+                        : SketcherObj::PointPos::end;
+                    obj->addConstraint(
+                        Sketcher::ConstraintType::Coincident,
+                        lastCurve, lastEndPosId,
+                        firstCurve, firstPosId
+                    );
+                    firstsegment = true;
+                }
+                obj->solve();
+            }
 
             //ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
             //    "User parameter:BaseApp/Preferences/Mod/Sketcher"
@@ -448,6 +428,7 @@ namespace MOON {
                     previousCurve = -1;
                     firstPosId = SketcherObj::PointPos::none;
                     previousPosId = SketcherObj::PointPos::none;
+                    firstsegment = true;
                     EditCurve.clear();
                     clearEdit();
                     drawEdit(EditCurve);
@@ -765,6 +746,24 @@ namespace MOON {
             }
         }
         dirVec.Normalize();
+    }
+    bool DrawSketchHandlerLineSet::isAtFirstPoint(const Base::Vector2d& pos) const
+    {
+        if (firstCurve < 0 || firstPosId == SketcherObj::PointPos::none) {
+            return false;
+        }
+        SketcherObj* obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+        if (!obj) {
+            return false;
+        }
+        Base::Vector2d firstPoint;
+        if (!obj->getGeometryPoint(firstCurve, firstPosId, firstPoint)) {
+            return false;
+        }
+        // The draw handler snaps the cursor onto sketch vertices, so a click
+        // that is meant to close the loop sits (almost) exactly on the vertex.
+        const double tol = 500.0 * Precision::Confusion();
+        return (pos - firstPoint).Length() <= tol;
     }
 	void DrawSketchHandlerLineSet::onKeyRelease(const std::string& key)
 	{

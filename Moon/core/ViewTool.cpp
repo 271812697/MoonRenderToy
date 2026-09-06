@@ -24,20 +24,19 @@ namespace MOON {
 		if (!actor) {
 			return false;
 		}
-		if (actor->HasParent()) {
-			auto parent = actor->GetParent();
-			if (parent->HasParent()) {
-				auto grandParent = parent->GetParent();
-				if (grandParent->HasComponent("CTopoShape")) {
-					auto topoComp = grandParent->GetComponent<::Core::ECS::Components::CTopoShape>();
-					std::string idString = actor->GetName().substr(5);
-					std::string type = actor->GetName().substr(0, 4);
-					int childId = std::stoi(idString);
-					topo.push_back( topoComp->GetTopoShape());
-					topo.push_back(type == "face"?topoComp->GetTopoFace(childId):topoComp->GetTopoEdge(childId));
-					return true;
-				}
+		//in fact indexName is not right to use to get the ref shape!
+		for (Core::ECS::Actor* cur = actor->HasParent() ? actor->GetParent() : nullptr;
+			cur; cur = cur->HasParent() ? cur->GetParent() : nullptr) {
+			if (cur->HasComponent("CTopoShape")) {
+				auto topoComp = cur->GetComponent<::Core::ECS::Components::CTopoShape>();
+				std::string idString = actor->GetName().substr(5);
+				std::string type = actor->GetName().substr(0, 4);
+				int childId = std::stoi(idString);
+				topo.push_back(topoComp->GetTopoShape());
+				topo.push_back(type == "face" ? topoComp->GetTopoFace(childId) : topoComp->GetTopoEdge(childId));
+				return true;
 			}
+
 		}
 		return false;
 	}

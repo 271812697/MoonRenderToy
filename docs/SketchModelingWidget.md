@@ -303,6 +303,10 @@ virtual void mouseMove(Base::Vector2d pos) {
 第①步更新“光标在哪”，第②步让子类用新位置“改数据 + 刷预览”。两者分离的好处是：未来如果加入
 约束/捕捉预览，可以在②之前统一插入，而不动子类代码。
 
+吸附收敛在 `SketcherObj::snapPoint()`：端点/圆心 → 原点/坐标轴 → 曲线本体，
+最后才是网格交叉点（面板 **Snap To Grid** 开关，阈值同为 10px），详见
+`docs/SketcherObj.md §3.4`。
+
 ### 6.5 右键/Esc
 
 ```cpp

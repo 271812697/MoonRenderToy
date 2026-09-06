@@ -67,9 +67,9 @@ namespace MOON
 	enum DrawPrimitiveType
 	{
 		// order here determines the order in which unsorted primitives are drawn
-		DrawPrimitivePoints,
-		DrawPrimitiveLines,
 		DrawPrimitiveTriangles,
+		DrawPrimitiveLines,
+		DrawPrimitivePoints,
 		DrawPrimitiveCount
 	};
 

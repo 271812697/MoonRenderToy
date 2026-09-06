@@ -1,104 +1,121 @@
-﻿#include "Widgets/ColorPicker.h"
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
+#include "Widgets/ColorPicker.h"
+#include <QColorDialog>
 #include <QHBoxLayout>
-#include <QRegExpValidator>
-#include <QPalette>
+#include <QLineEdit>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
+#include <QToolButton>
+
 namespace MOON {
-    ColorPicker::ColorPicker(QWidget* parent, WidgetProperty* prop)
-        :PropertyQtWidget(parent, prop)
-        , m_selectedColor(Qt::white) // 默认白色
-    {
-        // 1. 创建UI组件
-        m_colorPreview = new QLabel(this);
-       // m_colorPreview->setFixedSize(40, 25); // 预览框大小
-        m_colorPreview->setStyleSheet("border: 1px solid #ccc;");
+	ColorPicker::ColorPicker(QWidget* parent, WidgetProperty* prop)
+		: PropertyQtWidget(parent, prop)
+		, m_selectedColor(Qt::white)
+	{
+		m_colorButton = new QToolButton(this);
+		m_colorButton->setObjectName("ColorButton");
+		m_colorButton->setAutoRaise(true);
+		m_colorButton->setFixedSize(48, 32);
+		m_colorButton->setCursor(Qt::PointingHandCursor);
+		m_colorButton->setFocusPolicy(Qt::ClickFocus);
 
-        m_colorEdit = new QLineEdit(this);
-        m_colorEdit->setFixedWidth(100);
-        // 限制输入为十六进制颜色值（#开头，6位十六进制）
-        QRegExp colorRegex("#[0-9A-Fa-f]{6}");
-        m_colorEdit->setValidator(new QRegExpValidator(colorRegex, this));
+		m_colorEdit = new QLineEdit(this);
+		m_colorEdit->setFixedWidth(100);
+		// Accept #RRGGBB and #AARRGGBB.
+		QRegularExpression colorRegex("#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?");
+		m_colorEdit->setValidator(
+			new QRegularExpressionValidator(colorRegex, this)
+		);
+		m_colorEdit->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-        m_pickButton = new QPushButton("picker color", this);
+		auto* mainLayout = new QHBoxLayout(this);
+		mainLayout->setContentsMargins(0, 0, 0, 0);
+		mainLayout->setSpacing(6);
+		mainLayout->setAlignment(Qt::AlignLeft);
+		mainLayout->addWidget(m_colorButton);
+		mainLayout->addWidget(m_colorEdit, 1);
 
-        // 2. 布局
-        QHBoxLayout* mainLayout = new QHBoxLayout(this);
-        mainLayout->addWidget(m_colorPreview);
-        mainLayout->addWidget(m_colorEdit);
-        mainLayout->addWidget(m_pickButton);
-        mainLayout->setContentsMargins(5, 5, 5, 5);
-        setLayout(mainLayout);
+		connect(m_colorButton, &QToolButton::clicked, this, &ColorPicker::openColorDialog);
+		connect(m_colorEdit, &QLineEdit::editingFinished, this, &ColorPicker::updateColorFromText);
+	}
 
-        // 3. 连接信号槽
-        connect(m_pickButton, &QPushButton::clicked, this, &ColorPicker::openColorDialog);
-        connect(m_colorEdit, &QLineEdit::editingFinished, this, &ColorPicker::updateColorFromText);
+	QColor ColorPicker::currentColor() const
+	{
+		return m_selectedColor;
+	}
 
-        // 4. 初始化UI
-        //updateUI(m_selectedColor);
-    }
+	QVariant ColorPicker::widgetValue()
+	{
+		return currentColor();
+	}
 
-    QColor ColorPicker::currentColor() const
-    {
-        return m_selectedColor;
-    }
-    QVariant ColorPicker::widgetValue() {
-        return currentColor();
-    }
+	void ColorPicker::setWidgetValue(const QVariant& value)
+	{
+		setCurrentColor(value.value<QColor>());
+	}
 
-    void ColorPicker::setWidgetValue(const QVariant& value)
-    {
-        setCurrentColor(value.value<QColor>());
-    }
+	void ColorPicker::setCurrentColor(const QColor& color)
+	{
+		if (color.isValid()) {
+			m_selectedColor = color;
+			updateUI(color);
+		}
+	}
 
-    void ColorPicker::setCurrentColor(const QColor& color)
-    {
-        if (color.isValid()) {
-            m_selectedColor = color;
-            updateUI(color);
-        }
-    }
+	void ColorPicker::openColorDialog()
+	{
+		if (!m_colorDialog) {
+			m_colorDialog = new QColorDialog(this);
+			m_colorDialog->setWindowModality(Qt::NonModal);
+			m_colorDialog->setOption(QColorDialog::ShowAlphaChannel, true);
+			m_colorDialog->setOption(QColorDialog::NoButtons, true);
+			connect(
+				m_colorDialog,
+				&QColorDialog::currentColorChanged,
+				this,
+				[this](const QColor& color) {
+					if (color.isValid()) {
+						m_selectedColor = color;
+						updateUI(color);
+					}
+				}
+			);
+		}
+		m_colorDialog->setCurrentColor(m_selectedColor);
+		m_colorDialog->show();
+		m_colorDialog->raise();
+		m_colorDialog->activateWindow();
+	}
 
-    void ColorPicker::openColorDialog()
-    {
-        // 打开系统颜色选择对话框，初始颜色为当前选中的颜色
-        QColor selectedColor = QColorDialog::getColor(
-            m_selectedColor,
-            this,
-            "pick color",
-            QColorDialog::ShowAlphaChannel // 可选：显示透明度通道
-        );
+	void ColorPicker::updateColorFromText()
+	{
+		const QColor color(m_colorEdit->text());
+		if (color.isValid()) {
+			setCurrentColor(color);
+		}
+		else {
+			updateUI(m_selectedColor);
+		}
+	}
 
-        // 如果用户选择了有效颜色，更新
-        if (selectedColor.isValid()) {
-            m_selectedColor = selectedColor;
-            updateUI(selectedColor);
-        }
-    }
-
-    void ColorPicker::updateColorFromText()
-    {
-        // 从输入框文本解析颜色
-        QColor color(m_colorEdit->text());
-        if (color.isValid()) {
-            m_selectedColor = color;
-            updateUI(color);
-        }
-        else {
-            // 输入无效时，恢复原来的颜色值
-            updateUI(m_selectedColor);
-        }
-        
-    }
-
-    void ColorPicker::updateUI(const QColor& color)
-    {
-        // 更新预览框颜色
-        m_colorPreview->setStyleSheet(QString("background-color: %1; border: 1px solid #ccc;")
-            .arg(color.name()));
-        // 更新输入框文本（十六进制格式）
-        m_colorEdit->setText(color.name());
-        OnValueChanged();
-    }
+	void ColorPicker::updateUI(const QColor& color)
+	{
+		// Inviwo style: swatch shows the current colour, hover adds an accent
+		// border; the line edit carries the hexadecimal value.
+		const QString css = QString(
+			"QToolButton#ColorButton {"
+			" border: 1px solid transparent;"
+			" background-color: %1;"
+			" border-radius: 5px;"
+			"}"
+			"QToolButton#ColorButton:hover,"
+			"QToolButton#ColorButton:pressed {"
+			" border: 1px solid #268bd2;"
+			"}"
+		).arg(color.name());
+		m_colorButton->setStyleSheet(css);
+		m_colorEdit->setText(
+			color.alpha() < 255 ? color.name(QColor::HexArgb) : color.name()
+		);
+		OnValueChanged();
+	}
 }

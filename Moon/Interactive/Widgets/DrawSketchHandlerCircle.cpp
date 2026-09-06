@@ -196,7 +196,7 @@ namespace MOON {
         if (m_internal->radius < Precision::Confusion()) {
             return;
         }
-        addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius,true);
+        addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->radius, false);
     }
 
 }

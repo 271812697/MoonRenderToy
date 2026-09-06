@@ -187,7 +187,7 @@ namespace MOON {
 
 		if (fabs(m_internal->firstRadius - m_internal->secondRadius) < Precision::Confusion()) {
 			// Degenerate case: equal radii collapse to a circle.
-			addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->firstRadius, true);
+			addCircleToShapeGeometry(toVector3d(m_internal->centerPoint), m_internal->firstRadius, false);
 		}
 		else {
 			addEllipseToShapeGeometry(
@@ -195,7 +195,7 @@ namespace MOON {
 				toVector3d(majorAxis),
 				majorRadius,
 				m_internal->minorRadius,
-				true
+				false
 			);
 		}
 	}

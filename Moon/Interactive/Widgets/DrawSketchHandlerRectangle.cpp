@@ -390,6 +390,20 @@ namespace MOON {
                 addRoundedRectangleAutoConstraints();
             }
             Obj->solve();
+            // Corner/centre anchor points are only construction aids for the
+            // auto constraints; keep them in the solver but hide their dots.
+            if (constructionPointOneId >= 0) {
+                Obj->setConstruction(constructionPointOneId, true);
+            }
+            if (constructionPointTwoId >= 0) {
+                Obj->setConstruction(constructionPointTwoId, true);
+            }
+            if (constructionPointThreeId >= 0) {
+                Obj->setConstruction(constructionPointThreeId, true);
+            }
+            if (centerPointId >= 0) {
+                Obj->setConstruction(centerPointId, true);
+            }
         }
 
         thickness = 0.;
@@ -826,22 +840,22 @@ namespace MOON {
         addLineToShapeGeometry(
             toVector3d(corner1 + vecL * L2 * cos(angle412 / 2)),
             toVector3d(corner2 - vecL * L1 * cos(angle123 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(corner2 + vecW * L1 * cos(angle123 / 2)),
             toVector3d(corner3 - vecW * L2 * cos(angle412 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(corner3 - vecL * L2 * cos(angle412 / 2)),
             toVector3d(corner4 + vecL * L1 * cos(angle123 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(corner4 - vecW * L1 * cos(angle123 / 2)),
             toVector3d(corner1 + vecW * L2 * cos(angle412 / 2)),
-            true
+            false
         );
     }
     void DrawSketchHandlerRectangle::createFirstRectangleFillets(Base::Vector2d vecL, Base::Vector2d vecW, double L1, double L2)
@@ -859,10 +873,10 @@ namespace MOON {
         center3 = toVector3d(corner3 - b1 * L2);
         center4 = toVector3d(corner4 + b2 * L1);
 
-        addArcToShapeGeometry(center1, end - pi + angle412, end, radius, true);
-        addArcToShapeGeometry(center2, end, end - pi - angle123, radius, true);
-        addArcToShapeGeometry(center3, end + angle412, end - pi, radius, true);
-        addArcToShapeGeometry(center4, end - pi, end - angle123, radius, true);
+        addArcToShapeGeometry(center1, end - pi + angle412, end, radius, false);
+        addArcToShapeGeometry(center2, end, end - pi - angle123, radius, false);
+        addArcToShapeGeometry(center3, end + angle412, end - pi, radius, false);
+        addArcToShapeGeometry(center4, end - pi, end - angle123, radius, false);
     }
     void DrawSketchHandlerRectangle::createSecondRectangleGeometries(Base::Vector2d vecL, Base::Vector2d vecW, double L1, double L2)
     {
@@ -895,22 +909,22 @@ namespace MOON {
         addLineToShapeGeometry(
             toVector3d(frameCorner1 + vecLF / lengthF * L2F * cos(angle412 / 2)),
             toVector3d(frameCorner2 - vecLF / lengthF * L1F * cos(angle123 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(frameCorner2 + vecWF / widthF * L1F * cos(angle123 / 2)),
             toVector3d(frameCorner3 - vecWF / widthF * L2F * cos(angle412 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(frameCorner3 - vecLF / lengthF * L2F * cos(angle412 / 2)),
             toVector3d(frameCorner4 + vecLF / lengthF * L1F * cos(angle123 / 2)),
-            true
+            false
         );
         addLineToShapeGeometry(
             toVector3d(frameCorner4 - vecWF / widthF * L1F * cos(angle123 / 2)),
             toVector3d(frameCorner1 + vecWF / widthF * L2F * cos(angle412 / 2)),
-            true
+            false
         );
 
         if (roundCorners && radiusFrame > Precision::Confusion()) {
@@ -922,28 +936,28 @@ namespace MOON {
                 end - pi + angle412,
                 end,
                 radiusFrame,
-                true
+                false
             );
             addArcToShapeGeometry(
                 toVector3d(frameCorner2 - b2 * L1F),
                 end,
                 end - pi - angle123,
                 radiusFrame,
-                true
+                false
             );
             addArcToShapeGeometry(
                 toVector3d(frameCorner3 - b1 * L2F),
                 end + angle412,
                 end - pi,
                 radiusFrame,
-                true
+                false
             );
             addArcToShapeGeometry(
                 toVector3d(frameCorner4 + b2 * L1F),
                 end - pi,
                 end - angle123,
                 radiusFrame,
-                true
+                false
             );
         }
     }

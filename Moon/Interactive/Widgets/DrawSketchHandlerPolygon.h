@@ -14,7 +14,9 @@ namespace MOON
 		virtual void updateDataAndDrawToPosition(Base::Vector2d onSketchPos)override;
 		bool canGoToNextMode() override;
 		void createShape(bool onlyeditoutline) override;
+		void executeCommands() override;
 	private:
+		void addPolygonAutoConstraints(int firstCurve);
 		unsigned int numberOfCorners;
 		double radius;
 		Base::Vector2d centerPoint, firstCorner;

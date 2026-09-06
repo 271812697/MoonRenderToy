@@ -4072,9 +4072,10 @@ namespace MOON
 			Eigen::Vector3f boxECenter = (viewCube.maxConner + viewCube.minConner) / 2.0;
 			Maths::FVector3 boxCenter = { boxECenter.x(),boxECenter.y(),boxECenter.z()};
 
-			int viewPortX = cameraParam.viewportWidth - viewCube.screenPos.viewportSizeX;
-			int viewPortY = cameraParam.viewportHeight- viewCube.screenPos.viewportSizeY;
-
+			viewCube.screenPos.startX = cameraParam.viewportWidth - viewCube.screenPos.viewportSizeX-5;
+			viewCube.screenPos.startY = cameraParam.viewportHeight- viewCube.screenPos.viewportSizeY-5;
+		    int viewPortX = viewCube.screenPos.startX;
+			int viewPortY =  viewCube.screenPos.startY;
 			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewCube.screenPos.viewportSizeX -1;
 			float v = 2*(cameraParam.viewportHeight -cameraParam.cursor.y() - viewPortY) / (float)viewCube.screenPos.viewportSizeY -1;
 
@@ -4104,6 +4105,7 @@ namespace MOON
 			mCellMaterial->SetProperty("u_AlbedoMap",viewCube.texture);
 			mCellMaterial->SetProperty("edgeTexture", viewCube.edgeTexture);
 			mCellMaterial->SetProperty("uViewPortSize", Maths::FVector2(viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY));
+			mCellMaterial->SetProperty("uViewPortStart", Maths::FVector2(viewCube.screenPos.startX, viewCube.screenPos.startY));
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
 			glViewport(viewPortX,viewPortY, viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY);
 			viewCube.bind();

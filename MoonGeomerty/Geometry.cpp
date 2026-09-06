@@ -270,6 +270,16 @@ boost::uuids::uuid Geometry::getTag() const
     return tag;
 }
 
+void Geometry::setConstruction(bool enabled)
+{
+    construction = enabled;
+}
+
+bool Geometry::getConstruction() const
+{
+    return construction;
+}
+
 std::vector<std::weak_ptr<const GeometryExtension>> Geometry::getExtensions() const
 {
     std::vector<std::weak_ptr<const GeometryExtension>> wp;
@@ -407,6 +417,7 @@ void Geometry::assignTag(const Part::Geometry* geo)
 
 void Geometry::copyNonTag(const Part::Geometry* src)
 {
+    this->construction = src->construction;
     for (auto& ext : src->extensions) {
         this->extensions.push_back(ext->copy());
         extensions.back()->notifyAttachment(this);

@@ -1,9 +1,12 @@
 ﻿#include "SketchTaskDialog.h"
 #include "TaskBox.h"
+#include "editor/UI/PropertyPanel/Collapsiblegroupboxwidget.h"
 #include "Sketcher/SketcherObjManager.h"
 #include "Sketcher/SketcherObj.h"
 #include "feature/SketcherFeature.h"
 #include "Widgets/BoolProperty.h"
+#include "Widgets/ColorPickerProperty.h"
+#include "Widgets/SliderFloatProperty.h"
 #include "core/ViewTool.h"
 #include "Interactive/Widgets/SketchPlane.h"
 #include <QLabel>
@@ -13,7 +16,100 @@
 #include <QDoubleSpinBox>
 #include <QGroupBox>
 #include <gp_Pln.hxx>
+#include <QListWidget>
+#include <QStringList>
+#include <QTimer>
+#include <QIcon>
+#include <QToolButton>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QEvent>
+#include <QColor>
+#include <Eigen/Core>
+#include <cstdio>
+#include <vector>
+#include <functional>
+#include <set>
 namespace MOON {
+	static QColor abgrToQColor(const Eigen::Vector4<uint8_t>& c)
+	{
+		return QColor(c[3], c[2], c[1], c[0]);
+	}
+	static Eigen::Vector4<uint8_t> qColorToAbgr(const QColor& c)
+	{
+		return Eigen::Vector4<uint8_t>(
+			static_cast<uint8_t>(c.alpha()),
+			static_cast<uint8_t>(c.blue()),
+			static_cast<uint8_t>(c.green()),
+			static_cast<uint8_t>(c.red())
+		);
+	}
+	static QString constraintIconPath(Sketcher::ConstraintType type)
+	{
+		const QString prefix = ":/widgets/icons/constraint/";
+		switch (type) {
+		case Sketcher::ConstraintType::Coincident:
+			return prefix + "Constraint_Coincident.svg";
+		case Sketcher::ConstraintType::Horizontal:
+			return prefix + "Constraint_Horizontal.svg";
+		case Sketcher::ConstraintType::Vertical:
+			return prefix + "Constraint_Vertical.svg";
+		case Sketcher::ConstraintType::Parallel:
+			return prefix + "Constraint_Parallel.svg";
+		case Sketcher::ConstraintType::Tangent:
+			return prefix + "Constraint_Tangent.svg";
+		case Sketcher::ConstraintType::Distance:
+			return prefix + "Constraint_Length.svg";
+		case Sketcher::ConstraintType::DistanceX:
+			return prefix + "Constraint_DistanceX.svg";
+		case Sketcher::ConstraintType::DistanceY:
+			return prefix + "Constraint_VerticalDistance.svg";
+		case Sketcher::ConstraintType::Angle:
+			return prefix + "Constraint_InternalAngle.svg";
+		case Sketcher::ConstraintType::Perpendicular:
+			return prefix + "Constraint_Perpendicular.svg";
+		case Sketcher::ConstraintType::Radius:
+			return prefix + "Constraint_Radius.svg";
+		case Sketcher::ConstraintType::Equal:
+			return prefix + "Constraint_EqualLength.svg";
+		case Sketcher::ConstraintType::PointOnObject:
+			return prefix + "Constraint_PointOnObject.svg";
+		case Sketcher::ConstraintType::Symmetric:
+			return prefix + "Constraint_Symmetric.svg";
+		case Sketcher::ConstraintType::Diameter:
+			return prefix + "Constraint_Diameter.svg";
+		case Sketcher::ConstraintType::Block:
+			return prefix + "Constraint_Block.svg";
+		default:
+			return QString();
+		}
+	}
+	static QString curveIconPath(const Part::Geometry* g)
+	{
+		if (!g) {
+			return QString();
+		}
+		const QString prefix = ":/widgets/icons/";
+		if (g->is<Part::GeomLineSegment>()) {
+			return prefix + "Sketcher_CreateLine.svg";
+		}
+		if (g->is<Part::GeomArcOfCircle>()) {
+			return prefix + "Sketcher_CreateArc.svg";
+		}
+		if (g->is<Part::GeomCircle>()) {
+			return prefix + "Sketcher_CreateCircle.svg";
+		}
+		if (g->is<Part::GeomEllipse>() || g->is<Part::GeomArcOfEllipse>()) {
+			return prefix + "Sketcher_CreateEllipseByCenter.svg";
+		}
+		if (g->is<Part::GeomBSplineCurve>()) {
+			return prefix + "Sketcher_CreateBSpline.svg";
+		}
+		if (g->is<Part::GeomPoint>()) {
+			return prefix + "Sketcher_CreatePoint.svg";
+		}
+		return QString();
+	}
 
     class SketchTaskDialog::Internal
     {
@@ -72,8 +168,76 @@ namespace MOON {
         : ParamTaskDialog(parent),mInternal(new Internal(this)),ShapeHelper(feature)
     {
         PropertyComponent* sketchGroup = addGroupParam("Sketch");
-        addParam(new BoolProperty("Draw Grid", sketchGroup));
+        addParam(
+            new BoolProperty(
+                "Draw Grid",
+                sketchGroup,
+                BoolProperty::Style::InviwoRect
+            )
+        );
+        addParam(
+            new BoolProperty(
+                "Snap To Grid",
+                sketchGroup,
+                BoolProperty::Style::InviwoRect
+            )
+        );
+        addParam(new ColorPickerProperty("Point Color", sketchGroup));
+        addParam(new ColorPickerProperty("Preselect Color", sketchGroup));
+        addParam(new ColorPickerProperty("Select Color", sketchGroup));
+        addParam(new ColorPickerProperty("Curve Color", sketchGroup));
+        addParam(new ColorPickerProperty("Construction Color", sketchGroup));
+        addParam(new ColorPickerProperty("Constraint Color", sketchGroup));
+        auto* curveWidth = new SliderFloatProperty("Curve Line Width", sketchGroup, 0.5f, 10.0f);
+        curveWidth->setStep(0.1f);
+        addParam(curveWidth);
+        auto* pointSize = new SliderFloatProperty("Point Size", sketchGroup, 2.0f, 40.0f);
+        pointSize->setStep(0.5f);
+        addParam(pointSize);
+        addGroupParam("Constraints");
+        addGroupParam("Curves");
         buildUi();
+
+        mConstraintList = new QListWidget(this);
+        mCurveList = new QListWidget(this);
+        mConstraintList->setMinimumHeight(110);
+        mCurveList->setMinimumHeight(110);
+        auto attachList = [this](const QString& groupName, QListWidget* list) {
+            const auto it = groupToIndex.find(groupName);
+            if (it != groupToIndex.end()) {
+                auto* group = m_comps[it->second].first;
+                group->setCollapsed(false);
+                group->addSubWidget(list);
+            }
+        };
+        attachList("Constraints", mConstraintList);
+        attachList("Curves", mCurveList);
+
+        mRefreshTimer = new QTimer(this);
+        mRefreshTimer->setInterval(300);
+        connect(mRefreshTimer, &QTimer::timeout, this, [this]() { refreshLists(); });
+        mRefreshTimer->start();
+        mCurveList->setMouseTracking(true);
+        mCurveList->viewport()->setMouseTracking(true);
+        mCurveList->setStyleSheet(
+            "QListWidget { background: transparent; border: none; outline: 0; }"
+            "QListWidget::item { height: 20px; padding-left: 2px; }"
+            "QListWidget::item:hover { background-color: #cfe2f5; color: #202020; }"
+            "QListWidget::item:selected { background-color: #7ab2e8; color: white; }"
+        );
+        connect(mCurveList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
+            if (mInternal && mInternal->feature) {
+                const int geoId = item->data(Qt::UserRole).toInt();
+                mInternal->feature->getSketcherObj()->selectGeo(geoId);
+            }
+        });
+        connect(mCurveList, &QListWidget::itemEntered, this, [this](QListWidgetItem* item) {
+            if (mInternal && mInternal->feature) {
+                const int geoId = item->data(Qt::UserRole).toInt();
+                mInternal->feature->getSketcherObj()->setPreselect(geoId);
+            }
+        });
+        refreshLists();
     }
 
     SketchTaskDialog::~SketchTaskDialog()
@@ -86,6 +250,36 @@ namespace MOON {
         if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
             return QVariant::fromValue(mInternal->feature->getSketcherObj()->isDrawGrid());
         }
+        if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
+            return QVariant::fromValue(mInternal->feature->getSketcherObj()->isSnapToGrid());
+        }
+        if (mInternal && mInternal->feature) {
+            const auto& opt = mInternal->feature->getSketcherObj()->drawOption();
+            if (propertyName == "Sketch:Point Color") {
+                return QVariant::fromValue(abgrToQColor(opt.pointColor));
+            }
+            if (propertyName == "Sketch:Preselect Color") {
+                return QVariant::fromValue(abgrToQColor(opt.preselectColor));
+            }
+            if (propertyName == "Sketch:Select Color") {
+                return QVariant::fromValue(abgrToQColor(opt.selectColor));
+            }
+            if (propertyName == "Sketch:Curve Color") {
+                return QVariant::fromValue(abgrToQColor(opt.curveColor));
+            }
+            if (propertyName == "Sketch:Construction Color") {
+                return QVariant::fromValue(abgrToQColor(opt.constructionColor));
+            }
+            if (propertyName == "Sketch:Constraint Color") {
+                return QVariant::fromValue(abgrToQColor(opt.constraintColor));
+            }
+            if (propertyName == "Sketch:Curve Line Width") {
+                return QVariant::fromValue(opt.curveLineWidth);
+            }
+            if (propertyName == "Sketch:Point Size") {
+                return QVariant::fromValue(opt.pointSize);
+            }
+        }
         return QVariant();
     }
 
@@ -93,6 +287,36 @@ namespace MOON {
     {
         if (propertyName == "Sketch:Draw Grid" && mInternal->feature) {
             mInternal->feature->getSketcherObj()->setDrawGrid(value.value<bool>());
+        }
+        if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
+            mInternal->feature->getSketcherObj()->setSnapToGrid(value.value<bool>());
+        }
+        if (mInternal && mInternal->feature) {
+            auto& opt = mInternal->feature->getSketcherObj()->drawOption();
+            if (propertyName == "Sketch:Point Color") {
+                opt.pointColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Preselect Color") {
+                opt.preselectColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Select Color") {
+                opt.selectColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Curve Color") {
+                opt.curveColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Construction Color") {
+                opt.constructionColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Constraint Color") {
+                opt.constraintColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Curve Line Width") {
+                opt.curveLineWidth = value.toFloat();
+            }
+            else if (propertyName == "Sketch:Point Size") {
+                opt.pointSize = value.toFloat();
+            }
         }
     }
 
@@ -114,5 +338,224 @@ namespace MOON {
         if (mInternal->behaviour) {
             mInternal->feature->getSketcherObj()->setPlane(mInternal->behaviour->getSelectPlane());
         }
+    }
+    void SketchTaskDialog::refreshLists()
+    {
+        if (!mInternal || !mInternal->feature || !mConstraintList || !mCurveList) {
+            return;
+        }
+        SketcherObj* obj = mInternal->feature->getSketcherObj();
+        if (!obj) {
+            return;
+        }
+
+        QStringList constraintLines;
+        QStringList constraintIconPaths;
+        std::vector<bool> constraintVisible;
+        for (int i = 0; i < obj->getConstraintCount(); ++i) {
+            const Sketcher::Constraint* c = obj->getConstraint(i);
+            if (!c) {
+                continue;
+            }
+            constraintIconPaths << constraintIconPath(c->Type);
+            constraintVisible.push_back(c->isVisible);
+            QString line = QString("%1  %2").arg(i).arg(c->typeToString().c_str());
+            if (c->First != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  F%1/%2").arg(c->First).arg(static_cast<int>(c->FirstPos));
+            }
+            if (c->Second != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  S%1/%2").arg(c->Second).arg(static_cast<int>(c->SecondPos));
+            }
+            if (c->Third != Sketcher::GeoEnum::GeoUndef) {
+                line += QString("  T%1/%2").arg(c->Third).arg(static_cast<int>(c->ThirdPos));
+            }
+            if (c->isDimensional()) {
+                char buf[48] = { 0 };
+                std::snprintf(buf, sizeof(buf), " = %.2f", c->getValue());
+                line += buf;
+            }
+            constraintLines << line;
+        }
+
+        QStringList curveLines;
+        QStringList curveIconPaths;
+        std::vector<bool> curveVisible;
+        for (int i = 0; i <= obj->getHighestCurveIndex(); ++i) {
+            const Part::Geometry* g = obj->getGeometry(i);
+            if (!g) {
+                continue;
+            }
+            curveIconPaths << curveIconPath(g);
+            curveVisible.push_back(obj->isGeometryVisible(i));
+            QString typeName;
+            if (g->is<Part::GeomLineSegment>()) {
+                typeName = "Line";
+            }
+            else if (g->is<Part::GeomArcOfCircle>()) {
+                typeName = "Arc";
+            }
+            else if (g->is<Part::GeomCircle>()) {
+                typeName = "Circle";
+            }
+            else if (g->is<Part::GeomEllipse>()) {
+                typeName = "Ellipse";
+            }
+            else if (g->is<Part::GeomBSplineCurve>()) {
+                typeName = "BSpline";
+            }
+            else if (g->is<Part::GeomPoint>()) {
+                typeName = "Point";
+            }
+            else {
+                typeName = "Curve";
+            }
+            curveLines << QString("%1  %2").arg(i).arg(typeName);
+        }
+
+        const QString cache = constraintLines.join(QStringLiteral("\n")) + QStringLiteral("|")
+            + curveLines.join(QStringLiteral("\n"));
+        if (cache == mListCache && mCurveList->count() == curveLines.size()) {
+            syncCurveListSelection();
+            return;
+        }
+        mListCache = cache;
+        const QIcon eyeOpen(":/entityTree/icons/pqEyeball.svg");
+        const QIcon eyeClosed(":/entityTree/icons/pqEyeballClosed.svg");
+        const auto addEyeRow = [&](
+            QListWidget* list,
+            const QIcon& typeIcon,
+            const QString& text,
+            bool visible,
+            int userData,
+            const std::function<void(bool)>& onToggled
+        ) {
+            auto* item = new QListWidgetItem();
+            item->setData(Qt::UserRole, userData);
+            auto* row = new QWidget(list);
+            auto* rowLayout = new QHBoxLayout(row);
+            rowLayout->setContentsMargins(2, 2, 2, 2);
+            rowLayout->setSpacing(6);
+            auto* eye = new QToolButton(row);
+            eye->setCheckable(true);
+            eye->setAutoRaise(true);
+            eye->setChecked(visible);
+            eye->setIcon(visible ? eyeOpen : eyeClosed);
+            eye->setToolTip(visible ? "Hide" : "Show");
+            eye->setIconSize(QSize(20, 20));
+            eye->setStyleSheet(
+                "QToolButton { border: none; background: transparent; padding: 0px; }"
+            );
+            QLabel* typeLabel = nullptr;
+            if (!typeIcon.isNull()) {
+                typeLabel = new QLabel(row);
+                typeLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+                typeLabel->setPixmap(typeIcon.pixmap(24, 24));
+            }
+            auto* label = new QLabel(text, row);
+            label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+            rowLayout->addWidget(eye);
+            if (typeLabel) {
+                rowLayout->addWidget(typeLabel);
+            }
+            rowLayout->addWidget(label, 1);
+            if (list == mCurveList) {
+                const QVariant rowRef = QVariant::fromValue<QWidget*>(row);
+                const auto installHoverFilter = [this, &rowRef](QWidget* w) {
+                    w->setProperty("_curveRowWidget", rowRef);
+                    w->installEventFilter(this);
+                };
+                row->setProperty("_curveRowId", userData);
+                installHoverFilter(row);
+                installHoverFilter(eye);
+                if (typeLabel) {
+                    installHoverFilter(typeLabel);
+                }
+                installHoverFilter(label);
+            }
+            connect(eye, &QToolButton::toggled, this, [=](bool on) {
+                eye->setIcon(on ? eyeOpen : eyeClosed);
+                onToggled(on);
+            });
+            item->setFlags(item->flags() | Qt::ItemIsSelectable);
+            item->setSizeHint(row->sizeHint());
+            list->addItem(item);
+            list->setItemWidget(item, row);
+        };
+
+        mConstraintList->clear();
+        for (int i = 0; i < constraintLines.size(); ++i) {
+            addEyeRow(
+                mConstraintList,
+                constraintIconPaths[i].isEmpty() ? QIcon() : QIcon(constraintIconPaths[i]),
+                constraintLines[i],
+                constraintVisible[i],
+                i,
+                [obj, i](bool on) { obj->setConstraintVisible(i, on); }
+            );
+        }
+        mCurveList->clear();
+        for (int i = 0; i < curveLines.size(); ++i) {
+            addEyeRow(
+                mCurveList,
+                curveIconPaths[i].isEmpty() ? QIcon() : QIcon(curveIconPaths[i]),
+                curveLines[i],
+                curveVisible[i],
+                i,
+                [obj, i](bool on) { obj->setGeometryVisible(i, on); }
+            );
+        }
+        syncCurveListSelection();
+    }
+    void SketchTaskDialog::syncCurveListSelection()
+    {
+        if (!mInternal || !mInternal->feature || !mCurveList) {
+            return;
+        }
+        SketcherObj* obj = mInternal->feature->getSketcherObj();
+        if (!obj) {
+            return;
+        }
+        std::set<int> selected;
+        for (int geoId : obj->getSelectIds()) {
+            selected.insert(geoId);
+        }
+        for (int row = 0; row < mCurveList->count(); ++row) {
+            QListWidgetItem* item = mCurveList->item(row);
+            if (!item) {
+                continue;
+            }
+            const int geoId = item->data(Qt::UserRole).toInt();
+            item->setSelected(selected.count(geoId) != 0);
+        }
+    }
+    bool SketchTaskDialog::eventFilter(QObject* watched, QEvent* event)
+    {
+        if (!watched || (event->type() != QEvent::Enter && event->type() != QEvent::Leave)) {
+            return QWidget::eventFilter(watched, event);
+        }
+        auto* widget = qobject_cast<QWidget*>(watched);
+        if (!widget) {
+            return QWidget::eventFilter(watched, event);
+        }
+        auto* row = widget->property("_curveRowWidget").value<QWidget*>();
+        if (!row) {
+            return QWidget::eventFilter(watched, event);
+        }
+        const int geoId = row->property("_curveRowId").toInt();
+        if (event->type() == QEvent::Enter) {
+            if (mCurveHoverRow && mCurveHoverRow != row) {
+                mCurveHoverRow->setStyleSheet(QString());
+            }
+            mCurveHoverRow = row;
+            row->setStyleSheet("background-color: #cfe2f5;");
+            if (mInternal && mInternal->feature) {
+                mInternal->feature->getSketcherObj()->setPreselect(geoId);
+            }
+        }
+        else if (mCurveHoverRow == row) {
+            row->setStyleSheet(QString());
+            mCurveHoverRow = nullptr;
+        }
+        return QWidget::eventFilter(watched, event);
     }
 }

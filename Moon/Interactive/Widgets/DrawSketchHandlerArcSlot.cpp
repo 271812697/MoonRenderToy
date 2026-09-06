@@ -147,7 +147,7 @@ namespace MOON {
 
 		if (state() == SelectMode::SeekSecond) {
 			// Preview: full circle until the arc angle is picked.
-			addCircleToShapeGeometry(toVector3d(centerPoint), radius, true);
+			addCircleToShapeGeometry(toVector3d(centerPoint), radius, false);
 		}
 		else {
 			if (std::fabs(arcAngle) < Precision::Confusion()) {
@@ -164,21 +164,21 @@ namespace MOON {
 					startAngle,
 					endAngle,
 					radius + r,
-					true
+					false
 				);
 				addArcToShapeGeometry(
 					toVector3d(startPoint),
 					angleReversed ? endAngle : startAngle + pi,
 					angleReversed ? endAngle + pi : startAngle + 2 * pi,
 					r,
-					true
+					false
 				);
 				addArcToShapeGeometry(
 					toVector3d(endPoint),
 					angleReversed ? startAngle + pi : endAngle,
 					angleReversed ? startAngle + 2 * pi : pi + endAngle,
 					r,
-					true
+					false
 				);
 				if (radius - r > Precision::Confusion()) {
 					addArcToShapeGeometry(
@@ -186,7 +186,7 @@ namespace MOON {
 						startAngle,
 						endAngle,
 						radius - r,
-						true
+						false
 					);
 				}
 			}
@@ -196,7 +196,7 @@ namespace MOON {
 					startAngle,
 					endAngle,
 					radius,
-					true
+					false
 				);
 				Base::Vector3d p11 = arc1->getStartPoint();
 				Base::Vector3d p12 = arc1->getEndPoint();
@@ -210,18 +210,169 @@ namespace MOON {
 					Base::Vector3d p21 = arc2->getStartPoint();
 					Base::Vector3d p22 = arc2->getEndPoint();
 
-					addLineToShapeGeometry(p11, p21, true);
-					addLineToShapeGeometry(p12, p22, true);
+					addLineToShapeGeometry(p11, p21, false);
+					addLineToShapeGeometry(p12, p22, false);
 
 					// Inner arc is pushed last to keep the element order stable.
 					ShapeGeometry.push_back(std::move(arc2));
 				}
 				else {
-					addLineToShapeGeometry(p11, toVector3d(centerPoint), true);
-					addLineToShapeGeometry(p12, toVector3d(centerPoint), true);
+					addLineToShapeGeometry(p11, toVector3d(centerPoint), false);
+					addLineToShapeGeometry(p12, toVector3d(centerPoint), false);
 				}
 			}
 		}
+	}
+
+	void DrawSketchHandlerArcSlot::executeCommands()
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		const int firstCurve = Obj->getHighestCurveIndex() + 1;
+		createShape(false);
+		if (ShapeGeometry.empty()) {
+			return;
+		}
+
+		SupperClass::executeCommands();
+		if (constructionMethod() == ConstructionMethod::ArcSlot) {
+			addArcSlotAutoConstraints(firstCurve);
+		}
+		else {
+			addRectangleSlotAutoConstraints(firstCurve);
+		}
+	}
+
+	void DrawSketchHandlerArcSlot::addArcSlotAutoConstraints(int firstCurve)
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		// Geometry layout: outer arc 0, cap arc 1 at the start point, cap arc 2
+		// at the end point and (when wide enough) inner arc 3. The outer and
+		// inner arcs share the center, and every joint is tangent continuous.
+		const bool allArcs = std::fabs(radius - r) > Precision::Confusion();
+		const Sketcher::PointPos pos1 = angleReversed
+			? Sketcher::PointPos::start
+			: Sketcher::PointPos::end;
+		const Sketcher::PointPos pos2 = angleReversed
+			? Sketcher::PointPos::end
+			: Sketcher::PointPos::start;
+
+		if (allArcs) {
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 3, Sketcher::PointPos::mid
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Tangent,
+				firstCurve + 3, pos1,
+				firstCurve + 2, pos1
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Tangent,
+				firstCurve + 3, pos2,
+				firstCurve + 1, pos2
+			);
+		}
+		else {
+			// The inner arc degenerates; the two caps meet at the center.
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 1, pos2
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 2, pos1
+			);
+		}
+
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, pos1,
+			firstCurve + 2, pos2
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, pos2,
+			firstCurve + 1, pos1
+		);
+
+		Obj->solve();
+	}
+
+	void DrawSketchHandlerArcSlot::addRectangleSlotAutoConstraints(int firstCurve)
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		// Geometry layout: outer arc 0, radial wall 1, radial wall 2 and (when
+		// present) inner arc 3. Both walls stay radial to the outer arc and the
+		// inner arc is concentric with the outer one.
+		const bool allGeos = r > Precision::Confusion();
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Perpendicular,
+			firstCurve, Sketcher::PointPos::none,
+			firstCurve + 1, Sketcher::PointPos::none
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Perpendicular,
+			firstCurve, Sketcher::PointPos::none,
+			firstCurve + 2, Sketcher::PointPos::none
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Coincident,
+			firstCurve, Sketcher::PointPos::start,
+			firstCurve + 1, Sketcher::PointPos::start
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Coincident,
+			firstCurve, Sketcher::PointPos::end,
+			firstCurve + 2, Sketcher::PointPos::start
+		);
+
+		if (allGeos) {
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 3, Sketcher::PointPos::mid
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve + 3, Sketcher::PointPos::start,
+				firstCurve + 1, Sketcher::PointPos::end
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve + 3, Sketcher::PointPos::end,
+				firstCurve + 2, Sketcher::PointPos::end
+			);
+		}
+		else {
+			// The inner arc degenerates to the center point.
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 1, Sketcher::PointPos::end
+			);
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve, Sketcher::PointPos::mid,
+				firstCurve + 2, Sketcher::PointPos::end
+			);
+		}
+
+		Obj->solve();
 	}
 
 }

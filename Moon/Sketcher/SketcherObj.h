@@ -2,6 +2,8 @@
 #include<memory>
 #include <unordered_map>
 #include <chrono>
+#include <set>
+#include <Eigen/Core>
 #include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
@@ -12,6 +14,7 @@ namespace Part {
 	class  Geometry;
 }
 namespace MOON {
+	void defaultLabelOffsetPx(const Sketcher::Constraint* c, float& dx, float& dy);
 	class SketcherObj :public EventWidget
 	{
 	public:
@@ -19,6 +22,22 @@ namespace MOON {
 		// (GeoEnum.h); keep a short alias for use inside this class and by
 		// code that refers to SketcherObj::PointPos.
 		using PointPos = Sketcher::PointPos;
+		// Viewport drawing options for sketch geometry and constraint
+		// annotations. Colours are stored in ABGR byte order, matching the
+		// renderer's Eigen::Vector4<uint8_t> convention.
+		struct DrawOption
+		{
+			Eigen::Vector4<uint8_t> pointColor { 255, 0, 0, 255 };
+			Eigen::Vector4<uint8_t> preselectColor { 255, 0, 255, 255 };
+			Eigen::Vector4<uint8_t> selectColor { 255, 255, 255, 0 };
+			Eigen::Vector4<uint8_t> constraintColor { 255, 255, 47, 186 };
+			Eigen::Vector4<uint8_t> curveColor { 255, 0, 0, 0 };
+			Eigen::Vector4<uint8_t> constructionColor { 255, 255, 107, 142 };
+			float curveLineWidth = 4.0f;
+			float pointSize = 12.0f;
+		};
+		DrawOption& drawOption() { return m_drawOption; }
+		const DrawOption& drawOption() const { return m_drawOption; }
 		struct SelectGeoId
 		{
 			int GeoId;
@@ -38,10 +57,25 @@ namespace MOON {
 		void beginEdit();
 		void setDrawGrid(bool v) { m_drawGrid = v; }
 		bool isDrawGrid() const { return m_drawGrid; }
+		void setSnapToGrid(bool v) { m_snapToGrid = v; }
+		bool isSnapToGrid() const { return m_snapToGrid; }
+		// Marks geometry that is only used internally to build a shape (e.g.
+		// rounded-rectangle corner points). Such geometry stays in the solver
+		// but its point markers are hidden in the viewport.
+		void setConstruction(int geoId, bool construction);
+		void setConstraintVisible(int constrId, bool visible);
+		void setGeometryVisible(int geoId, bool visible);
+		void selectGeo(int geoId);
+		void setPreselect(int geoId);
+		bool isGeometryVisible(int geoId) const
+		{
+			return mHiddenGeoIds.count(geoId) == 0;
+		}
 		SketcherPlane2D getPlane();
 		void getPlaneNormal(double*p);
 		bool InEdit()const;
 		void draw();
+		bool snapToGridPoint(Base::Vector2d& pos) const;
 		// Sketch backdrop (adaptive background grid, infinite X/Y axes, origin
 		// marker). Kept separate from the geometry pass so background visuals
 		// can be tuned/disabled without touching curve rendering.
@@ -53,6 +87,10 @@ namespace MOON {
 		void addGeometry(const std::vector<Part::Geometry*>& curveList);
 		Part::Geometry* getGeometry(int GeoId);
 		const Part::Geometry* getGeometry(int GeoId) const;
+		bool getGeometryPoint(int GeoId, PointPos pos, Base::Vector2d& out) const
+		{
+			return getGeometryPointSketch(GeoId, pos, out);
+		}
 		int getHighestCurveIndex();
 		int getPickGeoIndex(const Base::Vector2d& pos, const Base::Matrix4D& viewPortMat);
 		SelectGeoId testSelect(const Base::Vector2d& pos);
@@ -96,7 +134,7 @@ namespace MOON {
 		Part::TopoShape getDoneWireShape() {
 			return doneWireShape;
 		}
-		Base::Matrix4D getplaneTransform();
+		Base::Matrix4D getplaneTransform() const;
 		Base::Vector3d getPlaneOrigin() {
 			return mPlane.origin;
 		}
@@ -150,6 +188,13 @@ namespace MOON {
 		) const;
 		int pickConstraintLabelAt(float mouseX, float mouseY) const;
 		void editConstraintValue(int constrId);
+		// Small geometric marker for tangent constraints: a tangent line
+		// segment through the computed tangency point.
+		void drawTangentIcons();
+		// Small viewport markers for the remaining geometric constraints
+		// (coincident/horizontal/vertical/parallel/...), placed near the
+		// geometry they act on.
+		void drawConstraintIcons();
 	private:
 		void retrieveSolverDiagnostics();
 		int lastDoF;
@@ -169,6 +214,11 @@ namespace MOON {
 		void updateGeoSegment(int id);
 		void pickGeo();
 		void updateConstraintLabelInteraction();
+		bool findNextCoincidentPoint(
+			const Base::Vector2d& pos,
+			const SelectGeoId& current,
+			SelectGeoId& next
+		) const;
 		bool getGeometryPointSketch(int geoId, PointPos pos, Base::Vector2d& out) const;
 		bool getGeometryCenterSketch(int geoId, Base::Vector2d& out) const;
 		bool getConstraintMeasureEndpoints(
@@ -200,6 +250,12 @@ namespace MOON {
 			float& startDeg,
 			float& sweepDeg
 		) const;
+		bool computeTangentIconAnchor(
+			const Sketcher::Constraint* constraint,
+			Base::Vector2d& anchorSketch,
+			Base::Vector2d& dirSketch,
+			Base::Vector2d& normalSketch
+		) const;
 		Base::Vector2d constraintLabelAnchor(const Sketcher::Constraint* constraint) const;
 		std::string constraintLabelText(const Sketcher::Constraint* constraint) const;
 		bool constraintInError(int constrId) const;
@@ -213,6 +269,10 @@ namespace MOON {
 		Base::Matrix4D planeTransform;
 		bool isInEdit = true;
 		bool m_drawGrid = true;
+		bool m_snapToGrid = false;
+		std::set<int> mConstructionGeoIds;
+		std::set<int> mHiddenGeoIds;
+		DrawOption m_drawOption;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;
@@ -220,6 +280,7 @@ namespace MOON {
 		std::vector<SelectGeoId> selectIds;
 		bool hasClickSelected = false;
 		bool m_dragSolverInit = false;
+		bool sketchDrawRect = false;
 		// P0 dimension-label overlay state
 		std::unordered_map<const Sketcher::Constraint*, Base::Vector2d> m_labelManualOffsetPx;
 		// 0..1 parameter of the caption along the straight dimension shaft
@@ -258,8 +319,11 @@ namespace MOON {
 		};
 		struct CurveSegment
 		{
+			//point discret of curver
 			std::vector<Base::Vector3d> point;
+			//the param value of point 
 			std::vector<double> params;
+			//the start、center、end position of the curve
 			std::vector<SegPoint>sepoints;
 			CurveSegment() {}
 		};

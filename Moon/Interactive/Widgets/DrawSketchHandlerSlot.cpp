@@ -114,14 +114,14 @@ namespace MOON {
 			pi / 2 + angle,
 			1.5 * pi + angle,
 			radius,
-			true
+			false
 		);
 		Part::GeomArcOfCircle* arc2 = addArcToShapeGeometry(
 			toVector3d(secondPoint),
 			1.5 * pi + angle,
 			pi / 2 + angle,
 			radius,
-			true
+			false
 		);
 
 		Base::Vector3d p11 = arc1->getStartPoint();
@@ -129,8 +129,66 @@ namespace MOON {
 		Base::Vector3d p21 = arc2->getStartPoint();
 		Base::Vector3d p22 = arc2->getEndPoint();
 
-		addLineToShapeGeometry(p11, p22, true);
-		addLineToShapeGeometry(p12, p21, true);
+		addLineToShapeGeometry(p11, p22, false);
+		addLineToShapeGeometry(p12, p21, false);
+	}
+
+	void DrawSketchHandlerSlot::executeCommands()
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		const int firstCurve = Obj->getHighestCurveIndex() + 1;
+		createShape(false);
+		if (ShapeGeometry.empty()) {
+			return;
+		}
+
+		SupperClass::executeCommands();
+		addSlotAutoConstraints(firstCurve);
+	}
+
+	void DrawSketchHandlerSlot::addSlotAutoConstraints(int firstCurve)
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		// Geometry layout: arc0 = left cap, arc1 = right cap, line0 = top
+		// connector, line1 = bottom connector. Each connector is tangent to the
+		// cap it touches (a point-wise tangent also pins the shared vertex).
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, Sketcher::PointPos::start,
+			firstCurve + 2, Sketcher::PointPos::start
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, Sketcher::PointPos::end,
+			firstCurve + 3, Sketcher::PointPos::start
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve + 1, Sketcher::PointPos::end,
+			firstCurve + 2, Sketcher::PointPos::end
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve + 1, Sketcher::PointPos::start,
+			firstCurve + 3, Sketcher::PointPos::end
+		);
+
+		// Both caps keep the same radius so the slot width stays uniform.
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Equal,
+			firstCurve, Sketcher::PointPos::none,
+			firstCurve + 1, Sketcher::PointPos::none
+		);
+
+		Obj->solve();
 	}
 
 	void DrawSketchHandlerSlot::onReset()

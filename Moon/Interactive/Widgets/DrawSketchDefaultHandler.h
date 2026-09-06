@@ -356,18 +356,23 @@ namespace MOON
         virtual void executeCommands() {
             CORE_INFO("add {0} geometry to sketcher obj ", ShapeGeometry.size());
 
-            //auto& view = GetService(::Editor::Panels::SceneView);
-            //auto scene = view.GetScene();
+            SketcherObj* sketchobj=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+            if (!sketchobj) {
+                return;
+            }
+            // Elements explicitly created as construction geometry (the flag
+            // lives on the Part::Geometry object) stay construction in the
+            // sketch object.
             for (auto& geo : ShapeGeometry) {
-                //auto& actor = scene->CreateActor("", "SketchGeomertyLine");
-                //auto& geoComp = actor.AddComponent<Core::ECS::Components::CGeometryLine>();
-                //actor.AddComponent<Core::ECS::Components::CModelRenderer>();
-                //actor.AddComponent<Core::ECS::Components::CMaterialRenderer>();
-                //geoComp.setGeometry(geo.get());
-                //geoComp.discretizationShape(plane);
-                SketcherObj* sketchobj=SketcherObjManager::instance().GetCurrentActiveSketcherObj();
-                if (sketchobj) {
-                    sketchobj->addGeometry((geo));
+                if (!geo) {
+                    continue;
+                }
+                // Read the flag before addGeometry(): the unique_ptr overload
+                // moves the element into the sketch object and leaves it empty.
+                const bool isConstruction = geo->getConstruction();
+                const int geoId = sketchobj->addGeometry((geo));
+                if (isConstruction) {
+                    sketchobj->setConstruction(geoId, true);
                 }
             }
         }
@@ -490,7 +495,7 @@ namespace MOON
         {
             auto line = std::make_unique<Part::GeomLineSegment>();
             line->setPoints(p1, p2);
-            //Sketcher::GeometryFacade::setConstruction(line.get(), constructionMode);
+            line->setConstruction(constructionMode);
             return static_cast<Part::GeomLineSegment*>(ShapeGeometry.emplace_back(std::move(line)).get());
         }
         /** @brief Function to add an arc to the ShapeGeometry vector.*/
@@ -500,7 +505,7 @@ namespace MOON
             arc->setCenter(p1);
             arc->setRange(start, end, true);
             arc->setRadius(radius);
-            //Sketcher::GeometryFacade::setConstruction(arc.get(), constructionMode);
+            arc->setConstruction(constructionMode);
             return static_cast<Part::GeomArcOfCircle*>(ShapeGeometry.emplace_back(std::move(arc)).get());
         }
 
@@ -509,7 +514,7 @@ namespace MOON
         {
             auto point = std::make_unique<Part::GeomPoint>();
             point->setPoint(p1);
-            //Sketcher::GeometryFacade::setConstruction(point.get(), constructionMode);
+            point->setConstruction(constructionMode);
             return static_cast<Part::GeomPoint*>(ShapeGeometry.emplace_back(std::move(point)).get());
         }
 
@@ -527,7 +532,7 @@ namespace MOON
             ellipse->setMinorRadius(minorRadius);
             ellipse->setMajorAxisDir(majorAxisDirection);
             ellipse->setCenter(centerPoint);
-            //Sketcher::GeometryFacade::setConstruction(ellipse.get(), constructionMode);
+            ellipse->setConstruction(constructionMode);
             return static_cast<Part::GeomEllipse*>(ShapeGeometry.emplace_back(std::move(ellipse)).get());
         }
 
@@ -537,7 +542,7 @@ namespace MOON
             auto circle = std::make_unique<Part::GeomCircle>();
             circle->setRadius(radius);
             circle->setCenter(centerPoint);
-            //Sketcher::GeometryFacade::setConstruction(circle.get(), constructionMode);
+            circle->setConstruction(constructionMode);
             return static_cast<Part::GeomCircle*>(ShapeGeometry.emplace_back(std::move(circle)).get());
         }
     protected:
