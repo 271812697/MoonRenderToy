@@ -111,6 +111,10 @@ public:
     Geometry* clone() const;
     /// returns the tag of the geometry object
     boost::uuids::uuid getTag() const;
+    /// Whether this geometry is only a construction aid (never part of the
+    /// final profile/shape). Construction curves are rendered dashed.
+    void setConstruction(bool enabled);
+    bool getConstruction() const;
 
     virtual bool isSame(const Geometry& other, double tol, double atol) const = 0;
     bool hasSameExtensions(const Geometry& other) const;
@@ -152,6 +156,7 @@ protected:
 
 protected:
     boost::uuids::uuid tag;
+    bool construction = false;
     std::vector<std::shared_ptr<GeometryExtension>> extensions;
 
 public:

@@ -1,4 +1,4 @@
-#include "Sketcher/SketcherObj.h"
+﻿#include "Sketcher/SketcherObj.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
@@ -660,10 +660,12 @@ namespace MOON {
         std::list<TopoDS_Edge> edge_list;
         std::list<TopoDS_Wire> wires;
 		for (const auto& geo : mGeoList) {
-			auto shape = geo->toShape();
-			if (shape.ShapeType() == TopAbs_EDGE) {
-				edge_list.push_back(TopoDS::Edge(shape));
-			}
+            if (!geo->getConstruction()) {
+			    auto shape = geo->toShape();
+			    if (shape.ShapeType() == TopAbs_EDGE) {
+				    edge_list.push_back(TopoDS::Edge(shape));
+			    }
+            }
 		}
         // Hint: Use ShapeAnalysis_FreeBounds::ConnectEdgesToWires() as an alternative
         // sort them together to wires

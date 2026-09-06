@@ -114,14 +114,14 @@ namespace MOON {
 			pi / 2 + angle,
 			1.5 * pi + angle,
 			radius,
-			true
+			false
 		);
 		Part::GeomArcOfCircle* arc2 = addArcToShapeGeometry(
 			toVector3d(secondPoint),
 			1.5 * pi + angle,
 			pi / 2 + angle,
 			radius,
-			true
+			false
 		);
 
 		Base::Vector3d p11 = arc1->getStartPoint();
@@ -129,8 +129,8 @@ namespace MOON {
 		Base::Vector3d p21 = arc2->getStartPoint();
 		Base::Vector3d p22 = arc2->getEndPoint();
 
-		addLineToShapeGeometry(p11, p22, true);
-		addLineToShapeGeometry(p12, p21, true);
+		addLineToShapeGeometry(p11, p22, false);
+		addLineToShapeGeometry(p12, p21, false);
 	}
 
 	void DrawSketchHandlerSlot::executeCommands()

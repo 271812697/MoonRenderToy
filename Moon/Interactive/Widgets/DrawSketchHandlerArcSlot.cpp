@@ -147,7 +147,7 @@ namespace MOON {
 
 		if (state() == SelectMode::SeekSecond) {
 			// Preview: full circle until the arc angle is picked.
-			addCircleToShapeGeometry(toVector3d(centerPoint), radius, true);
+			addCircleToShapeGeometry(toVector3d(centerPoint), radius, false);
 		}
 		else {
 			if (std::fabs(arcAngle) < Precision::Confusion()) {
@@ -164,21 +164,21 @@ namespace MOON {
 					startAngle,
 					endAngle,
 					radius + r,
-					true
+					false
 				);
 				addArcToShapeGeometry(
 					toVector3d(startPoint),
 					angleReversed ? endAngle : startAngle + pi,
 					angleReversed ? endAngle + pi : startAngle + 2 * pi,
 					r,
-					true
+					false
 				);
 				addArcToShapeGeometry(
 					toVector3d(endPoint),
 					angleReversed ? startAngle + pi : endAngle,
 					angleReversed ? startAngle + 2 * pi : pi + endAngle,
 					r,
-					true
+					false
 				);
 				if (radius - r > Precision::Confusion()) {
 					addArcToShapeGeometry(
@@ -186,7 +186,7 @@ namespace MOON {
 						startAngle,
 						endAngle,
 						radius - r,
-						true
+						false
 					);
 				}
 			}
@@ -196,7 +196,7 @@ namespace MOON {
 					startAngle,
 					endAngle,
 					radius,
-					true
+					false
 				);
 				Base::Vector3d p11 = arc1->getStartPoint();
 				Base::Vector3d p12 = arc1->getEndPoint();
@@ -210,15 +210,15 @@ namespace MOON {
 					Base::Vector3d p21 = arc2->getStartPoint();
 					Base::Vector3d p22 = arc2->getEndPoint();
 
-					addLineToShapeGeometry(p11, p21, true);
-					addLineToShapeGeometry(p12, p22, true);
+					addLineToShapeGeometry(p11, p21, false);
+					addLineToShapeGeometry(p12, p22, false);
 
 					// Inner arc is pushed last to keep the element order stable.
 					ShapeGeometry.push_back(std::move(arc2));
 				}
 				else {
-					addLineToShapeGeometry(p11, toVector3d(centerPoint), true);
-					addLineToShapeGeometry(p12, toVector3d(centerPoint), true);
+					addLineToShapeGeometry(p11, toVector3d(centerPoint), false);
+					addLineToShapeGeometry(p12, toVector3d(centerPoint), false);
 				}
 			}
 		}

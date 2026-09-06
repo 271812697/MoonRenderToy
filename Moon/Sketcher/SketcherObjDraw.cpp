@@ -24,6 +24,49 @@ namespace MOON {
     {
         return IM_COL32(c[3], c[2], c[1], c[0]);
     }
+    // Draws a sketch-plane polyline with a screen-space dashed pattern (dash
+    // and gap lengths are fixed in pixels, so the pattern keeps its size when
+    // the view is zoomed). Construction geometry uses this style.
+    static void drawDashedSketchPolyline(
+        ImRenderer* renderer,
+        SketcherPlane2D& plane,
+        const std::vector<Base::Vector3d>& points,
+        float dashPx = 8.0f,
+        float gapPx = 6.0f
+    )
+    {
+        if (!renderer || points.size() < 2) {
+            return;
+        }
+        const float cycle = dashPx + gapPx;
+        float phase = 0.0f;
+        for (int i = 0; i + 1 < static_cast<int>(points.size()); i++) {
+            const Eigen::Vector3f wa = plane.valueEigen(points[i].x, points[i].y);
+            const Eigen::Vector3f wb = plane.valueEigen(points[i + 1].x, points[i + 1].y);
+            const Eigen::Vector2f aS = renderer->worldToScreen(wa);
+            const Eigen::Vector2f bS = renderer->worldToScreen(wb);
+            const float len = (bS - aS).norm();
+            if (len < 0.05f) {
+                continue;
+            }
+            float t = 0.0f;
+            while (t < len - 0.1f) {
+                const bool ink = phase < dashPx;
+                const float stateRemain = ink ? (dashPx - phase) : (cycle - phase);
+                const float step = std::min(stateRemain, len - t);
+                if (ink && step > 0.1f) {
+                    const float u0 = t / len;
+                    const float u1 = (t + step) / len;
+                    renderer->drawLine(wa + (wb - wa) * u0, wa + (wb - wa) * u1);
+                }
+                t += step;
+                phase += step;
+                if (phase >= cycle) {
+                    phase -= cycle;
+                }
+            }
+        }
+    }
     // Default screen-space offset (in pixels) applied to the auto anchor when
     // the user has not moved the label manually.
     void defaultLabelOffsetPx(const Sketcher::Constraint* c, float& dx, float& dy)
@@ -409,6 +452,9 @@ namespace MOON {
                     }
                 }
             }
+            auto& geo = mGeoList[i];
+            const bool isConstruction
+                = mConstructionGeoIds.count(i) != 0 || geo->getConstruction();
             if (isSelect) {
                 renderer->pushColor(selectColor);
             }
@@ -416,13 +462,22 @@ namespace MOON {
                 renderer->pushColor(preselectColor);
             }
             else {
-                renderer->pushColor(m_drawOption.curveColor);
+                renderer->pushColor(
+                    isConstruction ? m_drawOption.constructionColor : m_drawOption.curveColor
+                );
             }
-            auto& geo = mGeoList[i];
             if (geo->isDerivedFrom<Part::GeomCurve>()) {
                 auto& seg = mGeoSegment[geo.get()];
-                for (int i = 0;i < seg.point.size() - 1;i++) {
-                    renderer->drawLine(mPlane.valueEigen(seg.point[i].x, seg.point[i].y), mPlane.valueEigen(seg.point[i + 1].x, seg.point[i + 1].y));
+                if (isConstruction) {
+                    drawDashedSketchPolyline(renderer, mPlane, seg.point);
+                }
+                else {
+                    for (int k = 0; k + 1 < static_cast<int>(seg.point.size()); k++) {
+                        renderer->drawLine(
+                            mPlane.valueEigen(seg.point[k].x, seg.point[k].y),
+                            mPlane.valueEigen(seg.point[k + 1].x, seg.point[k + 1].y)
+                        );
+                    }
                 }
             }
             renderer->popColor();
@@ -432,7 +487,9 @@ namespace MOON {
             if (mHiddenGeoIds.count(geoIndex)) {
                 continue;
             }
-            const bool isConstruction = mConstructionGeoIds.count(geoIndex) != 0;
+            const bool isConstruction
+                = mConstructionGeoIds.count(geoIndex) != 0
+                || mGeoList[geoIndex]->getConstruction();
             auto& sePoints = mGeoSegment[mGeoList[geoIndex].get()].sepoints;
             for (int k = 0; k < static_cast<int>(sePoints.size()); ++k) {
                 bool pointSelected = false;
@@ -448,9 +505,7 @@ namespace MOON {
                 renderer->drawPoint(
                     mPlane.valueEigen(sePoints[k].coord.x, sePoints[k].coord.y),
                     pointSize + 1,
-                    isConstruction
-                        ? Eigen::Vector4<uint8_t>(255, 0, 255, 0)
-                        : pointColor
+                    isConstruction ? m_drawOption.constructionColor : pointColor
                 );
             }
         }

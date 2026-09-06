@@ -32,7 +32,8 @@ namespace MOON {
 			Eigen::Vector4<uint8_t> selectColor { 255, 255, 255, 0 };
 			Eigen::Vector4<uint8_t> constraintColor { 255, 255, 47, 186 };
 			Eigen::Vector4<uint8_t> curveColor { 255, 0, 0, 0 };
-			float curveLineWidth = 3.0f;
+			Eigen::Vector4<uint8_t> constructionColor { 255, 255, 107, 142 };
+			float curveLineWidth = 4.0f;
 			float pointSize = 12.0f;
 		};
 		DrawOption& drawOption() { return m_drawOption; }

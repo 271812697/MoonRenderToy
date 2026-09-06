@@ -186,6 +186,7 @@ namespace MOON {
         addParam(new ColorPickerProperty("Preselect Color", sketchGroup));
         addParam(new ColorPickerProperty("Select Color", sketchGroup));
         addParam(new ColorPickerProperty("Curve Color", sketchGroup));
+        addParam(new ColorPickerProperty("Construction Color", sketchGroup));
         addParam(new ColorPickerProperty("Constraint Color", sketchGroup));
         auto* curveWidth = new SliderFloatProperty("Curve Line Width", sketchGroup, 0.5f, 10.0f);
         curveWidth->setStep(0.1f);
@@ -266,6 +267,9 @@ namespace MOON {
             if (propertyName == "Sketch:Curve Color") {
                 return QVariant::fromValue(abgrToQColor(opt.curveColor));
             }
+            if (propertyName == "Sketch:Construction Color") {
+                return QVariant::fromValue(abgrToQColor(opt.constructionColor));
+            }
             if (propertyName == "Sketch:Constraint Color") {
                 return QVariant::fromValue(abgrToQColor(opt.constraintColor));
             }
@@ -300,6 +304,9 @@ namespace MOON {
             }
             else if (propertyName == "Sketch:Curve Color") {
                 opt.curveColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Construction Color") {
+                opt.constructionColor = qColorToAbgr(value.value<QColor>());
             }
             else if (propertyName == "Sketch:Constraint Color") {
                 opt.constraintColor = qColorToAbgr(value.value<QColor>());

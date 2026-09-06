@@ -100,7 +100,7 @@ namespace MOON {
 			rx = cos_v * rx - sin_v * ry;
 			ry = cos_v * ry + sin_v * old_rx;
 			const Base::Vector2d newCorner(centerPoint.x + rx, centerPoint.y + ry);
-			addLineToShapeGeometry(toVector3d(prevCorner), toVector3d(newCorner), true);
+			addLineToShapeGeometry(toVector3d(prevCorner), toVector3d(newCorner), false);
 			prevCorner = newCorner;
 		}
 

@@ -1031,6 +1031,9 @@ namespace MOON {
     }
     void SketcherObj::setConstruction(int geoId, bool construction)
     {
+        if (geoId >= 0 && geoId < static_cast<int>(mGeoList.size())) {
+            mGeoList[geoId]->setConstruction(construction);
+        }
         if (construction) {
             mConstructionGeoIds.insert(geoId);
         }
