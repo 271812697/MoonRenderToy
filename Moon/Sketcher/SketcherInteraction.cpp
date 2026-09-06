@@ -1,5 +1,6 @@
 ﻿#include "Sketcher/SketcherObj.h"
 #include "renderer/SceneView.h"
+#include <cmath>
 namespace MOON {
     static double pointToSegmentDist(const Base::Vector3d& p, const Base::Vector3d& s, const Base::Vector3d& e, double& u) {
         Base::Vector3d se = e - s;
@@ -37,15 +38,39 @@ namespace MOON {
                 selectState = Hot;
             }
             else if (selectState == OperationGeo) {
-                // Single circle/arc body drag: the solver anchors the center
-                // and the mouse sets the rim point (radius). Everything else
-                // (endpoints, centers, whole lines, group drag) is moved by
-                // relative displacement.
-                bool radiusDrag = selectIds.size() == 1 && selectIds[0].pointPos == PointPos::none;
-                if (radiusDrag) {
+                // A single circle/arc is manipulated in its own parameter
+                // space: dragging the rim resizes it around the fixed center,
+                // dragging an endpoint slides it along the unchanged circle
+                // and dragging the center translates it. moveGeo() implements
+                // exactly those semantics. The solver path below would instead
+                // translate the whole element together with the grabbed
+                // endpoint (its center would follow the mouse) and can also
+                // drift the center while resizing, so bypass it here.
+                const bool singleCircleArcDrag = [&]() {
+                    if (selectIds.size() != 1) {
+                        return false;
+                    }
                     Part::Geometry* geo = getGeometry(selectIds[0].GeoId);
-                    radiusDrag = geo
+                    return geo
                         && (geo->is<Part::GeomCircle>() || geo->is<Part::GeomArcOfCircle>());
+                }();
+
+                if (singleCircleArcDrag) {
+                    if (!m_dragSolverInit) {
+                        // Normalize curves added since the last solve() so the
+                        // range angles read by moveGeo() are canonical.
+                        solve();
+                        m_dragSolverInit = true;
+                    }
+                    for (const auto& sel : selectIds) {
+                        moveGeo(
+                            sel,
+                            static_cast<float>(onSketchPosMove.x - preOnSketchPosMove.x),
+                            static_cast<float>(onSketchPosMove.y - preOnSketchPosMove.y)
+                        );
+                    }
+                    solve();
+                    return;
                 }
 
                 std::vector<Sketcher::GeoElementId> dragIds;
@@ -63,17 +88,10 @@ namespace MOON {
                     m_dragSolverInit = solvedSketch.initMove(dragIds) == 0;
                 }
                 if (m_dragSolverInit) {
-                    Base::Vector3d moveTo;
-                    bool relative = true;
-                    if (radiusDrag) {
-                        moveTo = Base::Vector3d(onSketchPosMove.x, onSketchPosMove.y, 0.0);
-                        relative = false;  // rim follows the mouse, center stays
-                    }
-                    else {
-                        const Base::Vector2d totalDelta = onSketchPosMove - onSketchPosP1;
-                        moveTo = Base::Vector3d(totalDelta.x, totalDelta.y, 0.0);
-                    }
-                    const int status = solvedSketch.moveGeometries(dragIds, moveTo, relative);
+                    // Relative displacement moves the grabbed elements rigidly.
+                    const Base::Vector2d totalDelta = onSketchPosMove - onSketchPosP1;
+                    const Base::Vector3d moveTo(totalDelta.x, totalDelta.y, 0.0);
+                    const int status = solvedSketch.moveGeometries(dragIds, moveTo, true);
                     if (status == 0) {
                         for (auto& geo : mGeoList) {
                             mGeoSegment.erase(geo.get());
@@ -890,20 +908,57 @@ namespace MOON {
                         }
                         else
                         {
-                            double u, v;
-                            curve->getRange(u, v, false);
-                            Base::Vector3d deltaV = mousePos - curve->getCenter();
-                            Base::Vector3d xAxis = Base::Vector3d(1, 0, 0);
-                            bool isNegative = xAxis.Cross(deltaV).z < 0;
-                            double angle = (deltaV).GetAngle(Base::Vector3d(1, 0, 0));
-                            if (isNegative) {
-                                angle = -angle;
-                            }
-                            if (isStart) {
-                                curve->setRange(angle, v, false);
-                            }
-                            else if (isEnd) {
-                                curve->setRange(u, angle, false);
+                            // Keep the center and the radius fixed; only the
+                            // grabbed endpoint travels along the circle. The
+                            // stored range parameters are unbounded, so a
+                            // signed [-pi, pi] mouse angle would jump whenever
+                            // the arc crosses the +/-x axis. Compute the small
+                            // angular delta between the current endpoint and
+                            // the mouse and add it to the stored parameter to
+                            // keep the update continuous.
+                            constexpr double kPi = 3.14159265358979323846;
+                            constexpr double kTwoPi = 2.0 * kPi;
+                            const Base::Vector3d currentDir = (isStart
+                                    ? curve->getStartPoint(true)
+                                    : curve->getEndPoint(true))
+                                - curve->getCenter();
+                            const Base::Vector3d mouseDir = mousePos - curve->getCenter();
+                            if (currentDir.Length() > 1.0e-9 && mouseDir.Length() > 1.0e-9) {
+                                double curAngle = std::atan2(currentDir.y, currentDir.x);
+                                double mouseAngle = std::atan2(mouseDir.y, mouseDir.x);
+                                double delta = mouseAngle - curAngle;
+                                if (delta > kPi) {
+                                    delta -= kTwoPi;
+                                }
+                                else if (delta < -kPi) {
+                                    delta += kTwoPi;
+                                }
+
+                                double u, v;
+                                curve->getRange(u, v, true);
+                                if (isStart) {
+                                    double newU = u + delta;
+                                    // Keep the CCW range valid (u < v and
+                                    // v - u <= 2*pi) while the grabbed start
+                                    // endpoint passes the end endpoint.
+                                    if (newU >= v) {
+                                        newU -= kTwoPi;
+                                    }
+                                    if (v - newU > kTwoPi) {
+                                        newU += kTwoPi;
+                                    }
+                                    curve->setRange(newU, v, true);
+                                }
+                                else if (isEnd) {
+                                    double newV = v + delta;
+                                    if (newV <= u) {
+                                        newV += kTwoPi;
+                                    }
+                                    if (newV - u > kTwoPi) {
+                                        newV -= kTwoPi;
+                                    }
+                                    curve->setRange(u, newV, true);
+                                }
                             }
                         }
                     }

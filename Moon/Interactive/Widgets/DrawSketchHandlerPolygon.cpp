@@ -79,7 +79,6 @@ namespace MOON {
 
 	void DrawSketchHandlerPolygon::createShape(bool onlyeditoutline)
 	{
-		Q_UNUSED(onlyeditoutline);
 		ShapeGeometry.clear();
 
 		Base::Vector2d prevCorner = firstCorner;
@@ -104,6 +103,90 @@ namespace MOON {
 			addLineToShapeGeometry(toVector3d(prevCorner), toVector3d(newCorner), true);
 			prevCorner = newCorner;
 		}
+
+		if (!onlyeditoutline) {
+			// The circumscribed construction circle keeps every vertex on a
+			// common circle; together with the equal side lengths it preserves
+			// the regular polygon property when the sketch is edited later.
+			addCircleToShapeGeometry(toVector3d(centerPoint), radius, true);
+		}
+	}
+
+	void DrawSketchHandlerPolygon::executeCommands()
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		const int firstCurve = Obj->getHighestCurveIndex() + 1;
+		createShape(false);
+		if (ShapeGeometry.empty()) {
+			return;
+		}
+
+		SupperClass::executeCommands();
+		addPolygonAutoConstraints(firstCurve);
+	}
+
+	void DrawSketchHandlerPolygon::addPolygonAutoConstraints(int firstCurve)
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		const int corners = static_cast<int>(numberOfCorners);
+		if (corners < 3) {
+			return;
+		}
+		const int circleId = firstCurve + corners;
+
+		// Close the vertex chain: the end of every edge is the start of the
+		// next one, and the last edge ends at the first edge's start.
+		for (int i = 0; i + 1 < corners; i++) {
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Coincident,
+				firstCurve + i,
+				Sketcher::PointPos::end,
+				firstCurve + i + 1,
+				Sketcher::PointPos::start
+			);
+		}
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Coincident,
+			firstCurve + corners - 1,
+			Sketcher::PointPos::end,
+			firstCurve,
+			Sketcher::PointPos::start
+		);
+
+		// Equal side lengths make the polygon regular once every vertex is
+		// also kept on the construction circle below.
+		for (int i = 1; i < corners; i++) {
+			Obj->addConstraint(
+				Sketcher::ConstraintType::Equal,
+				firstCurve,
+				Sketcher::PointPos::none,
+				firstCurve + i,
+				Sketcher::PointPos::none
+			);
+		}
+
+		// Every vertex (each edge's end point) stays on the circumscribed
+		// construction circle.
+		for (int i = 0; i < corners; i++) {
+			Obj->addConstraint(
+				Sketcher::ConstraintType::PointOnObject,
+				firstCurve + i,
+				Sketcher::PointPos::end,
+				circleId,
+				Sketcher::PointPos::none
+			);
+		}
+
+		Obj->solve();
+		Obj->setConstruction(circleId, true);
 	}
 
 }

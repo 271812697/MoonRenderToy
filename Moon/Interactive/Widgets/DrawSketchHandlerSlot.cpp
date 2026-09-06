@@ -133,6 +133,64 @@ namespace MOON {
 		addLineToShapeGeometry(p12, p21, true);
 	}
 
+	void DrawSketchHandlerSlot::executeCommands()
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		const int firstCurve = Obj->getHighestCurveIndex() + 1;
+		createShape(false);
+		if (ShapeGeometry.empty()) {
+			return;
+		}
+
+		SupperClass::executeCommands();
+		addSlotAutoConstraints(firstCurve);
+	}
+
+	void DrawSketchHandlerSlot::addSlotAutoConstraints(int firstCurve)
+	{
+		SketcherObj* Obj = SketcherObjManager::instance().GetCurrentActiveSketcherObj();
+		if (!Obj) {
+			return;
+		}
+
+		// Geometry layout: arc0 = left cap, arc1 = right cap, line0 = top
+		// connector, line1 = bottom connector. Each connector is tangent to the
+		// cap it touches (a point-wise tangent also pins the shared vertex).
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, Sketcher::PointPos::start,
+			firstCurve + 2, Sketcher::PointPos::start
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve, Sketcher::PointPos::end,
+			firstCurve + 3, Sketcher::PointPos::start
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve + 1, Sketcher::PointPos::end,
+			firstCurve + 2, Sketcher::PointPos::end
+		);
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Tangent,
+			firstCurve + 1, Sketcher::PointPos::start,
+			firstCurve + 3, Sketcher::PointPos::end
+		);
+
+		// Both caps keep the same radius so the slot width stays uniform.
+		Obj->addConstraint(
+			Sketcher::ConstraintType::Equal,
+			firstCurve, Sketcher::PointPos::none,
+			firstCurve + 1, Sketcher::PointPos::none
+		);
+
+		Obj->solve();
+	}
+
 	void DrawSketchHandlerSlot::onReset()
 	{
 		length = 0.0;

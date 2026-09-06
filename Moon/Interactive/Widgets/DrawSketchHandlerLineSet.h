@@ -21,6 +21,9 @@ namespace MOON
         void mouseMove(Base::Vector2d pos);
         virtual void quit()override;
         void updateTransitionData(int GeoId, SketcherObj::PointPos PosId);
+        // True when a sketch-space position lies on the start vertex of the
+        // first polyline segment; used to detect the loop-closing click.
+        bool isAtFirstPoint(const Base::Vector2d& pos) const;
         /// mode table
         enum SELECT_MODE
         {
