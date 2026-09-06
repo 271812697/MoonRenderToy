@@ -1819,36 +1819,56 @@ namespace MOON {
             }
             case Sketcher::ConstraintType::Horizontal:
             case Sketcher::ConstraintType::Vertical: {
-                Base::Vector2d p, a, b;
-                const bool gotA = anchorOf(c, 0, a);
-                const bool gotB = anchorOf(c, 1, b);
-                if (gotA && gotB) {
-                    p = (a + b) * 0.5;
+                char indexText[16];
+                std::snprintf(indexText, sizeof(indexText), "%d", i);
+                const bool isHorizontal = c->Type == Sketcher::ConstraintType::Horizontal;
+                const auto drawAlignmentIconAt = [&](const Base::Vector2d& anchor) {
+                    const Eigen::Vector2f s = screenOf(anchor);
+                    if (isHorizontal) {
+                        // Horizontal alignment: a horizontal bar above the
+                        // anchor, with the constraint index next to it.
+                        const float offsetY = -22.0f;
+                        const float halfLen = 16.0f;
+                        drawList->AddLine(
+                            ImVec2(s.x() - halfLen, s.y() + offsetY),
+                            ImVec2(s.x() + halfLen, s.y() + offsetY),
+                            col,
+                            2.4f
+                        );
+                        drawList->AddText(
+                            ImGui::GetFont(),
+                            ImGui::GetFontSize() * 1.4f,
+                            ImVec2(s.x() + halfLen + 5.0f, s.y() + offsetY - 9.0f),
+                            col,
+                            indexText
+                        );
+                    }
+                    else {
+                        // Vertical alignment: a vertical bar to the right of
+                        // the anchor, with the constraint index next to it.
+                        const float offsetX = 24.0f;
+                        const float lineHalf = 18.0f;
+                        drawList->AddLine(
+                            ImVec2(s.x() + offsetX, s.y() - lineHalf),
+                            ImVec2(s.x() + offsetX, s.y() + lineHalf),
+                            col,
+                            3.0f
+                        );
+                        drawList->AddText(
+                            ImGui::GetFont(),
+                            ImGui::GetFontSize() * 1.4f,
+                            ImVec2(s.x() + offsetX + lineHalf + 5.0f, s.y() - 9.0f),
+                            col,
+                            indexText
+                        );
+                    }
+                };
+                Base::Vector2d a, b;
+                if (anchorOf(c, 0, a)) {
+                    drawAlignmentIconAt(a);
                 }
-                else if (gotA) {
-                    p = a;
-                }
-                else {
-                    break;
-                }
-                const Eigen::Vector2f s = screenOf(p);
-                const float gap = 14.0f;
-                const float halfLen = 10.0f;
-                if (c->Type == Sketcher::ConstraintType::Horizontal) {
-                    drawList->AddLine(
-                        ImVec2(s.x() - halfLen, s.y() - gap),
-                        ImVec2(s.x() + halfLen, s.y() - gap),
-                        col,
-                        1.8f
-                    );
-                }
-                else {
-                    drawList->AddLine(
-                        ImVec2(s.x() + gap, s.y() - halfLen),
-                        ImVec2(s.x() + gap, s.y() + halfLen),
-                        col,
-                        1.8f
-                    );
+                if (anchorOf(c, 1, b)) {
+                    drawAlignmentIconAt(b);
                 }
                 break;
             }
@@ -1887,60 +1907,104 @@ namespace MOON {
             case Sketcher::ConstraintType::Parallel: {
                 Base::Vector2d a, b;
                 if (anchorOf(c, 0, a) && anchorOf(c, 1, b)) {
-                    const Base::Vector2d d = b - a;
-                    const double len = std::sqrt(d.x * d.x + d.y * d.y);
-                    if (len < 1.0e-6) {
-                        break;
+                    // Two parallel lines share one constraint. Draw the "//"
+                    // glyph next to every anchor, each tagged with the same
+                    // constraint index, like Equal.
+                    Base::Vector2d p1, p2;
+                    Base::Vector2d dir;
+                    if (getGeometryPointSketch(c->First, PointPos::start, p1)
+                        && getGeometryPointSketch(c->First, PointPos::end, p2)) {
+                        dir = p2 - p1;
+                        const double dlen = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+                        if (dlen > 1.0e-6) {
+                            dir.x /= dlen;
+                            dir.y /= dlen;
+                        }
                     }
-                    Base::Vector2d dir(d.x / len, d.y / len);
-                    const Base::Vector2d nrm(-dir.y, dir.x);
-                    const Base::Vector2d p = (a + b) * 0.5;
-                    const Eigen::Vector2f s0 = screenOf(
-                        Base::Vector2d(p.x + dir.x * 9.0, p.y + dir.y * 9.0)
-                    );
-                    const Eigen::Vector2f s1 = screenOf(
-                        Base::Vector2d(p.x - dir.x * 9.0, p.y - dir.y * 9.0)
-                    );
-                    const Eigen::Vector2f n0 = screenOf(
-                        Base::Vector2d(p.x + nrm.x * 3.0, p.y + nrm.y * 3.0)
-                    );
-                    const Eigen::Vector2f n1 = screenOf(
-                        Base::Vector2d(p.x - nrm.x * 3.0, p.y - nrm.y * 3.0)
-                    );
-                    const float dx = n0.x() - n1.x();
-                    const float dy = n0.y() - n1.y();
-                    const float dn = std::sqrt(dx * dx + dy * dy);
-                    if (dn < 1.0e-3f) {
-                        break;
-                    }
-                    const float hx = dx / dn * 3.0f;
-                    const float hy = dy / dn * 3.0f;
-                    drawList->AddLine(
-                        ImVec2(s0.x() + hx, s0.y() + hy),
-                        ImVec2(s1.x() + hx, s1.y() + hy),
-                        col,
-                        1.5f
-                    );
-                    drawList->AddLine(
-                        ImVec2(s0.x() - hx, s0.y() - hy),
-                        ImVec2(s1.x() - hx, s1.y() - hy),
-                        col,
-                        1.5f
-                    );
+                    char indexText[16];
+                    std::snprintf(indexText, sizeof(indexText), "%d", i);
+                    const auto drawParallelAt = [&](const Base::Vector2d& anchor) {
+                        const Eigen::Vector2f s = screenOf(anchor);
+                        Eigen::Vector2f dS;
+                        if (dir.x != 0.0 || dir.y != 0.0) {
+                            dS = screenOf(Base::Vector2d(anchor.x + dir.x, anchor.y + dir.y)) - s;
+                        }
+                        else {
+                            dS = screenOf(b) - screenOf(a);
+                        }
+                        const float dl = dS.norm();
+                        if (dl < 1.0e-3f) {
+                            return;
+                        }
+                        dS /= dl;
+                        const float nx = -dS.y();
+                        const float ny = dS.x();
+                        const float half = 12.0f;
+                        const float sep = 5.0f;
+                        drawList->AddLine(
+                            ImVec2(s.x() + dS.x() * half + nx * sep,
+                                   s.y() + dS.y() * half + ny * sep),
+                            ImVec2(s.x() - dS.x() * half + nx * sep,
+                                   s.y() - dS.y() * half + ny * sep),
+                            col,
+                            2.2f
+                        );
+                        drawList->AddLine(
+                            ImVec2(s.x() + dS.x() * half - nx * sep,
+                                   s.y() + dS.y() * half - ny * sep),
+                            ImVec2(s.x() - dS.x() * half - nx * sep,
+                                   s.y() - dS.y() * half - ny * sep),
+                            col,
+                            2.2f
+                        );
+                        drawList->AddText(
+                            ImGui::GetFont(),
+                            ImGui::GetFontSize() * 1.4f,
+                            ImVec2(s.x() + dS.x() * (half + 7.0f) + nx * sep,
+                                   s.y() + dS.y() * (half + 7.0f) + ny * sep - 7.0f),
+                            col,
+                            indexText
+                        );
+                    };
+                    drawParallelAt(a);
+                    drawParallelAt(b);
                 }
                 break;
             }
             case Sketcher::ConstraintType::Perpendicular: {
-                Base::Vector2d a;
-                if (anchorOf(c, 0, a)) {
-                    const Eigen::Vector2f s = screenOf(a);
-                    drawList->AddLine(ImVec2(s.x(), s.y()), ImVec2(s.x() + 9.0f, s.y()), col, 1.5f);
+                Base::Vector2d a, b;
+                char indexText[16];
+                std::snprintf(indexText, sizeof(indexText), "%d", i);
+                const auto drawPerpendicularAt = [&](const Base::Vector2d& anchor) {
+                    const Eigen::Vector2f s = screenOf(anchor);
+                    // A right-angle symbol per referenced object, like Equal.
+                    const float leg = 16.0f;
+                    const float thick = 2.4f;
                     drawList->AddLine(
-                        ImVec2(s.x() + 9.0f, s.y()),
-                        ImVec2(s.x() + 9.0f, s.y() + 9.0f),
+                        ImVec2(s.x(), s.y()),
+                        ImVec2(s.x() + leg, s.y()),
                         col,
-                        1.5f
+                        thick
                     );
+                    drawList->AddLine(
+                        ImVec2(s.x() + leg, s.y()),
+                        ImVec2(s.x() + leg, s.y() + leg),
+                        col,
+                        thick
+                    );
+                    drawList->AddText(
+                        ImGui::GetFont(),
+                        ImGui::GetFontSize() * 1.4f,
+                        ImVec2(s.x() + leg + 5.0f, s.y() - 9.0f),
+                        col,
+                        indexText
+                    );
+                };
+                if (anchorOf(c, 0, a)) {
+                    drawPerpendicularAt(a);
+                }
+                if (anchorOf(c, 1, b)) {
+                    drawPerpendicularAt(b);
                 }
                 break;
             }

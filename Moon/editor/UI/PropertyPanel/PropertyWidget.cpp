@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "PropertyWidget.h"
 #include "core/ECS/Actor.h"
 #include "core/ECS/Components/CMaterialRenderer.h"
@@ -285,7 +285,7 @@ namespace MOON {
 			mat = comp->GetMaterialAtIndex(0);
 			featureList = mat->GetShader()->GetFeatures();
 			for (auto feature : featureList) {
-				mProperties.push_back(new BoolProperty(feature.c_str(), this));
+				mProperties.push_back(new BoolProperty(feature.c_str(), this, BoolProperty::Style::InviwoRect));
 			}
 			for (auto& mprop:mat->GetProperties()) {
 				if (std::holds_alternative<Maths::FVector3>(mprop.second.value)) {
@@ -519,22 +519,7 @@ namespace MOON {
 						}
 						m_comps.push_back({ collpase ,p});
 					}
-					// The Face/Edge render anchors of a TopoActor are hidden from
-					// the TreeView, so expose the face material on the topo actor
-					// itself to keep the material panel reachable.
-					if (m_selectedActor->HasComponent("CTopoShape")) {
-						if (auto* face = m_selectedActor->GetChild("AllFaces")) {
-							if (auto* matComp = face->GetComponent<Core::ECS::Components::CMaterialRenderer>()) {
-								auto* p = transferActorPropertyComponent(matComp);
-								auto* collpase = new CollapsibleGroupBoxWidget(p->getComponentName(), mSelf);
-								layout_->addWidget(collpase);
-								for (auto* u : p->getProperties()) {
-									collpase->addProperty(u);
-								}
-								m_comps.push_back({ collpase, p });
-							}
-						}
-					}
+				
 					layout_->addStretch();
 				}
 			}

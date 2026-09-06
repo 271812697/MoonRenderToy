@@ -5,7 +5,65 @@
 #include <QGridLayout>   // for QGridLayout
 #include <QHBoxLayout>   // for QHBoxLayout
 #include <QLabel>
+#include <QResizeEvent>
+#include <QShowEvent>
 namespace MOON {
+	namespace {
+		// Property label whose text is elided with an ellipsis when it would
+		// exceed the fixed label column width. The full name stays available in
+		// the tooltip.
+		class PropertyElidedLabel : public QLabel {
+		public:
+			PropertyElidedLabel(const QString& fullText, int maxWidth, QWidget* parent)
+				: QLabel(fullText, parent)
+				, fullText_(fullText)
+				, maxWidth_(maxWidth) {
+				setObjectName("PropertyLabel");
+				setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+				// The label must not push the editor column to the right: it
+				// can always shrink down to the available width.
+				setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+				setMaximumWidth(maxWidth_);
+				setMinimumWidth(0);
+				setToolTip(fullText);
+			}
+
+		protected:
+			void showEvent(QShowEvent* event) override
+			{
+				QLabel::showEvent(event);
+				refreshElidedText();
+			}
+
+			void resizeEvent(QResizeEvent* event) override
+			{
+				QLabel::resizeEvent(event);
+				refreshElidedText();
+			}
+
+		private:
+			void refreshElidedText()
+			{
+				const int available = std::max(0, std::min(maxWidth_, width()));
+				if (fontMetrics().horizontalAdvance(fullText_) <= available) {
+					setText(fullText_);
+				}
+				else {
+					setText(fontMetrics().elidedText(fullText_, Qt::ElideRight, available));
+				}
+			}
+
+			QString fullText_;
+			int maxWidth_ = 0;
+		};
+
+		int propertyLabelMaxWidth(const QWidget* ref)
+		{
+			const auto em = ref->fontMetrics().boundingRect('M').width();
+			return std::max(110, 12 * em);
+		}
+	}  // namespace
+
 	class CollapsibleGroupBoxWidget::CollapsibleGroupBoxWidgetInternal {
 	public:
 		std::unique_ptr<QWidget> createPropertyLayoutWidget() {
@@ -176,9 +234,11 @@ namespace MOON {
 			//else {  // not a collapsible widget
 				//widget->setNestedDepth(this->getNestedDepth());
 				// property widget should only be added to the left column of the layout
-			auto* labelWidget = new QLabel(label, this);
-			labelWidget->setObjectName("PropertyLabel");
-			labelWidget->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+			auto* labelWidget = new PropertyElidedLabel(
+				label,
+				propertyLabelMaxWidth(this),
+				this
+			);
 			layout->addWidget(labelWidget, row, 0);
 			layout->addWidget(widget, row, 1);
 			//}
