@@ -152,10 +152,33 @@ namespace MOON {
         if (preSelectGeoId.GeoId == -1) {
             pickGeo();
         }
+      
         if (!isHaveActiveHandler) {
             if (selectState == Hot) {
                 if (preSelectGeoId.GeoId != -1) {
-                    //
+                    const bool alreadySelected = [this]() {
+                        for (const auto& sel : selectIds) {
+                            if (sel.GeoId == preSelectGeoId.GeoId
+                                && sel.pointPos == preSelectGeoId.pointPos) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }();
+                    if (alreadySelected && preSelectGeoId.pointPos != PointPos::none) {
+                        // Several points coincide; clicking the already
+                        // selected one cycles to the next unselected point.
+                        SelectGeoId next;
+                        if (findNextCoincidentPoint(onSketchPosClicked, preSelectGeoId, next)) {
+                            if (selectMode == OverrideSelect) {
+                                clearSelect();
+                            }
+                            addSelect(next);
+                            preSelectGeoId = next;
+                            selectState = OperationGeo;
+                            return;
+                        }
+                    }
                     if (selectMode == OverrideSelect) {
                         clearSelect();
                     }
@@ -404,6 +427,58 @@ namespace MOON {
             }
         }
         return ret;
+    }
+    bool SketcherObj::findNextCoincidentPoint(
+        const Base::Vector2d& pos,
+        const SelectGeoId& current,
+        SelectGeoId& next
+    ) const
+    {
+        const Maths::FMatrix4 mat = m_sceneView->GetCamera()->GetViewPortMatrix();
+        const Base::Matrix4D viewPortMat(
+            mat.data[0], mat.data[1], mat.data[2], mat.data[3],
+            mat.data[4], mat.data[5], mat.data[6], mat.data[7],
+            mat.data[8], mat.data[9], mat.data[10], mat.data[11],
+            mat.data[12], mat.data[13], mat.data[14], mat.data[15]
+        );
+        const Base::Matrix4D trans = viewPortMat * getplaneTransform();
+        const Base::Vector3d p1 = trans * Base::Vector3d(pos.x, pos.y, 0.0);
+        constexpr double kTol = 5.0;
+
+        const auto isSelected = [this](const SelectGeoId& s) {
+            for (const auto& sel : selectIds) {
+                if (sel.GeoId == s.GeoId && sel.pointPos == s.pointPos) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        for (int i = 0; i < static_cast<int>(mGeoList.size()); ++i) {
+            if (mHiddenGeoIds.count(i)) {
+                continue;
+            }
+            const auto segIt = mGeoSegment.find(mGeoList[i].get());
+            if (segIt == mGeoSegment.end()) {
+                continue;
+            }
+            const auto& sePoints = segIt->second.sepoints;
+            for (const auto& sp : sePoints) {
+                if (sp.pointPos == PointPos::none) {
+                    continue;
+                }
+                const double dist = (p1 - trans * sp.coord).Length();
+                if (dist < kTol) {
+                    const SelectGeoId cand{ i, sp.pointPos };
+                    if (!(cand.GeoId == current.GeoId && cand.pointPos == current.pointPos)
+                        && !isSelected(cand)) {
+                        next = cand;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
     std::vector<int> SketcherObj::getSelectIds() const
     {

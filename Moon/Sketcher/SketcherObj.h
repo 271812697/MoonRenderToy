@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <set>
+#include <Eigen/Core>
 #include "Interactive/EventWidget.h"
 #include "TopoShape.h"
 #include "Sketcher/SketchePlane2D.h"
@@ -21,6 +22,21 @@ namespace MOON {
 		// (GeoEnum.h); keep a short alias for use inside this class and by
 		// code that refers to SketcherObj::PointPos.
 		using PointPos = Sketcher::PointPos;
+		// Viewport drawing options for sketch geometry and constraint
+		// annotations. Colours are stored in ABGR byte order, matching the
+		// renderer's Eigen::Vector4<uint8_t> convention.
+		struct DrawOption
+		{
+			Eigen::Vector4<uint8_t> pointColor { 255, 0, 0, 255 };
+			Eigen::Vector4<uint8_t> preselectColor { 255, 0, 255, 255 };
+			Eigen::Vector4<uint8_t> selectColor { 255, 255, 255, 0 };
+			Eigen::Vector4<uint8_t> constraintColor { 255, 255, 47, 186 };
+			Eigen::Vector4<uint8_t> curveColor { 255, 0, 0, 0 };
+			float curveLineWidth = 3.0f;
+			float pointSize = 12.0f;
+		};
+		DrawOption& drawOption() { return m_drawOption; }
+		const DrawOption& drawOption() const { return m_drawOption; }
 		struct SelectGeoId
 		{
 			int GeoId;
@@ -117,7 +133,7 @@ namespace MOON {
 		Part::TopoShape getDoneWireShape() {
 			return doneWireShape;
 		}
-		Base::Matrix4D getplaneTransform();
+		Base::Matrix4D getplaneTransform() const;
 		Base::Vector3d getPlaneOrigin() {
 			return mPlane.origin;
 		}
@@ -197,6 +213,11 @@ namespace MOON {
 		void updateGeoSegment(int id);
 		void pickGeo();
 		void updateConstraintLabelInteraction();
+		bool findNextCoincidentPoint(
+			const Base::Vector2d& pos,
+			const SelectGeoId& current,
+			SelectGeoId& next
+		) const;
 		bool getGeometryPointSketch(int geoId, PointPos pos, Base::Vector2d& out) const;
 		bool getGeometryCenterSketch(int geoId, Base::Vector2d& out) const;
 		bool getConstraintMeasureEndpoints(
@@ -250,6 +271,7 @@ namespace MOON {
 		bool m_snapToGrid = false;
 		std::set<int> mConstructionGeoIds;
 		std::set<int> mHiddenGeoIds;
+		DrawOption m_drawOption;
 		Sketcher::Sketch solvedSketch;
 		std::vector<Sketcher::Constraint*> mConstraintList;
 		std::vector<std::unique_ptr<Part::Geometry>>mGeoList;

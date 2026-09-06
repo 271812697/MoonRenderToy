@@ -20,6 +20,10 @@ namespace MOON {
             || type == Sketcher::ConstraintType::Diameter
             || type == Sketcher::ConstraintType::Angle;
     }
+    static ImU32 abgrToImU32(const Eigen::Vector4<uint8_t>& c)
+    {
+        return IM_COL32(c[3], c[2], c[1], c[0]);
+    }
     // Default screen-space offset (in pixels) applied to the auto anchor when
     // the user has not moved the label manually.
     void defaultLabelOffsetPx(const Sketcher::Constraint* c, float& dx, float& dy)
@@ -380,7 +384,7 @@ namespace MOON {
         if (InEdit()) {
             drawBackground();
         }
-        renderer->pushSize(3);
+        renderer->pushSize(m_drawOption.curveLineWidth);
        
         if (selectState == DragRect && sketchDrawRect && !isHaveActiveHandler) {
             Eigen::Vector3f p1 = mPlane.valueEigen(Base::Vector2d(std::min(onSketchPosP1.x, onSketchPosP2.x), std::min(onSketchPosP1.y, onSketchPosP2.y)));
@@ -389,35 +393,10 @@ namespace MOON {
             Eigen::Vector3f p4 = mPlane.valueEigen(Base::Vector2d(std::min(onSketchPosP1.x, onSketchPosP2.x), std::max(onSketchPosP1.y, onSketchPosP2.y)));
             renderer->drawQuad(p1, p2, p3, p4);
         }
-        Eigen::Vector4<uint8_t> pointColor(255, 0, 0, 255);
-        Eigen::Vector4<uint8_t> preselectColor(255, 0, 255, 255);
-        Eigen::Vector4<uint8_t> selectColor(255, 255, 255, 0);
-        float pointSize = 12;
-        for (int geoIndex = 0; geoIndex < static_cast<int>(mGeoList.size()); ++geoIndex) {
-            if (mHiddenGeoIds.count(geoIndex)) {
-                continue;  // visibility toggled off from the sketch panel
-            }
-            auto& sePoints = mGeoSegment[mGeoList[geoIndex].get()].sepoints;
-            const bool isConstruction = mConstructionGeoIds.count(geoIndex) != 0;
-            for (int i = 0;i < sePoints.size();i++) {
-                if (isConstruction) {
-                    // Construction aids are visible, same size as normal
-                    // points, but drawn lighter so they are easy to tell apart.
-                    renderer->drawPoint(
-                        mPlane.valueEigen(sePoints[i].coord.x, sePoints[i].coord.y),
-                        pointSize + 1,
-                        Eigen::Vector4<uint8_t>(255, 0, 255, 0)
-                    );
-                }
-                else {
-                    renderer->drawPoint(
-                        mPlane.valueEigen(sePoints[i].coord.x, sePoints[i].coord.y),
-                        pointSize + 1,
-                        pointColor
-                    );
-                }
-            }
-        }
+        const Eigen::Vector4<uint8_t>& pointColor = m_drawOption.pointColor;
+        const Eigen::Vector4<uint8_t>& preselectColor = m_drawOption.preselectColor;
+        const Eigen::Vector4<uint8_t>& selectColor = m_drawOption.selectColor;
+        const float pointSize = m_drawOption.pointSize;
         for (int i = 0;i < mGeoList.size();i++) {
             if (mHiddenGeoIds.count(i)) {
                 continue;
@@ -428,15 +407,6 @@ namespace MOON {
                     if (selectIds[j].pointPos == PointPos::none) {
                         isSelect = true;
                     }
-                    else
-                    {
-                        auto& segment = mGeoSegment[mGeoList[i].get()];
-                        for (int k = 0; k < segment.sepoints.size(); k++) {
-                            if (segment.sepoints[k].pointPos == selectIds[j].pointPos) {
-                                renderer->drawPoint(mPlane.valueEigen(segment.sepoints[k].coord.x, segment.sepoints[k].coord.y), pointSize, selectColor);
-                            }
-                        }
-                    }
                 }
             }
             if (isSelect) {
@@ -446,7 +416,7 @@ namespace MOON {
                 renderer->pushColor(preselectColor);
             }
             else {
-                renderer->pushColor(Eigen::Vector4<uint8_t>(255, 0, 0, 0));
+                renderer->pushColor(m_drawOption.curveColor);
             }
             auto& geo = mGeoList[i];
             if (geo->isDerivedFrom<Part::GeomCurve>()) {
@@ -456,6 +426,52 @@ namespace MOON {
                 }
             }
             renderer->popColor();
+        }
+        // Point markers are drawn after the curves so they stay on top.
+        for (int geoIndex = 0; geoIndex < static_cast<int>(mGeoList.size()); ++geoIndex) {
+            if (mHiddenGeoIds.count(geoIndex)) {
+                continue;
+            }
+            const bool isConstruction = mConstructionGeoIds.count(geoIndex) != 0;
+            auto& sePoints = mGeoSegment[mGeoList[geoIndex].get()].sepoints;
+            for (int k = 0; k < static_cast<int>(sePoints.size()); ++k) {
+                bool pointSelected = false;
+                for (const auto& sel : selectIds) {
+                    if (sel.GeoId == geoIndex && sel.pointPos == sePoints[k].pointPos) {
+                        pointSelected = true;
+                        break;
+                    }
+                }
+                if (pointSelected) {
+                    continue;  // already drawn in its selection colour above
+                }
+                renderer->drawPoint(
+                    mPlane.valueEigen(sePoints[k].coord.x, sePoints[k].coord.y),
+                    pointSize + 1,
+                    isConstruction
+                        ? Eigen::Vector4<uint8_t>(255, 0, 255, 0)
+                        : pointColor
+                );
+            }
+        }
+        // Selected points are drawn last so they stay clearly on top.
+        for (const auto& sel : selectIds) {
+            if (sel.GeoId < 0 || sel.GeoId >= static_cast<int>(mGeoList.size())) {
+                continue;
+            }
+            if (mHiddenGeoIds.count(sel.GeoId)) {
+                continue;
+            }
+            auto& sePoints = mGeoSegment[mGeoList[sel.GeoId].get()].sepoints;
+            for (const auto& sp : sePoints) {
+                if (sp.pointPos == sel.pointPos) {
+                    renderer->drawPoint(
+                        mPlane.valueEigen(sp.coord.x, sp.coord.y),
+                        pointSize + 2,
+                        selectColor
+                    );
+                }
+            }
         }
         renderer->popSize();
         drawConstraintLabels();
@@ -1287,7 +1303,7 @@ namespace MOON {
             const ImVec2 boxMin(sx - ts.x * 0.5f - padX, sy - ts.y * 0.5f - padY);
             const ImVec2 boxMax(sx + ts.x * 0.5f + padX, sy + ts.y * 0.5f + padY);
             const ImU32 arrowCol = isError ? IM_COL32(255, 110, 110, 255)
-                : IM_COL32(255, 255, 0, 255);
+                : abgrToImU32(m_drawOption.constraintColor);
             auto screenOf = [&](const Base::Vector2d& sk) -> Eigen::Vector2f {
                 return renderer->worldToScreen(mPlane.valueEigen(sk));
                 };
@@ -1402,7 +1418,7 @@ namespace MOON {
                 }
             }
             const ImU32 textCol = isError ? IM_COL32(255, 92, 92, 255)
-                : IM_COL32(245, 245, 245, 255);
+                : abgrToImU32(m_drawOption.constraintColor);
             const ImU32 borderCol = isError ? IM_COL32(255, 120, 120, 220)
                 : hovered ? IM_COL32(255, 255, 140, 255) : IM_COL32(255, 255, 255, 42);
             drawList->AddRectFilled(boxMin, boxMax, IM_COL32(24, 24, 30, 178), 4.0f);
@@ -1613,7 +1629,7 @@ namespace MOON {
             }
             const bool isError = constraintInError(i);
             const ImU32 col = isError ? IM_COL32(255, 110, 110, 255)
-                                      : IM_COL32(255, 255, 0, 255);
+                                      : abgrToImU32(m_drawOption.constraintColor);
             const auto screenOfSketch = [this](const Base::Vector2d& sk) {
                 const Base::Vector3d w = mPlane.origin + sk.x * mPlane.xAxis
                     + sk.y * mPlane.yAxis;
@@ -1693,7 +1709,7 @@ namespace MOON {
             }
             const bool isError = constraintInError(i);
             const ImU32 col = isError ? IM_COL32(255, 110, 110, 255)
-                                      : IM_COL32(255, 255, 0, 255);
+                                      : abgrToImU32(m_drawOption.constraintColor);
 
             switch (c->Type) {
             case Sketcher::ConstraintType::Tangent:
@@ -1784,7 +1800,7 @@ namespace MOON {
             case Sketcher::ConstraintType::Equal: {
                 Base::Vector2d a, b;
                 char indexText[16];
-                std::snprintf(indexText, sizeof(indexText), "%d", i + 1);
+                std::snprintf(indexText, sizeof(indexText), "%d", i);
                 const auto drawEqualAt = [&](const Base::Vector2d& p) {
                     const Eigen::Vector2f s = screenOf(p);
                     drawList->AddLine(

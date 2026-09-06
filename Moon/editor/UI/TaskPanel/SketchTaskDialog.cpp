@@ -5,6 +5,8 @@
 #include "Sketcher/SketcherObj.h"
 #include "feature/SketcherFeature.h"
 #include "Widgets/BoolProperty.h"
+#include "Widgets/ColorPickerProperty.h"
+#include "Widgets/SliderFloatProperty.h"
 #include "core/ViewTool.h"
 #include "Interactive/Widgets/SketchPlane.h"
 #include <QLabel>
@@ -22,11 +24,26 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QEvent>
+#include <QColor>
+#include <Eigen/Core>
 #include <cstdio>
 #include <vector>
 #include <functional>
 #include <set>
 namespace MOON {
+	static QColor abgrToQColor(const Eigen::Vector4<uint8_t>& c)
+	{
+		return QColor(c[3], c[2], c[1], c[0]);
+	}
+	static Eigen::Vector4<uint8_t> qColorToAbgr(const QColor& c)
+	{
+		return Eigen::Vector4<uint8_t>(
+			static_cast<uint8_t>(c.alpha()),
+			static_cast<uint8_t>(c.blue()),
+			static_cast<uint8_t>(c.green()),
+			static_cast<uint8_t>(c.red())
+		);
+	}
 	static QString constraintIconPath(Sketcher::ConstraintType type)
 	{
 		const QString prefix = ":/widgets/icons/constraint/";
@@ -165,6 +182,17 @@ namespace MOON {
                 BoolProperty::Style::InviwoRect
             )
         );
+        addParam(new ColorPickerProperty("Point Color", sketchGroup));
+        addParam(new ColorPickerProperty("Preselect Color", sketchGroup));
+        addParam(new ColorPickerProperty("Select Color", sketchGroup));
+        addParam(new ColorPickerProperty("Curve Color", sketchGroup));
+        addParam(new ColorPickerProperty("Constraint Color", sketchGroup));
+        auto* curveWidth = new SliderFloatProperty("Curve Line Width", sketchGroup, 0.5f, 10.0f);
+        curveWidth->setStep(0.1f);
+        addParam(curveWidth);
+        auto* pointSize = new SliderFloatProperty("Point Size", sketchGroup, 2.0f, 40.0f);
+        pointSize->setStep(0.5f);
+        addParam(pointSize);
         addGroupParam("Constraints");
         addGroupParam("Curves");
         buildUi();
@@ -224,6 +252,30 @@ namespace MOON {
         if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
             return QVariant::fromValue(mInternal->feature->getSketcherObj()->isSnapToGrid());
         }
+        if (mInternal && mInternal->feature) {
+            const auto& opt = mInternal->feature->getSketcherObj()->drawOption();
+            if (propertyName == "Sketch:Point Color") {
+                return QVariant::fromValue(abgrToQColor(opt.pointColor));
+            }
+            if (propertyName == "Sketch:Preselect Color") {
+                return QVariant::fromValue(abgrToQColor(opt.preselectColor));
+            }
+            if (propertyName == "Sketch:Select Color") {
+                return QVariant::fromValue(abgrToQColor(opt.selectColor));
+            }
+            if (propertyName == "Sketch:Curve Color") {
+                return QVariant::fromValue(abgrToQColor(opt.curveColor));
+            }
+            if (propertyName == "Sketch:Constraint Color") {
+                return QVariant::fromValue(abgrToQColor(opt.constraintColor));
+            }
+            if (propertyName == "Sketch:Curve Line Width") {
+                return QVariant::fromValue(opt.curveLineWidth);
+            }
+            if (propertyName == "Sketch:Point Size") {
+                return QVariant::fromValue(opt.pointSize);
+            }
+        }
         return QVariant();
     }
 
@@ -234,6 +286,30 @@ namespace MOON {
         }
         if (propertyName == "Sketch:Snap To Grid" && mInternal->feature) {
             mInternal->feature->getSketcherObj()->setSnapToGrid(value.value<bool>());
+        }
+        if (mInternal && mInternal->feature) {
+            auto& opt = mInternal->feature->getSketcherObj()->drawOption();
+            if (propertyName == "Sketch:Point Color") {
+                opt.pointColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Preselect Color") {
+                opt.preselectColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Select Color") {
+                opt.selectColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Curve Color") {
+                opt.curveColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Constraint Color") {
+                opt.constraintColor = qColorToAbgr(value.value<QColor>());
+            }
+            else if (propertyName == "Sketch:Curve Line Width") {
+                opt.curveLineWidth = value.toFloat();
+            }
+            else if (propertyName == "Sketch:Point Size") {
+                opt.pointSize = value.toFloat();
+            }
         }
     }
 

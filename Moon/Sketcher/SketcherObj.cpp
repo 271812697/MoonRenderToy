@@ -1,4 +1,4 @@
-﻿#include "Sketcher/SketcherObj.h"
+#include "Sketcher/SketcherObj.h"
 #include "editor/Toolbar/sketchToolbar.h"
 #include "Geometry.h"
 #include "renderer/SceneView.h"
@@ -715,7 +715,7 @@ namespace MOON {
         result.setTransform(planeTransform);
         return result;
     }
-    Base::Matrix4D SketcherObj::getplaneTransform()
+    Base::Matrix4D SketcherObj::getplaneTransform() const
     {
         return planeTransform;
     }

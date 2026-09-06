@@ -47,7 +47,7 @@ namespace ImPlotCustom {
 	void testImPlotCustom()
 	{
 
-	
+		return;
 		ImPlotCustom::ColormapScale("lo", 1.0, 0.0, 10.0);
 		AddArrow(Transform(100, 100, 45), IM_COL32(255, 0, 255, 255), 50, 2);
 		drawDoubleArrow(Transform(100, 100, -60), IM_COL32(255, 0, 255, 255), 180, 2, "10.mm");
