@@ -67,51 +67,56 @@ namespace MOON {
 				ImGui::Image(gbufferData.normal->GetID(), size, a, b);
 				ImGui::Image(gbufferData.occlusion->GetID(), size, a, b);
 				ImGui::Image(gbufferData.occlusionBlur->GetID(), size, a, b);
-				const auto& frameInfo=mSceneView->GetRenderer().GetFeature<Rendering::Features::FrameInfoRenderFeature>().GetFrameInfo();
-				auto drawList=ImGui::GetForegroundDrawList();
-				char str[300];
-				sprintf_s(str,300,
-					"Total vertex Count %d\n"
-					"Batch Triangle Count %d"
-                    "\nTriangle Count % d\n"
-					"Triangle Vertex Count % d\n"
-					"Triangle instance Count % d\n"
-					"Batch line Count %d"
-					"\nline Count % d\n"
-					"line Vertex Count % d\n"
-					"line instance Count % d\n",
-					frameInfo.vertexCount,
-					frameInfo.batchPolyCount,
-					frameInfo.polyCount,
-					frameInfo.vertexPolyCount,
-					frameInfo.instancePolyCount,
-
-					frameInfo.batchLineCount,
-					frameInfo.lineCount,
-					frameInfo.vertexLineCount,
-					frameInfo.instancelineCount
-				);
-				char out[512];
-				sprintf_s(out, sizeof(out),
-					"FPS %.1f\n"
-					"Frame %.2f ms\n"
-					"%s", m_fps, m_avgFrameMs, str);
-				drawList->AddText({20,20}, IM_COL32(255, 255, 100, 255),out);
 			}
 		}
 
+		void drawFpsOverlay() {
+			if (!MOON::DebugSettings::instance().getOrDefault<bool>("showFPS", false)) {
+				return;
+			}
+			const auto& frameInfo =
+				mSceneView->GetRenderer().GetFeature<Rendering::Features::FrameInfoRenderFeature>().GetFrameInfo();
+			char text[512];
+			sprintf_s(text, sizeof(text),
+				"FPS %.1f\n"
+				"Frame %.2f ms\n"
+				"Total vertex Count %llu\n"
+				"Batch Triangle Count %llu\n"
+				"Triangle Count %llu\n"
+				"Triangle Vertex Count %llu\n"
+				"Triangle instance Count %llu\n"
+				"Batch line Count %llu\n"
+				"line Count %llu\n"
+				"line Vertex Count %llu\n"
+				"line instance Count %llu\n",
+				m_fps, m_frameMs,
+				(unsigned long long)frameInfo.vertexCount,
+				(unsigned long long)frameInfo.batchPolyCount,
+				(unsigned long long)frameInfo.polyCount,
+				(unsigned long long)frameInfo.vertexPolyCount,
+				(unsigned long long)frameInfo.instancePolyCount,
+				(unsigned long long)frameInfo.batchLineCount,
+				(unsigned long long)frameInfo.lineCount,
+				(unsigned long long)frameInfo.vertexLineCount,
+				(unsigned long long)frameInfo.instancelineCount
+			);
+			ImGui::GetForegroundDrawList()->AddText({20,20}, IM_COL32(255, 255, 100, 255), text);
+		}
+
 		void paintGL() {
-			// Rolling FPS / frame-time statistics, refreshed every 500 ms.
+			// Raw per-frame FPS / frame time, measured between consecutive
+			// paint calls and shown without any smoothing.
 			if (!m_fpsTimer.isValid()) {
 				m_fpsTimer.start();
+				m_fps = 0.0;
+				m_frameMs = 0.0;
 			}
-			++m_fpsFrameCount;
-			if (m_fpsTimer.elapsed() >= 500) {
-				const double elapsedMs = m_fpsTimer.elapsed();
-				m_fps = m_fpsFrameCount * 1000.0 / elapsedMs;
-				m_avgFrameMs = elapsedMs / m_fpsFrameCount;
-				m_fpsTimer.restart();
-				m_fpsFrameCount = 0;
+			else {
+				const double frameMs = m_fpsTimer.restart();
+				if (frameMs > 0.0) {
+					m_fps = 1000.0 / frameMs;
+					m_frameMs = frameMs;
+				}
 			}
 			ImRenderer::instance().newImgui();
 			Render2D::Im2DRender::instance().newFrame();
@@ -148,6 +153,7 @@ namespace MOON {
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			debugImgui();
+			drawFpsOverlay();
 			Render2D::Im2DRender::instance().endFrame();
 			ImRenderer::instance().endImgui();
 			mSceneView->getInutState().ClearEvents();
@@ -189,9 +195,8 @@ namespace MOON {
 		QString mReadFilePath = "";
 		bool mDoReadFile = false;
 		QElapsedTimer m_fpsTimer;
-		quint64 m_fpsFrameCount = 0;
 		double m_fps = 0.0;
-		double m_avgFrameMs = 0.0;
+		double m_frameMs = 0.0;
 
 	};
 	ViewerWidget::ViewerWidget(QWidget* parent) :
