@@ -45,7 +45,10 @@ DockWidgetTitleBar::DockWidgetTitleBar(QDockWidget* parent)
     auto* layout = new QHBoxLayout(this);
     layout->setContentsMargins(6, 0, 2, 0);
     layout->setSpacing(0);
-    layout->addWidget(label_, 1);
+    layout->addWidget(label_, 0);
+    // Absorbs the remaining width so optional title widgets stay on the
+    // left while the float/close buttons stay pinned to the right.
+    layout->addStretch(1);
     layout->addWidget(floatBtn_);
     layout->addWidget(closeBtn_);
 
@@ -82,6 +85,36 @@ DockWidgetTitleBar::DockWidgetTitleBar(QDockWidget* parent)
 
 DockWidgetTitleBar::~DockWidgetTitleBar() = default;
 
+void DockWidgetTitleBar::addTitleWidget(QWidget* widget, int stretch)
+{
+    auto* layout = qobject_cast<QHBoxLayout*>(this->layout());
+    if (!layout || !widget) {
+        return;
+    }
+
+    // Insert into the left group, right before the expanding spacer, so the
+    // widgets follow the title label and keep the order they were added in.
+    int spacerPos = -1;
+    for (int i = 0; i < layout->count(); ++i) {
+        if (auto* spacer = layout->itemAt(i)->spacerItem()) {
+            // Only the expanding spacer separates the left title group from
+            // the float/close buttons; the 8px gaps are fixed spacers.
+            if (spacer->sizePolicy().horizontalPolicy() == QSizePolicy::Expanding) {
+                spacerPos = i;
+                break;
+            }
+        }
+    }
+    if (spacerPos < 0) {
+        // Fallback for layouts without a spacer: insert before float/close.
+        spacerPos = layout->count() - 2;
+    }
+
+    layout->insertSpacing(spacerPos, 8);
+    layout->insertWidget(spacerPos + 1, widget, stretch);
+    widget->show();
+}
+
 void DockWidgetTitleBar::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     updateTitle();
@@ -90,7 +123,12 @@ void DockWidgetTitleBar::resizeEvent(QResizeEvent* event) {
 void DockWidgetTitleBar::updateTitle() {
     const QString title = dock_->windowTitle();
     QFontMetrics fm(label_->font());
-    label_->setText(fm.elidedText(title, Qt::ElideMiddle, std::max(0, label_->width() - 4)));
+    // Keep at least the full title width so a label that is not expanded by
+    // the layout (title widgets take the left, a spacer the remaining space)
+    // never collapses to an empty line.
+    label_->setMinimumWidth(fm.horizontalAdvance(title) + 4);
+    label_->setText(fm.elidedText(title, Qt::ElideMiddle,
+                                  std::max(0, label_->width() - 4)));
 }
 
 }

@@ -25,10 +25,7 @@ const Rendering::Data::FrameInfo& Rendering::Features::FrameInfoRenderFeature::G
 
 void Rendering::Features::FrameInfoRenderFeature::OnBeginFrame(const Data::FrameDescriptor& p_frameDescriptor)
 {
-	m_frameInfo.batchCount = 0;
-	m_frameInfo.instanceCount = 0;
-	m_frameInfo.polyCount = 0;
-	m_frameInfo.vertexCount = 0;
+	m_frameInfo.reset();
 
 	m_isFrameInfoDataValid = false;
 }
@@ -40,16 +37,26 @@ void Rendering::Features::FrameInfoRenderFeature::OnEndFrame()
 
 void Rendering::Features::FrameInfoRenderFeature::OnAfterDraw(const Rendering::Entities::Drawable& p_drawable)
 {
-	// TODO: Calculate vertex count from the primitive mode
 	constexpr uint32_t kVertexCountPerPolygon = 3;
-
+	constexpr uint32_t kVertexCountPerLine = 2;
 	const int instances = p_drawable.material.value().GetGPUInstances();
 
 	if (instances > 0)
 	{
-		++m_frameInfo.batchCount;
-		m_frameInfo.instanceCount += instances;
-		m_frameInfo.polyCount += (p_drawable.mesh.value().GetIndexCount() / kVertexCountPerPolygon) * instances;
+		if (p_drawable.primitiveMode == Rendering::Settings::EPrimitiveMode::TRIANGLES) {
+
+			++m_frameInfo.batchPolyCount;
+			m_frameInfo.instancePolyCount += instances;
+			m_frameInfo.polyCount += (p_drawable.mesh.value().GetIndexCount() / kVertexCountPerPolygon) * instances;
+			m_frameInfo.vertexPolyCount += p_drawable.mesh.value().GetVertexCount() * instances;
+		}
+		else if (p_drawable.primitiveMode == Rendering::Settings::EPrimitiveMode::LINES) {
+			++m_frameInfo.batchLineCount;
+			m_frameInfo.instancelineCount += instances;
+			m_frameInfo.lineCount += (p_drawable.mesh.value().GetIndexCount() / kVertexCountPerLine) * instances;
+			m_frameInfo.vertexLineCount += p_drawable.mesh.value().GetVertexCount() * instances;
+		}
+	
 		m_frameInfo.vertexCount += p_drawable.mesh.value().GetVertexCount() * instances;
 	}
 }

@@ -38,14 +38,6 @@ namespace MOON {
                 selectState = Hot;
             }
             else if (selectState == OperationGeo) {
-                // A single circle/arc is manipulated in its own parameter
-                // space: dragging the rim resizes it around the fixed center,
-                // dragging an endpoint slides it along the unchanged circle
-                // and dragging the center translates it. moveGeo() implements
-                // exactly those semantics. The solver path below would instead
-                // translate the whole element together with the grabbed
-                // endpoint (its center would follow the mouse) and can also
-                // drift the center while resizing, so bypass it here.
                 const bool singleCircleArcDrag = [&]() {
                     if (selectIds.size() != 1) {
                         return false;
@@ -54,8 +46,20 @@ namespace MOON {
                     return geo
                         && (geo->is<Part::GeomCircle>() || geo->is<Part::GeomArcOfCircle>());
                 }();
+                // Rim drags resize a circle/arc. They go through the solver
+                // with an absolute target: the grabbed rim follows the mouse
+                // while the center is pinned by a temporary coincidence, so
+                // constrained composites (e.g. a slot cap) resize without the
+                // center drifting.
+                const bool radiusDrag
+                    = singleCircleArcDrag && selectIds[0].pointPos == PointPos::none;
 
-                if (singleCircleArcDrag) {
+                if (singleCircleArcDrag && !radiusDrag) {
+                    // Endpoint/center drags keep the element's own parameter
+                    // semantics: an endpoint slides on the unchanged circle and
+                    // the center follows the mouse. moveGeo() implements those
+                    // directly; the solver's relative translation would move
+                    // the whole element together with the grabbed endpoint.
                     if (!m_dragSolverInit) {
                         // Normalize curves added since the last solve() so the
                         // range angles read by moveGeo() are canonical.
@@ -88,10 +92,19 @@ namespace MOON {
                     m_dragSolverInit = solvedSketch.initMove(dragIds) == 0;
                 }
                 if (m_dragSolverInit) {
-                    // Relative displacement moves the grabbed elements rigidly.
-                    const Base::Vector2d totalDelta = onSketchPosMove - onSketchPosP1;
-                    const Base::Vector3d moveTo(totalDelta.x, totalDelta.y, 0.0);
-                    const int status = solvedSketch.moveGeometries(dragIds, moveTo, true);
+                    Base::Vector3d moveTo;
+                    bool relative = true;
+                    if (radiusDrag) {
+                        moveTo = Base::Vector3d(onSketchPosMove.x, onSketchPosMove.y, 0.0);
+                        relative = false;  // rim follows the mouse, center stays
+                    }
+                    else {
+                        // Relative displacement moves the grabbed elements
+                        // rigidly (group/line drags).
+                        const Base::Vector2d totalDelta = onSketchPosMove - onSketchPosP1;
+                        moveTo = Base::Vector3d(totalDelta.x, totalDelta.y, 0.0);
+                    }
+                    const int status = solvedSketch.moveGeometries(dragIds, moveTo, relative);
                     if (status == 0) {
                         for (auto& geo : mGeoList) {
                             mGeoSegment.erase(geo.get());

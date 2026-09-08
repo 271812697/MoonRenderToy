@@ -1,4 +1,4 @@
-#include "parsescene.h"
+﻿#include "parsescene.h"
 #include "renderer/Context.h"
 #include "editor/View/sceneview/viewerwidget.h"
 #include "renderer/SceneView.h"
@@ -140,6 +140,9 @@ namespace MOON {
 			LoadGLTF(sceneName, scene, true);
 		else if (ext == "STEP"|| ext== "stp" || ext == "step") {
 			IO::ReadSTEP(sceneName.c_str(), scene);
+		}
+		else if (ext == "bin") {
+			IO::ReadSTEPBin(sceneName.c_str(), scene);
 		}
 		else
 		{

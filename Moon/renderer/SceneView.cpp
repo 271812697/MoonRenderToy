@@ -11,6 +11,7 @@
 #include "core/component/CTopoShape.h"
 #include <iostream>
 #include <QMouseEvent>
+#include <tracy/Tracy.hpp>
 
 static Maths::FVector3 GetSpherePosition(float a, float b, float radius) {
 	float elevation = a / 180.0 * 3.14159265;
@@ -360,7 +361,7 @@ bool IsResizing()
 
 void Editor::Panels::SceneView::HandleActorPicking()
 {
-	
+	ZoneScoped;
 	if (m_gizmoOperations.IsPicking()&&input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();

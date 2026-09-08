@@ -138,7 +138,7 @@ solvedSketch.resetInitMove()
 | 选择 | End 状态 / hasClickSelected / getPickGeoIndex | ❌ 冗余 | 已定义未使用 |
 | 吸附 | 端点/圆心/原点/坐标轴/曲线上/网格点 | ✅ 基本 | 网格吸附可开关、最低优先级；无中点/交点等 |
 | 输出 | toShape → wire/compound + transform | ✅ 完整 | 不生成 Face；闭合校验弱 |
-| 绘制 | 平面轴 / 曲线 / 选中高亮 / 框选矩形 | ✅ 基本 | 无约束符号/尺寸标注 |
+| 绘制 | 平面轴 / 曲线 / 选中高亮 / 框选矩形 / 构造虚线 / 约束与尺寸标注 | ✅ 基本 | 详见 [SketchRendering.md](SketchRendering.md) |
 | 撤销 | undo / redo | ❌ 缺失 | |
 
 ---
@@ -167,7 +167,8 @@ solvedSketch.resetInitMove()
 - [x] 网格吸附：自适应步长 + 10px 像素阈值 + UI 开关（SketchTaskDialog → Snap To Grid）；
 - [ ] 去掉 `End` / `hasClickSelected` / `getPickGeoIndex` 等未用字段；
 - [ ] 交互坐标去掉 0.01 量化或改为可配置网格吸附；
-- [ ] 绘制补约束符号、尺寸、构造线样式（construction）；
+- [x] 绘制补约束符号、尺寸、构造线样式（construction）——见
+      [SketchRendering.md](SketchRendering.md)；
 - [ ] undo/redo 栈（FreeCAD 用 Property + Transaction，本项目可先做快照式）；
 - [ ] 与 `DrawSketchHandler` 的提交回调节点整理（当前靠 `isHaveActiveHandler` 隐式协作）。
 

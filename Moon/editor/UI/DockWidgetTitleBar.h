@@ -15,6 +15,11 @@ public:
     explicit DockWidgetTitleBar(QDockWidget* parent);
     ~DockWidgetTitleBar();
 
+    // Inserts an extra widget after the title label but on the left side of
+    // the title bar (an expanding spacer keeps the float/close buttons on the
+    // right), so panels can host small controls such as log level filters.
+    void addTitleWidget(QWidget* widget, int stretch = 0);
+
 protected:
     void resizeEvent(QResizeEvent* event) override;
 

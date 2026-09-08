@@ -311,7 +311,8 @@ lastConflicting/lastRedundant/...`。后续如果要加 UI 提示（如 FreeCAD 
 
 ## 10. 当前限制 / TODO
 
-- 约束**符号/尺寸标注**尚未在视口绘制（约束数据是有效的，但看不到图标）；
+- 约束**符号/尺寸标注**绘制已实现（`SketcherObjDraw.cpp::drawConstraintIcons` /
+  `drawConstraintLabels`），部分类型（Symmetric、Block 等）图标仍较简陋；
 - Tangent/Perpendicular 尚未移植 FreeCAD 的自动 Orientation（内部/外部）判定；
 - 多选 >3 个点的 Coincident 仍只处理前 3 个；
 - handler 自动约束（画线/圆弧时的端点 Coincident/Tangent 建议）还未接上，
@@ -337,3 +338,167 @@ lastConflicting/lastRedundant/...`。后续如果要加 UI 提示（如 FreeCAD 
 - FreeCAD 源码（本地 `D:\Project\C++\FreeCAD\src\Mod\Sketcher\App`）：
   `SketchObjectConstraints.cpp`、`SketchObjectGeometry.cpp`、
   `SketchObjectOperations.cpp`。
+
+---
+
+## 13. 从 Part::Geometry 到 GCS：数据结构逐层拆解
+
+第 4 节给出“概念映射”，本节对照 `Sketch.h` / `Sketch.cpp` 说明这些概念在代码里
+到底是哪些字段、谁持有参数、谁持有指针。
+
+### 13.1 `GeoDef`：每个几何在求解器里的“户口”
+
+`Sketch` 内部并不直接保存用户的 `mGeoList`，而是为每条几何克隆一份并登记为
+`GeoDef`：
+
+```cpp
+struct GeoDef {
+    Part::Geometry* geo;   // 求解器自己的克隆（会随求解结果原地更新）
+    GeoType type;          // Point / Line / Arc / Circle / Ellipse / ...
+    bool external;         // 是否外部几何
+    int index;             // 在 Lines/Arcs/Circles/... 里的下标
+    int startPointId;      // 该几何起点在 Points 里的下标（无则 -1）
+    int midPointId;        // 圆心/中点/焦点等“中”点下标
+    int endPointId;        // 终点下标
+};
+```
+
+`Geoms` 是 `vector<GeoDef>`，顺序与草图 GeoId 一一对应；`checkGeoId()` 还支持把
+负数（外部几何）折算成 Geoms 下标。**GeoId = Geoms 下标** 是整个系统的一致性基础。
+
+### 13.2 参数仓库：`double*` 与 Points/Lines/Arcs
+
+求解器的“未知数”全部是 `double*`：
+
+```cpp
+std::vector<double*> Parameters;       // 活动未知参数
+std::vector<double*> DrivenParameters; // 被驱动参数（随约束自动取值）
+std::vector<double*> FixParameters;    // Block/固定参数
+```
+
+每个 GCS 点/线/圆/弧对象里保存的只是这些指针：
+
+```cpp
+GCS::Point  p;  p.x = Parameters.back();  p.y = Parameters.back()+1;
+GCS::Line   l;  l.p1 = Points[i];         l.p2 = Points[i+1];
+```
+
+以直线为例，`addLineSegment()` 实际做了：
+
+```text
+1. 克隆 GeomLineSegment 存入 def.geo；
+2. 为 start.x/start.y/end.x/end.y 各 new 一个 double 并 push 进 Parameters；
+3. 创建两个 GCS::Point p1/p2，让它们的 x/y 指向上面 4 个 double；
+4. GCS::Line l = {p1, p2}；
+5. def.type=Line, def.startPointId/endPointId 指向 Points 下标，
+   def.index 指向 Lines 下标；
+6. 把 <参数指针, {GeoId, PointPos, 分量}> 写进 param2geoelement，供诊断定位。
+```
+
+圆弧的 `GeoDef` 有 3 个 PointId：`startPointId / endPointId / midPointId`，即
+**起点、终点、圆心各是一组独立 GCS 点**；半径、起始角、终止角另存
+`GCS::Arc{start, end, center, rad, startAngle, endAngle}`。起点/终点是自由参数，
+求解器用“点必须在圆上且与角度一致”的规则把它们和圆心/半径绑起来，这样
+Coincident 等约束可以直接引用弧端点，同时拖动端点时仍能保持“点在圆上”。
+
+### 13.3 `param2geoelement`：参数 ↔ 草图元素 的反向索引
+
+```cpp
+std::map<double*, std::tuple<int, Sketcher::PointPos, int>> param2geoelement;
+```
+
+它的 key 是 `Parameters` 里的 `double*`，value 是 `{GeoId, PointPos, 分量}`。
+例如某条直线 end 的 x 参数 value 就是 `{3, PointPos::end, 0}`。诊断/自由度报告
+正是靠它把“某个自由度”翻译回“哪条几何的哪个点/哪条边”。
+
+### 13.4 `ConstrDef`：约束在求解器里的登记
+
+```cpp
+struct ConstrDef {
+    Constraint* constr;  // Sketcher::Constraint（Type/GeoId/Positions/Value）
+    bool driving;
+    double* value;       // 尺寸约束的数值参数（Distance/Radius/Angle/...）
+    double* secondvalue; // 目前 SnellsLaw 使用
+};
+```
+
+`setUpSketch()` 遍历 UI 层约束，对每条调用 `addXXXConstraint(...)`，每条 GCS 方程
+拿一个 `ConstraintsCounter++` 的 tagId；同一条 UI 约束可能贡献多条 GCS 方程。
+冲突/冗余诊断按 tag 归并，因此能回指到 `mConstraintList` 的某一条。
+
+---
+
+## 14. 求解成功后：参数如何更新回原来的几何
+
+### 14.1 完整链路
+
+```text
+Sketch::solve()
+  → internalSolve()
+      → GCSsys.solve()            // 迭代求解，只改 Parameters 指向的 double
+      → GCSsys.applySolution()    // 把解写进每个 double*（参数仓库）
+      → updateGeometry()          // 逐条 GeoDef 调 updateXxx(GeoDef)
+      → updateNonDrivingConstraints()
+  → 返回 GCS 状态
+SketcherObj::solve()             // 外层宿主
+  → 若 err==0：
+      geomlist = solvedSketch.extractGeometry()   // 克隆 Geoms[i].geo
+      清 mGeoSegment 缓存 → mGeoList.clear()
+      for g in geomlist: addGeometry(g)           // 再拷贝一份进宿主
+      delete 临时克隆
+```
+
+关键点：
+
+- `GCSsys.applySolution()` 只改**参数指针指向的 double**；真正把数值“变成
+  OCCT 几何”的是 `updateGeometry()`；
+- `updateGeometry()` 是“就地修改” `GeoDef::geo` 那个克隆，不改宿主 `mGeoList`；
+- `extractGeometry()` 克隆这些已更新过的克隆给宿主；
+- `SketcherObj::addGeometry()` 还会再次 `copy()`，并重建 `mGeoSegment`
+  （离散折线 + 关键点缓存），供拾取/吸附/绘制使用；
+- `mConstraintList` 在这条链路里全程不动，因此不会触发“删除几何时清理约束”的
+  一致性规则。
+
+### 14.2 逐类型的回写函数
+
+| GeoType | 回写函数 | 做了什么 |
+| --- | --- | --- |
+| Point | `updatePoint` | `setPoint(Points[start].x/y)` |
+| Line | `updateLineSegment` | `setPoints(Lines.p1, Lines.p2)` |
+| Arc | `updateArcOfCircle` | `setCenter(mid)`、`setRadius(rad)`、`setRange(startAngle,endAngle,true)` |
+| Circle | `updateCircle` | `setCenter(mid)`、`setRadius(rad)` |
+| Ellipse | `updateEllipse` | 由 center/focus1/radmin 反推长短轴并 `setMajorAxisDir` |
+| ArcOfEllipse/双曲/抛物弧 | 对应 `updateArcOf*` | 同理由焦点+半径+角度重建 |
+| BSpline | `updateBSpline` | 回写极点/权重/节点 |
+
+圆弧回写时统一使用 `emulateCCWXY=true`，即把求解器的 CCW 角度换算成 OCC 原始
+参数；这是“草图弧可能跨 0°/180°、但显示与求解始终一致”的关键一步。
+
+### 14.3 求解失败时保持原状
+
+`internalSolve()` 只在 `ret == GCS::Success` 时才 `applySolution()`。若求解成功但
+`updateGeometry()` 认为结果非法（如退化椭圆），会：
+
+```text
+GCSsys.undoSolution();   // 把参数恢复成解前值
+updateGeometry();        // 几何恢复成解前位形
+```
+
+随后尝试其它求解器（DogLeg → LM → BFGS → SQP）。所有求解器都失败时，
+`SketcherObj::solve()` 返回负错误码，**不会碰 mGeoList**，几何停留在求解前状态。
+
+### 14.4 拖动为什么也走“参数 + 回写”
+
+拖动（`initMove` + `moveGeometries`）不直接改几何：
+
+```text
+initMove(dragIds)
+  → 为被拖元素创建临时 coincident 方程，锚点参数存入 MoveParameters
+moveGeometries(dragIds, toPoint, relative)
+  → 只改 MoveParameters
+  → 调 solve()（DogLeg）
+  → 成功 → applySolution → updateGeometry → extractGeometry 回写宿主
+```
+
+因为“被拖点”通过临时方程约束在鼠标位置上，求解器在满足其它约束时仍会让
+被拖点跟随鼠标；松开后 `resetInitMove()` 清掉临时方程。

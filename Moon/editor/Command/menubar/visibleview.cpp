@@ -1,7 +1,9 @@
 ﻿#include "visibleview.h"
-#include "editor/UI/ReousrcePanel/resourcePanel.h"
 #include "editor/UI/TreeViewPanel/hierarchypanel.h"
 #include "editor/UI/SettingPanel/SettingPanel.h"
+#include "editor/UI/PropertyPanel/PropertyPanel.h"
+#include "editor/UI/TaskPanel/TaskViewPanel.h"
+#include "editor/UI/LogPanel/LogPanel.h"
 #include "Core/Global/ServiceLocator.h"
 #include "core/log.h"
 #include "renderer/SceneView.h"
@@ -18,29 +20,27 @@ namespace MOON {
 	}
 	void VisibleViewCommand::setUp(QMenu* menu)
 	{
-		auto resource = new QAction(VisibleViewCommand::tr("Resource"), this);
 		auto hierarchypanel = new QAction(VisibleViewCommand::tr("Hierarchy"), this);
 		auto settingPanel = new QAction(VisibleViewCommand::tr("Setting"), this);
-		resource->setCheckable(true);
-		resource->setChecked(true);
+		auto propertyPanel = new QAction(VisibleViewCommand::tr("Property"), this);
+		auto taskViewPanel = new QAction(VisibleViewCommand::tr("Task View"), this);
+		auto logPanel = new QAction(VisibleViewCommand::tr("Log"), this);
 		hierarchypanel->setCheckable(true);
 		hierarchypanel->setChecked(true);
 		settingPanel->setCheckable(true);
 		settingPanel->setChecked(true);
-		menu->addAction(resource);
+		propertyPanel->setCheckable(true);
+		propertyPanel->setChecked(true);
+		taskViewPanel->setCheckable(true);
+		taskViewPanel->setChecked(true);
+		logPanel->setCheckable(true);
+		logPanel->setChecked(true);
 		menu->addAction(hierarchypanel);
 		menu->addAction(settingPanel);
+		menu->addAction(propertyPanel);
+		menu->addAction(taskViewPanel);
+		menu->addAction(logPanel);
 
-		connect(resource, &QAction::triggered, [](bool check) {
-			if (check) {
-               GetService(MOON::ResPanel).show();
-			}
-			else
-			{
-			   GetService(MOON::ResPanel).hide();
-			}
-			
-			});
 		connect(hierarchypanel, &QAction::triggered, [](bool check) {
 			if (check) {
 				GetService(MOON::Hierarchypanel).show();
@@ -58,6 +58,36 @@ namespace MOON {
 			else
 			{
 				GetService(MOON::SettingPanel).hide();
+			}
+
+			});
+		connect(propertyPanel, &QAction::triggered, [](bool check) {
+			if (check) {
+				GetService(MOON::PropertyPanel).show();
+			}
+			else
+			{
+				GetService(MOON::PropertyPanel).hide();
+			}
+
+			});
+		connect(taskViewPanel, &QAction::triggered, [](bool check) {
+			if (check) {
+				GetService(MOON::TaskViewPanel).show();
+			}
+			else
+			{
+				GetService(MOON::TaskViewPanel).hide();
+			}
+
+			});
+		connect(logPanel, &QAction::triggered, [](bool check) {
+			if (check) {
+				GetService(MOON::LogPanel).show();
+			}
+			else
+			{
+				GetService(MOON::LogPanel).hide();
 			}
 
 			});

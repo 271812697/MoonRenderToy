@@ -1,5 +1,6 @@
 ﻿#include <QMouseEvent>
 #include "viewerwidget.h"
+#include <QElapsedTimer>
 #include "glloader.h"
 #define  __glad_h_
 #include "core/callbackManager.h"
@@ -20,6 +21,7 @@
 #include "Settings/DebugSetting.h"
 #include "core/SelectionManager.h"
 #include "renderer/GizmoRenderPass.h"
+#include "Rendering/Features/FrameInfoRenderFeature.h"
 
 namespace MOON {
 	struct OpenGLProcAddressHelper {
@@ -59,17 +61,58 @@ namespace MOON {
 			bool value=MOON::DebugSettings::instance().getNode("DebugImgui")->getData<bool>();
 			if (value) {
 				ImVec2 a = { 0,1 }, b = { 1,0 };
-				//ImVec2 size = ImVec2(mViewWidth / 2, mViewHeight/2);
 				ImVec2 size = ImVec2(mViewWidth, mViewHeight);
 				auto& gbufferData = mSceneView->GetRenderer().GetPass<::Core::Rendering::GbufferPass>("Gbuffer").GetGbufferData();
 				ImGui::Image(gbufferData.position->GetID(), size, a, b);
 				ImGui::Image(gbufferData.normal->GetID(), size, a, b);
 				ImGui::Image(gbufferData.occlusion->GetID(), size, a, b);
 				ImGui::Image(gbufferData.occlusionBlur->GetID(), size, a, b);
+				const auto& frameInfo=mSceneView->GetRenderer().GetFeature<Rendering::Features::FrameInfoRenderFeature>().GetFrameInfo();
+				auto drawList=ImGui::GetForegroundDrawList();
+				char str[300];
+				sprintf_s(str,300,
+					"Total vertex Count %d\n"
+					"Batch Triangle Count %d"
+                    "\nTriangle Count % d\n"
+					"Triangle Vertex Count % d\n"
+					"Triangle instance Count % d\n"
+					"Batch line Count %d"
+					"\nline Count % d\n"
+					"line Vertex Count % d\n"
+					"line instance Count % d\n",
+					frameInfo.vertexCount,
+					frameInfo.batchPolyCount,
+					frameInfo.polyCount,
+					frameInfo.vertexPolyCount,
+					frameInfo.instancePolyCount,
+
+					frameInfo.batchLineCount,
+					frameInfo.lineCount,
+					frameInfo.vertexLineCount,
+					frameInfo.instancelineCount
+				);
+				char out[512];
+				sprintf_s(out, sizeof(out),
+					"FPS %.1f\n"
+					"Frame %.2f ms\n"
+					"%s", m_fps, m_avgFrameMs, str);
+				drawList->AddText({20,20}, IM_COL32(255, 255, 100, 255),out);
 			}
 		}
 
 		void paintGL() {
+			// Rolling FPS / frame-time statistics, refreshed every 500 ms.
+			if (!m_fpsTimer.isValid()) {
+				m_fpsTimer.start();
+			}
+			++m_fpsFrameCount;
+			if (m_fpsTimer.elapsed() >= 500) {
+				const double elapsedMs = m_fpsTimer.elapsed();
+				m_fps = m_fpsFrameCount * 1000.0 / elapsedMs;
+				m_avgFrameMs = elapsedMs / m_fpsFrameCount;
+				m_fpsTimer.restart();
+				m_fpsFrameCount = 0;
+			}
 			ImRenderer::instance().newImgui();
 			Render2D::Im2DRender::instance().newFrame();
 			if (mSceneView->GetRenderer().GetPass<Editor::Rendering::GizmoRenderPass>("ImRenderer").IsEnabled()) {
@@ -80,7 +123,6 @@ namespace MOON {
 				mDoReadFile = false;
 				parser->ParseFile(mReadFilePath.toStdString());
 				mSceneView->UnselectActor();
-				
 			}
 				
 			if (mAddActors.size() > 0|| mRemoveActors.size() > 0||mModifyActors.size()>0) {
@@ -146,6 +188,10 @@ namespace MOON {
 		bool mRefreshTreeView = false;
 		QString mReadFilePath = "";
 		bool mDoReadFile = false;
+		QElapsedTimer m_fpsTimer;
+		quint64 m_fpsFrameCount = 0;
+		double m_fps = 0.0;
+		double m_avgFrameMs = 0.0;
 
 	};
 	ViewerWidget::ViewerWidget(QWidget* parent) :
@@ -270,7 +316,6 @@ namespace MOON {
 	void ViewerWidget::refreshTreeView()
 	{
 		mInternal->mRefreshTreeView = true;
-		
 	}
 	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {
 		if (actor != nullptr) {

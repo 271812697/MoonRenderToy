@@ -71,44 +71,15 @@ namespace MOON {
 
 	void OpenFileCommand::execute()
 	{
-		/*
-		QWidget* mainwidget = nullptr;
-		Q_FOREACH(QWidget * widget, QApplication::topLevelWidgets())
-		{
-			if (widget->isWindow() && widget->isVisible() && qobject_cast<QMainWindow*>(widget))
-			{
-				mainwidget = widget;
-				break;
-			}
-		}
-		QString filtersString = "";
-		std::cout << "Open file" << std::endl;
-		pqFileDialog fileDialog(
-			mainwidget, tr("Open File:"), QString(), filtersString, false);
-		fileDialog.setObjectName("FileOpenDialog");
-		fileDialog.setFileMode(pqFileDialog::ExistingFilesAndDirectories);
-		if (fileDialog.exec() == QDialog::Accepted) {
-
-		}
-
-		*/
 		QString fileName = QFileDialog::getOpenFileName(nullptr,
 			tr("Open Flow Scene"),
 			QDir::homePath(),
 			tr("Flow Scene Files (*.scene;*.gltf;*.obj;*.stl;*.*)"));
 		if (!QFileInfo::exists(fileName))
 			return;
-		CORE_INFO("Switch to Scene {0}", fileName.toStdString());
+		CORE_INFO("Read File {0}", fileName.toStdString());
 		emit readFilePath(fileName);
-		//SurfaceMesh mesh;
-		//read_stl( mesh, fileName.toStdString());
-		//;
-		//decimate(mesh,mesh.vertices_size()/5);
-		//write_stl(mesh, "decimated.stl");
-
 	}
-
-
 }
 
 
