@@ -1,5 +1,6 @@
-#include "LogPanel.h"
+﻿#include "LogPanel.h"
 #include "core/log.h"
+#include "Core/Global/ServiceLocator.h"
 #include "editor/UI/DockWidgetTitleBar.h"
 
 #include <QApplication>
@@ -61,8 +62,28 @@ namespace MOON {
 
 	LogPanel::LogPanel(QWidget* parent)
 		: QDockWidget(parent), LogOutput("LogPanel") {
+		RegService(LogPanel, *this);
 		setWindowTitle(tr("Log"));
-		setTitleBarWidget(new DockWidgetTitleBar(this));
+		auto* titleBar = new DockWidgetTitleBar(this);
+		setTitleBarWidget(titleBar);
+
+		// Level filters live in the title bar, keeping the content area for
+		// the log text itself.
+		m_debugCheck = new QCheckBox(tr("Debug"), titleBar);
+		m_infoCheck = new QCheckBox(tr("Info"), titleBar);
+		m_warnCheck = new QCheckBox(tr("Warning"), titleBar);
+		m_errorCheck = new QCheckBox(tr("Error"), titleBar);
+		m_debugCheck->setChecked(true);
+		m_infoCheck->setChecked(true);
+		m_warnCheck->setChecked(true);
+		m_errorCheck->setChecked(true);
+		m_clear = new QPushButton(tr("Clean"), titleBar);
+		for (QWidget* w : {static_cast<QWidget*>(m_debugCheck), static_cast<QWidget*>(m_infoCheck),
+		                   static_cast<QWidget*>(m_warnCheck), static_cast<QWidget*>(m_errorCheck),
+		                   static_cast<QWidget*>(m_clear)}) {
+			w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+			titleBar->addTitleWidget(w);
+		}
 
 		QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 		mono.setPointSize(mono.pointSize() + 2);
@@ -74,43 +95,18 @@ namespace MOON {
 		mainLayout->setContentsMargins(3, 3, 3, 3);
 		mainLayout->setSpacing(2);
 
-		// Filter row above the header row.
-		auto* filterRow = new QHBoxLayout();
-		filterRow->setSpacing(8);
-		m_debugCheck = new QCheckBox(tr("Debug"), content);
-		m_debugCheck->setChecked(true);
-		m_infoCheck = new QCheckBox(tr("Info"), content);
-		m_infoCheck->setChecked(true);
-		m_warnCheck = new QCheckBox(tr("Warning"), content);
-		m_warnCheck->setChecked(true);
-		m_errorCheck = new QCheckBox(tr("Error"), content);
-		m_errorCheck->setChecked(true);
-		m_clear = new QPushButton(tr("Clean"), content);
-		for (QWidget* w : {static_cast<QWidget*>(m_debugCheck), static_cast<QWidget*>(m_infoCheck),
-		                   static_cast<QWidget*>(m_warnCheck), static_cast<QWidget*>(m_errorCheck),
-		                   static_cast<QWidget*>(m_clear)}) {
-			w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-		}
-		filterRow->addWidget(m_debugCheck);
-		filterRow->addWidget(m_infoCheck);
-		filterRow->addWidget(m_warnCheck);
-		filterRow->addWidget(m_errorCheck);
-		filterRow->addWidget(m_clear);
-		filterRow->addStretch(1);
-		mainLayout->addLayout(filterRow);
-
 		// Header row: widths match the padded monospace content columns.
-		auto* headerRow = new QHBoxLayout();
-		headerRow->setSpacing(0);
-		auto* timeHeader = new QLabel(tr("Time"), content);
-		auto* levelHeader = new QLabel(tr("Level"), content);
-		auto* msgHeader = new QLabel(tr("Message"), content);
-		timeHeader->setFixedWidth((TimeFieldWidth + TimeSepWidth) * charWidth);
-		levelHeader->setFixedWidth(LevelFieldWidth * charWidth);
-		headerRow->addWidget(timeHeader);
-		headerRow->addWidget(levelHeader);
-		headerRow->addWidget(msgHeader, 1);
-		mainLayout->addLayout(headerRow);
+		//auto* headerRow = new QHBoxLayout();
+		//headerRow->setSpacing(0);
+		//auto* timeHeader = new QLabel(tr("Time"), content);
+		//auto* levelHeader = new QLabel(tr("Level"), content);
+		//auto* msgHeader = new QLabel(tr("Message"), content);
+		//timeHeader->setFixedWidth((TimeFieldWidth + TimeSepWidth) * charWidth);
+		//levelHeader->setFixedWidth(LevelFieldWidth * charWidth);
+		//headerRow->addWidget(timeHeader);
+		//headerRow->addWidget(levelHeader);
+		//headerRow->addWidget(msgHeader, 1);
+		//mainLayout->addLayout(headerRow);
 
 		m_logText = new QPlainTextEdit(content);
 		m_logText->setFont(mono);

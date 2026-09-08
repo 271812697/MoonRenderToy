@@ -59,7 +59,7 @@ Rendering::Resources::Mesh::Mesh(const std::vector<Geometry::VertexPositionNorma
 	}
 	AddMaterial(p_materialIndex, 0);
 	Upload(p_vertices, p_indices);
-	//ComputeBoundingSphereAndBox(p_vertices);
+	ComputeBoundingSphereAndBox(p_vertices);
 }
 Rendering::Resources::Mesh::Mesh(
 	const std::vector<Geometry::VertexBVH>& p_vertices,
@@ -353,6 +353,43 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::VertexBVH>& 
 		//("Empty vertex buffer!");
 	}
 }
+void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< Geometry::VertexPositionNormal>& p_vertices)
+{
+	m_boundingSphere.position = Maths::FVector3::Zero;
+	m_boundingSphere.radius = 0.0f;
+
+
+	if (!p_vertices.empty())
+	{
+		float minX = std::numeric_limits<float>::max();
+		float minY = std::numeric_limits<float>::max();
+		float minZ = std::numeric_limits<float>::max();
+
+		float maxX = std::numeric_limits<float>::min();
+		float maxY = std::numeric_limits<float>::min();
+		float maxZ = std::numeric_limits<float>::min();
+
+		for (const auto& vertex : p_vertices)
+		{
+			minX = std::min(minX, vertex.position[0]);
+			minY = std::min(minY, vertex.position[1]);
+			minZ = std::min(minZ, vertex.position[2]);
+
+			maxX = std::max(maxX, vertex.position[0]);
+			maxY = std::max(maxY, vertex.position[1]);
+			maxZ = std::max(maxZ, vertex.position[2]);
+		}
+
+		m_boundingSphere.position = Maths::FVector3{ minX + maxX, minY + maxY, minZ + maxZ } / 2.0f;
+		m_boundingBox = Geometry::bbox(Maths::FVector3{ minX , minY , minZ }, Maths::FVector3{ maxX,  maxY, maxZ });
+		for (const auto& vertex : p_vertices)
+		{
+			const auto& position = reinterpret_cast<const Maths::FVector3&>(vertex.position);
+			m_boundingSphere.radius = std::max(m_boundingSphere.radius, Maths::FVector3::Distance(m_boundingSphere.position, position));
+		}
+		BuildBvh();
+	}
+}
 void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< Geometry::Vertex>& p_vertices)
 {
 	m_boundingSphere.position = Maths::FVector3::Zero;
@@ -389,8 +426,6 @@ void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< 
 		}
 		BuildBvh();
 	}
-
-	
 }
 void Rendering::Resources::Mesh::ComputeBoundingSphereAndBox(const std::vector< Geometry::VertexBVH>& p_vertices)
 {

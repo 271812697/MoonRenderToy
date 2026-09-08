@@ -122,6 +122,7 @@ namespace MOON {
 					::Rendering::Settings::EPrimitiveMode::TRIANGLES);
 			
 				modelRender.GetModel()->AddMesh(mesh);
+				modelRender.GetModel()->computeBoxAndShpere();
 				auto tempMat = new Core::Resources::Material();
 				
 
@@ -130,6 +131,7 @@ namespace MOON {
 				tempMat->SetReceiveShadows(false);
 				tempMat->SetShader(GetShaderService[":Shaders\\Standard.ovfx"]);
 				tempMat->AddFeature("CLIP_PLANE");
+				tempMat->AddFeature("VERTEX_POS_NORMAL");
 				tempMat->SetProperty("_EnvironmentMap", GetSceneView.GetRenderer().GetPrefilterCube());					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
 				tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);

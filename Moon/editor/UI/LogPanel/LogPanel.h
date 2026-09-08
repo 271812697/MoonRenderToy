@@ -11,9 +11,9 @@ class QPushButton;
 
 namespace MOON {
 
-	// Console-style log panel: a Level/Time/Message header row above a
-	// monospace QPlainTextEdit whose lines are padded to line up with the
-	// headers. The level filters sit above the header row.
+	// Console-style log panel: a monospace QPlainTextEdit whose lines carry
+	// level/time prefixes. The level filters and Clear button live inside the
+	// dock title bar, not in the content area.
 	class LogPanel : public QDockWidget, public LogOutput {
 		Q_OBJECT
 	public:

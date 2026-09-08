@@ -1,17 +1,23 @@
-需要补充：
+# 文档补全记录
 
-草图约束文档：
+下列文档缺口已补齐：
 
-    约束求解后，参数和GCS对象如何更新原来的几何的细节
-    原来的几何映射成GCS对象以及参数的细节，可以针对相应的数据结构展开详细说明
+## 草图约束文档
 
+- [x] 约束求解后，参数和 GCS 对象如何更新回原来的几何 ——
+  [SketchConstraints.md](SketchConstraints.md) §13/§14
+  （`GeoDef`/`double*` 参数仓库/`param2geoelement`/`ConstrDef` 数据结构拆解，
+  `applySolution → updateGeometry → extractGeometry` 回写链路与失败回滚）
 
-草图绘制文档：
+## 草图绘制文档
 
-    标注绘制
-    曲线绘制
+- [x] 曲线绘制 —— [SketchRendering.md](SketchRendering.md) §2
+  （离散化缓存、颜色/选中、构造虚线、自适应网格背景）
+- [x] 标注绘制 —— [SketchRendering.md](SketchRendering.md) §3
+  （约束图标锚点/样式/序号、尺寸与角度标注、标签拖动与拾取）
 
-草图交互文档：
+## 草图交互文档
 
-    移动几何曲线（包括移动端点、移动边，有些情况是改变曲线的位置，而有些情况相当于是编辑曲线，如移动圆心是改变位置，拖拽边是改变半径）
-    几何曲线的拾取与吸附
+- [x] 移动几何曲线（端点/边/圆心的不同编辑语义）——
+  [SketchInteraction.md](SketchInteraction.md) §4
+- [x] 几何曲线的拾取与吸附 —— [SketchInteraction.md](SketchInteraction.md) §1/§2

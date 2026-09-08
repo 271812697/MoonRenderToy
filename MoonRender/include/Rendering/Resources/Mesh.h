@@ -64,6 +64,7 @@ namespace Rendering::Resources
 		void Upload(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void Upload(const std::vector<Geometry::VertexPositionNormal>&p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::Vertex>& p_vertices);
+		void ComputeBoundingSphereAndBox(const std::vector<Geometry::VertexPositionNormal>& p_vertices);
 		void Upload(const std::vector<Geometry::VertexBVH>& p_vertices, const std::vector<uint32_t>& p_indices);
 		void ComputeBoundingSphereAndBox(const std::vector<Geometry::VertexBVH>& p_vertices);
 

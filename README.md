@@ -52,6 +52,8 @@
 | [docs/SketchModelingWidgetArchitecture.md](docs/SketchModelingWidgetArchitecture.md) | 草图建模架构总览（分层与依赖、设计模式） |
 | [docs/SketchWidgets/README.md](docs/SketchWidgets/README.md) | 各草图工具专项文档（Point/Line/LineSet/Circle/Ellipse/Polygon/Slot/ArcSlot/BSpline/Rectangle/Fillet/Symmetry/Rotate/Offset/Trimming） |
 | [docs/SketchConstraints.md](docs/SketchConstraints.md) | 草图约束：原理 / 架构 / 工作流 / 用法 / 一致性规则（求解器、删除清理、拖动锚点、setDatum） |
+| [docs/SketchRendering.md](docs/SketchRendering.md) | 草图绘制：曲线 / 点 / 构造虚线 / 约束与尺寸标注 |
+| [docs/SketchInteraction.md](docs/SketchInteraction.md) | 草图交互：拾取 / 吸附 / 几何拖动（端点、边、圆心的编辑语义） |
 | [docs/FeatureModeling.md](docs/FeatureModeling.md) | Feature 参数化建模：预览逻辑 / 建模 / 任务 UI / 属性系统 |
 | [docs/SectionRendering.md](docs/SectionRendering.md) | 剖切截面渲染（模板 / 奇偶裁剪） |
 | [docs/ImguiArchitecture.md](docs/ImguiArchitecture.md) | ImGui 集成架构 |

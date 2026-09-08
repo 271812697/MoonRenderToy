@@ -1,6 +1,7 @@
 #pass SHADOW_PASS
 #pass REFLECTION_PASS
 
+#feature VERTEX_POS_NORMAL
 #feature PARALLAX_MAPPING
 #feature NORMAL_MAPPING
 #feature DISTANCE_FADE
@@ -13,11 +14,20 @@
 #include ":Shaders/Common/Buffers/EngineUBO.ovfxh"
 #include ":Shaders/Common/Utils.ovfxh"
 
+#if defined(VERTEX_POS_NORMAL)
+layout (location = 0) in vec3 geo_Pos;
+layout (location = 1) in vec3 geo_Normal;
+layout (location = 2) in vec2 geo_TexCoords;
+layout (location = 3) in vec3 geo_Tangent;
+layout (location = 4) in vec3 geo_Bitangent;
+#else
 layout (location = 0) in vec3 geo_Pos;
 layout (location = 1) in vec2 geo_TexCoords;
 layout (location = 2) in vec3 geo_Normal;
 layout (location = 3) in vec3 geo_Tangent;
 layout (location = 4) in vec3 geo_Bitangent;
+#endif
+
 
 out VS_OUT
 {
