@@ -21,3 +21,8 @@
 - [x] 移动几何曲线（端点/边/圆心的不同编辑语义）——
   [SketchInteraction.md](SketchInteraction.md) §4
 - [x] 几何曲线的拾取与吸附 —— [SketchInteraction.md](SketchInteraction.md) §1/§2
+
+## 渲染
+
+- [ ] 梳理一帧场景渲染的流程，以及可优化的方法
+- [ ] 材质系统的重构

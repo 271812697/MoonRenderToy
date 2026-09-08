@@ -132,77 +132,13 @@ Build\bin\Release\Moon.exe
 *特征建模结果*
 
 ![几何建模示例 4](README.assets/image-20260822220525316.png)
-*草图约束 / 几何编辑*
-
-![几何建模示例 5](README.assets/image-20260614223107815.png)
-*实体模型*
-
-![几何建模示例 6](README.assets/image-20260530091405678.png)
-*实体模型*
-
-![几何建模示例 7](README.assets/image-20260607084702171.png)
-*实体模型*
-
-![几何建模示例 8](README.assets/image-20260607085050874.png)
-*实体模型*
-
-![几何建模示例 9](README.assets/image-20260611002833901.png)
-*实体模型*
-
-### PBR 与 PathTrace
-
-![PBR 渲染效果 1](README.assets/image-20260315105534305.png)
-*PBR 材质与光照*
-
-![PBR 渲染效果 2](README.assets/image-20260315105623450.png)
-*PBR 材质与光照*
-
-![PBR 渲染效果 3](README.assets/image-20260315105725010.png)
-*PBR 材质与光照*
-
-![PathTrace 渲染](README.assets/path.png)
-*GPU fragment 路径追踪*
-
-![渲染效果 4](README.assets/image-20260428220406581.png)
-*渲染效果*
-
-![渲染效果 5](README.assets/image-20260102211418374.png)
-*渲染效果*
-
-![渲染效果 6](README.assets/image-20260316220501762.png)
-*渲染效果*
-
-![渲染效果 7](README.assets/image-20260108201518310.png)
-*渲染效果*
-
-![渲染效果 8](README.assets/image-20250929212947417.png)
-*渲染效果*
-
-### SSAO
-
-![SSAO 效果](README.assets/image-20260402203337507.png)
-*屏幕空间环境光遮蔽*
 
 ### 透明（depth peel）
 
 ![透明渲染](README.assets/image-20260325225058918.png)
 *深度剥离透明*
 
-### 剖切（clip）
 
-![剖切效果 1](README.assets/image-20260401213204139.png)
-*剖切平面交互*
-
-![剖切效果 2](README.assets/image-20260325225532674.png)
-*剖切截面*
-
-### 选择与高亮
-
-![选择高亮 1](README.assets/image-20260325225722346.png)
-*拾取与高亮*
-
-![选择高亮 2](README.assets/image-20260325225804474.png)
-*拾取与高亮*
 
 ### 交互 Widget 架构
 
