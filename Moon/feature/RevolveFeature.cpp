@@ -13,6 +13,8 @@
 #include "TopoShape.h"
 #include "RevolveFeature.h"
 #include "core/log.h"
+#include <cmath>
+#include <exception>
 #include <gp_Pln.hxx>
 #include <BRepTools.hxx>
 #include <BRepAdaptor_Surface.hxx>
@@ -40,40 +42,62 @@ namespace MOON {
 	}
 	bool RevolveFeature::execute()
 	{
-        Part::TopoShape face = getProfileFace();
-        Part::TopoShape baseShape;
-        if (m_baseFeature) {
-            baseShape = getBaseTopoShape();
-        }
-        gp_Ax1 raxis = axis;
-        if (reverse) {
-            raxis.Reverse();
-        }
-        float radAngle =angle * 3.14159265358979323846f / 180.0f;
-        Part::TopoShape revolve;
-        {
-            ZoneScopedN("Revolve");
-            revolve = face.makeElementRevolve(raxis, radAngle, "Part::FaceMakerBullseye");
-            getPreviewShape() = revolve;
-        }
+        try {
+            Part::TopoShape face = getProfileFace();
+            Part::TopoShape baseShape;
+            if (m_baseFeature) {
+                baseShape = getBaseTopoShape();
+            }
+            gp_Ax1 raxis = axis;
+            if (reverse) {
+                raxis.Reverse();
+            }
+            constexpr double kPi = 3.14159265358979323846;
+            constexpr double kTwoPi = 2.0 * kPi;
+            // Use double for the sweep angle: the old float conversion made a
+            // full 360 degree turn slightly larger than 2*pi, which made the
+            // start/end seam self-intersect and OCC returned only overlapping
+            // faces.
+            double radAngle = static_cast<double>(angle) * kPi / 180.0;
+            if (std::fabs(std::fabs(radAngle) - kTwoPi) < 1.0e-9) {
+                radAngle = radAngle > 0.0 ? kTwoPi : -kTwoPi;
+            }
+            Part::TopoShape revolve;
+            {
+                ZoneScopedN("Revolve");
+                revolve = face.makeElementRevolve(raxis, radAngle, "Part::FaceMakerBullseye");
+                getPreviewShape() = revolve;
+            }
 
-        Part::TopoShape resShape;
-        if (!baseShape.isNull()) {
-            ZoneScopedN("makeBoolen");
-            if (addSubType == 0) {
-                resShape = baseShape.makeElementFuse(revolve);
+            Part::TopoShape resShape;
+            if (!baseShape.isNull()) {
+                ZoneScopedN("makeBoolen");
+                if (addSubType == 0) {
+                    resShape = baseShape.makeElementFuse(revolve);
+                }
+                else if (addSubType == 1) {
+                    resShape = baseShape.makeElementCut(revolve);
+                }
             }
-            else if (addSubType == 1) {
-                resShape = baseShape.makeElementCut(revolve);
+            else {
+                resShape = revolve;
             }
+
+            topoShape->setShape(resShape);
+            return true;
         }
-        else
-        {
-            resShape = revolve;
+        catch (const Standard_Failure& e) {
+            CORE_ERROR("Revolve failed: {}", e.GetMessageString());
         }
-        
-        topoShape->setShape(resShape);
-        
-        return true;
+        catch (const Base::Exception& e) {
+            CORE_ERROR("Revolve failed: {}", e.what());
+        }
+        catch (const std::exception& e) {
+            CORE_ERROR("Revolve failed: {}", e.what());
+        }
+        catch (...) {
+            CORE_ERROR("Revolve failed: unknown error");
+        }
+        return false;
 	}
 }
