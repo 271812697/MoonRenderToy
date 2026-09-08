@@ -13,6 +13,7 @@
 #include "TopoShape.h"
 #include "RevolveFeature.h"
 #include "core/log.h"
+#include <cmath>
 #include <gp_Pln.hxx>
 #include <BRepTools.hxx>
 #include <BRepAdaptor_Surface.hxx>
@@ -49,7 +50,15 @@ namespace MOON {
         if (reverse) {
             raxis.Reverse();
         }
-        float radAngle =angle * 3.14159265358979323846f / 180.0f;
+        constexpr double kPi = 3.14159265358979323846;
+        constexpr double kTwoPi = 2.0 * kPi;
+        // Use double for the sweep angle: the old float conversion made a full
+        // 360 degree turn slightly larger than 2*pi, which made the start/end
+        // seam self-intersect and OCC returned only overlapping faces.
+        double radAngle = static_cast<double>(angle) * kPi / 180.0;
+        if (std::fabs(std::fabs(radAngle) - kTwoPi) < 1.0e-9) {
+            radAngle = radAngle > 0.0 ? kTwoPi : -kTwoPi;
+        }
         Part::TopoShape revolve;
         {
             ZoneScopedN("Revolve");
