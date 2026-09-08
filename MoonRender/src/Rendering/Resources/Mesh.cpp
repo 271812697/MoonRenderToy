@@ -39,6 +39,28 @@ Rendering::Resources::Mesh::Mesh(
 	Upload(p_vertices, p_indices);
 	ComputeBoundingSphereAndBox(p_vertices);
 }
+Rendering::Resources::Mesh::Mesh(const std::vector<Geometry::VertexPositionNormal>& p_vertices, const std::vector<uint32_t>& p_indices, uint32_t p_materialIndex, ::Rendering::Settings::EPrimitiveMode primitiveMode)
+	: mPrimitiveMode(primitiveMode),
+	m_vertexCount(p_vertices.size()),
+	m_indicesCount(static_cast<uint32_t>(p_indices.size()))
+{
+	isIndex = m_indicesCount > 0;
+	m_indices.resize(m_indicesCount);
+	m_vertices.resize(m_vertexCount);
+	uploadIndicesCount.resize(1);
+	m_vertexArrays.resize(1);
+	m_IndexBuffers.resize(1);
+	m_vertexArrays[0] = std::make_unique<HAL::VertexArray>();
+	m_IndexBuffers[0] = std::make_unique <HAL::IndexBuffer>();
+	memcpy(m_indices.data(), p_indices.data(), p_indices.size() * sizeof(uint32_t));
+	for (int i = 0; i < m_vertexCount; i++) {
+		m_vertices[i].position = p_vertices[i].position;
+		m_vertices[i].normals = p_vertices[i].normals;
+	}
+	AddMaterial(p_materialIndex, 0);
+	Upload(p_vertices, p_indices);
+	//ComputeBoundingSphereAndBox(p_vertices);
+}
 Rendering::Resources::Mesh::Mesh(
 	const std::vector<Geometry::VertexBVH>& p_vertices,
 	const std::vector< uint32_t>& p_indices,
@@ -288,6 +310,23 @@ void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::Vertex>& p_v
 			{ Settings::EDataType::FLOAT, 3 }, // normal
 			{ Settings::EDataType::FLOAT, 3 }, // tangent
 			{ Settings::EDataType::FLOAT, 3 }  // bitangent
+			}), m_vertexBuffer, *m_IndexBuffers[0]);
+	}
+	else
+	{
+		//("Empty vertex buffer!");
+	}
+}
+void Rendering::Resources::Mesh::Upload(const std::vector<Geometry::VertexPositionNormal>& p_vertices, const std::vector<uint32_t>& p_indices)
+{
+	if (m_vertexBuffer.Allocate(p_vertices.size() * sizeof(Geometry::VertexPositionNormal)))
+	{
+		m_vertexBuffer.Upload(p_vertices.data());
+
+		UploadIndices(p_indices);
+		m_vertexArrays[0]->SetLayout(std::to_array<Settings::VertexAttribute>({
+			{ Settings::EDataType::FLOAT, 3 }, // position
+			{ Settings::EDataType::FLOAT, 3 }, // normal
 			}), m_vertexBuffer, *m_IndexBuffers[0]);
 	}
 	else

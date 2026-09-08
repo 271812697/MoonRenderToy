@@ -21,4 +21,9 @@ namespace Rendering::Geometry
 		Maths::FVector3 normals;
 		Maths::FVector2 domainId;
 	};
+	struct VertexPositionNormal
+	{
+		Maths::FVector3 position;
+		Maths::FVector3 normals;
+	};
 }

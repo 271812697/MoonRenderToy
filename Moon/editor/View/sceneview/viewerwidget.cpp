@@ -80,7 +80,6 @@ namespace MOON {
 				mDoReadFile = false;
 				parser->ParseFile(mReadFilePath.toStdString());
 				mSceneView->UnselectActor();
-				
 			}
 				
 			if (mAddActors.size() > 0|| mRemoveActors.size() > 0||mModifyActors.size()>0) {
@@ -270,7 +269,6 @@ namespace MOON {
 	void ViewerWidget::refreshTreeView()
 	{
 		mInternal->mRefreshTreeView = true;
-		
 	}
 	void ViewerWidget::onActorSelected(::Core::ECS::Actor* actor) {
 		if (actor != nullptr) {
