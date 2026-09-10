@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="600" viewBox="0 0 1280 600"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#455A64"/></marker></defs><rect width="1280" height="600" fill="white"/>
+<text x="640" y="38" font-size="20" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡结果的粒度：按 (Mesh*, actorID) 而不是 Mesh*</text>
+<rect x="40" y="70" width="580" height="440" rx="10" fill="#FFF5F5" stroke="#E57373" stroke-width="1.6"/>
+<text x="330" y="104" font-size="16" font-weight="bold" fill="#C62828" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">只按 Mesh* 记录（会连坐）</text>
+<rect x="110" y="220" width="120" height="170" fill="#CFD8DC" stroke="#546E7A" stroke-width="2"/>
+<text x="170" y="205" font-size="13" fill="#546E7A" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡物</text>
+<g fill="#BBDEFB" stroke="#1565C0" stroke-width="1.8">
+<rect x="330" y="150" width="60" height="60"/><rect x="420" y="150" width="60" height="60"/><rect x="330" y="240" width="60" height="60"/><rect x="420" y="240" width="60" height="60"/>
+</g>
+<text x="405" y="140" font-size="13" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">4 个 cube 共用同一个 Mesh*</text>
+<text x="405" y="330" font-size="13" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">其中 3 个被遮挡物挡住</text>
+<text x="330" y="400" font-size="14" fill="#C62828" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡集合 = { Mesh* }</text>
+<text x="330" y="430" font-size="14" fill="#C62828" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">→ 4 个 drawable 全部跳过，遮挡物也消失</text>
+<rect x="660" y="70" width="580" height="440" rx="10" fill="#F1F8E9" stroke="#81C784" stroke-width="1.6"/>
+<text x="950" y="104" font-size="16" font-weight="bold" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">按 (Mesh*, actorID) 记录（当前实现）</text>
+<rect x="730" y="220" width="120" height="170" fill="#CFD8DC" stroke="#546E7A" stroke-width="2"/>
+<text x="790" y="205" font-size="13" fill="#546E7A" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡物（保留）</text>
+<g fill="#BBDEFB" stroke="#1565C0" stroke-width="1.8">
+<rect x="950" y="150" width="60" height="60"/><rect x="1040" y="150" width="60" height="60"/><rect x="950" y="240" width="60" height="60"/><rect x="1040" y="240" width="60" height="60"/>
+</g>
+<g fill="#C8E6C9" stroke="#2E7D32" stroke-width="2.4">
+<rect x="950" y="150" width="60" height="60"/><rect x="1040" y="150" width="60" height="60"/><rect x="950" y="240" width="60" height="60"/>
+</g>
+<text x="1025" y="140" font-size="13" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">被遮挡的 3 个实例被标记</text>
+<text x="950" y="400" font-size="14" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡集合 = { (Mesh*, actorA), (Mesh*, actorB), … }</text>
+<text x="950" y="430" font-size="14" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">→ 只跳过被挡的实例，遮挡物照常绘制</text>
+<text x="640" y="556" font-size="13" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">CAD 里同一标准件（螺栓/垫圈）会被大量复用，共用 Mesh* 是常态，所以必须带 actor 维度</text>
+</svg>

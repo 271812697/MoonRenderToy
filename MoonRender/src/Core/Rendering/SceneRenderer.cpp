@@ -745,11 +745,20 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		frustum = frustumerride ? frustumerride : camera.GetFrustum();
 	}
 
-	// Hierarchical Z-buffer occlusion culling. The max depth grid is produced by
-	// HzbBuildPass from the previous frame, so this test costs no GPU readback
-	// sync; it prunes whole BVH subtrees hidden behind large occluders.
+	// Hierarchical Z-buffer occlusion culling. The depth grid is produced by the
+	// HZB pass from the previous frame; the pass also owns the bias parameter
+	// exposed in the pass settings. When the pass is disabled no culling happens
+	// and the previous frame's results are dropped.
+	auto& hzbPass = GetPass<::Core::Rendering::HzbBuildPass>("HZB");
+	m_hzbCuller.SetDepthBias(hzbPass.GetDepthBias());
+	m_hzbCuller.SetStaticDepthBias(hzbPass.GetStaticDepthBias());
+
 	auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
-	if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
+	if (!hzbPass.IsEnabled())
+	{
+		m_hzbCuller.ClearGrid();
+	}
+	else if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
 	{
 		// The scene BVH is built by the editor (settings panel) or by the path
 		// tracer; the culler only consumes it when available, so the rebuild
@@ -823,7 +832,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		// previous frame's depth (hierarchical Z-buffer test on the BVH). The
 		// granularity is the mesh instance, which matches the drawable
 		// granularity produced by ParseScene (one drawable per mesh sub-range).
-		if (m_hzbCuller.IsMeshOccluded(desc.sourceMesh))
+		if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
 		{
 			++m_hzbSkippedDrawables;
 			continue;

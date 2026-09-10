@@ -21,7 +21,7 @@
 
 ---
 
-## 2. 为什么是「最大深度」金字塔
+## 2. 为什么是「最远深度」金字塔
 
 ### 2.1 判据推导
 
@@ -49,6 +49,10 @@ if (tile 内最远表面比物体的最近点还近)     // 用深度值比较�
 
 因此在 HZB 里：**金字塔取 min，物体最近点取各角点的 max**，判据是 `tileMin > objNear + bias`。
 另外别和 **Hi-Z** 混淆：GPU 光栅化层次深度测试用的那张金字塔存的是**最近**深度，目的是加速逐像素 depth test；遮挡剔除存的是**最远**，方向正好相反。
+
+![深度判据](images/hzb-depth-test.svg)
+
+> 左侧是几何关系，右侧是 Reversed-Z 窗口深度轴：`w_occ` 是遮挡物在 tile 里的**最远**表面（值最小），`w_obj` 是被测物体角点的**最近**点（值最大）。只有 `w_occ > w_obj + bias` 才判为完全遮挡；`bias` 用来吸收一帧延迟与深度量化误差。
 
 ### 2.3 为什么用「上一帧」的深度
 
@@ -130,6 +134,10 @@ if (drawables.transparents.size() > 0) {
 - 每级尺寸为上一级的 1/2，直到宽高都 ≤ `m_maxGridSize`（默认 **64**），最多 16 级；
 - 1920×1080 时约 5 级，总像素约为全屏的 1/3，开销可忽略。
 
+![金字塔与 tile](images/hzb-pyramid-coverage.svg)
+
+> 2×2 逐级取 min 得到金字塔；网格上限 64 意味着一个 tile 覆盖屏幕约 1/64（1920 宽时约 30 像素）。红框那种**同时覆盖零件和背景**的 tile，min 会被背景拉到 0，该区域永远判不出遮挡——这是 CAD 密集装配里剔除偏保守的主要原因之一。
+
 ### 5.2 reduce shader
 
 `Resource/Moon/Data/Engine/Shaders/PostProcess/HzbReduce.ovfx`：输出 texel 覆盖输入的 2×2 区块，取四者中**最远**的那个 —— Reversed-Z 下即**最小值**。
@@ -210,19 +218,30 @@ inline int const* Bvh::GetIndices();                 // 叶子 → 图元索引
 ### 6.2 节点测试（保守性全部体现在这里）
 
 ```cpp
-// 8 个角投影
+// TestNode 返回枚举，便于统计拒绝原因：
+// NoGrid | NearClip | OutOfRange | Offscreen | Background | BiasRejected | Visible | Occluded
+
+// 1) 8 个角投影
 for (each corner of node->bounds) {
     clip = viewProjection * vec4(corner, 1);
-    if (clip.w <= 1e-5) return false;              // 跨近平面/在眼后 → 不剔
+    if (clip.w <= 1e-5) return NearClip;           // 跨近平面/在眼后 → 不剔
     depth = 0.5 - clip.z / clip.w * 0.5;           // Reversed-Z：近 1 远 0
     uv    = (clip.xy / clip.w) * 0.5 + 0.5;
-    记录 closestDepth = max(各角点 depth) 与 uv 包围盒   // 值大 = 近
+    closestDepth = max(各角点 depth)                // 值大 = 最近的角点
 }
-if (closestDepth <= 0 || closestDepth >= 1) return false;  // 落在近/远平面 → 不剔
-if (矩形完全在屏幕外) return false;                 // 交给视锥剔除
+if (closestDepth <= 0 || closestDepth >= 1) return OutOfRange;
+if (矩形完全在屏幕外) return Offscreen;              // 交给视锥剔除
 矩形 clamp 到 [0,1] → 映射到 grid texel 范围（含边界扩一格）
-occluderDepth = min(该范围内的 grid 值)             // 保守：取最远（值最小）
-return occluderDepth > closestDepth + bias;         // true = 完全被遮挡
+
+// 2) 扫描 tile 矩形：任一 tile 不满足条件就提前退出，不扫完整个矩形
+for (tile in 矩形) {
+    d = grid[tile];
+    if (d <= 0)                    return Background;    // tile 里有背景 → 不剔
+    if (d <= closestDepth)         return Visible;       // 遮挡物在该点后面 → 不剔
+    if (d <= closestDepth + bias)  return BiasRejected;  // 只差偏置，没敢剔
+    occluderDepth = min(occluderDepth, d);
+}
+return Occluded;            // tile 内最远表面都比物体最近点近 → 完全被遮挡
 ```
 
 四处保守处理都是刻意为之，宁可漏剔也不能误剔（误剔 = 物体凭空消失）：
@@ -233,32 +252,57 @@ return occluderDepth > closestDepth + bias;         // true = 完全被遮挡
 4. 遮挡值取范围内**最远**的那个（Reversed-Z 下为 **min**），而不是平均值或最近的表面；
 5. 背景（未绘制像素）在 Reversed-Z 下是 **0**（远），所以覆盖到背景的区域永远不会误剔。
 
-### 6.3 遍历与 actor 粒度
+### 6.3 遍历、子树收集与实例粒度
 
 ```cpp
 stack.push(root);
 while (!stack.empty()) {
     n = stack.pop();
-    if (被遮挡(n)) {                      // 一次测试剪掉整棵子树
-        if (n 是叶子) 把叶子内所有图元的 actorID 记入 occluded;
-        continue;
+    result = TestNode(n);                       // 见 §6.2
+    if (result == Occluded) {
+        ++culledNodes; ++occludedNodeTests;
+        collectSubtree(n);                      // 关键：内部节点也要收集整棵子树
+        continue;                               // 剪枝，不再测试子树
     }
-    if (n 是叶子) 把叶子内所有图元的 actorID 记入 visible;
-    else { stack.push(n->lc); stack.push(n->rc); }
+    if (result == BiasRejected) ++biasRejectedNodes;
+    else if (result == Background) ++backgroundRejectedNodes;
+    if (n 是叶子) continue;
+    stack.push(n->lc); stack.push(n->rc);
 }
-for (actorID : visible) occluded.erase(actorID);   // 一个 actor 任一部分可见 → 整体必须画
+
+// 遮挡集合的 key：
+//   struct InstanceKey { const Mesh* mesh; int64_t actorID; };
+//   collectSubtree 遍历被剔除子树的所有叶子，把每个图元的
+//   { sceneMeshes[meshID], instance.actorID } 插入 m_occludedInstances
 ```
 
+![BVH 子树收集](images/hzb-traversal-collect.svg)
+
+> 初版只在「叶子被剔除」时记录图元，内部节点被剪掉后子树里的实例一个都没标记，于是统计上出现 `culled > 0` 但 `occludedInst / skipped = 0`。现在内部节点被剔除会先收集整棵子树的实例再剪枝。
+
+![实例粒度](images/hzb-instance-key.svg)
+
+> 遮挡结果不能只按 `Mesh*` 记：CAD 里同一个标准件会被复用，一个实例被挡会把所有共用该 mesh 的 drawable 一起剔掉（连遮挡物自己都消失）。现在按 `(Mesh*, actorID)` 记，只跳过真正被挡的实例。
+
 - **为什么要分层**：一次节点测试可以剪掉子树里成百上千个物体，测试成本从 O(物体数) 降到 O(可见簇 + 边界簇)。CAD 里「一个大零件挡住后面上千个小零件」正是在 BVH 上层一刀剪掉。
-- **为什么要 actor 归一化**：BVH 的图元是 mesh 实例，一个 actor 可能由多个实例组成；只要有一个实例可见，actor 就必须绘制。
-- **叶子粒度**影响剪枝效率（每叶 16~64 个图元较合适）；**BVH 变更后必须重建**（`BvhService::SetDirtyFlag` / 场景的 `reBuildBvh`），否则用过期 AABB 剔除会出错。
+- **子树收集的代价**：被剔除的子树仍会被遍历一遍（只收集、不再做深度测试）。想要连这部分也省掉，需要在 BVH 构建时给内部节点存「子树实例区间」，这是后续优化项。
+- **叶子粒度**：当前 `kMaxPrimitivesPerLeaf = 1`，每个 mesh 实例一个叶子；BVH 变更后必须重建（场景的 `reBuildBvh`），否则过期 AABB 会导致误剔。
 
 ### 6.4 bias
 
-当前是深度值上的固定偏置（默认 `0.0005`），用于抵消深度精度与一帧延迟带来的边界抖动。
-更严谨的做法是换成**视空间偏置**（把窗口深度反投影回 view space 再加一个米级 epsilon），
-因为透视投影下窗口深度与视空间深度是非线性的，固定 ε 在不同距离上的等效厚度并不一致
-（Reversed-Z 已经把精度拉平了很多，这一点比常规管线轻）。
+偏置要吸收的是**上一帧延迟**（相机/物体位移）与深度量化误差，但 CAD 装配的零件是贴在一起的，
+遮挡物和被遮零件的深度差可能只有千分之几，固定或过大的偏置会把几乎所有候选都拒掉。当前实现分三层：
+
+1. **相对偏置**：`bias = max(effectiveBias * closestDepth, 1e-9)`。
+   窗口深度近似满足 `w ≈ near / d`，所以 `Δw / w ≈ Δd / d`——按 `closestDepth` 成比例，
+   在任意距离上都等价于「遮挡物必须近 `effectiveBias × 距离`」，而不是一个随距离漂移的固定厚度。
+2. **静止自适应**：culler 每帧比较本帧与上一帧的 view-projection 矩阵；若相机没动（观察固定视角时很常见），
+   上一帧的深度网格对本帧是精确的，偏置自动降到 `1e-6` 的相对量级，让贴合零件的遮挡也能剔掉。
+3. **运行时可调**：Settings → View → `hzbBias` 滑块（0 ~ 0.005，默认 0.0005）实时生效；
+   日志里的 `bias` 打印的是**本帧实际生效**的值，方便对照。
+
+> **注意**：静止自适应只跟踪相机运动。如果相机不动但某个零件被拖动/变形，网格仍是旧的，
+> 可能出现误剔；此时把 `hzbBias` 调大，或在该交互期间临时关闭 HZB。
 
 ---
 
@@ -267,22 +311,27 @@ for (actorID : visible) occluded.erase(actorID);   // 一个 actor 任一部分�
 `SceneRenderer::FilterDrawables`（每帧一次，绘制列表生成前）先跑一次剔除：
 
 ```cpp
-const auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
-if (auto* bvhService = sceneDescriptor.scene.GetBvhService();
-    bvhService != nullptr && bvhService->m_sceneBvh != nullptr)
+auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
+if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
 {
-    m_hzbCuller.Cull(*bvhService->m_sceneBvh,
-                     bvhService->mSceneMeshInstances,
-                     camera.GetViewProjectionMatrix(),
-                     m_frameDescriptor.renderWidth,
-                     m_frameDescriptor.renderHeight);
+    if (bvhService->m_sceneBvh != nullptr && bvhService->m_sceneBvh->m_root != nullptr)
+    {
+        m_hzbCuller.Cull(*bvhService,
+                         camera.GetViewProjectionMatrix(),
+                         m_frameDescriptor.renderWidth,
+                         m_frameDescriptor.renderHeight);
+    }
 }
 ```
 
 drawable 循环内（视锥测试之后）执行剔除：
 
 ```cpp
-if (m_hzbCuller.IsOccluded(desc.actor.GetID())) continue;
+if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
+{
+    ++m_hzbSkippedDrawables;
+    continue;
+}
 ```
 
 pass 注册在 `SceneRenderer` 构造函数里，并把 culler 指针交给 pass：
@@ -294,6 +343,12 @@ hzbPass.SetCuller(&m_hzbCuller);
 
 **开关**：pass 名叫 `HZB`，因此它自动出现在 ImGui 编辑器的 **Settings → Passes** 列表里，可以直接勾掉做对比（旧 Qt 编辑器可用同一套 pass 开关机制）。
 
+**前提：场景 BVH 必须先构建**。`BvhService` 构造函数不分配 `m_sceneBvh`，
+只有 `Scene::BuildSceneBvh()` → `BvhService::Clear()` 里才会 `new Bvh(...)` 并构建；
+当前唯一入口是 PathTracing 的 `reBuildBvh` 设置回调（手动点一次）。
+`m_sceneBvh == nullptr` 时 `Cull()` 被整段跳过，统计里 `bvh 0 / visited 0`，日志会提示「scene BVH is null/empty」。
+`SceneRenderer::RequestBvhRebuild()` 目前没有调用方，是预留的自动重建接口。
+
 ---
 
 ## 8. 调试与验证
@@ -303,19 +358,60 @@ hzbPass.SetCuller(&m_hzbCuller);
 | 字段 | 含义 |
 |---|---|
 | `visitedNodes` | 本帧实际测试过的 BVH 节点数 |
-| `culledNodes` | 因遮挡被剪掉的节点数（含内部节点，能反映剪枝效率） |
-| `occludedActors` | 最终被判为完全遮挡的 actor 数 |
+| `culledNodes` / `occludedNodeTests` | 因遮挡被剪掉的节点数（含内部节点） |
+| `occludedInstances` | 最终被标记为完全遮挡的 mesh 实例数 |
+| `biasRejectedNodes` | 物体在遮挡物后面，但差距没超过偏置的节点数 |
+| `backgroundRejectedNodes` | 覆盖区域里混进了背景（深度 0）的节点数 |
+| `bestMargin` | 本帧最大的 `occluderDepth - closestDepth` |
+| `effectiveBias` | 本帧实际生效的相对偏置（静止时会自动变小） |
 | `gridWidth/Height` | 回读网格尺寸（正常应 ≤ 64） |
+| `gridMin/ Max/ MeanDepth` | 网格深度范围（`max = 0` 说明没有数据） |
 | `cullTimeMs` | CPU 侧剔除耗时 |
 | `HzbBuildPass::GetLastBuildTimeMs()` | 金字塔构建 + 回读耗时 |
+
+**日志**：打开 Show FPS 后每秒输出一行，可直接复制：
+
+```text
+[HZB] grid 56x35 depth[0.000000 0.016110 0.001769] bvh 4 visited 3 culled 1 occludedInst 0 skipped 0 tests[occluded 1 biasRejected 0 bgRejected 2] bestMargin 0.000783 bias 0.000500 cull 0.002ms build 0.310ms
+```
+
+![日志判读流程](images/hzb-diagnostics.svg)
+
+> 判读顺序：先看 `bvh` 是否为 0（BVH 没构建）→ 再看 `depth[max]` 是否为 0（深度/金字塔没有数据）→ 再看 `culled` 与 `occludedInst/skipped`（剪了但没标记实例）→ 最后看 `tests[...]` 里 `biasRejected`（偏置过大）和 `bgRejected`（tile 覆盖到背景）哪个占主导。
 
 **验证方法**：
 
 1. 在 Settings → Passes 里开关 `HZB`，对比画面与帧率：
    - 画面**必须一致**（出现物体消失说明有误剔 → 调大 bias 或先关掉）；
    - 帧率/CPU 提交耗时应有改善，否则说明当前场景没有可利用的遮挡关系（稀疏场景很常见）。
-2. 观察统计：`culledNodes` 高但 `occludedActors` 低 → 剪的是空子树，收益有限；两者都高才是目标场景。
+2. 观察统计：`culledNodes` 高但 `occludedInstances` 低，可能是被剪的是内部节点而收集没生效；两者都高才是目标场景。
 3. 旋转/平移相机时留意有无「闪烁」（一帧延迟导致的边界抖动）→ 需要 bias 调优或对移动物体跳过剔除。
+
+### 8.1 实测数据与已做的优化
+
+在 CAD 装配（2 万多个 mesh 实例、零件彼此贴合）上实测：
+
+| 指标 | 数值 |
+|---|---|
+| BVH 实例数 | 20000+ |
+| HZB 剔除的实例 | 10000+ |
+| CPU 侧剔除耗时（优化前） | ~4ms |
+
+初版 4ms 里有几处明显浪费，已修：
+
+1. **tile 扫描提前退出**：只要发现任一 tile 不满足遮挡条件就立刻返回，不再把整个 AABB 矩形扫完求 min（大节点的常见路径从 O(面积) 降到 O(1)）。
+2. **复用临时缓冲**：BVH 遍历栈与子树收集栈改为成员复用，去掉逐帧、逐被剔节点的 `std::vector` 分配。
+3. **遮挡集合预留容量**：`reserve(instanceCount)`，避免插入上万条时反复 rehash。
+4. **日志增加 `build` 字段**：把金字塔构建 + 回读的耗时和 CPU 剔除耗时分开，便于判断是同步回读拖慢还是遍历本身慢。
+
+下一步的优化优先级（收益从大到小）：
+
+1. 遮挡集合改成按实例索引的 flat 标志位 / 稀疏位图，彻底去掉哈希与节点分配；
+2. 用 JobSystem 按顶层子树并行遍历；
+3. 隔帧剔除（结果复用 2~4 帧）或相机静止时跳过；
+4. 回读换 PBO 三帧环形缓冲，消掉 `glReadPixels` 的 GPU 同步。
+
+是否值得保留，用 Settings → Passes 里 `HZB` 的开关做 A/B：如果省下的 10000+ draw 提交时间大于 `cull + build`，就值得。
 
 ---
 
@@ -324,12 +420,15 @@ hzbPass.SetCuller(&m_hzbCuller);
 | 项 | 现状 | 下一步 |
 |---|---|---|
 | 回读方式 | 每帧一次同步 `ReadPixels`（≤16KB，仍会 stall） | PBO 三帧环形缓冲 + fence，读 N−2 帧 |
-| 一帧延迟 | 用上一帧深度，未做特殊处理 | 对「本帧发生位移」的 actor 跳过剔除 |
-| bias | NDC 固定 ε（0.0005） | 改为视空间偏置 |
-| 统计可视化 | 只有 API，未画到 UI | 挂到 ImGui Settings 面板（候选 / 视锥剔除 / HZB 剔除 / 实际 draw 四个计数） |
-| BVH 时效 | 假定 `m_sceneBvh` 已是最新 | BVH dirty 时跳过剔除 |
-| 剔除粒度 | actor（BVH 叶子 → actorID） | 需要更细粒度时下探到 mesh 实例 |
-| 每帧分配 | `unordered_set` 每帧 clear/插入 | 帧 Arena + 稀疏位图 |
+| 一帧延迟 | 相机静止时由「静止自适应 bias」消除，运动时靠 bias 留余量；物体自身运动未跟踪 | 对「本帧发生位移」的 actor 跳过剔除 |
+| bias | 相对偏置 + 静止自适应 + 滑块可调 | 视空间偏置 / 按运动幅度自适应 |
+| tile 分辨率 | 网格上限 64，tile≈30px；CAD 密集小零件下容易被边界 tile 吃掉 | 提到 128~256（配合 PBO 异步回读） |
+| AABB 偏大 | 旋转零件的 AABB 比实际轮廓大，最近角点偏前 → 判不出遮挡 | 用更紧的包围体（视空间 OBB / 凸包） |
+| BVH 时效 | 手动 `reBuildBvh`；`RequestBvhRebuild()` 无调用方；`isDirty` 语义未使用 | 场景变更时标脏并自动/提示重建 |
+| 反射 pass | 目前 `ReflectionRenderPass` 被注释掉；启用后它会用反射相机重跑 `FilterDrawables`，与主相机的网格不匹配 | 给 `FilterDrawables` 加「是否执行 HZB」开关或按相机缓存网格 |
+| MSAA 深度解析 | `glBlitNamedFramebuffer` 做 MSAA→单采样深度解析，规范上要求采样数一致（驱动通常宽容） | 用 `sampler2DMS` 手动 resolve，或确认目标驱动行为 |
+| 统计可视化 | 屏幕叠加 + 每秒日志 | 挂到 ImGui Settings 面板（候选 / 视锥剔除 / HZB 剔除 / 实际 draw 四个计数） |
+| 每帧分配 | `unordered_set` 每帧 clear/插入（已 reserve） | 帧 Arena + 稀疏位图 |
 | GPU 化 | 无 compute，无法做 GPU 侧测试 | 补 compute stage + indirect draw 后，可改为 GPU 遍历 BVH 写 indirect 参数（见 [todo.md](./todo.md) 的「HAL 能力」组） |
 
 ---
@@ -340,9 +439,11 @@ hzbPass.SetCuller(&m_hzbCuller);
 |---|---|
 | `MoonRender/include/Rendering/Settings/ERenderPassOrder.h` | 新增 `HzbBuild = 35000U` |
 | `Resource/Moon/Data/Engine/Shaders/PostProcess/HzbReduce.ovfx` | 2×2 取**最远**（本项目 Reversed-Z 下为 min）的降采样 shader |
-| `MoonRender/include/Core/Rendering/HzbCuller.h` + `src/Core/Rendering/HzbCuller.cpp` | 网格存储、BVH 分层测试、actor 归一化、统计 |
+| `MoonRender/include/Core/Rendering/HzbCuller.h` + `src/Core/Rendering/HzbCuller.cpp` | 网格存储、BVH 分层测试、`(Mesh*, actorID)` 实例 key、子树实例收集、偏置策略、统计 |
 | `MoonRender/include/Core/Rendering/HzbBuildPass.h` + `src/Core/Rendering/HzbBuildPass.cpp` | MSAA 深度解析、金字塔构建、回读、网格下发 |
 | `MoonRender/include/Core/Rendering/SceneRenderer.h` + `src/Core/Rendering/SceneRenderer.cpp` | pass 注册、`FilterDrawables` 接入、`GetHzbCuller` / `GetHzbStats` |
+| `Moon/editor/View/sceneview/viewerwidget.cpp` | 屏幕统计 + 每秒 `[HZB]` 日志、`hzbBias` 同步 |
+| `Moon/Settings/DebugSetting.cpp` | `hzbBias` / `showFPS` 等调试项与滑块 |
 
 ---
 
@@ -351,5 +452,7 @@ hzbPass.SetCuller(&m_hzbCuller);
 - **输入**：上一帧的**不透明**深度——自己从 MSAA 解析，不依赖 transparent pass 的分支；透明走 depth peeling，不参与遮挡。
 - **金字塔**：R32F、逐级 2×2 取**最远**（本项目 Reversed-Z → **min**；非 Reversed-Z 管线应取 max），减半到 ≤64 网格；无 compute，用全屏 fragment pass 实现。
 - **回读**：只读最小级（≤16KB），当前同步，后续换 PBO。
-- **测试**：BVH 分层遍历，节点 AABB → 屏幕矩形 → 与范围内最远深度比较（Reversed-Z：`tileMin > objNearClosest + bias` 即被判为遮挡）；近平面/越界/深度异常一律保守不剔；结果按 actor 归一化。
+- **测试**：BVH 分层遍历，节点 AABB → 屏幕矩形 → 与范围内最远深度比较（Reversed-Z：`tileMin > objNearClosest + bias` 即被判为遮挡）；近平面/越界/深度异常一律保守不剔；内部节点被剔时要收集整棵子树的实例，结果按 `(Mesh*, actorID)` 记录。
+- **bias**：相对偏置（按距离成比例）+ 相机静止时自适应收紧 + Settings → View → `hzbBias` 可实时调。
 - **接入**：`SceneRenderer::FilterDrawables` 里剔除；pass 名 `HZB`，可随时开关对比。
+- **前提**：场景 BVH 需要手动构建（`reBuildBvh`）；BVH 为空时 culling 被跳过，日志会提示。

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#455A64"/></marker></defs><rect width="1280" height="660" fill="white"/>
+<text x="640" y="38" font-size="20" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">金字塔与屏幕 tile：为什么 CAD 装配里剔除偏保守</text>
+<rect x="40" y="70" width="600" height="470" rx="10" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1.4"/>
+<text x="340" y="102" font-size="16" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">屏幕空间 tile（网格上限 64 → tile 很粗）</text>
+<rect x="80" y="130" width="520" height="340" fill="white" stroke="#616161" stroke-width="1.6"/>
+<g stroke="#E0E0E0" stroke-width="1">
+<line x1="145" y1="130" x2="145" y2="470"/><line x1="210" y1="130" x2="210" y2="470"/><line x1="275" y1="130" x2="275" y2="470"/><line x1="340" y1="130" x2="340" y2="470"/><line x1="405" y1="130" x2="405" y2="470"/><line x1="470" y1="130" x2="470" y2="470"/><line x1="535" y1="130" x2="535" y2="470"/>
+<line x1="80" y1="198" x2="600" y2="198"/><line x1="80" y1="266" x2="600" y2="266"/><line x1="80" y1="334" x2="600" y2="334"/><line x1="80" y1="402" x2="600" y2="402"/>
+</g>
+<rect x="210" y="266" width="65" height="68" fill="none" stroke="#D32F2F" stroke-width="2.6"/>
+<rect x="150" y="205" width="90" height="55" fill="#BBDEFB" stroke="#1565C0" stroke-width="1.6"/>
+<rect x="235" y="212" width="70" height="48" fill="#C8E6C9" stroke="#2E7D32" stroke-width="1.6"/>
+<rect x="320" y="280" width="95" height="60" fill="#FFE0B2" stroke="#E65100" stroke-width="1.6"/>
+<rect x="420" y="200" width="80" height="52" fill="#D1C4E9" stroke="#4527A0" stroke-width="1.6"/>
+<rect x="360" y="360" width="110" height="70" fill="#FFCDD2" stroke="#C62828" stroke-width="1.6"/>
+<text x="340" y="500" font-size="13" fill="#C62828" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">红框 tile 同时覆盖零件与背景 → min = 0 → 永远判不出遮挡</text>
+<text x="340" y="524" font-size="12" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">零件越小、越密集，被这种边界 tile 吃掉的候选就越多</text>
+<rect x="680" y="70" width="560" height="470" rx="10" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1.4"/>
+<text x="960" y="102" font-size="16" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">2×2 逐级取 min（Reversed-Z 的最远表面）</text>
+<rect x="760" y="140" width="90" height="70" fill="#E3F2FD" stroke="#1565C0"/><text x="805" y="182" font-size="15" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">0.90</text>
+<rect x="850" y="140" width="90" height="70" fill="#E3F2FD" stroke="#1565C0"/><text x="895" y="182" font-size="15" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">0.80</text>
+<rect x="760" y="210" width="90" height="70" fill="#E3F2FD" stroke="#1565C0"/><text x="805" y="252" font-size="15" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">0.60</text>
+<rect x="850" y="210" width="90" height="70" fill="#FFF3E0" stroke="#E65100"/><text x="895" y="252" font-size="15" fill="#E65100" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">0.05</text>
+<line x1="960" y1="210" x2="1030" y2="210" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="1040" y="175" width="110" height="70" rx="6" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.8"/>
+<text x="1095" y="206" font-size="13" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">min = 0.05</text>
+<text x="1095" y="230" font-size="12" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">最远表面</text>
+<text x="960" y="320" font-size="14" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">1920×1080 → 960×540 → 480×270 → 240×135 → 60×33（≤64）</text>
+<text x="960" y="352" font-size="13" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">每级 2×2 取 min，最后只回读最小一级（≤16KB）</text>
+<text x="960" y="400" font-size="13" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">tile = 屏幕 / 64 ≈ 30 像素（1920 宽）</text>
+<text x="960" y="430" font-size="13" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">CAD 密集小零件可把上限提到 128~256，tile 变小、剔除更准</text>
+<text x="960" y="460" font-size="12" fill="#D32F2F" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">代价：回读量按比例上升（建议配合 PBO 异步回读）</text>
+<text x="640" y="590" font-size="13" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">tile 取「最远表面」是为了保守：只要覆盖区域内有一点不是遮挡物，就不敢剔除</text>
+</svg>

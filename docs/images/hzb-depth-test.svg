@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#455A64"/></marker></defs><rect width="1280" height="620" fill="white"/>
+<text x="640" y="38" font-size="20" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">深度判据：Reversed-Z 下「最远表面」与「物体最近点」</text>
+<rect x="40" y="70" width="600" height="470" rx="10" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1.4"/>
+<text x="340" y="102" font-size="16" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">侧视图：几何关系</text>
+<polygon points="90,300 155,270 155,330" fill="#455A64"/>
+<text x="122" y="360" font-size="13" fill="#455A64" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">相机</text>
+<line x1="155" y1="300" x2="620" y2="300" stroke="#9E9E9E" stroke-width="1.4" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="300" y="230" width="70" height="140" fill="#BBDEFB" stroke="#1565C0" stroke-width="2"/>
+<text x="335" y="215" font-size="13" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡物（近）</text>
+<rect x="470" y="250" width="70" height="120" fill="#FFE0B2" stroke="#E65100" stroke-width="2"/>
+<text x="505" y="235" font-size="13" fill="#E65100" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">被遮物体（远）</text>
+<line x1="335" y1="410" x2="505" y2="410" stroke="#616161" stroke-width="1.4" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+<text x="420" y="436" font-size="13" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">d_occ &lt; d_obj（视空间）</text>
+<text x="340" y="490" font-size="12" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">几何上都在遮挡物后面，但是否「完全遮挡」还要看屏幕空间覆盖</text>
+<rect x="680" y="70" width="560" height="470" rx="10" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1.4"/>
+<text x="960" y="102" font-size="16" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">窗口深度轴（Reversed-Z）</text>
+<line x1="740" y1="230" x2="1200" y2="230" stroke="#455A64" stroke-width="2"/>
+<line x1="740" y1="222" x2="740" y2="238" stroke="#455A64" stroke-width="2"/>
+<line x1="1200" y1="222" x2="1200" y2="238" stroke="#455A64" stroke-width="2"/>
+<text x="740" y="212" font-size="13" fill="#455A64" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">1（近）</text>
+<text x="1200" y="212" font-size="13" fill="#455A64" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">0（远/背景）</text>
+<rect x="985" y="218" width="30" height="24" fill="#FFF59D" stroke="#F9A825" stroke-width="1.4"/>
+<text x="1000" y="206" font-size="12" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">bias 带</text>
+<line x1="870" y1="230" x2="870" y2="300" stroke="#1565C0" stroke-width="1.6" stroke-dasharray="4 4"/>
+<circle cx="870" cy="230" r="7" fill="#1565C0"/>
+<text x="870" y="324" font-size="13" fill="#1565C0" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">w_occ = tile 内最小（最远表面）</text>
+<line x1="1015" y1="230" x2="1015" y2="360" stroke="#E65100" stroke-width="1.6" stroke-dasharray="4 4"/>
+<circle cx="1015" cy="230" r="7" fill="#E65100"/>
+<text x="1015" y="384" font-size="13" fill="#E65100" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">w_obj = 角点最大（物体最近点）</text>
+<text x="960" y="440" font-size="15" font-weight="bold" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">w_occ &gt; w_obj + bias → 完全遮挡，可剔除</text>
+<text x="960" y="470" font-size="13" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">否则保守不剔：宁可漏剔，也不能误剔</text>
+</svg>

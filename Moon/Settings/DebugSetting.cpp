@@ -25,6 +25,11 @@ namespace MOON {
 		{
 			QSlider* slider = new QSlider(Qt::Horizontal, parent);
 			slider->setRange(0, 100); // 整数范围
+			if (mMaxValue > mMinValue) {
+				slider->setValue(static_cast<int>(
+					(this->get() - mMinValue) / (mMaxValue - mMinValue) * 100.0f
+				));
+			}
 			QObject::connect(slider, &QSlider::valueChanged, [this](int v) {
 				float val=v / 100.0f * (mMaxValue - mMinValue) + mMinValue;
 				this->setData<float>(val);

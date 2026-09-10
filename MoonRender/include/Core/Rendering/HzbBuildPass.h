@@ -29,6 +29,14 @@ namespace Core::Rendering
 		void SetMaxGridSize(uint32_t p_size) { m_maxGridSize = p_size; }
 		uint32_t GetMaxGridSize() const { return m_maxGridSize; }
 
+		/** Relative depth bias for the CPU culler (exposed in pass settings). */
+		void SetDepthBias(float p_bias) { m_depthBias = p_bias; }
+		float GetDepthBias() const { return m_depthBias; }
+
+		/** Bias used while the camera is static (previous depth is still exact). */
+		void SetStaticDepthBias(float p_bias) { m_staticDepthBias = p_bias; }
+		float GetStaticDepthBias() const { return m_staticDepthBias; }
+
 		uint32_t GetGridWidth() const { return m_gridWidth; }
 		uint32_t GetGridHeight() const { return m_gridHeight; }
 		float GetLastBuildTimeMs() const { return m_lastBuildTimeMs; }
@@ -62,6 +70,8 @@ namespace Core::Rendering
 
 		HzbCuller* m_culler = nullptr;
 		uint32_t m_maxGridSize = 64;
+		float m_depthBias = 0.0005f;
+		float m_staticDepthBias = 1e-6f;
 		uint32_t m_gridWidth = 0;
 		uint32_t m_gridHeight = 0;
 		uint32_t m_width = 0;

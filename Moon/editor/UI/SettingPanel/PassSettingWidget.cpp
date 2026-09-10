@@ -18,6 +18,7 @@
 #include "Widgets/ColorPickerProperty.h"
 #include "Widgets/TextureProperty.h"
 #include "Core/Rendering/GbufferPass.h"
+#include "Core/Rendering/HzbBuildPass.h"
 #include "Core/Rendering/SkyBoxRenderPass .h"
 #include "renderer/GizmoRenderPass.h"
 #include "renderer/PickingRenderPass.h"
@@ -234,6 +235,39 @@ namespace MOON {
 			}
 		}
 	};
+	class HzbPassComponent :public RenderPassComponent
+	{
+	public:
+		HzbPassComponent(::Core::Rendering::HzbBuildPass* p) :RenderPassComponent(p) {
+			mProperties.push_back(new SliderFloatProperty("Depth Bias", this, 0.0f, 0.005f));
+			mProperties.push_back(new SliderFloatProperty("Static Bias", this, 0.0f, 0.0001f));
+		}
+		virtual QVariant getPropertyValue(const QString& propertyName)override {
+			auto hzbPass = dynamic_cast<::Core::Rendering::HzbBuildPass*>(pass);
+			if (propertyName == "Enable") {
+				return QVariant::fromValue(pass->IsEnabled());
+			}
+			else if (propertyName == "Depth Bias") {
+				return QVariant::fromValue(hzbPass->GetDepthBias());
+			}
+			else if (propertyName == "Static Bias") {
+				return QVariant::fromValue(hzbPass->GetStaticDepthBias());
+			}
+			return QVariant();
+		}
+		virtual void setPropertyValue(const QString& propertyName, const QVariant& value)override {
+			auto hzbPass = dynamic_cast<::Core::Rendering::HzbBuildPass*>(pass);
+			if (propertyName == "Enable") {
+				pass->SetEnabled(value.value<bool>());
+			}
+			else if (propertyName == "Depth Bias") {
+				hzbPass->SetDepthBias(value.value<float>());
+			}
+			else if (propertyName == "Static Bias") {
+				hzbPass->SetStaticDepthBias(value.value<float>());
+			}
+		}
+	};
 	RenderPassComponent* CreateRenderPassComponent(Rendering::Core::ARenderPass* pass) {
 		if (dynamic_cast<::Core::Rendering::GbufferPass*>(pass)) {
 			return new GbufferPassComponent(dynamic_cast<::Core::Rendering::GbufferPass*>(pass));
@@ -246,6 +280,9 @@ namespace MOON {
 		}
 		else if (dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass)) {
 			return new PickPassComponent(dynamic_cast<::Editor::Rendering::PickingRenderPass*>(pass));
+		}
+		else if (dynamic_cast<::Core::Rendering::HzbBuildPass*>(pass)) {
+			return new HzbPassComponent(dynamic_cast<::Core::Rendering::HzbBuildPass*>(pass));
 		}
 		else {
 			return new RenderPassComponent(pass);

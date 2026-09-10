@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#455A64"/></marker></defs><rect width="1280" height="660" fill="white"/>
+<text x="640" y="38" font-size="20" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">BVH 遍历：内部节点被剔除时要收集整棵子树</text>
+<circle cx="380" cy="140" r="34" fill="#ECEFF1" stroke="#546E7A" stroke-width="2"/>
+<text x="380" y="145" font-size="12" fill="#37474F" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">root</text>
+<line x1="356" y1="168" x2="266" y2="232" stroke="#546E7A" stroke-width="1.8"/>
+<line x1="404" y1="168" x2="494" y2="232" stroke="#546E7A" stroke-width="1.8"/>
+<circle cx="240" cy="262" r="34" fill="#C8E6C9" stroke="#2E7D32" stroke-width="2.4"/>
+<text x="240" y="267" font-size="12" fill="#1B5E20" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">A</text>
+<circle cx="520" cy="262" r="34" fill="#FFE0B2" stroke="#E65100" stroke-width="2.4"/>
+<text x="520" y="267" font-size="12" fill="#BF360C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">B</text>
+<line x1="218" y1="292" x2="168" y2="356" stroke="#2E7D32" stroke-width="1.6"/>
+<line x1="262" y1="292" x2="312" y2="356" stroke="#2E7D32" stroke-width="1.6"/>
+<line x1="498" y1="292" x2="448" y2="356" stroke="#E65100" stroke-width="1.6"/>
+<line x1="542" y1="292" x2="592" y2="356" stroke="#E65100" stroke-width="1.6"/>
+<rect x="130" y="360" width="76" height="52" rx="6" fill="#BBDEFB" stroke="#1565C0" stroke-width="1.8"/>
+<text x="168" y="392" font-size="12" fill="#0D47A1" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">实例</text>
+<rect x="274" y="360" width="76" height="52" rx="6" fill="#BBDEFB" stroke="#1565C0" stroke-width="1.8"/>
+<text x="312" y="392" font-size="12" fill="#0D47A1" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">实例</text>
+<rect x="410" y="360" width="76" height="52" rx="6" fill="#FFCDD2" stroke="#C62828" stroke-width="1.8"/>
+<text x="448" y="386" font-size="11" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">bgRejected</text>
+<text x="448" y="402" font-size="11" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">不剔</text>
+<rect x="554" y="360" width="76" height="52" rx="6" fill="#ECEFF1" stroke="#546E7A" stroke-width="1.8"/>
+<text x="592" y="386" font-size="11" fill="#37474F" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遮挡物</text>
+<text x="592" y="402" font-size="11" fill="#37474F" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">可见</text>
+<text x="240" y="320" font-size="13" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">A 判定遮挡 → 收集整棵子树</text>
+<text x="560" y="500" font-size="12" fill="#757575" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">初版只在「叶子被剔除」时记录实例：A 是内部节点，剪掉后什么都没标记 → culled &gt; 0 但 occludedInst / skipped = 0</text>
+<rect x="740" y="90" width="500" height="430" rx="10" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1.4"/>
+<text x="990" y="124" font-size="16" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">遍历流程</text>
+<text x="770" y="168" font-size="13.5" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">1. 弹出节点 → TestNode（8 角投影 + tile min）</text>
+<rect x="762" y="186" width="456" height="32" rx="6" fill="#C8E6C9" stroke="#2E7D32" stroke-width="1.6"/>
+<text x="774" y="208" font-size="13.5" fill="#1B5E20" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">2. Occluded → 收集子树所有叶子实例 → 标记，剪枝</text>
+<text x="770" y="254" font-size="13.5" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">3. Visible / BiasRejected / Background → 不下结论</text>
+<text x="770" y="284" font-size="13.5" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">4. 内部节点 → 压入左右孩子；叶子 → 结束</text>
+<text x="770" y="314" font-size="13.5" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">5. 遍历结束 → 遮挡集合交给 FilterDrawables</text>
+<rect x="762" y="342" width="456" height="150" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.5"/>
+<text x="776" y="370" font-size="13" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">优化点（已做）</text>
+<text x="776" y="398" font-size="12.5" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">• tile 扫描提前退出：发现不符合的 tile 立刻返回</text>
+<text x="776" y="422" font-size="12.5" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">• 遍历栈/子树栈复用，避免逐帧、逐节点 new</text>
+<text x="776" y="446" font-size="12.5" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">• 遮挡集合 reserve(instanceCount)，避免反复 rehash</text>
+<text x="776" y="470" font-size="12.5" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">• 后续：flat bitset 索引、按顶层子树并行</text>
+<text x="990" y="560" font-size="13" fill="#2E7D32" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">分层遍历的意义：一次节点测试剪掉整棵子树，测试从 O(物体数) 降到 O(可见簇 + 边界簇)</text>
+</svg>

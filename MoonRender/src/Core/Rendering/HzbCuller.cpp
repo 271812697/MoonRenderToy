@@ -10,6 +10,10 @@ namespace
 	// Below this clip-space w the corner is behind (or on) the near plane; such
 	// nodes are never culled to stay conservative.
 	constexpr float kMinClipW = 1e-5f;
+
+	// Absolute floor for the relative depth bias, so nodes at extremely small
+	// window depths (very far away) still get a usable epsilon.
+	constexpr float kMinDepthBias = 1e-9f;
 }
 
 namespace Core::Rendering
@@ -53,12 +57,20 @@ namespace Core::Rendering
 		m_height = 0;
 		m_stats.gridWidth = 0;
 		m_stats.gridHeight = 0;
-		m_occludedMeshes.clear();
+		m_occludedInstances.clear();
 	}
 
-	bool HzbCuller::IsMeshOccluded(const ::Rendering::Resources::Mesh* p_mesh) const
+	bool HzbCuller::IsOccluded(
+		const ::Rendering::Resources::Mesh* p_mesh,
+		int64_t p_actorID
+	) const
 	{
-		return p_mesh != nullptr && m_occludedMeshes.find(p_mesh) != m_occludedMeshes.end();
+		if (p_mesh == nullptr)
+		{
+			return false;
+		}
+		const InstanceKey key{ p_mesh, p_actorID };
+		return m_occludedInstances.find(key) != m_occludedInstances.end();
 	}
 
 	void HzbCuller::Cull(
@@ -70,8 +82,12 @@ namespace Core::Rendering
 	{
 		m_stats.visitedNodes = 0;
 		m_stats.culledNodes = 0;
-		m_stats.occludedMeshes = 0;
-		m_occludedMeshes.clear();
+		m_stats.occludedInstances = 0;
+		m_stats.occludedNodeTests = 0;
+		m_stats.biasRejectedNodes = 0;
+		m_stats.backgroundRejectedNodes = 0;
+		m_stats.bestMargin = 0.0f;
+		m_occludedInstances.clear();
 
 		if (!HasGrid())
 		{
@@ -92,18 +108,93 @@ namespace Core::Rendering
 		m_viewportWidth = std::max(1u, p_viewportWidth);
 		m_viewportHeight = std::max(1u, p_viewportHeight);
 
+		// The grid was built with the previous frame's camera. While the camera
+		// is static that grid is still exact, so the bias can drop to a tiny
+		// epsilon; only real motion needs a safety margin.
+		if (m_hasLastCullViewProjection)
+		{
+			float maxDelta = 0.0f;
+			for (int i = 0; i < 16; ++i)
+			{
+				maxDelta = std::max(
+					maxDelta,
+					std::fabs(p_viewProjection.data[i] - m_lastCullViewProjection.data[i])
+				);
+			}
+			m_effectiveDepthBias = maxDelta < 1e-6f ? m_staticDepthBias : m_depthBias;
+		}
+		else
+		{
+			m_effectiveDepthBias = m_depthBias;
+		}
+		m_lastCullViewProjection = p_viewProjection;
+		m_hasLastCullViewProjection = true;
+		m_stats.effectiveBias = m_effectiveDepthBias;
+
 		const auto startTime = std::chrono::high_resolution_clock::now();
 
 		const int* indices = bvh->GetIndices();
 		const int instanceCount = static_cast<int>(instances.size());
 
-		std::vector<const ::Rendering::Geometry::Bvh::Node*> stack;
-		stack.push_back(bvh->m_root);
-
-		while (!stack.empty())
+		// Marks every mesh instance stored under a leaf node.
+		const auto markLeaf = [&](const ::Rendering::Geometry::Bvh::Node& p_leaf)
 		{
-			const auto* node = stack.back();
-			stack.pop_back();
+			if (indices == nullptr)
+			{
+				return;
+			}
+			for (int i = 0; i < p_leaf.numprims; ++i)
+			{
+				const int prim = indices[p_leaf.startidx + i];
+				if (prim < 0 || prim >= instanceCount)
+				{
+					continue;
+				}
+				const int meshID = instances[prim].meshID;
+				if (meshID >= 0 && meshID < static_cast<int>(meshes.size()))
+				{
+					m_occludedInstances.insert(InstanceKey{
+						meshes[meshID],
+						instances[prim].actorID
+					});
+				}
+			}
+		};
+
+		// A pruned internal node hides everything below it, so its whole
+		// subtree has to be collected, not only the leaves that were tested.
+		const auto markSubtree = [&](const ::Rendering::Geometry::Bvh::Node* p_root)
+		{
+			m_subtreeStack.clear();
+			m_subtreeStack.push_back(p_root);
+			while (!m_subtreeStack.empty())
+			{
+				const auto* current = m_subtreeStack.back();
+				m_subtreeStack.pop_back();
+				if (current == nullptr)
+				{
+					continue;
+				}
+				if (current->type == ::Rendering::Geometry::Bvh::kLeaf)
+				{
+					markLeaf(*current);
+					continue;
+				}
+				m_subtreeStack.push_back(current->lc);
+				m_subtreeStack.push_back(current->rc);
+			}
+		};
+
+		// At most every instance can end up occluded, so size the hash set once.
+		m_occludedInstances.reserve(instances.size());
+
+		m_traversalStack.clear();
+		m_traversalStack.push_back(bvh->m_root);
+
+		while (!m_traversalStack.empty())
+		{
+			const auto* node = m_traversalStack.back();
+			m_traversalStack.pop_back();
 
 			if (node == nullptr)
 			{
@@ -112,30 +203,36 @@ namespace Core::Rendering
 
 			++m_stats.visitedNodes;
 
-			if (IsNodeOccluded(*node))
+			float closestDepth = 0.0f;
+			float occluderDepth = 0.0f;
+			const auto testResult = TestNode(*node, closestDepth, occluderDepth);
+			if (occluderDepth > 0.0f)
+			{
+				m_stats.bestMargin = std::max(
+					m_stats.bestMargin,
+					occluderDepth - closestDepth
+				);
+			}
+
+			if (testResult == ENodeTestResult::Occluded)
 			{
 				// Whole subtree is behind the occluder depth: prune it and mark
 				// every mesh instance inside as hidden. Culling granularity is
 				// the mesh instance, which is also the drawable granularity
 				// (ParseScene emits one drawable per mesh/sub-range).
 				++m_stats.culledNodes;
-				if (node->type == ::Rendering::Geometry::Bvh::kLeaf && indices != nullptr)
-				{
-					for (int i = 0; i < node->numprims; ++i)
-					{
-						const int prim = indices[node->startidx + i];
-						if (prim < 0 || prim >= instanceCount)
-						{
-							continue;
-						}
-						const int meshID = instances[prim].meshID;
-						if (meshID >= 0 && meshID < static_cast<int>(meshes.size()))
-						{
-							m_occludedMeshes.insert(meshes[meshID]);
-						}
-					}
-				}
+				++m_stats.occludedNodeTests;
+				markSubtree(node);
 				continue;
+			}
+
+			if (testResult == ENodeTestResult::BiasRejected)
+			{
+				++m_stats.biasRejectedNodes;
+			}
+			else if (testResult == ENodeTestResult::Background)
+			{
+				++m_stats.backgroundRejectedNodes;
 			}
 
 			if (node->type == ::Rendering::Geometry::Bvh::kLeaf)
@@ -143,21 +240,28 @@ namespace Core::Rendering
 				continue;
 			}
 
-			stack.push_back(node->lc);
-			stack.push_back(node->rc);
+			m_traversalStack.push_back(node->lc);
+			m_traversalStack.push_back(node->rc);
 		}
 
-		m_stats.occludedMeshes = static_cast<uint32_t>(m_occludedMeshes.size());
+		m_stats.occludedInstances = static_cast<uint32_t>(m_occludedInstances.size());
 		m_stats.cullTimeMs = std::chrono::duration<float, std::milli>(
 			std::chrono::high_resolution_clock::now() - startTime
 		).count();
 	}
 
-	bool HzbCuller::IsNodeOccluded(const ::Rendering::Geometry::Bvh::Node& p_node) const
+	HzbCuller::ENodeTestResult HzbCuller::TestNode(
+		const ::Rendering::Geometry::Bvh::Node& p_node,
+		float& p_closestDepth,
+		float& p_occluderDepth
+	) const
 	{
+		p_closestDepth = 0.0f;
+		p_occluderDepth = 0.0f;
+
 		if (!HasGrid())
 		{
-			return false;
+			return ENodeTestResult::NoGrid;
 		}
 
 		// Reversed-Z: window depth 1 = near, 0 = far/background. The object's
@@ -178,7 +282,7 @@ namespace Core::Rendering
 			if (clip.w <= kMinClipW)
 			{
 				// Straddles the near plane (or behind the eye): keep it.
-				return false;
+				return ENodeTestResult::NearClip;
 			}
 
 			const float invW = 1.0f / clip.w;
@@ -201,13 +305,13 @@ namespace Core::Rendering
 		if (closestDepth <= 0.0f || closestDepth >= 1.0f)
 		{
 			// On (or beyond) the near/far plane: keep it.
-			return false;
+			return ENodeTestResult::OutOfRange;
 		}
 
 		if (uMax < 0.0f || uMin > 1.0f || vMax < 0.0f || vMin > 1.0f)
 		{
 			// Fully off screen; frustum culling handles this case.
-			return false;
+			return ENodeTestResult::Offscreen;
 		}
 
 		uMin = std::clamp(uMin, 0.0f, 1.0f);
@@ -225,20 +329,48 @@ namespace Core::Rendering
 		y0 = std::clamp(y0, 0, static_cast<int>(m_height) - 1);
 		y1 = std::clamp(y1, 0, static_cast<int>(m_height) - 1);
 
+		const float bias = std::max(m_effectiveDepthBias * closestDepth, kMinDepthBias);
+
 		// Conservative occluder depth: the farthest surface inside the covered
-		// tile range, which in reversed-Z is the smallest value. If even that
-		// surface is closer (larger value) than the node's closest point,
-		// nothing inside the node can be visible.
+		// tile range, which in reversed-Z is the smallest value. The node is
+		// occluded only if even that surface is closer (larger value) than the
+		// node's closest point, so the scan can stop at the first tile that
+		// fails the test instead of always reducing the whole rectangle.
+		const float required = closestDepth + bias;
 		float occluderDepth = 1.0f;
 		for (int y = y0; y <= y1; ++y)
 		{
 			const size_t row = static_cast<size_t>(y) * m_width;
 			for (int x = x0; x <= x1; ++x)
 			{
-				occluderDepth = std::min(occluderDepth, m_depths[row + x]);
+				const float depth = m_depths[row + x];
+				if (depth <= 0.0f)
+				{
+					// The tile still contains background, so no surface there
+					// can occlude the node.
+					p_closestDepth = closestDepth;
+					p_occluderDepth = 0.0f;
+					return ENodeTestResult::Background;
+				}
+				if (depth <= closestDepth)
+				{
+					p_closestDepth = closestDepth;
+					p_occluderDepth = depth;
+					return ENodeTestResult::Visible;
+				}
+				if (depth <= required)
+				{
+					// Behind the occluder, but the margin is inside the bias.
+					p_closestDepth = closestDepth;
+					p_occluderDepth = depth;
+					return ENodeTestResult::BiasRejected;
+				}
+				occluderDepth = std::min(occluderDepth, depth);
 			}
 		}
 
-		return occluderDepth > closestDepth + m_depthBias;
+		p_closestDepth = closestDepth;
+		p_occluderDepth = occluderDepth;
+		return ENodeTestResult::Occluded;
 	}
 }
