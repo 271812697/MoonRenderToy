@@ -1,0 +1,44 @@
+#shader vertex
+#version 450 core
+
+layout(location = 0) in vec2 geo_Pos;
+layout(location = 1) in vec2 geo_TexCoords;
+
+out vec2 TexCoords;
+
+void main()
+{
+    TexCoords = geo_TexCoords;
+    gl_Position = vec4(geo_Pos, 0.0, 1.0);
+}
+
+#shader fragment
+#version 450 core
+
+in vec2 TexCoords;
+out vec4 FRAGMENT_COLOR;
+
+uniform sampler2D _InputTexture;
+uniform vec2 _InputResolution;
+
+// Hierarchical-Z reduce pass: each output texel keeps the FARTHEST surface of
+// the 2x2 input block it covers, so that "if even the farthest surface in a
+// region is closer than an object, the object is fully occluded" stays
+// conservative.
+//
+// This project renders with REVERSED-Z (GLBackend sets glDepthRange(1,0) and
+// PipelineState defaults to depthFunc GREATER), i.e. window depth 1 = near and
+// 0 = far/background. The farthest surface is therefore the SMALLEST value, so
+// the reduce takes the MIN. A pipeline using regular (non reversed) depth must
+// take the MAX here instead.
+void main()
+{
+    vec2 halfTexel = 0.5 / _InputResolution;
+
+    float a = texture(_InputTexture, TexCoords + vec2(-halfTexel.x, -halfTexel.y)).r;
+    float b = texture(_InputTexture, TexCoords + vec2( halfTexel.x, -halfTexel.y)).r;
+    float c = texture(_InputTexture, TexCoords + vec2(-halfTexel.x,  halfTexel.y)).r;
+    float d = texture(_InputTexture, TexCoords + vec2( halfTexel.x,  halfTexel.y)).r;
+
+    FRAGMENT_COLOR = vec4(min(min(a, b), min(c, d)), 0.0, 0.0, 1.0);
+}

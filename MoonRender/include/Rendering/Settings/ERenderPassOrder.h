@@ -18,6 +18,7 @@ namespace Rendering::Settings
 		static constexpr PassType SectionCap		= 25000U;
 		static constexpr PassType SectionContour	= 25001U;
 		static constexpr PassType Transparent		= 30000U;
+		static constexpr PassType HzbBuild			= 35000U;
 		static constexpr PassType PostProcessing	= 40000U;
 		static constexpr PassType PathTrace	        = 40001U;
 		static constexpr PassType LineAfterPathTrace	    = 40002U;

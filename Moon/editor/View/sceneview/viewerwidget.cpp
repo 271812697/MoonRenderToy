@@ -76,7 +76,8 @@ namespace MOON {
 			}
 			const auto& frameInfo =
 				mSceneView->GetRenderer().GetFeature<Rendering::Features::FrameInfoRenderFeature>().GetFrameInfo();
-			char text[512];
+			const auto& hzb = mSceneView->GetRenderer().GetHzbStats();
+			char text[1024];
 			sprintf_s(text, sizeof(text),
 				"FPS %.1f\n"
 				"Frame %.2f ms\n"
@@ -88,7 +89,10 @@ namespace MOON {
 				"Batch line Count %llu\n"
 				"line Count %llu\n"
 				"line Vertex Count %llu\n"
-				"line instance Count %llu\n",
+				"line instance Count %llu\n"
+				"[HZB] grid %ux%u depth[min %.6f max %.6f mean %.6f]\n"
+				"[HZB] bvh instances %u | visited %u | culled nodes %u | occluded meshes %u\n"
+				"[HZB] skipped drawables %u | cull %.3f ms\n",
 				m_fps, m_frameMs,
 				(unsigned long long)frameInfo.vertexCount,
 				(unsigned long long)frameInfo.batchPolyCount,
@@ -98,7 +102,12 @@ namespace MOON {
 				(unsigned long long)frameInfo.batchLineCount,
 				(unsigned long long)frameInfo.lineCount,
 				(unsigned long long)frameInfo.vertexLineCount,
-				(unsigned long long)frameInfo.instancelineCount
+				(unsigned long long)frameInfo.instancelineCount,
+				hzb.gridWidth, hzb.gridHeight,
+				hzb.gridMinDepth, hzb.gridMaxDepth, hzb.gridMeanDepth,
+				hzb.bvhInstances, hzb.visitedNodes, hzb.culledNodes, hzb.occludedMeshes,
+				mSceneView->GetRenderer().GetHzbSkippedDrawables(),
+				hzb.cullTimeMs
 			);
 			ImGui::GetForegroundDrawList()->AddText({20,20}, IM_COL32(255, 255, 100, 255), text);
 		}

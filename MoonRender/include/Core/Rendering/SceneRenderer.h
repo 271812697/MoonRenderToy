@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <map>
 #include <Rendering/Core/CompositeRenderer.h>
+#include <Core/Rendering/HzbCuller.h>
 #include <Rendering/Data/Frustum.h>
 #include <Rendering/Entities/Drawable.h>
 #include <Rendering/HAL/UniformBuffer.h>
@@ -78,6 +79,8 @@ namespace Core::Rendering
 			Core::ECS::Actor& actor;
 			EVisibilityFlags visibilityFlags = EVisibilityFlags::NONE;
 			std::optional<::Rendering::Geometry::BoundingSphere> bounds;
+			/** Source mesh of this drawable (used to match HZB occlusion results). */
+			const ::Rendering::Resources::Mesh* sourceMesh = nullptr;
 		};
 
 
@@ -124,5 +127,26 @@ namespace Core::Rendering
 			const SceneDrawablesDescriptor& p_drawables,
 			const SceneDrawablesFilteringInput& p_filteringInput
 		);
+
+		/** Hierarchical Z-buffer occlusion culler (filled by the HZB pass). */
+		HzbCuller& GetHzbCuller() { return m_hzbCuller; }
+		const HzbCuller& GetHzbCuller() const { return m_hzbCuller; }
+		const HzbStats& GetHzbStats() const { return m_hzbCuller.GetStats(); }
+
+		/** Ask the renderer to rebuild the scene BVH on the next frame.
+		 *
+		 * The scene BVH is otherwise only (re)built by the path tracer, so after
+		 * the scene geometry changes a manual request is needed for the
+		 * occlusion culler to work with fresh bounds.
+		 */
+		void RequestBvhRebuild() { m_bvhRebuildRequested = true; }
+
+		/** Number of drawables the HZB culler removed from the last filtered list. */
+		uint32_t GetHzbSkippedDrawables() const { return m_hzbSkippedDrawables; }
+
+	private:
+		HzbCuller m_hzbCuller;
+		bool m_bvhRebuildRequested = false;
+		uint32_t m_hzbSkippedDrawables = 0;
 	};
 }

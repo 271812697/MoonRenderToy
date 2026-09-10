@@ -1,0 +1,72 @@
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+#include <Core/Rendering/HzbCuller.h>
+#include <Core/Resources/Material.h>
+#include <Rendering/Core/ARenderPass.h>
+#include <Rendering/HAL/Framebuffer.h>
+
+namespace Core::Rendering
+{
+	/** Builds the hierarchical Z-buffer (max depth pyramid) of the current frame.
+	 *
+	 * Source depth is resolved from the frame's MSAA depth buffer, so the
+	 * occluder set is exactly the opaque (plus section cap) geometry: the depth
+	 * peeling pass keeps transparents in its own layer buffers. The pyramid is
+	 * reduced down to a small grid that is read back to the CPU for the next
+	 * frame's BVH occlusion test (one frame of latency, no GPU stall besides the
+	 * small readback).
+	 */
+	class HzbBuildPass : public ::Rendering::Core::ARenderPass
+	{
+	public:
+		HzbBuildPass(::Rendering::Core::CompositeRenderer& p_renderer);
+
+		void SetCuller(HzbCuller* p_culler) { m_culler = p_culler; }
+		void SetMaxGridSize(uint32_t p_size) { m_maxGridSize = p_size; }
+		uint32_t GetMaxGridSize() const { return m_maxGridSize; }
+
+		uint32_t GetGridWidth() const { return m_gridWidth; }
+		uint32_t GetGridHeight() const { return m_gridHeight; }
+		float GetLastBuildTimeMs() const { return m_lastBuildTimeMs; }
+
+	protected:
+		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
+		virtual void ResizeRenderer(int width, int height) override;
+
+	private:
+		void SetupTargets(uint32_t p_width, uint32_t p_height);
+		void ReleaseLevels();
+
+		::Core::Resources::Material m_reduceMaterial;
+
+		/** Depth only framebuffer holding the resolved (non MSAA) scene depth. */
+		::Rendering::HAL::Framebuffer m_resolveFbo;
+		std::shared_ptr<::Rendering::HAL::Texture> m_resolveColor;
+		std::shared_ptr<::Rendering::HAL::Texture> m_resolveDepth;
+
+		/** One framebuffer per pyramid level (R32F color, half resolution each step).
+		 *
+		 * Held by unique_ptr on purpose: GLFramebuffer has no user defined
+		 * copy/move and its destructor calls glDeleteFramebuffers, so storing the
+		 * framebuffers by value in a growing vector would let the temporary
+		 * copies destroy the GL names still referenced by the surviving objects
+		 * (surfaces as "Framebuffer name must be generated before being bound").
+		 */
+		std::vector<std::unique_ptr<::Rendering::HAL::Framebuffer>> m_levels;
+		std::vector<Maths::FVector2> m_levelResolutions;
+		std::vector<std::shared_ptr<::Rendering::HAL::Texture>> m_levelTextures;
+
+		HzbCuller* m_culler = nullptr;
+		uint32_t m_maxGridSize = 64;
+		uint32_t m_gridWidth = 0;
+		uint32_t m_gridHeight = 0;
+		uint32_t m_width = 0;
+		uint32_t m_height = 0;
+		float m_lastBuildTimeMs = 0.0f;
+		bool m_targetsReady = false;
+	};
+}
