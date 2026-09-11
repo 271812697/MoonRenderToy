@@ -62,6 +62,11 @@ namespace MOON {
 		}
 		else if (dirType == 1) {
 			params.lengthFwd *= -1;
+			// ExtrusionHelper computes the taper offset as tan(angle) * length,
+			// so negating the length would also negate the offset and turn an
+			// inward taper into an outward one. Negating the angle as well keeps
+			// the reversed prism the mirror image of the forward one.
+			params.taperAngleFwd *= -1;
 		}
 		else if (dirType == 2) // 双向
 		{
@@ -72,7 +77,10 @@ namespace MOON {
 		else if (dirType == 3) // 对称
 		{
 			params.lengthRev = params.lengthFwd;
-			params.taperAngleRev = params.taperAngleFwd * std::numbers::pi / 180.0;
+			// taperAngleFwd is already in radians (see above); converting it a
+			// second time shrank the symmetric side's taper to ~0, so that side
+			// came out as a straight extrusion.
+			params.taperAngleRev = params.taperAngleFwd;
 		}
         Part::TopoShape prism;
         if (extrudeType==2 && !upToFace.isNull()) {
