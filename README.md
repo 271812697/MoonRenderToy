@@ -23,8 +23,10 @@
 - [ ] PathTrace（CPU / CUDA）
 - [x] SSAO（深度感知，可开关）
 - [x] 透明渲染（depth peel 深度剥离）
+- [x] 剖切截面渲染（模板奇偶填充截面 + 几何着色器逐三角形求交截线，拾取同步按剖切面过滤）
 - [x] 阴影（反射平面）
 - [x] 后处理：Bloom / FXAA / Tonemap / Auto Exposure
+- [x] HZB 遮挡剔除（上一帧深度金字塔 + BVH 分层节点测试，PBO 环形缓冲异步回读）
 - [ ] LOD / 网格简化等性能优化
 
 ### 交互与选择
@@ -56,6 +58,7 @@
 | [docs/SketchInteraction.md](docs/SketchInteraction.md) | 草图交互：拾取 / 吸附 / 几何拖动（端点、边、圆心的编辑语义） |
 | [docs/FeatureModeling.md](docs/FeatureModeling.md) | Feature 参数化建模：预览逻辑 / 建模 / 任务 UI / 属性系统 |
 | [docs/SectionRendering.md](docs/SectionRendering.md) | 剖切截面渲染（模板 / 奇偶裁剪） |
+| [docs/HzbOcclusionCulling.md](docs/HzbOcclusionCulling.md) | HZB 遮挡剔除：深度金字塔 / BVH 分层测试 / PBO 异步回读 / 偏置与统计 |
 | [docs/ImguiArchitecture.md](docs/ImguiArchitecture.md) | ImGui 集成架构 |
 | [docs/API.md](docs/API.md) | API 索引 |
 
