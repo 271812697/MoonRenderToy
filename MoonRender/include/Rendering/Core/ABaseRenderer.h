@@ -121,6 +121,7 @@ namespace Rendering::Core
 		
 		Rendering::Data::PipelineState m_basePipelineState;
 		bool m_isDrawing;
+		std::optional<Rendering::Data::MaterialSignatureSet> m_previousMaterialSignature = std::nullopt;
 		Rendering::Resources::Shader* m_presentShader;
 		Rendering::Data::Material m_presentMaterial;
 	private:

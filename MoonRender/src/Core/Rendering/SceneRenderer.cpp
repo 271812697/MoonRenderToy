@@ -760,8 +760,6 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 	}
 	else if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
 	{
-	
-
 		if (bvhService->m_sceneBvh != nullptr && bvhService->m_sceneBvh->m_root != nullptr)
 		{
 			ZoneScopedN("HZB Culling");
@@ -810,10 +808,6 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		if (frustum && desc.bounds.has_value())
 		{
 			ZoneScopedN("Frustum Culling");
-
-			// Get the engine drawable descriptor to access transform information
-			const auto& engineDesc = drawable.GetDescriptor<EngineDrawableDescriptor>();
-
 			if (!frustum->BoundingSphereInFrustum(desc.bounds.value(), desc.actor.transform.GetFTransform()))
 			{
 				continue; // Skip this drawable as it's outside the frustum
@@ -851,12 +845,14 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		{
 			output.ui.emplace(decltype(decltype(output.ui)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
+					.materialKey = reinterpret_cast<uintptr_t>(&drawableCopy.material.value()),
 					.distance = distanceToCamera
 			}, drawableCopy);
 		}
 		else if (drawableCopy.primitiveMode == ::Rendering::Settings::EPrimitiveMode::LINES) {
 			output.lines.emplace(decltype(decltype(output.lines)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
+					.materialKey = reinterpret_cast<uintptr_t>(&drawableCopy.material.value()),
 					.distance = distanceToCamera
 			}, drawableCopy);
 		}
@@ -865,6 +861,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 			drawableCopy.pass = "Transparents";
 			output.transparents.emplace(decltype(decltype(output.transparents)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
+					.materialKey = reinterpret_cast<uintptr_t>(&drawableCopy.material.value()),
 					.distance = distanceToCamera
 			}, drawableCopy);
 		}
@@ -872,6 +869,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		{
 			output.opaques.emplace(decltype(decltype(output.opaques)::value_type::first){
 				.order = drawableCopy.material->GetDrawOrder(),
+					.materialKey = reinterpret_cast<uintptr_t>(&drawableCopy.material.value()),
 					.distance = distanceToCamera
 			}, drawableCopy);
 		}

@@ -26,15 +26,24 @@ namespace Core::Rendering
 			FRONT_TO_BACK,
 		};
 
-		template<EOrderingMode OrderingMode>
+		template<EOrderingMode OrderingMode,bool BatchMaterial>
 		struct DrawOrder
 		{
 			const int order;
+			const uintptr_t materialKey;
 			const float distance;
 			bool operator<(const DrawOrder& p_other) const
 			{
 				if (order == p_other.order)
 				{
+					if constexpr (BatchMaterial)
+					{
+						if (materialKey != p_other.materialKey)
+						{
+							return materialKey < p_other.materialKey;
+						}
+					}
+
 					if constexpr (OrderingMode == EOrderingMode::BACK_TO_FRONT)
 					{
 						return distance > p_other.distance;
@@ -51,8 +60,8 @@ namespace Core::Rendering
 			}
 		};
 
-		template<EOrderingMode OrderingMode>
-		using DrawableMap = std::multimap<DrawOrder<OrderingMode>, ::Rendering::Entities::Drawable>;
+		template<EOrderingMode OrderingMode, bool BatchMaterial = false>
+		using DrawableMap = std::multimap<DrawOrder<OrderingMode, BatchMaterial>, ::Rendering::Entities::Drawable>;
 
 
 		struct SceneDescriptor
@@ -86,9 +95,9 @@ namespace Core::Rendering
 
 		struct SceneFilteredDrawablesDescriptor
 		{
-			DrawableMap<EOrderingMode::FRONT_TO_BACK> opaques;
+			DrawableMap<EOrderingMode::FRONT_TO_BACK, true> opaques;
 			DrawableMap<EOrderingMode::BACK_TO_FRONT> transparents;
-			DrawableMap<EOrderingMode::FRONT_TO_BACK> lines;
+			DrawableMap<EOrderingMode::FRONT_TO_BACK, true> lines;
 			DrawableMap<EOrderingMode::BACK_TO_FRONT> ui;
 		};
 

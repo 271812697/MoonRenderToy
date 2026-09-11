@@ -371,15 +371,29 @@ void Rendering::Core::ABaseRenderer::DrawEntity(
 		}
 	}
 
-	p_drawable.material->Bind(
+	const auto signature=p_drawable.material->Bind(
 		&m_emptyTexture2D,
 		&m_emptyTextureCube,
 		p_drawable.pass,
 		p_drawable.featureSetOverride.has_value() ?
 		Tools::Utils::OptRef<const Data::FeatureSet>(p_drawable.featureSetOverride.value()) :
-		std::nullopt
+		std::nullopt,
+		m_previousMaterialSignature
 	);
+	const bool uploadStableProperties = !m_previousMaterialSignature.has_value() || signature.stablePropertySignature != m_previousMaterialSignature->stablePropertySignature;
+	const bool uploadSingleUseProperties = !m_previousMaterialSignature.has_value() || signature.singleUsePropertySignature != m_previousMaterialSignature->singleUsePropertySignature;
 
+	if (uploadStableProperties || uploadSingleUseProperties)
+	{
+		p_drawable.material->UploadProperties(
+			uploadStableProperties,
+			uploadSingleUseProperties,
+			&m_emptyTexture2D,
+			&m_emptyTextureCube
+		);
+	}
+
+	m_previousMaterialSignature = signature;
 	m_driver.Draw(
 		p_pso,
 		p_drawable.mesh.value(),
