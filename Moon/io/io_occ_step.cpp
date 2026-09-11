@@ -35,6 +35,11 @@ namespace MOON {
 				in.read(reinterpret_cast<char*>(&nmlSize), sizeof(nmlSize));
 				in.read(reinterpret_cast<char*>(&triSize), sizeof(triSize));
 				if (!in) return false;
+				if (ptSize == 0) {
+					std::cout << "[Mesh] domain " << d << " has no vertex, file may be corrupted: "
+						<< path << std::endl;
+					return false;
+				}
 
 				LoadedDomain dom;
 				dom.vertex.resize((size_t)ptSize);
@@ -51,35 +56,77 @@ namespace MOON {
 						(float)raw[i * 3 + 0], (float)raw[i * 3 + 1], (float)raw[i * 3 + 2]
 					};
 				}
-				for (size_t i = 0; i < nmlSize; i++) {
-					dom.vertex[i].normals = {
-						(float)raw[(ptSize + i) * 3 + 0],
-						(float)raw[(ptSize + i) * 3 + 1],
-						(float)raw[(ptSize + i) * 3 + 2]
-					};
-				}
 
 				in.read(reinterpret_cast<char*>(dom.indices.data()),
 					(std::streamsize)(dom.indices.size() * sizeof(uint32_t)));
 				if (!in) return false;
 
-				// 法线缺失（nmlSize != ptSize）时，用面法线累加补一份
-				//if (dom.normals.size() != dom.positions.size()) {
-				//	std::vector<Maths::FVector3> flat(dom.positions.size(), { 0, 0, 0 });
-				//	for (size_t t = 0; t + 2 < dom.indices.size(); t += 3) {
-				//		uint32_t i0 = dom.indices[t], i1 = dom.indices[t + 1], i2 = dom.indices[t + 2];
-				//		if (i0 >= dom.positions.size() || i1 >= dom.positions.size() ||
-				//			i2 >= dom.positions.size()) continue;
-				//		const auto e1 = dom.positions[i1] - dom.positions[i0];
-				//		const auto e2 = dom.positions[i2] - dom.positions[i0];
-				//		const auto fn = Maths::FVector3::Cross(e1,e2);
-				//		flat[i0] += fn; flat[i1] += fn; flat[i2] += fn;
-				//	}
-				//	dom.normals.resize(dom.positions.size());
-				//	for (size_t i = 0; i < dom.normals.size(); i++) {
-				//		dom.normals[i] = Maths::FVector3::Normalize(flat[i]);;
-				//	}
-				//}
+				// 索引范围校验：越界索引在 GPU 上会取到随机顶点，表现为三角形乱飞，
+				// 因此把越界的三角形整块丢掉（宁可少画，也不要画出错的面）。
+				{
+					std::vector<uint32_t> safeIndices;
+					safeIndices.reserve(dom.indices.size());
+					for (size_t t = 0; t + 2 < dom.indices.size(); t += 3) {
+						const uint32_t i0 = dom.indices[t];
+						const uint32_t i1 = dom.indices[t + 1];
+						const uint32_t i2 = dom.indices[t + 2];
+						if (i0 >= ptSize || i1 >= ptSize || i2 >= ptSize) {
+							continue;
+						}
+						safeIndices.push_back(i0);
+						safeIndices.push_back(i1);
+						safeIndices.push_back(i2);
+					}
+					if (safeIndices.size() != dom.indices.size()) {
+						std::cout << "[Mesh] domain " << d << ": dropped "
+							<< (dom.indices.size() - safeIndices.size()) / 3
+							<< " out-of-range triangle(s)" << std::endl;
+						dom.indices.swap(safeIndices);
+					}
+				}
+
+				// 法线：只有 nmlSize == ptSize 时法线段才与顶点一一对应。
+				// 其它情况（缺失、数量不符）必须用面法线累加补一份，否则顶点法线为
+				// (0,0,0)，而 Standard.ovfx 里 normalize(0) 会得到 NaN，光照整个坏掉。
+				if (nmlSize == ptSize) {
+					for (size_t i = 0; i < ptSize; i++) {
+						dom.vertex[i].normals = {
+							(float)raw[(ptSize + i) * 3 + 0],
+							(float)raw[(ptSize + i) * 3 + 1],
+							(float)raw[(ptSize + i) * 3 + 2]
+						};
+					}
+				}
+				else {
+					std::cout << "[Mesh] domain " << d << ": normals rebuilt from faces (nmlSize="
+						<< nmlSize << ", vertexCount=" << ptSize << ")" << std::endl;
+
+					std::vector<Maths::FVector3> accumulated(
+						(size_t)ptSize,
+						Maths::FVector3{ 0.0f, 0.0f, 0.0f }
+					);
+					for (size_t t = 0; t + 2 < dom.indices.size(); t += 3) {
+						const uint32_t i0 = dom.indices[t];
+						const uint32_t i1 = dom.indices[t + 1];
+						const uint32_t i2 = dom.indices[t + 2];
+						if (i0 >= ptSize || i1 >= ptSize || i2 >= ptSize) {
+							continue;
+						}
+						const Maths::FVector3 e1
+							= dom.vertex[i1].position - dom.vertex[i0].position;
+						const Maths::FVector3 e2
+							= dom.vertex[i2].position - dom.vertex[i0].position;
+						const Maths::FVector3 faceNormal = Maths::FVector3::Cross(e1, e2);
+						accumulated[i0] += faceNormal;
+						accumulated[i1] += faceNormal;
+						accumulated[i2] += faceNormal;
+					}
+					for (size_t i = 0; i < ptSize; i++) {
+						dom.vertex[i].normals = accumulated[i].Length() > 1e-20f
+							? Maths::FVector3::Normalize(accumulated[i])
+							: Maths::FVector3{ 0.0f, 0.0f, 1.0f };
+					}
+				}
 				out.push_back(std::move(dom));
 			}
 			return true;
@@ -130,7 +177,15 @@ namespace MOON {
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				tempMat->SetShader(GetShaderService[":Shaders\\Standard.ovfx"]);
-				tempMat->AddFeature("CLIP_PLANE");
+				// NOTE: Standard.ovfx 的 #feature 列表里没有 CLIP_PLANE（只有
+				// VERTEX_POS_NORMAL / PARALLAX_MAPPING / NORMAL_MAPPING /
+				// DISTANCE_FADE / SPECULAR_WORKFLOW / WITH_EDGE）。Standard 的
+				// 裁剪走 engine UBO 的 ubo_enableClip，由工具栏 Clip 开关
+				// (EngineBufferRenderFeature::EnableClip) 控制，所以这里不需要
+				// 也不应该加 CLIP_PLANE（只有 GeomertyLine.ovfx 支持该 feature）。
+				// VERTEX_POS_NORMAL 是必须的：本网格是 VertexPositionNormal
+				// (loc0=pos, loc1=normal)，不加这个 feature 时 shader 会把 normal
+				// 当 texCoords、把 texCoords 当 normal，光照与 UV 全错。
 				tempMat->AddFeature("VERTEX_POS_NORMAL");
 				tempMat->SetProperty("_EnvironmentMap", GetSceneView.GetRenderer().GetPrefilterCube());					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
@@ -142,6 +197,7 @@ namespace MOON {
 				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
 				auto& matRender=actor.AddComponent<::Core::ECS::Components::CMaterialRenderer>();
 				matRender.SetMaterialAtIndex(0, *tempMat);
+				matRender.UpdateMaterialList();
 				GetViewerWidget.addActorToTreeView(&actor);
 
 			}
