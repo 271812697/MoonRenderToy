@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#455A64"/></marker></defs><rect width="1280" height="720" fill="white"/>
+<text x="640" y="38" font-size="20" font-weight="bold" fill="#212121" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">日志 [HZB] 行怎么看：一条判定链</text>
+<rect x="440" y="70" width="400" height="52" rx="8" fill="#E3F2FD" stroke="#1565C0" stroke-width="1.8"/>
+<text x="640" y="102" font-size="15" fill="#0D47A1" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">看到每秒一行的 [HZB] 统计</text>
+<line x1="640" y1="122" x2="640" y2="152" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="420" y="156" width="440" height="52" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.8"/>
+<text x="640" y="188" font-size="14" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">bvh = 0 ？（没有可遍历的场景 BVH）</text>
+<line x1="640" y1="208" x2="640" y2="238" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="400" y="242" width="480" height="52" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.8"/>
+<text x="640" y="274" font-size="14" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">grid 的 depth[max] = 0 ？（深度解析/金字塔无数据）</text>
+<line x1="640" y1="294" x2="640" y2="324" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="400" y="328" width="480" height="52" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.8"/>
+<text x="640" y="360" font-size="14" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">culled &gt; 0 但 occludedInst / skipped = 0 ？</text>
+<line x1="640" y1="380" x2="640" y2="410" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="400" y="414" width="480" height="52" rx="8" fill="#FFF8E1" stroke="#F9A825" stroke-width="1.8"/>
+<text x="640" y="446" font-size="14" fill="#F57F17" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">tests 里 biasRejected / bgRejected 多？</text>
+<line x1="640" y1="466" x2="640" y2="496" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="440" y="500" width="400" height="52" rx="8" fill="#C8E6C9" stroke="#2E7D32" stroke-width="1.8"/>
+<text x="640" y="532" font-size="15" fill="#1B5E20" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">skipped &gt; 0 → 剔除已生效</text>
+<line x1="420" y1="182" x2="150" y2="182" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="30" y="156" width="240" height="52" rx="8" fill="#FFCDD2" stroke="#C62828" stroke-width="1.8"/>
+<text x="150" y="188" font-size="13" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">先构建 BVH（reBuildBvh）</text>
+<line x1="400" y1="268" x2="150" y2="268" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="30" y="242" width="240" height="52" rx="8" fill="#FFCDD2" stroke="#C62828" stroke-width="1.8"/>
+<text x="150" y="274" font-size="13" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">查深度解析 / 金字塔构建</text>
+<line x1="880" y1="354" x2="1130" y2="354" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="1136" y="328" width="130" height="52" rx="8" fill="#FFCDD2" stroke="#C62828" stroke-width="1.8"/>
+<text x="1201" y="352" font-size="12" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">内部节点没收集</text>
+<text x="1201" y="370" font-size="12" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">子树实例</text>
+<line x1="880" y1="440" x2="1130" y2="440" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="1136" y="400" width="130" height="80" rx="8" fill="#FFCDD2" stroke="#C62828" stroke-width="1.8"/>
+<text x="1201" y="426" font-size="12" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">bias：调小</text>
+<text x="1201" y="444" font-size="12" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">hzbBias，静止</text>
+<text x="1201" y="462" font-size="12" fill="#B71C1C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">帧会自动收紧</text>
+<line x1="880" y1="470" x2="1050" y2="560" stroke="#455A64" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="1056" y="540" width="210" height="80" rx="8" fill="#FFE0B2" stroke="#E65100" stroke-width="1.8"/>
+<text x="1161" y="566" font-size="12" fill="#BF360C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">bg：tile 混进背景</text>
+<text x="1161" y="584" font-size="12" fill="#BF360C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">提高网格分辨率</text>
+<text x="1161" y="602" font-size="12" fill="#BF360C" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">或收紧 AABB</text>
+<text x="640" y="620" font-size="13" fill="#616161" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle">日志行示例：[HZB] bvh 4 visited 3 culled 1 occludedInst 0 skipped 0 tests[occluded 1 biasRejected 0 bgRejected 2] …</text>
+<text x="640" y="650" font-size="12" fill="#9E9E9E" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif" text-anchor="middle" font-style="italic">建议：先看 bvh 和 depth，再看 culled/occludedInst，最后看 tests 的拒绝原因</text>
+</svg>

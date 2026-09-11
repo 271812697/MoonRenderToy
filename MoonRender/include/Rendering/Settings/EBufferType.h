@@ -12,6 +12,8 @@ namespace Rendering::Settings
 		INDEX,
 		UNIFORM,
 		SHADER_STORAGE,
+		/** Pixel pack buffer: destination of asynchronous glReadPixels. */
+		PIXEL_PACK,
 		UNKNOWN
 	};
 }

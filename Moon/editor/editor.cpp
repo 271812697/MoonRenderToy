@@ -20,6 +20,7 @@
 #include "Command/menubar/openFile.h"
 #include "Command/menubar/exportFile.h"
 #include "Command/menubar/cameraMode.h"
+#include "Command/menubar/fpsStat.h"
 #include "Command/menubar/visibleview.h"
 #include "Command/menubar/sketch.h"
 #include "core/Global/ServiceLocator.h"
@@ -95,6 +96,8 @@ namespace MOON {
 		void buildDisplayMenu() {
 			auto cameraModeCommand = new CameraModeComand(self);
 			menu_Display->addAction(cameraModeCommand->action());
+			auto fpsStatCommand = new FpsStatCommand(self);
+			menu_Display->addAction(fpsStatCommand->action());
 		}
 		void buildViewMenu() {
 			auto visible=new VisibleViewCommand(menu_View);

@@ -443,7 +443,8 @@ struct Tools::Utils::MappingFor<Rendering::Settings::EBufferType, GLenum>
 		EnumValuePair<EnumType::VERTEX, GL_ARRAY_BUFFER>,
 		EnumValuePair<EnumType::INDEX, GL_ELEMENT_ARRAY_BUFFER>,
 		EnumValuePair<EnumType::UNIFORM, GL_UNIFORM_BUFFER>,
-		EnumValuePair<EnumType::SHADER_STORAGE, GL_SHADER_STORAGE_BUFFER>
+		EnumValuePair<EnumType::SHADER_STORAGE, GL_SHADER_STORAGE_BUFFER>,
+		EnumValuePair<EnumType::PIXEL_PACK, GL_PIXEL_PACK_BUFFER>
 	>;
 };
 

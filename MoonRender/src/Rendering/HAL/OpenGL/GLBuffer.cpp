@@ -89,3 +89,59 @@ uint32_t Rendering::HAL::GLBuffer::GetID() const
 	assert(IsValid()&&"Cannot get ID of an invalid buffer");
 	return m_buffer.id;
 }
+
+template<>
+void* Rendering::HAL::GLBuffer::MapRead(uint64_t p_offset, uint64_t p_size)
+{
+	assert(IsValid() && "Cannot map an invalid buffer");
+	assert(!IsEmpty() && "Cannot map an empty buffer");
+
+	return glMapNamedBufferRange(
+		m_buffer.id,
+		p_offset,
+		p_size,
+		GL_MAP_READ_BIT
+	);
+}
+
+template<>
+void Rendering::HAL::GLBuffer::Unmap()
+{
+	assert(IsValid() && "Cannot unmap an invalid buffer");
+	glUnmapNamedBuffer(m_buffer.id);
+}
+
+template<>
+void Rendering::HAL::GLBuffer::InsertFence()
+{
+	ClearFence();
+	assert(IsValid() && "Cannot fence an invalid buffer");
+	m_buffer.fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+}
+
+template<>
+bool Rendering::HAL::GLBuffer::IsFenceSignaled() const
+{
+	if (m_buffer.fence == nullptr)
+	{
+		return true;
+	}
+
+	const GLenum result = glClientWaitSync(
+		static_cast<GLsync>(m_buffer.fence),
+		GL_SYNC_FLUSH_COMMANDS_BIT,
+		0
+	);
+
+	return result == GL_ALREADY_SIGNALED || result == GL_CONDITION_SATISFIED;
+}
+
+template<>
+void Rendering::HAL::GLBuffer::ClearFence()
+{
+	if (m_buffer.fence != nullptr)
+	{
+		glDeleteSync(static_cast<GLsync>(m_buffer.fence));
+		m_buffer.fence = nullptr;
+	}
+}

@@ -99,17 +99,51 @@ namespace MOON {
                 }
                 behaviour1->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
                 behaviour1->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
-                behaviour1->setLength(10);
+                behaviour1->setLength(feature->lengthForward > 0.1f ? feature->lengthForward : 0.1f);
+                behaviour1->setAngle(static_cast<float>(feature->angleForward));
                 behaviour1->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke1);
                 behaviour1->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke1);
 
                 behaviour2->setUpXAxis(pln.XAxis().Direction().X(), pln.XAxis().Direction().Y(), pln.XAxis().Direction().Z());
                 behaviour2->setUpYAxis(pln.YAxis().Direction().X(), pln.YAxis().Direction().Y(), pln.YAxis().Direction().Z());
-                behaviour2->setLength(10);
+                behaviour2->setLength(feature->lengthRev > 0.1 ? feature->lengthRev : 0.1);
+                behaviour2->setAngle(static_cast<float>(feature->angleRev));
                 behaviour2->AddObserver(PadTaskEvent::LengthChange, self, &ExtrudeTaskDialog::onWidgetLengthInvoke2);
                 behaviour2->AddObserver(PadTaskEvent::AngleChange, self, &ExtrudeTaskDialog::onWidgetAngleInvoke2);
+
+                syncPrimaryWidgetDirection();
             }
         }
+
+        /* The primary handle has to point along the direction the material
+         * actually grows towards. ExtrudeFeature::execute() keeps `finalDir` as
+         * the extrusion axis and implements dirType == 1 (Reverse) by negating
+         * lengthFwd, so the prism ends up along -finalDir while the widget set
+         * up in setUp() would still point along +finalDir: dragging it forward
+         * would grow the shape backwards. Mirror the handle here (keeping the
+         * length/angle the user already dialled in) whenever the direction
+         * changes, so the widget and the preview agree. */
+        void syncPrimaryWidgetDirection()
+        {
+            if (!behaviour1 || !feature) {
+                return;
+            }
+            if (feature->finalDir.Magnitude() <= Precision::Confusion()) {
+                return;
+            }
+
+            const double sign = feature->dirType == 1 ? -1.0 : 1.0;
+            const float length = behaviour1->getLength();
+            const float angle = behaviour1->getAngle();
+
+            behaviour1->setUpDir(
+                static_cast<float>(sign * feature->finalDir.X()),
+                static_cast<float>(sign * feature->finalDir.Y()),
+                static_cast<float>(sign * feature->finalDir.Z()));
+            behaviour1->setLength(length);
+            behaviour1->setAngle(angle);
+        }
+
     private:
         ExtrudeFeature* feature=nullptr;
         PadTaskWidget* behaviour1 = nullptr;
@@ -134,8 +168,10 @@ namespace MOON {
         PropertyComponent* p = addGroupParam("Extrude");
 
         EnumProperty* mode = new EnumProperty("Extrude Type", p);
+        mode->setInitIndex(mInternal->feature->extrudeType);
         addParam(mode);
         EnumProperty* dir = new EnumProperty("Extrude Direction", p); 
+        dir->setInitIndex(mInternal->feature->dirType);
         addParam(dir);
 
         mInternal->extrudeLength1 = new SliderFloatProperty("Length 1", p);
@@ -192,6 +228,9 @@ namespace MOON {
         }
         else if (propertyName == "Extrude:Extrude Direction") {
             mInternal->feature->dirType = value.value<int>();
+            // Forward/Reverse swap which side of the profile the material grows
+            // towards, so the drag handle has to follow.
+            mInternal->syncPrimaryWidgetDirection();
             if (mInternal->behaviour2) {  
                 if (mInternal->feature->dirType == 2) {
                     mInternal->behaviour2->setActive(true);

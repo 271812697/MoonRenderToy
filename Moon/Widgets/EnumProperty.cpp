@@ -12,6 +12,9 @@ namespace MOON {
 			auto temp= new ComboBox(parent, this);
 			mWidget = temp;
 			temp->addComboList(owner->getPropertyValue(mName).value<QList<QString>>());	
+			if (mInitIndex >= 0) {
+				temp->setWidgetValue(mInitIndex);
+			}
 		}
 		return mWidget;
 	}

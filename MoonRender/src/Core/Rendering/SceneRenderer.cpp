@@ -14,6 +14,7 @@
 #include <Core/Rendering/ShadowRenderFeature.h>
 #include <Core/Rendering/ShadowRenderPass.h>
 #include <Core/Rendering/GbufferPass.h>
+#include <Core/Rendering/HzbBuildPass.h>
 #include <Core/ResourceManagement/ShaderManager.h>
 #include <Rendering/Data/Frustum.h>
 #include <Rendering/Features/LightingRenderFeature.h>
@@ -562,6 +563,12 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 
 	AddPass<LineRenderPass>("Lines", ERenderPassOrder::LineAfterPathTrace, p_stencilWrite);
 	AddPass<TransparentRenderPass>("Transparents", ERenderPassOrder::Transparent, p_stencilWrite);
+	{
+		// Builds the max depth pyramid from the opaque depth and feeds the
+		// CPU side BVH occlusion culler used by the next frame.
+		auto& hzbPass = AddPass<HzbBuildPass>("HZB", ERenderPassOrder::HzbBuild);
+		hzbPass.SetCuller(&m_hzbCuller);
+	}
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);
 	AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
 }
@@ -704,6 +711,7 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 					.actor = modelRenderer->owner,
 					.visibilityFlags = materialRenderer->GetVisibilityFlags(),
 					.bounds = bounds,
+					.sourceMesh = mesh,
 					});
 				drawable.AddDescriptor<EngineDrawableDescriptor>({
 					transform.GetWorldMatrix(),
@@ -736,6 +744,46 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 	{
 		frustum = frustumerride ? frustumerride : camera.GetFrustum();
 	}
+
+	// Hierarchical Z-buffer occlusion culling. The depth grid is produced by the
+	// HZB pass from the previous frame; the pass also owns the bias parameter
+	// exposed in the pass settings. When the pass is disabled no culling happens
+	// and the previous frame's results are dropped.
+	auto& hzbPass = GetPass<::Core::Rendering::HzbBuildPass>("HZB");
+	m_hzbCuller.SetDepthBias(hzbPass.GetDepthBias());
+	m_hzbCuller.SetStaticDepthBias(hzbPass.GetStaticDepthBias());
+
+	auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
+	if (!hzbPass.IsEnabled())
+	{
+		m_hzbCuller.ClearGrid();
+	}
+	else if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
+	{
+		// The scene BVH is built by the editor (settings panel) or by the path
+		// tracer; the culler only consumes it when available, so the rebuild
+		// policy stays under the editor's control.
+		if (m_bvhRebuildRequested)
+		{
+			m_bvhRebuildRequested = false;
+			bvhService->SetDirtyFlag(false);
+			sceneDescriptor.scene.BuildSceneBvh();
+		}
+
+		if (bvhService->m_sceneBvh != nullptr && bvhService->m_sceneBvh->m_root != nullptr)
+		{
+			ZoneScopedN("HZB Culling");
+
+			m_hzbCuller.Cull(
+				*bvhService,
+				camera.GetViewProjectionMatrix(),
+				m_frameDescriptor.renderWidth,
+				m_frameDescriptor.renderHeight
+			);
+		}
+	}
+
+	m_hzbSkippedDrawables = 0;
 
 	// Process each drawable
 	for (const auto& drawable : p_drawables.drawables)
@@ -778,6 +826,16 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 			{
 				continue; // Skip this drawable as it's outside the frustum
 			}
+		}
+
+		// Occlusion culling: skip drawables whose source mesh is fully behind the
+		// previous frame's depth (hierarchical Z-buffer test on the BVH). The
+		// granularity is the mesh instance, which matches the drawable
+		// granularity produced by ParseScene (one drawable per mesh sub-range).
+		if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
+		{
+			++m_hzbSkippedDrawables;
+			continue;
 		}
 
 		// Calculate distance to camera for sorting
