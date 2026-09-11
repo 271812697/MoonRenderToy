@@ -60,8 +60,8 @@ if (tile 内最远表面比物体的最近点还近)     // 用深度值比较�
 
 1. 时序上成立（剔除 → 绘制 → 建立下一帧要用的金字塔）；
 2. 可以完全避开 GPU→CPU 同步：回读走 PBO 环形缓冲（§5.4），CPU 从不等 GPU；
-3. 代价是**延迟**：同步回读时是 1 帧，改成 PBO 环形后有 2~3 帧（§5.6），
-   所以偏置要按「相机可能已经动过几帧」来留余量（见 §5.6.3）。
+3. 代价是**延迟**：网格要等回读才落到 CPU 手上，比绘制晚 1~3 帧（§5.4），
+   所以偏置要按「相机可能已经动过几帧」来留余量（见 §6.4）。
 
 ---
 
@@ -86,7 +86,7 @@ Shadows(10000) → Skybox(10001) → Gbuffer(19999) → Opaques(20000)
  ├─ HZB pass：
  │    ① CopyFramebufferDepth(MSAA → 自建 DEPTH_COMPONENT32F 纹理)   ← 解析 MSAA
  │    ② 逐级 2×2 取 min（Reversed-Z），减半到 ≤ 64×64 的 R32F 网格
- │    ③ glReadPixels 写进 PBO（异步）→ 2~3 帧后 fence 已就绪时 MapRead → HzbCuller::SetGrid()
+ │    ③ glReadPixels 写进 PBO（异步）→ 1~3 帧后 fence 已就绪时 MapRead → HzbCuller::SetGrid()
  └─ Post-Process 及之后（不受影响）
 帧 N+1
  └─ SceneRenderer::FilterDrawables → HzbCuller::Cull(BVH) → 被遮挡的 actor 不进绘制列表
@@ -197,20 +197,28 @@ FRAGMENT_COLOR = vec4(min(min(a, b), min(c, d)), 0.0, 0.0, 1.0);
 - `IssueReadback()` 写下一个槽；若该槽上一轮的数据还没被消费（GPU 落后整整一圈），
   **本帧跳过提交**并累加 `skippedFrames`，绝不在这里等 GPU。
 
-因此实际延迟是 **2~3 帧**（提交后至少错过一圈才会被消费），叠加 §2.3 的「用上一帧深度」，
-总体比初版多 1~2 帧。换来的收益是：剔除不再引入任何同步点。
+延迟由「要错过几帧才轮得到消费」决定：同一帧里 `ConsumeReadyReadback()` 跑在
+`IssueReadback()` **之前**，所以本帧提交的数据最早只能在**下一帧**被取回——**下限 1 帧**。
+GPU 跟得上时就是这个值（本机实测稳态 `pending 1 / latency 1`），
+此时网格的新鲜度和初版的同步回读**完全一样**，而 stall 已经消掉。
+
+只有当 GPU 真的落后（帧太快、驱动排队）时 `pending` 才会上涨，`latency` 最多到 3
+（槽数）；再落后就跳过提交，绝不在这里等 GPU。所以环形缓冲是**兜底**，
+不是「必然多 2 帧延迟」。
 
 调试叠加层里新增一行：
 
 ```text
-[HZB] readback slots 3 (pending 3) | skipped frames 0 | latency 3 frames
+[HZB] readback slots 3 (pending 1) | skipped frames 0 | latency 1 frames
 ```
 
 判读：
 
-- `pending` 长期等于槽数 = GPU 落后超过一圈；
-- `skipped frames` 应该基本不涨（偶发增长说明帧率被 GPU 卡住）；
-- `latency` 通常是 3；如果频繁出现 `latency` 变很大，说明消费侧被别的同步点拖住了。
+- `pending 1` + `latency 1` 是稳态理想情况：每帧提交一个、下一帧就取回一个，
+  `latency` 不会低于 1（代码结构决定的），看到 1 说明没有额外开销；
+- `pending` 涨到槽数 3 = GPU 落后整整一圈，此时剔除用的是更旧的网格；
+- `skipped frames` 偶发增长无害（只是网格更旧），持续增长说明 GPU 长期跟不上；
+- `latency` 长期大于 3 说明消费侧被别的同步点拖住了，要去查别的 `glReadPixels`/`glGet*`。
 
 ### 5.5 一个必须避开的坑：别把 `Framebuffer` 放进会扩容的容器
 
@@ -431,6 +439,7 @@ hzbPass.SetCuller(&m_hzbCuller);
 | BVH 实例数 | 20000+ |
 | HZB 剔除的实例 | 10000+ |
 | CPU 侧剔除耗时（优化前） | ~4ms |
+| 回读（PBO 环形） | `pending 1 / skipped 0 / latency 1` —— 稳态，即网格只比绘制晚 1 帧 |
 
 初版 4ms 里有几处明显浪费，已修：
 
@@ -456,7 +465,7 @@ hzbPass.SetCuller(&m_hzbCuller);
 | 项 | 现状 | 下一步 |
 |---|---|---|
 | 回读方式 | **PBO 三帧环形缓冲 + fence**（已实现，见 §5.4），CPU 不等待 GPU | 槽位数自适应；把 `MapRead` 的拷贝换成 `glGetBufferSubData` 或常驻映射 |
-| 延迟 | 深度 1 帧 + 回读 2~3 帧；相机静止时由「静止自适应 bias」消除，运动时靠 bias 留余量；物体自身运动未跟踪 | 对「本帧发生位移」的 actor 跳过剔除 |
+| 延迟 | 深度 1 帧 + 回读 1~3 帧（实测稳态为下限 1 帧）；相机静止时由「静止自适应 bias」消除，运动时靠 bias 留余量；物体自身运动未跟踪 | 对「本帧发生位移」的 actor 跳过剔除 |
 | bias | 相对偏置 + 静止自适应 + 滑块可调 | 视空间偏置 / 按运动幅度自适应 |
 | tile 分辨率 | 网格上限 64，tile≈30px；CAD 密集小零件下容易被边界 tile 吃掉 | 提到 128~256（回读已是异步，增大网格不再带来同步代价，只有带宽/拷贝成本） |
 | AABB 偏大 | 旋转零件的 AABB 比实际轮廓大，最近角点偏前 → 判不出遮挡 | 用更紧的包围体（视空间 OBB / 凸包） |
@@ -487,7 +496,7 @@ hzbPass.SetCuller(&m_hzbCuller);
 
 - **输入**：上一帧的**不透明**深度——自己从 MSAA 解析，不依赖 transparent pass 的分支；透明走 depth peeling，不参与遮挡。
 - **金字塔**：R32F、逐级 2×2 取**最远**（本项目 Reversed-Z → **min**；非 Reversed-Z 管线应取 max），减半到 ≤64 网格；无 compute，用全屏 fragment pass 实现。
-- **回读**：只读最小级（≤16KB），走 **PBO 三帧环形缓冲 + fence** 异步取回，CPU 不等待 GPU；延迟 2~3 帧。
+- **回读**：只读最小级（≤16KB），走 **PBO 三帧环形缓冲 + fence** 异步取回，CPU 不等待 GPU；延迟下限 1 帧（实测稳态就是 1 帧），GPU 落后时最多 3 帧，再落后则跳过提交。
 - **测试**：BVH 分层遍历，节点 AABB → 屏幕矩形 → 与范围内最远深度比较（Reversed-Z：`tileMin > objNearClosest + bias` 即被判为遮挡）；近平面/越界/深度异常一律保守不剔；内部节点被剔时要收集整棵子树的实例，结果按 `(Mesh*, actorID)` 记录。
 - **bias**：相对偏置（按距离成比例）+ 相机静止时自适应收紧 + Settings → View → `hzbBias` 可实时调。
 - **接入**：`SceneRenderer::FilterDrawables` 里剔除；pass 名 `HZB`，可随时开关对比。
