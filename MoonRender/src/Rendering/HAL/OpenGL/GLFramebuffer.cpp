@@ -292,6 +292,31 @@ void Rendering::HAL::GLFramebuffer::ReadPixels(
 	Unbind();
 }
 template<>
+void Rendering::HAL::GLFramebuffer::ReadPixelsToBuffer(
+	const Rendering::HAL::GLBuffer& p_buffer,
+	uint64_t p_offset,
+	uint32_t p_x,
+	uint32_t p_y,
+	uint32_t p_width,
+	uint32_t p_height,
+	Settings::EPixelDataFormat p_format,
+	Settings::EPixelDataType p_type) const
+{
+	Bind();
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, p_buffer.GetID());
+	glReadPixels(
+		p_x, p_y,
+		p_width,
+		p_height,
+		EnumToValue<GLenum>(p_format),
+		EnumToValue<GLenum>(p_type),
+		reinterpret_cast<void*>(static_cast<uintptr_t>(p_offset))
+	);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	Unbind();
+}
+
+template<>
 void Rendering::HAL::GLFramebuffer::Clear(Settings::EFramebufferAttachment p_attachment,int index)
 {
 	const GLfloat clear_color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };

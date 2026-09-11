@@ -69,6 +69,11 @@ Core::Rendering::HzbBuildPass::HzbBuildPass(::Rendering::Core::CompositeRenderer
 	SetupTargets(1, 1);
 }
 
+Core::Rendering::HzbBuildPass::~HzbBuildPass()
+{
+	ReleaseReadbacks();
+}
+
 void Core::Rendering::HzbBuildPass::ResizeRenderer(int p_width, int p_height)
 {
 	// Targets are rebuilt lazily in Draw() when the frame size changes.
@@ -160,6 +165,136 @@ void Core::Rendering::HzbBuildPass::SetupTargets(uint32_t p_width, uint32_t p_he
 	m_width = p_width;
 	m_height = p_height;
 	m_targetsReady = true;
+
+	SetupReadbacks();
+}
+
+void Core::Rendering::HzbBuildPass::SetupReadbacks()
+{
+	ReleaseReadbacks();
+
+	if (m_gridWidth == 0 || m_gridHeight == 0)
+	{
+		return;
+	}
+
+	m_readbackBytes = static_cast<uint64_t>(m_gridWidth) * m_gridHeight * sizeof(float);
+	m_readbackSlots.resize(kReadbackSlotCount);
+
+	for (ReadbackSlot& slot : m_readbackSlots)
+	{
+		// PIXEL_PACK buffer: destination of the asynchronous glReadPixels. The
+		// STREAM_READ hint matches "written once by the GPU, read once by the CPU".
+		slot.buffer = std::make_shared<::Rendering::HAL::Buffer>(
+			::Rendering::Settings::EBufferType::PIXEL_PACK
+		);
+		slot.buffer->Allocate(
+			m_readbackBytes,
+			::Rendering::Settings::EAccessSpecifier::STREAM_READ
+		);
+	}
+}
+
+void Core::Rendering::HzbBuildPass::ReleaseReadbacks()
+{
+	for (ReadbackSlot& slot : m_readbackSlots)
+	{
+		if (slot.buffer)
+		{
+			slot.buffer->ClearFence();
+		}
+		slot.buffer.reset();
+		slot.pending = false;
+	}
+
+	m_readbackSlots.clear();
+	m_readbackPendingSlots = 0;
+	m_readbackWriteIndex = 0;
+	m_readbackBytes = 0;
+}
+
+void Core::Rendering::HzbBuildPass::ConsumeReadyReadback()
+{
+	if (m_readbackSlots.empty() || m_culler == nullptr)
+	{
+		return;
+	}
+
+	const uint32_t slotCount = static_cast<uint32_t>(m_readbackSlots.size());
+
+	// Oldest slot first: it is the one the next submission would overwrite.
+	for (uint32_t i = 0; i < slotCount; ++i)
+	{
+		const uint32_t index = (m_readbackWriteIndex + i) % slotCount;
+		ReadbackSlot& slot = m_readbackSlots[index];
+
+		if (!slot.pending || !slot.buffer->IsFenceSignaled())
+		{
+			continue;
+		}
+
+		void* mapped = slot.buffer->MapRead(0, m_readbackBytes);
+		if (mapped == nullptr)
+		{
+			// Could not map (the GPU is still using the buffer): retry next frame.
+			break;
+		}
+
+		const float* depths = static_cast<const float*>(mapped);
+		const size_t count = static_cast<size_t>(m_gridWidth) * m_gridHeight;
+
+		// A slot that was never written still holds zeros, which in reversed-Z
+		// means "far": the culler then simply finds nothing occluded.
+		m_culler->SetGrid(m_gridWidth, m_gridHeight, std::vector<float>(depths, depths + count));
+
+		slot.buffer->Unmap();
+		slot.buffer->ClearFence();
+		slot.pending = false;
+		if (m_readbackPendingSlots != 0)
+		{
+			--m_readbackPendingSlots;
+		}
+		m_lastReadbackLatencyFrames = static_cast<uint32_t>(m_frameCounter - slot.issueFrame);
+		break;
+	}
+}
+
+void Core::Rendering::HzbBuildPass::IssueReadback()
+{
+	if (m_readbackSlots.empty() || m_levels.empty()
+		|| m_gridWidth == 0 || m_gridHeight == 0)
+	{
+		return;
+	}
+
+	ReadbackSlot& slot = m_readbackSlots[m_readbackWriteIndex];
+
+	if (slot.pending)
+	{
+		// The GPU is a full ring behind: skip this frame instead of blocking the
+		// CPU; the culler keeps using the previous grid.
+		++m_readbackSkippedFrames;
+	}
+	else
+	{
+		m_levels.back()->ReadPixelsToBuffer(
+			*slot.buffer,
+			0,
+			0,
+			0,
+			m_gridWidth,
+			m_gridHeight,
+			::Rendering::Settings::EPixelDataFormat::RED,
+			::Rendering::Settings::EPixelDataType::FLOAT
+		);
+		slot.buffer->InsertFence();
+		slot.pending = true;
+		slot.issueFrame = m_frameCounter;
+		++m_readbackPendingSlots;
+	}
+
+	m_readbackWriteIndex
+		= (m_readbackWriteIndex + 1) % static_cast<uint32_t>(m_readbackSlots.size());
 }
 
 void Core::Rendering::HzbBuildPass::Draw(::Rendering::Data::PipelineState p_pso)
@@ -229,24 +364,14 @@ void Core::Rendering::HzbBuildPass::Draw(::Rendering::Data::PipelineState p_pso)
 		);
 	}
 
-	// 4) Read the smallest level back to the CPU. The grid is tiny (<= 64x64),
-	//    so this stays cheap; it is consumed by the next frame's culler, which
-	//    keeps the one frame latency but avoids resting on a fresh GPU sync.
-	{
-		// Default (reverse-Z) far value: 0 means "nothing drawn", which never
-		// causes a cull even if a readback were to come back untouched.
-		std::vector<float> depths(static_cast<size_t>(m_gridWidth) * m_gridHeight, 0.0f);
-		m_levels.back()->ReadPixels(
-			0,
-			0,
-			static_cast<uint32_t>(m_gridWidth),
-			static_cast<uint32_t>(m_gridHeight),
-			::Rendering::Settings::EPixelDataFormat::RED,
-			::Rendering::Settings::EPixelDataType::FLOAT,
-			depths.data()
-		);
-		m_culler->SetGrid(m_gridWidth, m_gridHeight, std::move(depths));
-	}
+	// 4) Asynchronous readback through a PBO ring: the smallest level is copied
+	//    into a pixel pack buffer now and fetched a few frames later, once its
+	//    fence is already signalled, so the CPU never waits for the GPU (a
+	//    synchronous glReadPixels would stall the pipeline every frame). The
+	//    culler therefore consumes a grid that is 2~3 frames old.
+	ConsumeReadyReadback();
+	IssueReadback();
+	++m_frameCounter;
 
 	// Restore the frame's default target for the following passes.
 	msaaBuffer.Bind();

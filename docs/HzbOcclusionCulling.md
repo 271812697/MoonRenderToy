@@ -59,8 +59,9 @@ if (tile 内最远表面比物体的最近点还近)     // 用深度值比较�
 本帧的深度要等绘制完才有，而剔除必须在提交绘制**之前**完成。用上一帧的深度：
 
 1. 时序上成立（剔除 → 绘制 → 建立下一帧要用的金字塔）；
-2. 可以完全避开 GPU→CPU 同步（配合异步回读时）；
-3. 代价是**一帧延迟**：快速移动的物体会有一帧的误剔/漏剔。
+2. 可以完全避开 GPU→CPU 同步：回读走 PBO 环形缓冲（§5.4），CPU 从不等 GPU；
+3. 代价是**延迟**：同步回读时是 1 帧，改成 PBO 环形后有 2~3 帧（§5.6），
+   所以偏置要按「相机可能已经动过几帧」来留余量（见 §5.6.3）。
 
 ---
 
@@ -85,7 +86,7 @@ Shadows(10000) → Skybox(10001) → Gbuffer(19999) → Opaques(20000)
  ├─ HZB pass：
  │    ① CopyFramebufferDepth(MSAA → 自建 DEPTH_COMPONENT32F 纹理)   ← 解析 MSAA
  │    ② 逐级 2×2 取 min（Reversed-Z），减半到 ≤ 64×64 的 R32F 网格
- │    ③ ReadPixels 小网格 → HzbCuller::SetGrid()
+ │    ③ glReadPixels 写进 PBO（异步）→ 2~3 帧后 fence 已就绪时 MapRead → HzbCuller::SetGrid()
  └─ Post-Process 及之后（不受影响）
 帧 N+1
  └─ SceneRenderer::FilterDrawables → HzbCuller::Cull(BVH) → 被遮挡的 actor 不进绘制列表
@@ -165,17 +166,51 @@ FRAGMENT_COLOR = vec4(min(min(a, b), min(c, d)), 0.0, 0.0, 1.0);
 
 注意 `Blit` 的 `RESIZE_DST_TO_MATCH_SRC` 不能开（各级尺寸本就不同），所以显式传 flag 而非 `DEFAULT`；视口在绘制前用 `SetViewport(0,0,levelW,levelH)` 设为当前级尺寸。
 
-### 5.4 回读
+### 5.4 回读：异步 PBO 环形缓冲
 
-只读**最小的那一级**（≤64×64 的 R32F = 最多 16KB）：
+只读**最小的那一级**（≤64×64 的 R32F = 最多 16KB），而且**不阻塞 CPU**：
 
-```cpp
-m_levels.back().ReadPixels(0, 0, gridWidth, gridHeight,
-    EPixelDataFormat::RED, EPixelDataType::FLOAT, depths.data());
-m_culler->SetGrid(gridWidth, gridHeight, std::move(depths));
+```text
+每帧：
+  ① ConsumeReadyReadback()   // 从环形里挑最早的一个槽，若它的 fence 已 signal → MapRead → SetGrid
+  ② IssueReadback()          // 把本帧的最小级 glReadPixels 写进下一个空闲 PBO，并插一个 fence
 ```
 
-第一版是**同步**回读（每帧一次 stall，见 §9）；正式版应改成 PBO 三帧环形缓冲，读第 N−2 帧的结果，彻底消除同步。
+为什么不能直接 `ReadPixels` 到 CPU 内存：`glReadPixels` 会等待 GPU 把这一帧画完（隐式同步），
+于是每帧白白多出一次 pipeline stall——**省下来的 draw 提交时间可能还不够赔这次等待**。
+把目标换成 PBO 之后写入是异步的，CPU 立刻返回。
+
+落地的三层：
+
+| 层 | 改动 |
+|---|---|
+| HAL 设置 | `EBufferType` 增加 `PIXEL_PACK`（映射到 `GL_PIXEL_PACK_BUFFER`） |
+| HAL 缓冲 | `TBuffer` 增加 `MapRead/Unmap/InsertFence/IsFenceSignaled/ClearFence`（GL 侧用 `glMapNamedBufferRange` / `glFenceSync` / `glClientWaitSync`），`GLBufferContext` 存 `GLsync` |
+| HAL 帧缓冲 | `TFramebuffer::ReadPixelsToBuffer()`：绑定 PBO 后 `glReadPixels`，此时指针参数是**PBO 内的字节偏移** |
+
+`HzbBuildPass` 里是一个 **3 槽**环形：
+
+- `SetupTargets()` 计算完网格尺寸后按 `gridW * gridH * 4` 字节分配 3 个 PBO（`STREAM_READ`）；
+- `ConsumeReadyReadback()` 从**最早**的槽开始找，用 `glClientWaitSync(..., 0)` 做非阻塞检查：
+  - 已 signal → `MapRead` 取数据 → `HzbCuller::SetGrid()` → `Unmap` → 删 fence；
+  - 未 signal → 本帧不消费（网格保持上一份，剔除照常工作）；
+- `IssueReadback()` 写下一个槽；若该槽上一轮的数据还没被消费（GPU 落后整整一圈），
+  **本帧跳过提交**并累加 `skippedFrames`，绝不在这里等 GPU。
+
+因此实际延迟是 **2~3 帧**（提交后至少错过一圈才会被消费），叠加 §2.3 的「用上一帧深度」，
+总体比初版多 1~2 帧。换来的收益是：剔除不再引入任何同步点。
+
+调试叠加层里新增一行：
+
+```text
+[HZB] readback slots 3 (pending 3) | skipped frames 0 | latency 3 frames
+```
+
+判读：
+
+- `pending` 长期等于槽数 = GPU 落后超过一圈；
+- `skipped frames` 应该基本不涨（偶发增长说明帧率被 GPU 卡住）；
+- `latency` 通常是 3；如果频繁出现 `latency` 变很大，说明消费侧被别的同步点拖住了。
 
 ### 5.5 一个必须避开的坑：别把 `Framebuffer` 放进会扩容的容器
 
@@ -408,8 +443,9 @@ hzbPass.SetCuller(&m_hzbCuller);
 
 1. 遮挡集合改成按实例索引的 flat 标志位 / 稀疏位图，彻底去掉哈希与节点分配；
 2. 用 JobSystem 按顶层子树并行遍历；
-3. 隔帧剔除（结果复用 2~4 帧）或相机静止时跳过；
-4. 回读换 PBO 三帧环形缓冲，消掉 `glReadPixels` 的 GPU 同步。
+3. 隔帧剔除（结果复用 2~4 帧）或相机静止时跳过。
+
+（`glReadPixels` 的 GPU 同步已经通过 §5.4 的 PBO 环形缓冲消掉。）
 
 是否值得保留，用 Settings → Passes 里 `HZB` 的开关做 A/B：如果省下的 10000+ draw 提交时间大于 `cull + build`，就值得。
 
@@ -419,10 +455,10 @@ hzbPass.SetCuller(&m_hzbCuller);
 
 | 项 | 现状 | 下一步 |
 |---|---|---|
-| 回读方式 | 每帧一次同步 `ReadPixels`（≤16KB，仍会 stall） | PBO 三帧环形缓冲 + fence，读 N−2 帧 |
-| 一帧延迟 | 相机静止时由「静止自适应 bias」消除，运动时靠 bias 留余量；物体自身运动未跟踪 | 对「本帧发生位移」的 actor 跳过剔除 |
+| 回读方式 | **PBO 三帧环形缓冲 + fence**（已实现，见 §5.4），CPU 不等待 GPU | 槽位数自适应；把 `MapRead` 的拷贝换成 `glGetBufferSubData` 或常驻映射 |
+| 延迟 | 深度 1 帧 + 回读 2~3 帧；相机静止时由「静止自适应 bias」消除，运动时靠 bias 留余量；物体自身运动未跟踪 | 对「本帧发生位移」的 actor 跳过剔除 |
 | bias | 相对偏置 + 静止自适应 + 滑块可调 | 视空间偏置 / 按运动幅度自适应 |
-| tile 分辨率 | 网格上限 64，tile≈30px；CAD 密集小零件下容易被边界 tile 吃掉 | 提到 128~256（配合 PBO 异步回读） |
+| tile 分辨率 | 网格上限 64，tile≈30px；CAD 密集小零件下容易被边界 tile 吃掉 | 提到 128~256（回读已是异步，增大网格不再带来同步代价，只有带宽/拷贝成本） |
 | AABB 偏大 | 旋转零件的 AABB 比实际轮廓大，最近角点偏前 → 判不出遮挡 | 用更紧的包围体（视空间 OBB / 凸包） |
 | BVH 时效 | 手动 `reBuildBvh`；`RequestBvhRebuild()` 无调用方；`isDirty` 语义未使用 | 场景变更时标脏并自动/提示重建 |
 | 反射 pass | 目前 `ReflectionRenderPass` 被注释掉；启用后它会用反射相机重跑 `FilterDrawables`，与主相机的网格不匹配 | 给 `FilterDrawables` 加「是否执行 HZB」开关或按相机缓存网格 |
@@ -451,7 +487,7 @@ hzbPass.SetCuller(&m_hzbCuller);
 
 - **输入**：上一帧的**不透明**深度——自己从 MSAA 解析，不依赖 transparent pass 的分支；透明走 depth peeling，不参与遮挡。
 - **金字塔**：R32F、逐级 2×2 取**最远**（本项目 Reversed-Z → **min**；非 Reversed-Z 管线应取 max），减半到 ≤64 网格；无 compute，用全屏 fragment pass 实现。
-- **回读**：只读最小级（≤16KB），当前同步，后续换 PBO。
+- **回读**：只读最小级（≤16KB），走 **PBO 三帧环形缓冲 + fence** 异步取回，CPU 不等待 GPU；延迟 2~3 帧。
 - **测试**：BVH 分层遍历，节点 AABB → 屏幕矩形 → 与范围内最远深度比较（Reversed-Z：`tileMin > objNearClosest + bias` 即被判为遮挡）；近平面/越界/深度异常一律保守不剔；内部节点被剔时要收集整棵子树的实例，结果按 `(Mesh*, actorID)` 记录。
 - **bias**：相对偏置（按距离成比例）+ 相机静止时自适应收紧 + Settings → View → `hzbBias` 可实时调。
 - **接入**：`SceneRenderer::FilterDrawables` 里剔除；pass 名 `HZB`，可随时开关对比。

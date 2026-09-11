@@ -79,6 +79,36 @@ namespace Rendering::HAL
 		*/
 		uint32_t GetID() const;
 
+		/**
+		* Maps a range of the buffer for reading on the CPU.
+		* @param p_offset
+		* @param p_size
+		* @return Pointer to the mapped memory, or nullptr on failure
+		*/
+		void* MapRead(uint64_t p_offset, uint64_t p_size);
+
+		/**
+		* Unmaps the buffer previously mapped with MapRead()
+		*/
+		void Unmap();
+
+		/**
+		* Inserts a fence after the commands already submitted for this buffer
+		@sa IsFenceSignaled()
+		*/
+		void InsertFence();
+
+		/**
+		* Non blocking check of the fence inserted by InsertFence()
+		* @return True when the GPU finished the work submitted before the fence
+		*/
+		bool IsFenceSignaled() const;
+
+		/**
+		* Deletes the fence inserted by InsertFence()
+		*/
+		void ClearFence();
+
 	protected:
 		BufferContext m_buffer;
 	};

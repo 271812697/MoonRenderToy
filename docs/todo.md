@@ -30,9 +30,9 @@
 
 - [ ] HZB 遮挡剔除（深度金字塔、上一帧深度、BVH 分层节点测试）——
   第一版已落地，原理与实现见 [HzbOcclusionCulling.md](HzbOcclusionCulling.md)；
-  待办：PBO 异步回读、视空间 bias、一帧延迟处理、统计可视化
-- [ ] 深度异步回读（PBO 环形缓冲，避免剔除引入同步 stall）——
-  见 [HzbOcclusionCulling.md](HzbOcclusionCulling.md) §9
+  待办：视空间 bias、一帧延迟处理、统计可视化
+- [x] 深度异步回读（PBO 环形缓冲，避免剔除引入同步 stall）——
+  见 [HzbOcclusionCulling.md](HzbOcclusionCulling.md) §5.4
 - [ ] 屏幕尺寸剔除
 - [ ] LOD / 重要度预算（按屏幕占比 × 距离 × 语义重要度取舍）
 

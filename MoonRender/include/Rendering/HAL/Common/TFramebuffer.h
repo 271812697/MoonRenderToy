@@ -16,6 +16,7 @@
 #include <Rendering/Resources/Texture.h>
 #include <Rendering/HAL/Common/TTexture.h>
 #include <Rendering/HAL/Common/TRenderbuffer.h>
+#include <Rendering/HAL/Buffer.h>
 #include <Tools/Utils/OptRef.h>
 
 namespace Rendering::HAL
@@ -78,6 +79,25 @@ namespace Rendering::HAL
 			Settings::EPixelDataFormat p_format,
 			Settings::EPixelDataType p_type,
 			void* p_data
+		) const;
+
+		/** Asynchronously copies pixels into a pixel pack buffer.
+		 *
+		 * glReadPixels writes into whatever is currently bound to
+		 * GL_PIXEL_PACK_BUFFER; with a buffer bound, p_offset is a byte offset
+		 * inside it. The call returns immediately, and the data must be fetched
+		 * later (MapRead) once the buffer's fence is signalled, so the CPU never
+		 * waits for the GPU.
+		 */
+		void ReadPixelsToBuffer(
+			const ::Rendering::HAL::Buffer& p_buffer,
+			uint64_t p_offset,
+			uint32_t p_x,
+			uint32_t p_y,
+			uint32_t p_width,
+			uint32_t p_height,
+			Settings::EPixelDataFormat p_format,
+			Settings::EPixelDataType p_type
 		) const;
 		const std::string& GetDebugName() const;
 

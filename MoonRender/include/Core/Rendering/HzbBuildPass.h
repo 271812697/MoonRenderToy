@@ -7,6 +7,7 @@
 #include <Core/Rendering/HzbCuller.h>
 #include <Core/Resources/Material.h>
 #include <Rendering/Core/ARenderPass.h>
+#include <Rendering/HAL/Buffer.h>
 #include <Rendering/HAL/Framebuffer.h>
 
 namespace Core::Rendering
@@ -24,6 +25,7 @@ namespace Core::Rendering
 	{
 	public:
 		HzbBuildPass(::Rendering::Core::CompositeRenderer& p_renderer);
+		~HzbBuildPass();
 
 		void SetCuller(HzbCuller* p_culler) { m_culler = p_culler; }
 		void SetMaxGridSize(uint32_t p_size) { m_maxGridSize = p_size; }
@@ -41,6 +43,15 @@ namespace Core::Rendering
 		uint32_t GetGridHeight() const { return m_gridHeight; }
 		float GetLastBuildTimeMs() const { return m_lastBuildTimeMs; }
 
+		/** Asynchronous readback state (debug overlay / profiling). */
+		uint32_t GetReadbackSlotCount() const
+		{
+			return static_cast<uint32_t>(m_readbackSlots.size());
+		}
+		uint32_t GetReadbackPendingSlots() const { return m_readbackPendingSlots; }
+		uint32_t GetReadbackSkippedFrames() const { return m_readbackSkippedFrames; }
+		uint32_t GetLastReadbackLatencyFrames() const { return m_lastReadbackLatencyFrames; }
+
 	protected:
 		virtual void Draw(::Rendering::Data::PipelineState p_pso) override;
 		virtual void ResizeRenderer(int width, int height) override;
@@ -48,6 +59,14 @@ namespace Core::Rendering
 	private:
 		void SetupTargets(uint32_t p_width, uint32_t p_height);
 		void ReleaseLevels();
+
+		/** (Re)allocates the pixel pack buffer ring for the current grid size. */
+		void SetupReadbacks();
+		void ReleaseReadbacks();
+		/** Feeds the culler with the oldest finished readback slot, if any. */
+		void ConsumeReadyReadback();
+		/** Submits this frame's readback; skipped when the ring is saturated. */
+		void IssueReadback();
 
 		::Core::Resources::Material m_reduceMaterial;
 
@@ -67,6 +86,28 @@ namespace Core::Rendering
 		std::vector<std::unique_ptr<::Rendering::HAL::Framebuffer>> m_levels;
 		std::vector<Maths::FVector2> m_levelResolutions;
 		std::vector<std::shared_ptr<::Rendering::HAL::Texture>> m_levelTextures;
+
+		/** One entry of the asynchronous readback ring.
+		 *
+		 * The grid is copied into a PBO instead of being read synchronously, and
+		 * fetched a few frames later once its fence is signalled, so the CPU
+		 * never waits for the GPU to finish the frame.
+		 */
+		struct ReadbackSlot
+		{
+			std::shared_ptr<::Rendering::HAL::Buffer> buffer;
+			bool pending = false;
+			uint64_t issueFrame = 0;
+		};
+
+		static constexpr uint32_t kReadbackSlotCount = 3;
+		std::vector<ReadbackSlot> m_readbackSlots;
+		uint64_t m_readbackBytes = 0;
+		uint32_t m_readbackWriteIndex = 0;
+		uint32_t m_readbackPendingSlots = 0;
+		uint32_t m_readbackSkippedFrames = 0;
+		uint32_t m_lastReadbackLatencyFrames = 0;
+		uint64_t m_frameCounter = 0;
 
 		HzbCuller* m_culler = nullptr;
 		uint32_t m_maxGridSize = 64;

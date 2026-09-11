@@ -78,7 +78,9 @@ namespace MOON {
 			const auto& frameInfo =
 				mSceneView->GetRenderer().GetFeature<Rendering::Features::FrameInfoRenderFeature>().GetFrameInfo();
 			const auto& hzb = mSceneView->GetRenderer().GetHzbStats();
-			char text[1024];
+			const auto& hzbPass
+				= mSceneView->GetRenderer().GetPass<Core::Rendering::HzbBuildPass>("HZB");
+			char text[1536];
 			sprintf_s(text, sizeof(text),
 				"FPS %.1f\n"
 				"Frame %.2f ms\n"
@@ -94,7 +96,8 @@ namespace MOON {
 				"[HZB] grid %ux%u depth[min %.6f max %.6f mean %.6f]\n"
 				"[HZB] bvh instances %u | visited %u | culled nodes %u | occluded meshes %u\n"
 				"[HZB] tests: occluded %u | bias rejected %u | bg rejected %u | best margin %.6f | bias %.6f\n"
-				"[HZB] skipped drawables %u | cull %.3f ms\n",
+				"[HZB] skipped drawables %u | cull %.3f ms\n"
+				"[HZB] readback slots %u (pending %u) | skipped frames %u | latency %u frames\n",
 				m_fps, m_frameMs,
 				(unsigned long long)frameInfo.vertexCount,
 				(unsigned long long)frameInfo.batchPolyCount,
@@ -111,7 +114,11 @@ namespace MOON {
 				hzb.occludedNodeTests, hzb.biasRejectedNodes, hzb.backgroundRejectedNodes,
 				hzb.bestMargin, mSceneView->GetRenderer().GetHzbCuller().GetDepthBias(),
 				mSceneView->GetRenderer().GetHzbSkippedDrawables(),
-				hzb.cullTimeMs
+				hzb.cullTimeMs,
+				hzbPass.GetReadbackSlotCount(),
+				hzbPass.GetReadbackPendingSlots(),
+				hzbPass.GetReadbackSkippedFrames(),
+				hzbPass.GetLastReadbackLatencyFrames()
 			);
 			ImGui::GetForegroundDrawList()->AddText({20,20}, IM_COL32(255, 255, 100, 255), text);
 		}
