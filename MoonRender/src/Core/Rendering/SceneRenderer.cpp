@@ -760,15 +760,7 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 	}
 	else if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
 	{
-		// The scene BVH is built by the editor (settings panel) or by the path
-		// tracer; the culler only consumes it when available, so the rebuild
-		// policy stays under the editor's control.
-		if (m_bvhRebuildRequested)
-		{
-			m_bvhRebuildRequested = false;
-			bvhService->SetDirtyFlag(false);
-			sceneDescriptor.scene.BuildSceneBvh();
-		}
+	
 
 		if (bvhService->m_sceneBvh != nullptr && bvhService->m_sceneBvh->m_root != nullptr)
 		{

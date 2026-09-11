@@ -133,20 +133,12 @@ namespace Core::Rendering
 		const HzbCuller& GetHzbCuller() const { return m_hzbCuller; }
 		const HzbStats& GetHzbStats() const { return m_hzbCuller.GetStats(); }
 
-		/** Ask the renderer to rebuild the scene BVH on the next frame.
-		 *
-		 * The scene BVH is otherwise only (re)built by the path tracer, so after
-		 * the scene geometry changes a manual request is needed for the
-		 * occlusion culler to work with fresh bounds.
-		 */
-		void RequestBvhRebuild() { m_bvhRebuildRequested = true; }
-
 		/** Number of drawables the HZB culler removed from the last filtered list. */
 		uint32_t GetHzbSkippedDrawables() const { return m_hzbSkippedDrawables; }
 
 	private:
 		HzbCuller m_hzbCuller;
-		bool m_bvhRebuildRequested = false;
+		
 		uint32_t m_hzbSkippedDrawables = 0;
 	};
 }
