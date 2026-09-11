@@ -540,11 +540,11 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddFeature<EngineBufferRenderFeature, ALWAYS>();
 	AddFeature<LightingRenderFeature, ALWAYS>();
 
-	AddFeature<ReflectionRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>()
-		.Include<TransparentRenderPass>();
-	AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>();
+	//AddFeature<ReflectionRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>()
+	//	.Include<TransparentRenderPass>();
+	//AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>();
 
 	AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
 		.Include<OpaqueRenderPass>()
