@@ -3980,6 +3980,9 @@ namespace MOON
 			}
 			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));
 			mat->Bind();
+			// Bind() only selects the program; this path bypasses
+			// ABaseRenderer::DrawEntity so the uniforms must be pushed here.
+			mat->UploadProperties(true, true);
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 		}
 	}
@@ -4060,6 +4063,7 @@ namespace MOON
 			}
 			mat->SetProperty("uViewProjMatrix", ToFMatrix4(cameraParam.viewProj));;
 			mat->Bind();
+			mat->UploadProperties(true, true);
 			glDrawArrays(prim, 0, (GLsizei)drawList.vertexCount);
 			mat->Unbind();
 
@@ -4107,6 +4111,7 @@ namespace MOON
 			mCellMaterial->SetProperty("uViewPortSize", Maths::FVector2(viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY));
 			mCellMaterial->SetProperty("uViewPortStart", Maths::FVector2(viewCube.screenPos.startX, viewCube.screenPos.startY));
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			mCellMaterial->UploadProperties(true, true, &mEmptyTexture2D, &mEmptyTextureCube);
 			glViewport(viewPortX,viewPortY, viewCube.screenPos.viewportSizeX, viewCube.screenPos.viewportSizeY);
 			viewCube.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewCube.numVertex);
@@ -4114,6 +4119,7 @@ namespace MOON
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(viewAxis.model));
 			mCellMaterial->SetProperty("edgeTexture", viewAxis.edgeTexture);
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+			mCellMaterial->UploadProperties(true, true, &mEmptyTexture2D, &mEmptyTextureCube);
 			viewAxis.bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)viewAxis.numVertex);
 			{
@@ -4149,9 +4155,10 @@ namespace MOON
 			mCellMaterial->SetProperty("uModelMatrix", ToFMatrix4(drawMesh.model));
 			mCellMaterial->SetProperty("edgeTexture", polygon->edgeTexture);
 			mCellMaterial->SetProperty("u_AlbedoMap",polygon->texture);
-			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
-			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
-			polygon->bind();
+				mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
+				mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube);
+				mCellMaterial->UploadProperties(true, true, &mEmptyTexture2D, &mEmptyTextureCube);
+				polygon->bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);
 		}
 	}
@@ -4188,6 +4195,7 @@ namespace MOON
 			mCellMaterial->SetProperty("blockTexture", polygon->blockTexture);
 			mCellMaterial->SetProperty("polygonId", polygon->getId());
 			mCellMaterial->Bind(&mEmptyTexture2D, &mEmptyTextureCube, "PICKING_PASS");
+			mCellMaterial->UploadProperties(true, true, &mEmptyTexture2D, &mEmptyTextureCube);
 			
 			polygon->bind();
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)polygon->numVertex);

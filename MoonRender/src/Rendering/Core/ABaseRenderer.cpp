@@ -139,7 +139,7 @@ void Rendering::Core::ABaseRenderer::BeginFrame(const Data::FrameDescriptor& p_f
 {
 	ZoneScoped;
 
-	
+	m_previousMaterialSignature.reset();
 	m_frameDescriptor = p_frameDescriptor;
 
 	if (p_frameDescriptor.outputMsaaBuffer)
@@ -324,6 +324,10 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::Data::Material& mat)
 		}
 
 		material->Bind(nullptr);
+		// Bind() only selects the program now; callers that do not go through
+		// DrawEntity have to push the uniforms themselves, otherwise the
+		// samplers keep their default value and the blit samples garbage.
+		material->UploadProperties(true, true);
 		m_driver.Draw(pso, mesh.value(), blit.primitiveMode, gpuInstances);
 		material->Unbind();
 	}

@@ -159,13 +159,15 @@ void Rendering::Data::Material::UploadProperties(bool uploadStableProperties, bo
 		}
 		else if (uniformType == FLOAT_MAT3)
 		{
-			const auto t = FMatrix3::Transpose(std::get<FMatrix3>(value));
-			program.SetUniform<FMatrix3>(name, t);
+			// No transpose here: SetUniform<FMatrix4/3> uploads with the
+			// "transpose" flag set, i.e. it already expects row-major data,
+			// which is exactly how Maths::FMatrix4 stores it. Transposing again
+			// would flip every matrix property.
+			program.SetUniform<FMatrix3>(name, std::get<FMatrix3>(value));
 		}
 		else if (uniformType == FLOAT_MAT4)
 		{
-			const auto t = FMatrix4::Transpose(std::get<FMatrix4>(value));
-			program.SetUniform<FMatrix4>(name, t);
+			program.SetUniform<FMatrix4>(name, std::get<FMatrix4>(value));
 		}
 		else if (
 			uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE
