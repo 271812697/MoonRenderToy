@@ -170,48 +170,6 @@ namespace MOON {
 			}
 
 			mSceneView->Render();
-
-			// Mirror the HZB statistics into the editor log (1 Hz) so they can
-			// be copied; the on screen overlay stays as the live view.
-			if (!m_hzbLogTimer.isValid()) {
-				m_hzbLogTimer.start();
-			}
-			if (MOON::DebugSettings::instance().getOrDefault<bool>("showFPS", false)
-				&& m_hzbLogTimer.elapsed() >= 1000) {
-				m_hzbLogTimer.restart();
-				const auto& hzb = mSceneView->GetRenderer().GetHzbStats();
-				CORE_INFO(
-					"[HZB] grid {}x{} depth[{:.6f} {:.6f} {:.6f}] "
-					"bvh {} visited {} culled {} occludedInst {} skipped {} "
-					"tests[occluded {} biasRejected {} bgRejected {}] "
-					"bestMargin {:.6f} bias {:.6f} cull {:.3f}ms build {:.3f}ms",
-					hzb.gridWidth, hzb.gridHeight,
-					hzb.gridMinDepth, hzb.gridMaxDepth, hzb.gridMeanDepth,
-					hzb.bvhInstances, hzb.visitedNodes, hzb.culledNodes, hzb.occludedInstances,
-					mSceneView->GetRenderer().GetHzbSkippedDrawables(),
-					hzb.occludedNodeTests, hzb.biasRejectedNodes, hzb.backgroundRejectedNodes,
-					hzb.bestMargin,
-					hzb.effectiveBias,
-					hzb.cullTimeMs,
-					mSceneView->GetRenderer()
-						.GetPass<::Core::Rendering::HzbBuildPass>("HZB")
-						.GetLastBuildTimeMs()
-				);
-
-				if (hzb.bvhInstances == 0) {
-					if (!m_hzbBvhWarningLogged) {
-						m_hzbBvhWarningLogged = true;
-						CORE_WARN(
-							"[HZB] scene BVH is null/empty - occlusion culling is disabled. "
-							"Build the BVH first (reBuildBvh)."
-						);
-					}
-				}
-				else {
-					m_hzbBvhWarningLogged = false;
-				}
-			}
-			
 			mSelf->glBindFramebuffer(GL_FRAMEBUFFER, mSelf->defaultFramebufferObject());
 			mSceneView->Present();
 			debugImgui();
@@ -257,8 +215,6 @@ namespace MOON {
 		QString mReadFilePath = "";
 		bool mDoReadFile = false;
 		QElapsedTimer m_fpsTimer;
-		QElapsedTimer m_hzbLogTimer;
-		bool m_hzbBvhWarningLogged = false;
 		double m_fps = 0.0;
 		double m_frameMs = 0.0;
 

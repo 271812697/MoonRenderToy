@@ -177,21 +177,12 @@ namespace MOON {
 				tempMat->SetCastShadows(false);
 				tempMat->SetReceiveShadows(false);
 				tempMat->SetShader(GetShaderService[":Shaders\\Standard.ovfx"]);
-				// NOTE: Standard.ovfx 的 #feature 列表里没有 CLIP_PLANE（只有
-				// VERTEX_POS_NORMAL / PARALLAX_MAPPING / NORMAL_MAPPING /
-				// DISTANCE_FADE / SPECULAR_WORKFLOW / WITH_EDGE）。Standard 的
-				// 裁剪走 engine UBO 的 ubo_enableClip，由工具栏 Clip 开关
-				// (EngineBufferRenderFeature::EnableClip) 控制，所以这里不需要
-				// 也不应该加 CLIP_PLANE（只有 GeomertyLine.ovfx 支持该 feature）。
-				// VERTEX_POS_NORMAL 是必须的：本网格是 VertexPositionNormal
-				// (loc0=pos, loc1=normal)，不加这个 feature 时 shader 会把 normal
-				// 当 texCoords、把 texCoords 当 normal，光照与 UV 全错。
 				tempMat->AddFeature("VERTEX_POS_NORMAL");
 				tempMat->SetProperty("_EnvironmentMap", GetSceneView.GetRenderer().GetPrefilterCube());					tempMat->SetProperty("u_Albedo", Maths::FVector4{ 1.0, 1.0, 1.0, 1.0 });
 
 				tempMat->SetProperty("u_AlphaClippingThreshold", 1.0f);
-				tempMat->SetProperty("u_Roughness", 0.1f);
-				tempMat->SetProperty("u_Metallic", 0.1f);
+				tempMat->SetProperty("u_Roughness", 0.3f);
+				tempMat->SetProperty("u_Metallic", 0.8f);
 				// Emission
 				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
