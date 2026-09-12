@@ -196,15 +196,21 @@ void Rendering::Core::ABaseRenderer::SetViewport(uint32_t p_x, uint32_t p_y, uin
 	m_driver.SetViewport(p_x, p_y, p_width, p_height);
 }
 
+void Rendering::Core::ABaseRenderer::SetScissor(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height)
+{
+	m_driver.SetScissor(p_x, p_y, p_width, p_height);
+}
+
 void Rendering::Core::ABaseRenderer::Clear(
 	bool p_colorBuffer,
 	bool p_depthBuffer,
 	bool p_stencilBuffer,
-	const Maths::FVector4& p_color
+	const Maths::FVector4& p_color,
+	bool p_scissor
 )
 {
 	ZoneScoped;
-	m_driver.Clear(p_colorBuffer, p_depthBuffer, p_stencilBuffer, p_color);
+	m_driver.Clear(p_colorBuffer, p_depthBuffer, p_stencilBuffer, p_color, p_scissor);
 }
 
 void Rendering::Core::ABaseRenderer::Blit(

@@ -60,6 +60,10 @@ namespace Rendering::Core
 		*/
 		void SetViewport(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height);
 
+		/** Sets the scissor rectangle used when the pipeline state enables the
+		 * scissor test (see Clear(..., p_scissor) and PipelineState). */
+		void SetScissor(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height);
+
 		/**
 		* Clear the screen
 		* @param p_colorBuffer
@@ -71,7 +75,8 @@ namespace Rendering::Core
 			bool p_colorBuffer,
 			bool p_depthBuffer,
 			bool p_stencilBuffer,
-			const Maths::FVector4& p_color = Maths::FVector4::Zero
+			const Maths::FVector4& p_color = Maths::FVector4::Zero,
+			bool p_scissor = false
 		);
 
 		/**

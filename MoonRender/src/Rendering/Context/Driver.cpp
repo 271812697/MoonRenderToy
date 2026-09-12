@@ -54,7 +54,8 @@ void Rendering::Context::Driver::Clear(
 	bool p_colorBuffer,
 	bool p_depthBuffer,
 	bool p_stencilBuffer,
-	const Maths::FVector4& p_color
+	const Maths::FVector4& p_color,
+	bool p_scissor
 )
 {
 	if (p_colorBuffer)
@@ -69,11 +70,21 @@ void Rendering::Context::Driver::Clear(
 		pso.stencilWriteMask = ~0;
 	}
 
-	pso.scissorTest = false;
+	pso.scissorTest = p_scissor;
 
 	SetPipelineState(pso);
 
 	m_gfxBackend->Clear(p_colorBuffer, p_depthBuffer, p_stencilBuffer);
+}
+
+void Rendering::Context::Driver::SetScissor(
+	uint32_t p_x,
+	uint32_t p_y,
+	uint32_t p_width,
+	uint32_t p_height
+)
+{
+	m_gfxBackend->SetScissor(p_x, p_y, p_width, p_height);
 }
 
 void Rendering::Context::Driver::Draw(

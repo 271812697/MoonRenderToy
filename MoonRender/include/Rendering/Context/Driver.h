@@ -37,7 +37,16 @@ namespace Rendering::Context
 			bool p_colorBuffer,
 			bool p_depthBuffer,
 			bool p_stencilBuffer,
-			const Maths::FVector4& p_color = Maths::FVector4::Zero
+			const Maths::FVector4& p_color = Maths::FVector4::Zero,
+			bool p_scissor = false
+		);
+		/** Sets the scissor rectangle; the test itself is enabled through the
+		 * pipeline state (see PipelineState::scissorTest). */
+		void SetScissor(
+			uint32_t p_x,
+			uint32_t p_y,
+			uint32_t p_width,
+			uint32_t p_height
 		);
 		void Draw(
 			Rendering::Data::PipelineState p_pso,

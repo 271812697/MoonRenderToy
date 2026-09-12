@@ -417,6 +417,11 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	const bool mouseMoved = mousePos != m_lastPickingMouse;
 	const bool leftPressed = input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT);
 	const bool leftDown = input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_LEFT);
+	// Right / middle are camera navigation (orbit / pan): the hover highlight is
+	// not useful while navigating, so the picking target is left untouched.
+	const bool cameraNavigation =
+		input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_MIDDLE)
+		|| input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_RIGHT);
 
 	const Maths::FMatrix4 viewProjection = m_camera.GetViewProjectionMatrix();
 	bool cameraMoved = false;
@@ -439,7 +444,7 @@ void Editor::Panels::SceneView::HandleActorPicking()
 		m_lastPickingMouse = mousePos;
 		m_pickRequestTimer.restart();
 	}
-	else if (mouseMoved || cameraMoved)
+	else if ((mouseMoved || cameraMoved) && !cameraNavigation)
 	{
 		if (!leftDown && m_pickRequestTimer.elapsed() >= kPickThrottleMs)
 		{

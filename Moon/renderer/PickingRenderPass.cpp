@@ -1,6 +1,7 @@
 ﻿#include <ranges>
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <cstring>
+#include <algorithm>
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Core/Rendering/FramebufferUtil.h>
 #include "Core/Global/ServiceLocator.h"
@@ -272,13 +273,39 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	auto& frameDescriptor = m_renderer.GetFrameDescriptor();
 	auto& scene = sceneDescriptor.scene;
 
+	if (frameDescriptor.renderWidth == 0 || frameDescriptor.renderHeight == 0)
+	{
+		m_pickRequestPending = false;
+		return;
+	}
+
 	m_actorPickingFramebuffer.Resize(frameDescriptor.renderWidth, frameDescriptor.renderHeight);
 
 	m_actorPickingFramebuffer.Bind();
 
-	auto pso = m_renderer.CreatePipelineState();
+	// Only the pixel under the cursor is read back, so clip the whole pass to a
+	// small region around it: the draw calls are still submitted, but almost all
+	// fragments are scissored away before shading / depth write / bandwidth.
+	constexpr uint32_t kPickRegionRadius = 24;
+	const uint32_t frameWidth = frameDescriptor.renderWidth;
+	const uint32_t frameHeight = frameDescriptor.renderHeight;
+	const uint32_t regionLeft = m_pickRequestX > kPickRegionRadius
+		? m_pickRequestX - kPickRegionRadius : 0u;
+	const uint32_t regionBottom = m_pickRequestY > kPickRegionRadius
+		? m_pickRequestY - kPickRegionRadius : 0u;
+	const uint32_t regionRight = std::min(m_pickRequestX + kPickRegionRadius, frameWidth - 1);
+	const uint32_t regionTop = std::min(m_pickRequestY + kPickRegionRadius, frameHeight - 1);
+	m_renderer.SetScissor(
+		regionLeft,
+		regionBottom,
+		regionRight - regionLeft + 1,
+		regionTop - regionBottom + 1
+	);
 
-	m_renderer.Clear(true, true, true);
+	auto pso = m_renderer.CreatePipelineState();
+	pso.scissorTest = true;
+
+	m_renderer.Clear(true, true, true, Maths::FVector4::Zero, true);
 
 	DrawPickableModels(pso, scene);
 	//the following code has bugs and is temporarily disabled
@@ -287,6 +314,11 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	//DrawPickableLights(pso, scene);
 	auto& gizmoInstance = MOON::ImRenderer::instance();
 	gizmoInstance.drawMeshPick();
+
+	// Restore a full target rectangle: the scissor test may still be enabled
+	// until the next pipeline state is applied, and a full-screen box never clips.
+	m_renderer.SetScissor(0, 0, frameWidth, frameHeight);
+
 	// Clear depth, gizmos are rendered on top of everything else
 	//m_renderer.Clear(false, true, false);
 
