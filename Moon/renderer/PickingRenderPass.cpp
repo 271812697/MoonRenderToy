@@ -1,5 +1,6 @@
 ﻿#include <ranges>
 #include <Core/ECS/Components/CMaterialRenderer.h>
+#include <cstring>
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Core/Rendering/FramebufferUtil.h>
 #include "Core/Global/ServiceLocator.h"
@@ -9,6 +10,8 @@
 #include "Interactive/Im3DRenderer.h"
 #include "Qtimgui/imgui/imgui.h"
 #include <Rendering/HAL/Profiling.h>
+#include <Rendering/Settings/EAccessSpecifier.h>
+#include <Rendering/Settings/EBufferType.h>
 
 namespace
 {
@@ -37,6 +40,8 @@ Editor::Rendering::PickingRenderPass::PickingRenderPass(::Rendering::Core::Compo
 	::Core::Rendering::FramebufferUtil::SetupFramebuffer(
 		m_actorPickingFramebuffer, 1, 1, true, false, false
 	);
+
+	SetupPickReadbacks();
 
 	/* Light Material */
 	m_lightMaterial.SetShader(::Core::Global::ServiceLocator::Get<Editor::Core::Context>().editorResources->GetShader("Billboard"));
@@ -68,18 +73,28 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 	uint32_t p_y,bool& isSelected
 )
 {
+	ZoneScoped;
 	uint8_t pixel[4];
-	auto& gizmoInstance = MOON::ImRenderer::instance();
-	bool resetPloygon = false;
 	m_actorPickingFramebuffer.ReadPixels(
 		p_x, p_y, 1, 1,
 		::Rendering::Settings::EPixelDataFormat::RGBA,
 		::Rendering::Settings::EPixelDataType::UNSIGNED_BYTE,
 		pixel
 	);
-	if (pixel[3] == 255) {
+	return DecodePickResult(p_scene, pixel, isSelected);
+}
+
+Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRenderPass::DecodePickResult(
+	const ::Core::SceneSystem::Scene& p_scene,
+	const uint8_t p_pixel[4],
+	bool& p_isSelected
+)
+{
+	auto& gizmoInstance = MOON::ImRenderer::instance();
+
+	if (p_pixel[3] == 255) {
 		gizmoInstance.resetSelectPolygon();
-		uint32_t actorID = (0 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | (pixel[0] << 0);
+		uint32_t actorID = (p_pixel[2] << 16) | (p_pixel[1] << 8) | (p_pixel[0] << 0);
 		auto actorUnderMouse = p_scene.FindActorByID(actorID);
 
 		if (actorUnderMouse)
@@ -87,36 +102,165 @@ Editor::Rendering::PickingRenderPass::PickingResult Editor::Rendering::PickingRe
 			return Tools::Utils::OptRef(*actorUnderMouse);
 		}
 		else if (
-			pixel[0] == 255 &&
-			pixel[1] == 255 &&
-			pixel[2] >= 252 &&
-			pixel[2] <= 254
+			p_pixel[0] == 255 &&
+			p_pixel[1] == 255 &&
+			p_pixel[2] >= 252 &&
+			p_pixel[2] <= 254
 			)
 		{
-			return static_cast<Editor::Core::GizmoBehaviour::EDirection>(pixel[2] - 252);
+			return static_cast<Editor::Core::GizmoBehaviour::EDirection>(p_pixel[2] - 252);
 		}
-		isSelected = true;
+		p_isSelected = true;
 	}
-	else if(pixel[3]==254)
+	else if(p_pixel[3]==254)
 	{
-		uint32_t polygonID = pixel[2];
-		uint32_t blockID = pixel[1];
+		uint32_t polygonID = p_pixel[2];
+		uint32_t blockID = p_pixel[1];
 		gizmoInstance.selectPolygon(polygonID,blockID);
-		isSelected = true;
+		p_isSelected = true;
 	}
 	else
 	{
 		gizmoInstance.resetSelectPolygon();
-		isSelected = false;
+		p_isSelected = false;
 	}
-	
+
 	return std::nullopt;
+}
+
+void Editor::Rendering::PickingRenderPass::SetupPickReadbacks()
+{
+	m_pickReadbackSlots.clear();
+	m_pickReadbackSlots.resize(kPickReadbackSlotCount);
+	m_pickWriteIndex = 0;
+	m_pickRequestPending = false;
+
+	for (PickReadbackSlot& slot : m_pickReadbackSlots)
+	{
+		// PIXEL_PACK buffer: destination of the asynchronous glReadPixels.
+		slot.buffer = std::make_shared<::Rendering::HAL::Buffer>(
+			::Rendering::Settings::EBufferType::PIXEL_PACK
+		);
+		slot.buffer->Allocate(
+			kPickReadbackBytes,
+			::Rendering::Settings::EAccessSpecifier::STREAM_READ
+		);
+	}
+}
+
+void Editor::Rendering::PickingRenderPass::RequestPick(uint32_t p_x, uint32_t p_y)
+{
+	// Only the newest request matters: serving an older one would highlight a
+	// position the cursor already left.
+	m_pickRequestX = p_x;
+	m_pickRequestY = p_y;
+	m_pickRequestPending = true;
+}
+
+void Editor::Rendering::PickingRenderPass::IssuePickReadback()
+{
+	if (!m_pickRequestPending || m_pickReadbackSlots.empty())
+	{
+		m_pickRequestPending = false;
+		return;
+	}
+
+	PickReadbackSlot* freeSlot = nullptr;
+	for (uint32_t i = 0; i < kPickReadbackSlotCount; ++i)
+	{
+		PickReadbackSlot& slot = m_pickReadbackSlots[
+			(m_pickWriteIndex + i) % kPickReadbackSlotCount
+		];
+		if (!slot.pending)
+		{
+			freeSlot = &slot;
+			m_pickWriteIndex = (m_pickWriteIndex + i + 1) % kPickReadbackSlotCount;
+			break;
+		}
+	}
+
+	m_pickRequestPending = false;
+
+	if (freeSlot == nullptr)
+	{
+		// The whole ring is still in flight: drop the request instead of
+		// blocking. The hover highlight simply lags one more frame.
+		return;
+	}
+
+	m_actorPickingFramebuffer.ReadPixelsToBuffer(
+		*freeSlot->buffer,
+		0,
+		m_pickRequestX,
+		m_pickRequestY,
+		1, 1,
+		::Rendering::Settings::EPixelDataFormat::RGBA,
+		::Rendering::Settings::EPixelDataType::UNSIGNED_BYTE
+	);
+	freeSlot->buffer->InsertFence();
+	freeSlot->x = m_pickRequestX;
+	freeSlot->y = m_pickRequestY;
+	freeSlot->pending = true;
+}
+
+bool Editor::Rendering::PickingRenderPass::TryConsumePick(
+	const ::Core::SceneSystem::Scene& p_scene,
+	PickingResult& p_outResult,
+	uint32_t& p_outX,
+	uint32_t& p_outY
+)
+{
+	if (m_pickReadbackSlots.empty())
+	{
+		return false;
+	}
+
+	for (uint32_t i = 0; i < kPickReadbackSlotCount; ++i)
+	{
+		PickReadbackSlot& slot = m_pickReadbackSlots[
+			(m_pickWriteIndex + i) % kPickReadbackSlotCount
+		];
+		if (!slot.pending || !slot.buffer->IsFenceSignaled())
+		{
+			continue;
+		}
+
+		void* mapped = slot.buffer->MapRead(0, kPickReadbackBytes);
+		if (mapped == nullptr)
+		{
+			// Still used by the GPU: retry on the next frame.
+			continue;
+		}
+
+		uint8_t pixel[4];
+		std::memcpy(pixel, mapped, kPickReadbackBytes);
+		slot.buffer->Unmap();
+		slot.buffer->ClearFence();
+		slot.pending = false;
+
+		p_outX = slot.x;
+		p_outY = slot.y;
+
+		bool ignoredSelectionState = false;
+		p_outResult = DecodePickResult(p_scene, pixel, ignoredSelectionState);
+		return true;
+	}
+
+	return false;
 }
 
 void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState p_pso)
 {
 	ZoneScoped;
 	TracyGpuZone("PickingRenderPass");
+
+	// The picking target is a full second scene pass (RGBA8 + depth at render
+	// resolution), so it is only rendered on demand: RequestPick() sets the flag
+	// for hover / camera motion / clicks, and Idle frames skip it entirely.
+	if (!m_pickRequestPending)
+	{
+		return;
+	}
 
 	using namespace ::Core::Rendering;
 
@@ -159,6 +303,10 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 	//}
 
 	m_actorPickingFramebuffer.Unbind();
+
+	// Serve a queued hover request: the picking target just finished, so the
+	// pixel can be copied into the PBO ring without waiting for the GPU.
+	IssuePickReadback();
 	
 	//the following code is for debug, it will display the picking framebuffer
 	if (mPickOption.debug) {
