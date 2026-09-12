@@ -69,6 +69,15 @@ namespace Editor::Rendering
 			const uint8_t p_pixel[4],
 			bool& p_isSelected
 		);
+		/** Conservative screen-space rejection for the picking pass.
+		 *
+		 * The pass is draw-call bound on big scenes (one draw per mesh), and only
+		 * the pixels inside the pick region are read back, so drawables whose
+		 * bounding sphere cannot touch that region are skipped entirely. The test
+		 * uses the drawable's own bounds, so it stays correct even when the scene
+		 * BVH is stale.
+		 */
+		bool MayTouchPickRegion(const ::Rendering::Entities::Drawable& p_drawable) const;
 		void SetupPickReadbacks();
 		void IssuePickReadback();
 
@@ -109,5 +118,14 @@ namespace Editor::Rendering
 		bool m_pickRequestPending = false;
 		uint32_t m_pickRequestX = 0;
 		uint32_t m_pickRequestY = 0;
+
+		/** Pick region / matrices captured by Draw() for MayTouchPickRegion(). */
+		float m_pickRegionNdcMinX = -1.0f;
+		float m_pickRegionNdcMinY = -1.0f;
+		float m_pickRegionNdcMaxX = 1.0f;
+		float m_pickRegionNdcMaxY = 1.0f;
+		float m_pickProjectionScaleX = 1.0f;
+		float m_pickProjectionScaleY = 1.0f;
+		Maths::FMatrix4 m_pickViewProjection = Maths::FMatrix4::Identity;
 	};
 }

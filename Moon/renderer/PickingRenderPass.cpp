@@ -2,6 +2,7 @@
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 #include <Core/Rendering/EngineDrawableDescriptor.h>
 #include <Core/Rendering/FramebufferUtil.h>
 #include "Core/Global/ServiceLocator.h"
@@ -302,6 +303,25 @@ void Editor::Rendering::PickingRenderPass::Draw(::Rendering::Data::PipelineState
 		regionTop - regionBottom + 1
 	);
 
+	// Capture the data MayTouchPickRegion() needs: the region in NDC (with a
+	// small margin) and the projection scale for the screen radius estimate.
+	const auto& camera = frameDescriptor.camera.value();
+	const auto& projection = camera.GetProjectionMatrix();
+	m_pickViewProjection = camera.GetViewProjectionMatrix();
+	m_pickProjectionScaleX = projection.data[0];
+	m_pickProjectionScaleY = projection.data[5];
+	constexpr float kPickRegionMarginPixels = 2.0f;
+	const float pixelToNdcX = 2.0f / static_cast<float>(frameWidth);
+	const float pixelToNdcY = 2.0f / static_cast<float>(frameHeight);
+	m_pickRegionNdcMinX =
+		pixelToNdcX * (static_cast<float>(regionLeft) - kPickRegionMarginPixels) - 1.0f;
+	m_pickRegionNdcMaxX =
+		pixelToNdcX * (static_cast<float>(regionRight + 1) + kPickRegionMarginPixels) - 1.0f;
+	m_pickRegionNdcMinY =
+		pixelToNdcY * (static_cast<float>(regionBottom) - kPickRegionMarginPixels) - 1.0f;
+	m_pickRegionNdcMaxY =
+		pixelToNdcY * (static_cast<float>(regionTop + 1) + kPickRegionMarginPixels) - 1.0f;
+
 	auto pso = m_renderer.CreatePipelineState();
 	pso.scissorTest = true;
 
@@ -362,6 +382,13 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 	auto drawPickableModels = [&](auto drawables) {
 		for (auto& drawable : drawables)
 		{			
+			// Only the pick region is read back, and this pass submits one draw
+			// per mesh, so drawables that cannot touch the region are skipped.
+			if (!MayTouchPickRegion(drawable))
+			{
+				continue;
+			}
+
 			const auto& actor = drawable.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDrawableDescriptor>().actor;
 			if (actor.HasComponent("CBatchMeshTriangle")) {
 			
@@ -429,6 +456,52 @@ void Editor::Rendering::PickingRenderPass::DrawPickableModels(
 	drawPickableModels(filteredDrawables.lines | std::views::values);
 	drawPickableModels(filteredDrawables.transparents | std::views::values);
 	drawPickableModels(filteredDrawables.ui | std::views::values);
+}
+
+bool Editor::Rendering::PickingRenderPass::MayTouchPickRegion(
+	const ::Rendering::Entities::Drawable& p_drawable
+) const
+{
+	const auto& desc =
+		p_drawable.GetDescriptor<::Core::Rendering::SceneRenderer::SceneDrawableDescriptor>();
+	if (!desc.bounds.has_value())
+	{
+		// Without bounds the drawable cannot be rejected safely.
+		return true;
+	}
+
+	const auto& sphere = desc.bounds.value();
+	const Maths::FMatrix4& model = desc.actor.transform.GetWorldMatrix();
+	const Maths::FVector4 worldCenter = model * Maths::FVector4(
+		sphere.position.x,
+		sphere.position.y,
+		sphere.position.z,
+		1.0f
+	);
+	const Maths::FVector4 clip = m_pickViewProjection * worldCenter;
+	if (clip.w <= 1e-5f)
+	{
+		// Behind / straddling the near plane: keep it (conservative).
+		return true;
+	}
+
+	const float invW = 1.0f / clip.w;
+	const float ndcX = clip.x * invW;
+	const float ndcY = clip.y * invW;
+
+	// Conservative screen-space radius: a sphere of radius r at clip w covers
+	// roughly r * projectionScale / w in NDC. Treating the circle as a box (and
+	// keeping a margin) makes the rejection safe for the picking pass.
+	constexpr float kRadiusBias = 1.25f;
+	const float radiusX = std::abs(m_pickProjectionScaleX) * sphere.radius * invW * kRadiusBias;
+	const float radiusY = std::abs(m_pickProjectionScaleY) * sphere.radius * invW * kRadiusBias;
+
+	return !(
+		ndcX + radiusX < m_pickRegionNdcMinX
+		|| ndcX - radiusX > m_pickRegionNdcMaxX
+		|| ndcY + radiusY < m_pickRegionNdcMinY
+		|| ndcY - radiusY > m_pickRegionNdcMaxY
+		);
 }
 
 void Editor::Rendering::PickingRenderPass::DrawPickableCameras(
