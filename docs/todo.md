@@ -28,7 +28,7 @@
 
 **剔除**
 
-- [ ] HZB 遮挡剔除（深度金字塔、上一帧深度、BVH 分层节点测试）——
+- [x] HZB 遮挡剔除（深度金字塔、上一帧深度、BVH 分层节点测试）——
   第一版已落地，原理与实现见 [HzbOcclusionCulling.md](HzbOcclusionCulling.md)；
   待办：视空间 bias、一帧延迟处理、统计可视化
 - [x] 深度异步回读（PBO 环形缓冲，避免剔除引入同步 stall）——
@@ -40,6 +40,7 @@
 
 - [ ] 64 位排序键（pass / pipeline / material / depth / mesh）
 - [ ] 每对象数据入 SSBO（去掉逐 draw 的 uniform 上传与状态切换）
+- [ ] 大量actor场景下，parsescene和filterdrawable的优化，开启遮挡剔除后，这两部分会占据比较长的时间
 - [ ] 帧 Arena 分配（绘制列表、剔除结果不再逐帧 new/delete）
 
 **HAL 能力**

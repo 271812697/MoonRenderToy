@@ -2,6 +2,7 @@
 #include <Rendering/Context/Driver.h>
 #include <Rendering/HAL/Backend.h>
 #include <Rendering/Utils/Conversions.h>
+#include <tracy/Tracy.hpp>
 
 namespace
 {
@@ -87,6 +88,7 @@ void Rendering::Context::Driver::Draw(
 
 void Rendering::Context::Driver::Draw(Rendering::Data::PipelineState p_pso, const Resources::IMesh& p_mesh, int index, Settings::EPrimitiveMode p_primitiveMode, uint32_t p_instances)
 {
+	ZoneScoped;
 	if (p_instances > 0)
 	{
 		SetPipelineState(p_pso);
@@ -95,6 +97,7 @@ void Rendering::Context::Driver::Draw(Rendering::Data::PipelineState p_pso, cons
 
 		if (p_mesh.GetIndexCount() > 0)
 		{
+			//m_gfxBackend->DrawElementsInstanced(p_primitiveMode, p_mesh.GetIndexCount(index), p_instances);
 			if (p_instances == 1)
 			{
 				m_gfxBackend->DrawElements(p_primitiveMode, p_mesh.GetIndexCount(index));
@@ -106,6 +109,7 @@ void Rendering::Context::Driver::Draw(Rendering::Data::PipelineState p_pso, cons
 		}
 		else
 		{
+			//m_gfxBackend->DrawArraysInstanced(p_primitiveMode, p_mesh.GetVertexCount(), p_instances);
 			if (p_instances == 1)
 			{
 				m_gfxBackend->DrawArrays(p_primitiveMode, p_mesh.GetVertexCount());
@@ -122,6 +126,7 @@ void Rendering::Context::Driver::Draw(Rendering::Data::PipelineState p_pso, cons
 
 void Rendering::Context::Driver::SetPipelineState(Rendering::Data::PipelineState p_state)
 {
+	ZoneScoped;
 	using namespace Rendering::Settings;
 	if (p_state.lineWidth != m_pipelineState.lineWidth) {
 		m_gfxBackend->SetRasterizationLinesWidth(p_state.lineWidth);

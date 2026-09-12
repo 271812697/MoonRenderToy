@@ -546,12 +546,12 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	//AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
 	//	.Include<OpaqueRenderPass>();
 
-	AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>()
-		.Include<TransparentRenderPass>()
-		.Include<UIRenderPass>();
+	//AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>()
+	//	.Include<TransparentRenderPass>()
+	//	.Include<UIRenderPass>();
 
-	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
+	//AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	//AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
 	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque-1);
@@ -570,7 +570,7 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 		hzbPass.SetCuller(&m_hzbCuller);
 	}
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);
-	AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
+	//AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
 }
 
 void Core::Rendering::SceneRenderer::BeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
@@ -752,9 +752,10 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 	auto& hzbPass = GetPass<::Core::Rendering::HzbBuildPass>("HZB");
 	m_hzbCuller.SetDepthBias(hzbPass.GetDepthBias());
 	m_hzbCuller.SetStaticDepthBias(hzbPass.GetStaticDepthBias());
+	bool isEnableHzb = hzbPass.IsEnabled();
 
 	auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
-	if (!hzbPass.IsEnabled())
+	if (!isEnableHzb)
 	{
 		m_hzbCuller.ClearGrid();
 	}
@@ -818,10 +819,12 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		// previous frame's depth (hierarchical Z-buffer test on the BVH). The
 		// granularity is the mesh instance, which matches the drawable
 		// granularity produced by ParseScene (one drawable per mesh sub-range).
-		if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
-		{
-			++m_hzbSkippedDrawables;
-			continue;
+		if (isEnableHzb) {
+			if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
+			{
+				++m_hzbSkippedDrawables;
+				continue;
+			}
 		}
 
 		// Calculate distance to camera for sorting
