@@ -3987,6 +3987,34 @@ namespace MOON
 		}
 	}
 
+	bool ImRenderer::IsCursorOverViewCube(
+		float p_cursorX,
+		float p_cursorY,
+		int p_viewportWidth,
+		int p_viewportHeight
+	) const
+	{
+		const auto& viewCube = NavigateCube();
+
+		// Mirrors the placement in drawSort(): the cube viewport is anchored to
+		// the top right corner, using GL (bottom-left) viewport coordinates.
+		const int viewportX =
+			p_viewportWidth - viewCube.screenPos.viewportSizeX - kViewCubeMargin;
+		const int viewportY =
+			p_viewportHeight - viewCube.screenPos.viewportSizeY - kViewCubeMargin;
+
+		// The cursor uses top-left based coordinates, hence the flip.
+		const float cubeTop = static_cast<float>(
+			p_viewportHeight - (viewportY + viewCube.screenPos.viewportSizeY)
+		);
+		const float cubeBottom = static_cast<float>(p_viewportHeight - viewportY);
+
+		return p_cursorX >= static_cast<float>(viewportX)
+			&& p_cursorX < static_cast<float>(viewportX + viewCube.screenPos.viewportSizeX)
+			&& p_cursorY >= cubeTop
+			&& p_cursorY < cubeBottom;
+	}
+
 	void ImRenderer::drawSort()
 	{
 		drawLists.clear();
@@ -4076,8 +4104,8 @@ namespace MOON
 			Eigen::Vector3f boxECenter = (viewCube.maxConner + viewCube.minConner) / 2.0;
 			Maths::FVector3 boxCenter = { boxECenter.x(),boxECenter.y(),boxECenter.z()};
 
-			viewCube.screenPos.startX = cameraParam.viewportWidth - viewCube.screenPos.viewportSizeX-5;
-			viewCube.screenPos.startY = cameraParam.viewportHeight- viewCube.screenPos.viewportSizeY-5;
+			viewCube.screenPos.startX = cameraParam.viewportWidth - viewCube.screenPos.viewportSizeX - kViewCubeMargin;
+			viewCube.screenPos.startY = cameraParam.viewportHeight- viewCube.screenPos.viewportSizeY - kViewCubeMargin;
 		    int viewPortX = viewCube.screenPos.startX;
 			int viewPortY =  viewCube.screenPos.startY;
 			float u = 2*(cameraParam.cursor.x() - viewPortX) / (float)viewCube.screenPos.viewportSizeX -1;
@@ -4095,11 +4123,21 @@ namespace MOON
 		
 			auto proj=Maths::FMatrix4::CreateOrthographic(boxExtent/2.0, 1, 0.1, boxExtent);
 			int faceIndex=viewCube.hit(ToEigenMatrix4f(proj * view),u,v);
-			if (faceIndex != -1) {
+			if (faceIndex != mViewCubeHoveredCell) {
+				// -1 resets every cell, so leaving the cube clears the highlight.
 				viewCube.setCellColor(faceIndex,{255,255,0,255});
-				if (wasKeyReleased(MouseMiddle)) {
-					auto nor=-viewCube.getCellNormal(faceIndex);
-					renderView->FitToSelectedActor({nor.x(),nor.y(),nor.z()});
+				mViewCubeHoveredCell = faceIndex;
+			}
+			if (faceIndex != -1 && wasKeyPressed(MouseLeft) && renderView != nullptr) {
+				auto nor=-viewCube.getCellNormal(faceIndex);
+				const Maths::FVector3 fitDirection{ nor.x(),nor.y(),nor.z() };
+				// Fit the selection when there is one; otherwise fit the scene so
+				// the cube stays useful with nothing selected.
+				if (renderView->IsSelectActor()) {
+					renderView->FitToSelectedActor(fitDirection);
+				}
+				else {
+					renderView->FitToScene(fitDirection);
 				}
 			}
 			mCellMaterial->SetFeatures({ "WITH_EDGE","CUSTOM_PROJECT","CUSTOM_VIEWPORT"});

@@ -9,6 +9,7 @@
 #include "renderer/GizmoRenderPass.h"
 #include "Interactive/Widgets/ClipPlane.h"
 #include "core/component/CTopoShape.h"
+#include "Interactive/Im3DRenderer.h"
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -190,17 +191,75 @@ Maths::FVector2 Editor::Panels::SceneView::worldToScreen(const Maths::FVector3& 
 
 void Editor::Panels::SceneView::FitToScene(const Maths::FVector3& dir)
 {
-	//m_camera.ProjectionFitToSphere->the code make no sence
-	auto& models = GetScene()->GetFastAccessComponents().modelRenderers;
-	if (models.size()>0) {
-		::Rendering::Geometry::BoundingSphere sphere=models[0]->GetModel()->GetBoundingSphere();
-		for (size_t i = 1; i < models.size(); i++)
+	using namespace ::Core::ECS::Components;
+
+	// Merge every active model's bounds, transformed to world space, so the fit
+	// covers the whole scene instead of the models' local spheres.
+	::Rendering::Geometry::BoundingSphere sphere;
+	bool hasBounds = false;
+
+	for (auto* modelRenderer : GetScene()->GetFastAccessComponents().modelRenderers)
+	{
+		if (modelRenderer == nullptr) continue;
+
+		auto& owner = modelRenderer->owner;
+		if (!owner.IsActive()) continue;
+
+		auto model = modelRenderer->GetModel();
+		if (model == nullptr) continue;
+
+		auto modelSphere = model->GetBoundingSphere();
+		if (modelSphere.radius <= 0.0f) continue;
+
+		const auto transform = owner.GetComponent<CTransform>();
+		if (transform == nullptr) continue;
+
+		modelSphere.position = Maths::FMatrix4::MulPoint(
+			transform->GetWorldMatrix(),
+			modelSphere.position
+		);
+		Maths::FVector3 worldScale = transform->GetWorldScale();
+		modelSphere.radius *= worldScale.Max();
+
+		if (!hasBounds)
 		{
-			sphere.merge(models[i]->GetModel()->GetBoundingSphere());
-		}	
-		//m_camera.ProjectionFitToSphere(sphere, dir);
+			sphere = modelSphere;
+			hasBounds = true;
+		}
+		else
+		{
+			sphere.merge(modelSphere);
+		}
 	}
 
+	if (!hasBounds)
+	{
+		return;
+	}
+
+	// Same pose math as FitToSelectedActor(): adjust the projection first, then
+	// place the camera on the fit direction at a distance that contains the
+	// bounding sphere.
+	m_camera.ProjectionFitToSphere(sphere, dir);
+
+	const float pi = 3.14159265359f;
+	const Maths::FVector3 forward = dir;
+	const float angle = Maths::FVector3::AngleBetween(forward, { 0,1,0 });
+	const Maths::FVector3 up =
+		(angle < FLT_EPSILON || std::abs(angle - pi) < FLT_EPSILON) ?
+		Maths::FVector3(1, 0, 0) : Maths::FVector3(0, 1, 0);
+	const Maths::FQuaternion quat = Maths::FQuaternion::LookAt(forward, up);
+	const float eff = pi / 180.0f;
+
+	if (m_camera.GetProjectionMode() == ::Rendering::Settings::EProjectionMode::ORTHOGRAPHIC)
+	{
+		GetCameraController().MoveToPose(sphere.position - dir * sphere.radius, quat);
+	}
+	else
+	{
+		const float distance = sphere.radius / std::sin(eff * m_camera.GetFov() / 2.0f);
+		GetCameraController().MoveToPose(sphere.position - dir * distance, quat);
+	}
 }
 
 void Editor::Panels::SceneView::BuildBvh()
@@ -387,6 +446,20 @@ void Editor::Panels::SceneView::HandleActorPicking()
 	}
 
 	const auto mousePos = input.GetMousePosition();
+
+	// The navigation cube owns the cursor while it is hovered: skip scene
+	// picking so clicking a cube face does not also select the actor behind it,
+	// and hovering the cube does not highlight the scene.
+	if (MOON::ImRenderer::instance().IsCursorOverViewCube(
+		static_cast<float>(mousePos.first),
+		static_cast<float>(mousePos.second),
+		static_cast<int>(viewWidth),
+		static_cast<int>(viewHeight)))
+	{
+		m_highlightedActor = {};
+		m_highlightedGizmoDirection = {};
+		return;
+	}
 
 	// Clamp to the picking target: a drag can move the cursor outside the
 	// viewport, and reading outside the framebuffer is undefined.
