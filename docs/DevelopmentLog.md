@@ -25,6 +25,7 @@
 | **路径追踪** | 场景 mesh → 顶点/索引 TBO + BVH TBO，`PathTraceRenderPass` 做光追；新增低分辨率变体 `PathTraceLowRes.ovfx`；正交/透视切换时重建累积与变体；每个 solid 一种配色（修正 domainId → solidId 的映射） | `renderer/PathTraceRenderPass.*`、`PathTrace/*.ovfx` |
 | **拓扑与网格可视化** | `TopoShape` 离散化时按拓扑结构建 Actor（Solid/Shell/Face/Edge），并加 `AllFaces` / `AllEdges` 锚点；支持从祖先节点整体显隐、边隐藏、相机 fit 与拾取 | `core/component/CTopoShape.*`、`TopoShapeActor.*`、`TreeViewPanel` |
 | **反射平面 / 其它** | `GridRenderPass` 固定尺寸反射平面；编辑器叠加层（FPS、帧吞吐、Gbuffer 调试视图） | `renderer/GridRenderPass.*`、`viewerwidget.cpp` |
+| **GPU id 拾取** | `PickingRenderPass` 把 actor id 编码进颜色缓冲：`(r,g,b) = actorID`、`a = 255`；gizmo 方向用 `(255,255,252..254)`，gizmo 多边形选择用 `a = 254`；线和面共面时用多边形偏移 + `GeomertySurfacePick.ovfx` 保证**线的 id 优先于面**；悬停 / 选中 / gizmo 拖拽都基于这张 id 缓冲（性能优化见 §1.2.4） | `renderer/PickingRenderPass.*`、`renderer/SceneView.cpp` |
 
 ---
 
@@ -117,7 +118,7 @@ FPS / Frame ms
 | CPU 侧剔除耗时（优化前） | ~4 ms |
 | 剔除误剔 | 修正实例粒度后不再出现"遮挡物一起消失" |
 
-**已知限制与后续**（见 §1.2.5 与 [HzbOcclusionCulling.md](./HzbOcclusionCulling.md) §9）
+**已知限制与后续**（见 §1.2.6 与 [HzbOcclusionCulling.md](./HzbOcclusionCulling.md) §9）
 
 - 网格上限 64 → tile 约 30px，密集小零件容易被边界 tile 吃掉；CAD 可提到 128~256；
 - culler 用 AABB，旋转零件的包围盒偏大，会漏剔（可换视空间 OBB / 凸包）；
@@ -150,19 +151,76 @@ FPS / Frame ms
 - 场景不变（相机绕行）时 `ParseScene` 在 Tracy 中基本消失，只剩一次廉价的签名遍历；
 - 需要在以下操作后确认画面正常刷新：拖动零件、树面板切显隐、修改材质、加载/删除模型、特征重建（圆角/倒角等换 mesh 的操作）。若某类操作不刷新，说明签名缺少对应字段，补进签名即可。
 
-#### 1.2.4 深度精度：Reversed-Z + 动态近远平面
+#### 1.2.4 拾取（Picking）链路优化
+
+**背景**：Tracy 显示 `PickingRenderPass` 单帧 30+ ms，`ReadbackPickingResult` 还有一次 ~10 ms 的同步等待。逐项查下来是三个不同的问题叠在一起，分三轮解决。
+
+| 问题 | 原因 | 修复 |
+|---|---|---|
+| 每帧一次同步 `glReadPixels` | `glReadPixels` 的语义是「CPU 立刻要数据」，必须等本帧之前的 GPU 命令全部执行完 → 约 10 ms 的管线等待（不是 4 个字节的拷贝时间） | ① 按需回读：鼠标移动 / 点击 / 相机移动才读，闲置帧直接返回；② hover 改走 **3 槽 PBO 环形 + fence** 异步回读；③ 坐标 clamp 到 framebuffer 范围；④ gizmo 拖拽期间不拾取 |
+| pick pass 每帧重绘整个场景 | 全分辨率 RGBA8 + 深度的「第二遍场景」 | ① 只在有拾取请求时绘制（无请求直接 return）；② 相机导航（中键平移 / 右键旋转）期间不发请求；③ 点击的同步读移到本帧绘制之后（`ResolvePendingClick()`），保证像素精确且每次点击只付一次 stall |
+| 30+ ms 的 draw call 提交 | scissor 只能裁片元，2 万个 mesh 仍是 2 万次 draw call + 顶点处理 | ① scissor 把整个 pass（含清屏）限制在光标附近 ±24 px；② **屏幕空间候选剔除**：用 drawable 自己的包围球和 pick 区域做保守相交测试，只提交可能命中该区域的 draw call |
+
+**异步回读（PBO 三帧环形）**
+
+- `RequestPick(x, y)` 只登记最新一次请求；pass 末尾（picking target 画完）用 `ReadPixelsToBuffer` + `InsertFence()` 投递异步回读，不阻塞；
+- `TryConsumePick()` 非阻塞扫描环形，取 fence 已 signaling 的最老槽位 → `MapRead` → 解码 → `ClearFence` 归还；未就绪就下一帧再试，环形满则丢弃本次请求（hover 多滞后一帧）；
+- 像素解码抽成 `DecodePickResult()`，同步/异步共用同一套语义（actor id、gizmo 方向、polygon/block 选择、`isSelected` 标志）。
+
+**点击仍然像素精确**（`SceneView.cpp`）
+
+```text
+DrawFrame():
+  HandleActorPicking()      // 发请求（点击必发 / hover 节流 ~30Hz / 相机导航不发）+ 消费异步 hover
+  AViewControllable::DrawFrame()   // picking pass 只在有请求时绘制
+  ResolvePendingClick()     // 对本帧刚画好的 target 做一次同步读 → 选中 / gizmo 起步
+```
+
+**HAL 补 scissor 能力**
+
+`Driver::SetPipelineState` 只按「请求状态 ≠ 缓存状态」下发，绕过 HAL 直接 `glScissor/glEnable` 会让缓存失真（后续 pass 可能一直被裁剪），所以补齐了这一层：
+
+| 层 | 新增 |
+|---|---|
+| `TBackend` / `GLBackend` | `SetScissor(x, y, w, h)` → `glScissor` |
+| `Driver` | `SetScissor(...)`；`Clear(..., bool p_scissor = false)`（原来是硬编码 `scissorTest = false`） |
+| `ABaseRenderer` | `SetScissor(...)`；`Clear(...)` 透传 scissor 开关 |
+
+pick pass 里：`SetScissor(光标 ±24px)` → `pso.scissorTest = true` → scissored clear → 绘制 → 还原全屏框。ImGui 的 gizmo 拾取绘制自己会保存/恢复 scissor 框与 viewport，不会互相污染。
+
+**候选剔除的保守性**（`MayTouchPickRegion()`）
+
+- 包围球 ⊇ mesh；pick 区域在 NDC 上外扩 2 像素；
+- 屏幕半径按 `r_ndc ≈ |proj(0,0)| · r / w` 估算（x/y 各一次）再乘 1.25 安全系数，圆当方框做相交测试；
+- `clip.w <= 0`（近平面附近 / 身后）或没有 bounds 的 drawable **一律保留**；
+- 用 **drawable 自己的 bounds**，不依赖场景 BVH，所以 BVH 过期也不会漏选；
+- GPU id 判定完全不变：候选仍用原来的 picking 材质、多边形偏移与 `GeomertySurfacePick.ovfx` 画进同一张 id 缓冲，**线与面的优先级、子网格、gizmo 判定都和以前一致**。
+
+**效果**
+
+| 场景 | 优化前 | 优化后 |
+|---|---|---|
+| 闲置（鼠标 / 相机不动） | 每帧 pick pass + 每帧 ~10 ms 等待 | 不绘制、不等待 |
+| 悬停（鼠标移动） | 每帧 pick pass（30+ ms）+ 10 ms 等待 | ≤30 次/秒，且只画光标附近的候选 |
+| 相机旋转 / 平移（右键 / 中键） | 每帧 pick pass | 不绘制 |
+| 左键点击 | 每帧 pick pass + 同步等待 | 一次 pick pass（仅候选）+ 一次同步读 |
+
+**可调参数**（均在 `PickingRenderPass.cpp`）：`kPickRegionRadius = 24`（pick 区域半径，理论只需覆盖 1 个像素）、`kPickRegionMarginPixels = 2`（NDC 区域外扩）、`kRadiusBias = 1.25`（屏幕半径安全系数）。若在细小零件或轮廓边缘偶发 hover/点击不灵，调大后两者即可。
+
+#### 1.2.5 深度精度：Reversed-Z + 动态近远平面
 
 - 大模型场景下线/面深度冲突与"模型破碎"问题：near/far 比例过大导致深度精度不足；
 - 方案：动态近远平面（near ∝ 相机距离）+ Reversed-Z（`glDepthRange(1,0)` + `depthFunc GREATER`），远平面 δZ 从"与 near/far 比例强相关"变为 `≈ far × 6e-8`；
 - 数据对比与原理见 [DepthPrecision.md](./DepthPrecision.md)。
 
-#### 1.2.5 后续优化路线（按优先级）
+#### 1.2.6 后续优化路线（按优先级）
 
 1. **遮挡剔除继续加强**：遮挡体筛选（只让近且大的物体写深度）、网格分辨率 128~256、隔帧剔除、`unordered_set` → 按实例索引的 flat bitset；
 2. **多线程**：BVH 遍历按顶层子树并行（每个任务独立栈与结果，`Wait` 后按序归并；小场景走串行回退）；`ParseScene` / `FilterDrawables` 的数据并行（只读共享 + 每任务私有输出 + 按序合并，注意 multimap 等价键的插入顺序）；
 3. **绘制提交**：flat vector + `stable_sort` 取代 `multimap`（消除每帧 2 万次节点分配）、64 位排序键、逐对象数据入 SSBO；
 4. **GPU 驱动**：补 compute stage + indirect draw 后，可在 GPU 侧遍历 BVH 生成 indirect 参数（见 [todo.md](./todo.md)「HAL 能力」）；
 5. **其它剔除**：屏幕尺寸剔除、LOD / 重要度预算（见 [mass-entity-render-perf.md](./mass-entity-render-perf.md)）。
+6. **拾取**：候选列表按光标区域缓存（区域没变就复用，省掉 2 万次包围球测试）；点击改异步（去掉最后一次 stall，选中滞后 1~2 帧）。
 
 ---
 
@@ -249,6 +307,6 @@ FPS / Frame ms
 
 ## 5. 待办
 
-- 渲染 / 剔除：见 §1.2.5 与 [todo.md](./todo.md)；
+- 渲染 / 剔除：见 §1.2.6 与 [todo.md](./todo.md)；
 - HZB 细节与限制：见 [HzbOcclusionCulling.md](./HzbOcclusionCulling.md) §9；
 - 建模：草图剩余工具（部分 Handler 的约束补全）、装配层级剔除与 LOD 预算、材质系统重构（见 [todo.md](./todo.md)）。
