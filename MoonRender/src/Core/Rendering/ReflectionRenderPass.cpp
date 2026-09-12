@@ -105,10 +105,14 @@ void Core::Rendering::ReflectionRenderPass::_DrawReflections(
 	const ::Rendering::Entities::Camera& p_camera
 )
 {
-	auto& drawables = m_renderer.GetDescriptor<SceneRenderer::SceneDrawablesDescriptor>();
+	const auto* drawables = m_renderer.GetDescriptor<SceneRenderer::SceneDrawablesHandle>().drawables;
+	if (drawables == nullptr)
+	{
+		return;
+	}
 
 	const auto filteredDrawables = static_cast<SceneRenderer&>(m_renderer).FilterDrawables(
-		drawables,
+		*drawables,
 		SceneRenderer::SceneDrawablesFilteringInput{
 			.camera = p_camera,
 			.frustumerride = std::nullopt, // No frustum erride for reflections

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <map>
+#include <cstdint>
 #include <Rendering/Core/CompositeRenderer.h>
 #include <Core/Rendering/HzbCuller.h>
 #include <Rendering/Data/Frustum.h>
@@ -82,6 +83,20 @@ namespace Core::Rendering
 			std::vector<::Rendering::Entities::Drawable> drawables;
 		};
 
+		/** Per frame handle to the cached parsed drawables.
+		 *
+		 * Parsing builds one Drawable per mesh sub-range and every Drawable owns
+		 * heap backed descriptor storage, so re-parsing 20k+ drawables each frame
+		 * is dominated by allocation traffic. The parsed list is therefore cached
+		 * in the renderer and only rebuilt when the scene content changes (see
+		 * UpdateParsedDrawables); on a hit the per frame descriptor is just this
+		 * pointer, so nothing is copied or allocated.
+		 */
+		struct SceneDrawablesHandle
+		{
+			const SceneDrawablesDescriptor* drawables = nullptr;
+		};
+
 
 		struct SceneDrawableDescriptor
 		{
@@ -131,6 +146,15 @@ namespace Core::Rendering
 			const SceneParsingInput& p_input
 		);
 
+		/** Rebuilds the cached parsed drawables when the scene content changed.
+		 *
+		 * The signature covers everything ParseScene reads: actor set/active
+		 * flags, transforms, models and their meshes (material indices, sub
+		 * ranges, index counts, primitive modes, bounds) and material renderer
+		 * state (materials, visibility flags, user matrix).
+		 */
+		void UpdateParsedDrawables(Core::SceneSystem::Scene& p_scene);
+
 
 		SceneFilteredDrawablesDescriptor FilterDrawables(
 			const SceneDrawablesDescriptor& p_drawables,
@@ -149,5 +173,11 @@ namespace Core::Rendering
 		HzbCuller m_hzbCuller;
 		
 		uint32_t m_hzbSkippedDrawables = 0;
+
+		/** Cached ParseScene output, see UpdateParsedDrawables. */
+		SceneDrawablesDescriptor m_parsedDrawables;
+		uint64_t m_parsedDrawablesHash = 0;
+		bool m_parsedDrawablesValid = false;
+		size_t m_lastParsedDrawableCount = 0;
 	};
 }

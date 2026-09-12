@@ -59,6 +59,7 @@
 | [docs/FeatureModeling.md](docs/FeatureModeling.md) | Feature 参数化建模：预览逻辑 / 建模 / 任务 UI / 属性系统 |
 | [docs/SectionRendering.md](docs/SectionRendering.md) | 剖切截面渲染（模板 / 奇偶裁剪） |
 | [docs/HzbOcclusionCulling.md](docs/HzbOcclusionCulling.md) | HZB 遮挡剔除：深度金字塔 / BVH 分层测试 / PBO 异步回读 / 偏置与统计 |
+| [docs/DevelopmentLog.md](docs/DevelopmentLog.md) | 开发工作记录：渲染（渲染效果 / 性能优化）与建模两大主题的工作归档 |
 | [docs/ImguiArchitecture.md](docs/ImguiArchitecture.md) | ImGui 集成架构 |
 | [docs/API.md](docs/API.md) | API 索引 |
 

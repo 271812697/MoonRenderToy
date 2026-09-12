@@ -121,12 +121,12 @@ const Rendering::Geometry::bbox& Rendering::Resources::Mesh::GetBoundingBox()
 	return m_boundingBox;
 }
 
-std::vector<uint32_t> Rendering::Resources::Mesh::GetMaterialIndex() const
+const std::vector<uint32_t>& Rendering::Resources::Mesh::GetMaterialIndex() const
 {
 	return m_materialIndex;
 }
 
-std::vector<uint32_t> Rendering::Resources::Mesh::GetSubRangeBufferIndex() const
+const std::vector<uint32_t>& Rendering::Resources::Mesh::GetSubRangeBufferIndex() const
 {
 	return m_subRangeIndex;
 }
