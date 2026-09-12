@@ -156,22 +156,9 @@ namespace MOON {
 			}
 			auto&parent=scene->CreateActor();
 			GetViewerWidget.addActorToTreeView(&parent);
-			for (int i = 0;i < domains.size();i++) {
-				auto& actor = scene->CreateActor("Domain_" + std::to_string(i));
-				actor.SetParent(parent);
-				auto faceModel = new ::Rendering::Resources::Model(std::string("_faceModel") + std::to_string(i));
-
-				auto& modelRender = actor.AddComponent<Core::ECS::Components::CModelRenderer>();
-				modelRender.SetModel(faceModel);
-				auto mesh = new ::Rendering::Resources::Mesh(domains[i].vertex,
-					domains[i].indices,
-					0,
-					::Rendering::Settings::EPrimitiveMode::TRIANGLES);
-			
-				modelRender.GetModel()->AddMesh(mesh);
-				modelRender.GetModel()->computeBoxAndShpere();
+			if (domains.size() > 0) {
 				auto tempMat = new Core::Resources::Material();
-				
+
 
 				tempMat->SetBackfaceCulling(false);;
 				tempMat->SetCastShadows(false);
@@ -186,12 +173,31 @@ namespace MOON {
 				// Emission
 				tempMat->SetProperty("u_EmissiveIntensity", 1.0f);
 				tempMat->SetProperty("u_EmissiveColor", Maths::FVector3{ 0.0f,0.0f,0.0f });
-				auto& matRender=actor.AddComponent<::Core::ECS::Components::CMaterialRenderer>();
-				matRender.SetMaterialAtIndex(0, *tempMat);
-				matRender.UpdateMaterialList();
-				GetViewerWidget.addActorToTreeView(&actor);
 
+
+				for (int i = 0;i < domains.size();i++) {
+					auto& actor = scene->CreateActor("Domain_" + std::to_string(i));
+					actor.SetParent(parent);
+					auto faceModel = new ::Rendering::Resources::Model(std::string("_faceModel") + std::to_string(i));
+
+					auto& modelRender = actor.AddComponent<Core::ECS::Components::CModelRenderer>();
+					modelRender.SetModel(faceModel);
+					auto mesh = new ::Rendering::Resources::Mesh(domains[i].vertex,
+						domains[i].indices,
+						0,
+						::Rendering::Settings::EPrimitiveMode::TRIANGLES);
+
+					modelRender.GetModel()->AddMesh(mesh);
+					modelRender.GetModel()->computeBoxAndShpere();
+
+					auto& matRender = actor.AddComponent<::Core::ECS::Components::CMaterialRenderer>();
+					matRender.SetMaterialAtIndex(0, *tempMat);
+					matRender.UpdateMaterialList();
+					GetViewerWidget.addActorToTreeView(&actor);
+
+				}
 			}
+
         }
     }
 }

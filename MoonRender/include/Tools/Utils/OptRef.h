@@ -21,7 +21,6 @@ namespace Tools::Utils
             m_storage = other.m_storage;
             return *this;
         }
-
         OptRef& operator=(T* ptr)
         {
             m_storage = ptr ? std::optional(std::ref(*ptr)) : std::nullopt;

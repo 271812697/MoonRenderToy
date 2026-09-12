@@ -10,6 +10,8 @@
 #include "Interactive/Widgets/ClipPlane.h"
 #include "core/component/CTopoShape.h"
 #include <iostream>
+#include <algorithm>
+#include <cmath>
 #include <QMouseEvent>
 #include <tracy/Tracy.hpp>
 
@@ -351,7 +353,9 @@ void Editor::Panels::SceneView::DrawFrame()
 {
 	HandleActorPicking();
 	Editor::Panels::AViewControllable::DrawFrame();
-
+	// The picking target for this frame has just been rendered (only when a pick
+	// was requested), so the click can be resolved against it exactly.
+	ResolvePendingClick();
 }
 
 bool IsResizing()
@@ -362,74 +366,162 @@ bool IsResizing()
 void Editor::Panels::SceneView::HandleActorPicking()
 {
 	ZoneScoped;
-	if (m_gizmoOperations.IsPicking()&&input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
+
+	if (m_gizmoOperations.IsPicking() && input.IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT))
 	{
 		m_gizmoOperations.StopPicking();
 		//GetScene()->BuildSceneBvh();
-	}	
-
-	auto mousePos = input.GetMousePosition();
-	int mouseY = GetSafeSize().second - mousePos.second - 1;
-	int mouseX = mousePos.first;
-	auto& scene = *GetScene();
-	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
-	//may be we can read by event
-	bool isSeletedSomething = false;
-	pickingResult = actorPickingPass.ReadbackPickingResult(
-			scene,
-			static_cast<uint32_t>(mouseX),
-			static_cast<uint32_t>(mouseY)
-		,isSeletedSomething);
-
-	if (!m_gizmoOperations.IsPicking())
-	{
-		m_highlightedActor = {};
-		m_highlightedGizmoDirection = {};
-
-		if ( pickingResult.has_value())
-		{
-			if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&pickingResult.value()))
-			{
-				m_highlightedActor = *pval;
-			}
-			else if (const auto pval = std::get_if<Editor::Core::GizmoBehaviour::EDirection>(&pickingResult.value()))
-			{
-				m_highlightedGizmoDirection = *pval;
-			}
-		}
-
-		if (input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT) )
-		{
-			if (m_highlightedGizmoDirection)
-			{
-				m_gizmoOperations.StartPicking(
-					*GetSelectedActor(),
-					m_camera.GetPosition(),
-					m_currentOperation,
-					m_highlightedGizmoDirection.value());
-			}
-			else if (m_highlightedActor)
-			{
-				SelectActor(m_highlightedActor.value());
-			}
-			else if(!isSeletedSomething)
-			{
-				UnselectActor();
-			}
-		}
-	}
-	else
-	{
-		m_highlightedActor = std::nullopt;
-		m_highlightedGizmoDirection = std::nullopt;
 	}
 
+	// While a gizmo drag is active there is nothing to pick, and the picking
+	// readback is a synchronous glReadPixels, so skip it entirely.
 	if (m_gizmoOperations.IsPicking())
 	{
-		auto [winWidth, winHeight] = GetSafeSize();
-		auto mousePosition = input.GetMousePosition();
-		m_gizmoOperations.SetCurrentMouse({ static_cast<float>(mousePosition.first), static_cast<float>(mousePosition.second) });
-		m_gizmoOperations.ApplyOperation(m_camera.GetViewMatrix(), m_camera.GetProjectionMatrix(), m_camera.GetPosition(), { static_cast<float>(winWidth), static_cast<float>(winHeight) });
+		return;
+	}
+
+	const auto [viewWidth, viewHeight] = GetSafeSize();
+	if (viewWidth == 0 || viewHeight == 0)
+	{
+		return;
+	}
+
+	const auto mousePos = input.GetMousePosition();
+
+	// Clamp to the picking target: a drag can move the cursor outside the
+	// viewport, and reading outside the framebuffer is undefined.
+	const int mouseX = std::clamp(
+		static_cast<int>(mousePos.first),
+		0,
+		static_cast<int>(viewWidth) - 1
+	);
+	const int mouseY = std::clamp(
+		static_cast<int>(viewHeight - mousePos.second - 1.0),
+		0,
+		static_cast<int>(viewHeight) - 1
+	);
+
+	auto& scene = *GetScene();
+	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+
+	// The picking pass is a full second scene render, so it is only drawn when
+	// something actually asks for a pick. Requests are throttled: hovering and
+	// camera motion refresh the target at most every kPickThrottleMs ms, while a
+	// click always requests one exact frame.
+	constexpr qint64 kPickThrottleMs = 33; // ~30 Hz for hover
+	if (!m_pickRequestTimer.isValid())
+	{
+		m_pickRequestTimer.start();
+	}
+
+	const bool mouseMoved = mousePos != m_lastPickingMouse;
+	const bool leftPressed = input.IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT);
+	const bool leftDown = input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_LEFT);
+	// Right / middle are camera navigation (orbit / pan): the hover highlight is
+	// not useful while navigating, so the picking target is left untouched.
+	const bool cameraNavigation =
+		input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_MIDDLE)
+		|| input.IsMouseButtonDown(MouseButton::MOUSE_BUTTON_RIGHT);
+
+	const Maths::FMatrix4 viewProjection = m_camera.GetViewProjectionMatrix();
+	bool cameraMoved = false;
+	if (m_hasLastPickViewProjection)
+	{
+		for (int i = 0; i < 16 && !cameraMoved; ++i)
+		{
+			cameraMoved = std::abs(viewProjection.data[i] - m_lastPickViewProjection.data[i]) > 1e-6f;
+		}
+	}
+
+	if (leftPressed)
+	{
+		// Selection has to be pixel exact: force this frame's target and resolve
+		// it after the frame has been drawn (see ResolvePendingClick).
+		actorPickingPass.RequestPick(static_cast<uint32_t>(mouseX), static_cast<uint32_t>(mouseY));
+		m_clickPickPending = true;
+		m_clickPickX = mouseX;
+		m_clickPickY = mouseY;
+		m_lastPickingMouse = mousePos;
+		m_pickRequestTimer.restart();
+	}
+	else if ((mouseMoved || cameraMoved) && !cameraNavigation)
+	{
+		if (!leftDown && m_pickRequestTimer.elapsed() >= kPickThrottleMs)
+		{
+			actorPickingPass.RequestPick(static_cast<uint32_t>(mouseX), static_cast<uint32_t>(mouseY));
+			m_lastPickingMouse = mousePos;
+			m_pickRequestTimer.restart();
+		}
+	}
+
+	m_lastPickViewProjection = viewProjection;
+	m_hasLastPickViewProjection = true;
+
+	// Hovering consumes the asynchronous result: the CPU never waits for the GPU.
+	Rendering::PickingRenderPass::PickingResult finishedPick;
+	uint32_t pickX = 0;
+	uint32_t pickY = 0;
+	if (actorPickingPass.TryConsumePick(scene, finishedPick, pickX, pickY))
+	{
+		pickingResult = finishedPick;
+		ApplyPickResult(pickingResult);
+	}
+}
+
+void Editor::Panels::SceneView::ApplyPickResult(
+	const Rendering::PickingRenderPass::PickingResult& p_result
+)
+{
+	m_highlightedActor = {};
+	m_highlightedGizmoDirection = {};
+
+	if (p_result.has_value())
+	{
+		if (const auto pval = std::get_if<Tools::Utils::OptRef<::Core::ECS::Actor>>(&p_result.value()))
+		{
+			m_highlightedActor = *pval;
+		}
+		else if (const auto pval = std::get_if<Editor::Core::GizmoBehaviour::EDirection>(&p_result.value()))
+		{
+			m_highlightedGizmoDirection = *pval;
+		}
+	}
+}
+
+void Editor::Panels::SceneView::ResolvePendingClick()
+{
+	if (!m_clickPickPending)
+	{
+		return;
+	}
+	m_clickPickPending = false;
+
+	auto& scene = *GetScene();
+	auto& actorPickingPass = m_renderer->GetPass<Rendering::PickingRenderPass>("Picking");
+
+	bool isSeletedSomething = false;
+	pickingResult = actorPickingPass.ReadbackPickingResult(
+		scene,
+		static_cast<uint32_t>(m_clickPickX),
+		static_cast<uint32_t>(m_clickPickY),
+		isSeletedSomething);
+	ApplyPickResult(pickingResult);
+
+	if (m_highlightedGizmoDirection)
+	{
+		m_gizmoOperations.StartPicking(
+			*GetSelectedActor(),
+			m_camera.GetPosition(),
+			m_currentOperation,
+			m_highlightedGizmoDirection.value());
+	}
+	else if (m_highlightedActor)
+	{
+		SelectActor(m_highlightedActor.value());
+	}
+	else if (!isSeletedSomething)
+	{
+		UnselectActor();
 	}
 }
 

@@ -139,7 +139,7 @@ void Rendering::Core::ABaseRenderer::BeginFrame(const Data::FrameDescriptor& p_f
 {
 	ZoneScoped;
 
-	
+	m_previousMaterialSignature.reset();
 	m_frameDescriptor = p_frameDescriptor;
 
 	if (p_frameDescriptor.outputMsaaBuffer)
@@ -196,15 +196,21 @@ void Rendering::Core::ABaseRenderer::SetViewport(uint32_t p_x, uint32_t p_y, uin
 	m_driver.SetViewport(p_x, p_y, p_width, p_height);
 }
 
+void Rendering::Core::ABaseRenderer::SetScissor(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height)
+{
+	m_driver.SetScissor(p_x, p_y, p_width, p_height);
+}
+
 void Rendering::Core::ABaseRenderer::Clear(
 	bool p_colorBuffer,
 	bool p_depthBuffer,
 	bool p_stencilBuffer,
-	const Maths::FVector4& p_color
+	const Maths::FVector4& p_color,
+	bool p_scissor
 )
 {
 	ZoneScoped;
-	m_driver.Clear(p_colorBuffer, p_depthBuffer, p_stencilBuffer, p_color);
+	m_driver.Clear(p_colorBuffer, p_depthBuffer, p_stencilBuffer, p_color, p_scissor);
 }
 
 void Rendering::Core::ABaseRenderer::Blit(
@@ -324,6 +330,10 @@ void Rendering::Core::ABaseRenderer::Present(Rendering::Data::Material& mat)
 		}
 
 		material->Bind(nullptr);
+		// Bind() only selects the program now; callers that do not go through
+		// DrawEntity have to push the uniforms themselves, otherwise the
+		// samplers keep their default value and the blit samples garbage.
+		material->UploadProperties(true, true);
 		m_driver.Draw(pso, mesh.value(), blit.primitiveMode, gpuInstances);
 		material->Unbind();
 	}
@@ -371,15 +381,29 @@ void Rendering::Core::ABaseRenderer::DrawEntity(
 		}
 	}
 
-	p_drawable.material->Bind(
+	const auto signature=p_drawable.material->Bind(
 		&m_emptyTexture2D,
 		&m_emptyTextureCube,
 		p_drawable.pass,
 		p_drawable.featureSetOverride.has_value() ?
 		Tools::Utils::OptRef<const Data::FeatureSet>(p_drawable.featureSetOverride.value()) :
-		std::nullopt
+		std::nullopt,
+		m_previousMaterialSignature
 	);
+	const bool uploadStableProperties = !m_previousMaterialSignature.has_value() || signature.stablePropertySignature != m_previousMaterialSignature->stablePropertySignature;
+	const bool uploadSingleUseProperties = !m_previousMaterialSignature.has_value() || signature.singleUsePropertySignature != m_previousMaterialSignature->singleUsePropertySignature;
 
+	if (uploadStableProperties || uploadSingleUseProperties)
+	{
+		p_drawable.material->UploadProperties(
+			uploadStableProperties,
+			uploadSingleUseProperties,
+			&m_emptyTexture2D,
+			&m_emptyTextureCube
+		);
+	}
+
+	m_previousMaterialSignature = signature;
 	m_driver.Draw(
 		p_pso,
 		p_drawable.mesh.value(),

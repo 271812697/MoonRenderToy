@@ -2,6 +2,9 @@
 #include "GizmoBehaviour.h"
 #include "AViewControllable.h"
 #include "PickingRenderPass.h"
+
+#include <QElapsedTimer>
+
 namespace Editor::Panels
 {
 
@@ -36,6 +39,10 @@ namespace Editor::Panels
 	private:
 		virtual void DrawFrame() override;
 		void HandleActorPicking();
+		/** Applies a pick result to the hover / selection state. */
+		void ApplyPickResult(const Rendering::PickingRenderPass::PickingResult& p_result);
+		/** Synchronous click pick against the picking target drawn this frame. */
+		void ResolvePendingClick();
 	private:
 		int64_t mTargetActorId = -1;
 		::Core::SceneSystem::SceneManager& m_sceneManager;
@@ -45,5 +52,18 @@ namespace Editor::Panels
 		Tools::Utils::OptRef<::Core::ECS::Actor> m_highlightedActor;
 		std::optional<Editor::Core::GizmoBehaviour::EDirection> m_highlightedGizmoDirection;
 		Editor::Rendering::PickingRenderPass::PickingResult pickingResult;
+		/** Last mouse position the picking readback was performed for. */
+		std::pair<double, double> m_lastPickingMouse{ -1.0, -1.0 };
+		/** Throttles hover picks: the picking pass is a full scene pass, so it is
+		 * rendered on demand at most every kPickThrottleMs milliseconds. */
+		QElapsedTimer m_pickRequestTimer;
+		/** View projection of the last pick request (refreshes the target while
+		 * the camera moves). */
+		Maths::FMatrix4 m_lastPickViewProjection = Maths::FMatrix4::Identity;
+		bool m_hasLastPickViewProjection = false;
+		/** Left click waiting for the synchronous pick on this frame's target. */
+		bool m_clickPickPending = false;
+		int m_clickPickX = 0;
+		int m_clickPickY = 0;
 	};
 }

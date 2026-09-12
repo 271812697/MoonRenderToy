@@ -12,6 +12,21 @@
 
 namespace
 {
+	template<typename T>
+	inline void HashCombine(std::size_t& seed, const T& value)
+	{
+		// A large odd constant derived from the golden ratio (64-bit variant).
+		// It helps distribute bits more uniformly and reduce clustering/collisions.
+		constexpr std::size_t kHashCombineConstant = 0x9e3779b97f4a7c15ULL;
+
+		seed ^= std::hash<T>{}(value)
+			+kHashCombineConstant
+			// Bit mixing. They spread entropy from earlier values so order matters
+			// and nearby hashes don't collapse into similar outputs.
+			+ (seed << 6)
+			+ (seed >> 2);
+	}
+
 	Rendering::Data::MaterialPropertyType UniformToPropertyValue(const std::any& p_uniformValue)
 	{
 		using namespace Maths;
@@ -71,6 +86,7 @@ void Rendering::Data::Material::SetShader(Rendering::Resources::Shader* p_shader
 	else
 	{
 		m_properties.clear();
+		InvalidatePropertySignature();
 	}
 }
 
@@ -90,8 +106,100 @@ Tools::Utils::OptRef<Rendering::HAL::ShaderProgram> Rendering::Data::Material::G
 	return std::nullopt;
 }
 
+void Rendering::Data::Material::UploadProperties(bool uploadStableProperties, bool uploadSingleUseProperties, Rendering::HAL::Texture* p_emptyTexture2D, Rendering::HAL::Texture* p_emptyTextureCube)
+{
+	ZoneScoped;
+	using namespace Maths;
+	using enum Rendering::Settings::EUniformType;
+	auto& program = m_programInUse.value();
+	int textureSlot = 0;
+	for (auto& [name, prop] : m_properties)
+	{
+		if (!uploadStableProperties && !prop.singleUse) continue;
+		if (!uploadSingleUseProperties && prop.singleUse) continue;
+
+		const auto uniformData = program.GetUniformInfo(name);
+
+		// Skip this property if the current program isn't using its associated uniform
+		if (!uniformData)
+		{
+			continue;
+		}
+
+		auto& value = prop.value;
+		auto uniformType = uniformData.value().type;
+
+		// Iterating over the properties to set them in the shader.
+		// This could have been cleaner with a visitor, but the performance impact
+		// is not worth it. This is a critical path in the rendering pipeline.
+
+		if (uniformType == BOOL)
+		{
+			program.SetUniform<int>(name, static_cast<int>(std::get<bool>(value)));
+		}
+		else if (uniformType == INT)
+		{
+			program.SetUniform<int>(name, std::get<int>(value));
+		}
+		else if (uniformType == FLOAT)
+		{
+			program.SetUniform<float>(name, std::get<float>(value));
+		}
+		else if (uniformType == FLOAT_VEC2)
+		{
+			program.SetUniform<FVector2>(name,std::get<FVector2>(value));
+		}
+		else if (uniformType == FLOAT_VEC3)
+		{
+			program.SetUniform<FVector3>(name, std::get<FVector3>(value));
+		}
+		else if (uniformType == FLOAT_VEC4)
+		{
+			program.SetUniform<FVector4>(name, std::get<FVector4>(value));
+		}
+		else if (uniformType == FLOAT_MAT3)
+		{
+			// No transpose here: SetUniform<FMatrix4/3> uploads with the
+			// "transpose" flag set, i.e. it already expects row-major data,
+			// which is exactly how Maths::FMatrix4 stores it. Transposing again
+			// would flip every matrix property.
+			program.SetUniform<FMatrix3>(name, std::get<FMatrix3>(value));
+		}
+		else if (uniformType == FLOAT_MAT4)
+		{
+			program.SetUniform<FMatrix4>(name, std::get<FMatrix4>(value));
+		}
+		else if (
+			uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE
+			|| uniformType == SAMPLER_BUFFER || uniformType == UINTSAMPLER_BUFFER
+			|| uniformType == SAMPLER_2DARRAY || uniformType == INTSAMPLER_BUFFER
+			)
+		{
+			HAL::TextureHandle* handle = nullptr;
+			if (auto textureHandle = std::get_if<HAL::TextureHandle*>(&value))
+			{
+				handle = *textureHandle;
+			}
+			else if (auto texture = std::get_if<Resources::Texture*>(&value))
+			{
+				if (*texture != nullptr)
+				{
+					handle = &(*texture)->GetTexture();
+				}
+			}
+			BindTexture(program, name, handle, uniformType == SAMPLER_2D ? p_emptyTexture2D : p_emptyTextureCube, textureSlot);
+		}
+
+		if (prop.singleUse)
+		{
+			value = UniformToPropertyValue(uniformData->defaultValue);
+		}
+	}
+}
+
 void Rendering::Data::Material::UpdateProperties()
 {
+	InvalidatePropertySignature();
 	// Collect all uniform names currently used by the shader
 	std::unordered_set<std::string> usedUniforms;
 	auto variants_view = m_shader->GetVariants()
@@ -119,120 +227,44 @@ void Rendering::Data::Material::UpdateProperties()
 }
 // Note: this function is critical for performance, as it may be called many times during a frame.
 // Avoid using any heavy operations or allocations inside this function.
-void Rendering::Data::Material::Bind(
+Rendering::Data::MaterialSignatureSet Rendering::Data::Material::Bind(
 	HAL::Texture* p_emptyTexture,
 	HAL::Texture* p_emptyTextureCube,
 	std::optional<const std::string_view> p_pass,
-	Tools::Utils::OptRef<const Data::FeatureSet> p_featureSetOverride
+	Tools::Utils::OptRef<const Data::FeatureSet> p_featureSetOverride,
+	std::optional<MaterialSignatureSet> p_previousMaterialSignature 
 )
 {
 	ZoneScoped;
-
-	using namespace Maths;
-	using enum Rendering::Settings::EUniformType;
 	auto& program = m_shader->GetVariant(
 		p_pass,
 		p_featureSetOverride.value_or(m_features)
 	);
 
-	if (lateLoadTextures.size() > 0) {
-		for (auto& [name, path] : lateLoadTextures) {
-			auto texture = ::Core::Global::ServiceLocator::Get<Core::ResourceManagement::TextureManager>().GetResource(path, true);
-			if (texture) {
-				SetProperty(name,texture);
-			}
-		}
-		lateLoadTextures.clear();
-	}
-	program.Bind();
+	const auto signature = CalculateSignature(
+		program,
+		p_emptyTexture,
+		p_emptyTextureCube
+	);
 
-	int textureSlot = 0;
-
-	for (auto& [name, prop] : m_properties)
+	if (!p_previousMaterialSignature || signature.bindSignature != p_previousMaterialSignature->bindSignature)
 	{
-		const auto uniformData = program.GetUniformInfo(name);
-		auto& value = prop.value;
-		// Skip this property if the current program isn't using its associated uniform
-		if (!uniformData)
-		{
-			if (std::holds_alternative<Maths::FVector3>(prop.value)) {
-				program.SetUniform<FVector3>(name, std::get<FVector3>(value));
-			}else if (std::holds_alternative<Maths::FVector4>(prop.value)) {
-				program.SetUniform<FVector4>(name, std::get<FVector4>(value));
-			}
-			continue;
-		}
-
-		
-		auto uniformType = uniformData->type;
-
-		// Iterating over the properties to set them in the shader.
-		// This could have been cleaner with a visitor, but the performance impact
-		// is not worth it. This is a critical path in the rendering pipeline.
-
-		if (uniformType == BOOL)
-		{
-			program.SetUniform<int>(name, static_cast<int>(std::get<bool>(value)));
-		}
-		else if (uniformType == INT)
-		{
-			program.SetUniform<int>(name, std::get<int>(value));
-		}
-		else if (uniformType == FLOAT)
-		{
-			program.SetUniform<float>(name, std::get<float>(value));
-		}
-		else if (uniformType == FLOAT_VEC2)
-		{
-			program.SetUniform<FVector2>(name, std::get<FVector2>(value));
-		}
-		else if (uniformType == FLOAT_VEC3)
-		{
-			program.SetUniform<FVector3>(name, std::get<FVector3>(value));
-		}
-		else if (uniformType == FLOAT_VEC4)
-		{
-			program.SetUniform<FVector4>(name, std::get<FVector4>(value));
-		}
-		else if (uniformType == FLOAT_MAT3)
-		{
-			program.SetUniform<FMatrix3>(name, std::get<FMatrix3>(value));
-		}
-		else if (uniformType == FLOAT_MAT4)
-		{
-			program.SetUniform<FMatrix4>(name, std::get<FMatrix4>(value));
-		}
-		else if (
-			uniformType == SAMPLER_2D || uniformType == SAMPLER_CUBE
-			|| uniformType ==SAMPLER_BUFFER ||uniformType==UINTSAMPLER_BUFFER 
-			|| uniformType == SAMPLER_2DARRAY || uniformType == INTSAMPLER_BUFFER
-			)
-		{
-			HAL::TextureHandle* handle = nullptr;
-			if (auto textureHandle = std::get_if<HAL::TextureHandle*>(&value))
-			{
-				handle = *textureHandle;
-			}
-			else if (auto texture = std::get_if<Resources::Texture*>(&value))
-			{
-				if (*texture != nullptr)
-				{
-					handle = &(*texture)->GetTexture();
-				}
-			}
-			BindTexture(program, name, handle, uniformType == SAMPLER_2D ? p_emptyTexture : p_emptyTextureCube, textureSlot);
-		}
-
-		if (prop.singleUse)
-		{
-			value = UniformToPropertyValue(uniformData->defaultValue);
-		}
+		program.Bind();
 	}
+
+	m_programInUse = program;
+
+	return signature;
 }
 
-void Rendering::Data::Material::Unbind() const
+void Rendering::Data::Material::Unbind(bool p_resetBoundProgram)
 {
-	m_shader->GetVariant().Unbind();
+	if (p_resetBoundProgram)
+	{
+		m_programInUse->Unbind();
+	}
+
+	m_programInUse.reset();
 }
 
 bool Rendering::Data::Material::HasProperty(const std::string& p_name) const
@@ -242,11 +274,17 @@ bool Rendering::Data::Material::HasProperty(const std::string& p_name) const
 
 void Rendering::Data::Material::SetProperty(const std::string p_name, const MaterialPropertyType& p_value, bool p_singleUse)
 {
-	const auto property =
-		m_properties[p_name] = MaterialProperty{
-			p_value,
-			p_singleUse
-	};
+	m_properties[p_name].value = p_value;
+	m_properties[p_name].singleUse = p_singleUse;
+
+	if (p_singleUse)
+	{
+		++m_singleUsePropertySignatureVersion;
+	}
+	else
+	{
+		++m_stablePropertySignatureVersion;
+	}
 }
 
 void Rendering::Data::Material::LateUpdateTexture(const std::string& p_name, const std::string& p_path)
@@ -540,4 +578,35 @@ void Rendering::Data::Material::SetTransparent(bool transparent)
 	if (transparent) {
 		m_blendable = true;
 	}
+}
+
+void Rendering::Data::Material::InvalidatePropertySignature()
+{
+	++m_stablePropertySignatureVersion;
+	++m_singleUsePropertySignatureVersion;
+}
+
+Rendering::Data::MaterialSignatureSet Rendering::Data::Material::CalculateSignature(Rendering::HAL::ShaderProgram& p_selectedProgram, Rendering::HAL::Texture* p_emptyTexture2D, Rendering::HAL::Texture* p_emptyTextureCube)
+{
+	ZoneScoped;
+
+	MaterialSignatureSet signature;
+
+	// Bind
+	HashCombine(signature.bindSignature, this);
+	HashCombine(signature.bindSignature, &p_selectedProgram);
+
+	// Stable Properties
+	signature.stablePropertySignature = signature.bindSignature;
+	HashCombine(signature.stablePropertySignature, m_stablePropertySignatureVersion);
+	HashCombine(signature.stablePropertySignature, p_emptyTexture2D);
+	HashCombine(signature.stablePropertySignature, p_emptyTextureCube);
+
+	// Single Use Properties
+	signature.singleUsePropertySignature = signature.bindSignature;
+	HashCombine(signature.singleUsePropertySignature, m_singleUsePropertySignatureVersion);
+	HashCombine(signature.singleUsePropertySignature, p_emptyTexture2D);
+	HashCombine(signature.singleUsePropertySignature, p_emptyTextureCube);
+
+	return signature;
 }

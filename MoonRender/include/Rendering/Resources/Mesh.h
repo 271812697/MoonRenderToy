@@ -43,8 +43,11 @@ namespace Rendering::Resources
 
 		virtual const Rendering::Geometry::BoundingSphere& GetBoundingSphere()  override;
 		virtual const Rendering::Geometry::bbox& GetBoundingBox() override;
-		std::vector<uint32_t> GetMaterialIndex() const;
-		std::vector<uint32_t> GetSubRangeBufferIndex() const;
+		/** Returned by reference: these lists are read every frame while parsing
+		 * the scene, and returning by value used to allocate two vectors per
+		 * mesh per frame. */
+		const std::vector<uint32_t>& GetMaterialIndex() const;
+		const std::vector<uint32_t>& GetSubRangeBufferIndex() const;
 		void AddMaterial(int materialIndex,int subRangeIndex);
 		HAL::VertexArray& getVertexArray(int index=0);
 		HAL::VertexBuffer& getVertexBuffer();

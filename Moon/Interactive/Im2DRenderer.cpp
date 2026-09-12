@@ -164,6 +164,10 @@ void main()
             projMat=projMat.TransposeMartix();
             mInternal->mMat.SetProperty("ProjMtx",projMat);
             mInternal->mMat.Bind();
+            // Bind() only selects the program now: without this the projection
+            // matrix never reaches the shader and the whole ImGui draw list
+            // collapses, leaving a black window.
+            mInternal->mMat.UploadProperties(true, true);
             for (int i = 0;i < mInternal->drawList.CmdBuffer.size();i++) {
                 auto& cmd = mInternal->drawList.CmdBuffer[i];
                 int offsetIndex=cmd.IdxOffset;

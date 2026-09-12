@@ -31,6 +31,12 @@ namespace Rendering::Data
 		MaterialPropertyType value;
 		bool singleUse;
 	};
+	struct MaterialSignatureSet
+	{
+		std::size_t bindSignature;
+		std::size_t stablePropertySignature;
+		std::size_t singleUsePropertySignature;
+	};
 
 	class Material
 	{
@@ -43,14 +49,23 @@ namespace Rendering::Data
 			std::optional<const std::string_view> p_pass = std::nullopt,
 			Tools::Utils::OptRef<const Data::FeatureSet> p_override = std::nullopt
 		) const;
+		
+		void UploadProperties(
+			bool uploadStableProperties,
+			bool uploadSingleUseProperties,
+			Rendering::HAL::Texture* p_emptyTexture2D = nullptr,
+			Rendering::HAL::Texture* p_emptyTextureCube = nullptr
+		);
 		void UpdateProperties();
-		void Bind(
+		MaterialSignatureSet Bind(
 			HAL::Texture* p_emptyTexture2D = nullptr,
 			HAL::Texture* p_emptyTextureCube = nullptr,
 			std::optional<const std::string_view> p_pass = std::nullopt,
-			Tools::Utils::OptRef<const Data::FeatureSet> p_featureSetOverride = std::nullopt
+			Tools::Utils::OptRef<const Data::FeatureSet> p_featureSetOverride = std::nullopt,
+			std::optional<MaterialSignatureSet> p_previousMaterialSignature = std::nullopt
 		);
-		void Unbind() const;
+		void Unbind(bool p_resetBoundProgram = false) ;
+
 		bool HasProperty(const std::string& p_name) const;
 		void SetProperty(const std::string p_name, const MaterialPropertyType& p_value, bool p_singleUse = false);
 		void LateUpdateTexture(const std::string &p_name,const std::string& p_path);
@@ -104,13 +119,23 @@ namespace Rendering::Data
 		bool SupportsProjectionMode(Rendering::Settings::EProjectionMode p_projectionMode) const;
 		void SetLineWidth(float p_width);
 		void SetTransparent(bool transparent);
+	protected:
+		void InvalidatePropertySignature();
+
+		MaterialSignatureSet CalculateSignature(
+			Rendering::HAL::ShaderProgram& p_selectedProgram,
+			Rendering::HAL::Texture* p_emptyTexture2D = nullptr,
+			Rendering::HAL::Texture* p_emptyTextureCube = nullptr
+		);
 
 	protected:
 		Rendering::Resources::Shader* m_shader = nullptr;
 		std::map<std::string, std::string>lateLoadTextures;
-
 		PropertyMap m_properties;
 		Data::FeatureSet m_features;
+		size_t m_stablePropertySignatureVersion = 0ULL;
+		size_t m_singleUsePropertySignatureVersion = 0ULL;
+		Tools::Utils::OptRef<Rendering::HAL::ShaderProgram> m_programInUse = std::nullopt;
 
 		bool m_supportOrthographic = true;
 		bool m_supportPerspective = true;

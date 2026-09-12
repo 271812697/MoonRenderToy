@@ -1,5 +1,8 @@
 ﻿#include <ranges>
 #include <tracy/Tracy.hpp>
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <Core/ECS/Components/CModelRenderer.h>
 #include <Core/ECS/Components/CMaterialRenderer.h>
 #include <Core/Global/ServiceLocator.h>
@@ -26,6 +29,40 @@
 namespace
 {
 	using namespace Core::Rendering;
+
+	/** Cheap 64-bit content signature used to cache the parsed drawables. */
+	void HashCombine(uint64_t& p_seed, uint64_t p_value)
+	{
+		p_seed ^= p_value + 0x9e3779b97f4a7c15ULL + (p_seed << 6) + (p_seed >> 2);
+	}
+
+	uint64_t HashPointer(const void* p_pointer)
+	{
+		return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(p_pointer));
+	}
+
+	uint64_t HashFloat(float p_value)
+	{
+		uint32_t bits = 0;
+		std::memcpy(&bits, &p_value, sizeof(bits));
+		return static_cast<uint64_t>(bits);
+	}
+
+	void HashMatrix(uint64_t& p_seed, const Maths::FMatrix4& p_matrix)
+	{
+		for (int i = 0; i < 16; ++i)
+		{
+			HashCombine(p_seed, HashFloat(p_matrix.data[i]));
+		}
+	}
+
+	void HashSphere(uint64_t& p_seed, const ::Rendering::Geometry::BoundingSphere& p_sphere)
+	{
+		HashCombine(p_seed, HashFloat(p_sphere.position.x));
+		HashCombine(p_seed, HashFloat(p_sphere.position.y));
+		HashCombine(p_seed, HashFloat(p_sphere.position.z));
+		HashCombine(p_seed, HashFloat(p_sphere.radius));
+	}
 
 	class SceneRenderPass : public Rendering::Core::ARenderPass
 	{
@@ -540,18 +577,18 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 	AddFeature<EngineBufferRenderFeature, ALWAYS>();
 	AddFeature<LightingRenderFeature, ALWAYS>();
 
-	AddFeature<ReflectionRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>()
-		.Include<TransparentRenderPass>();
-	AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>();
+	//AddFeature<ReflectionRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>()
+	//	.Include<TransparentRenderPass>();
+	//AddFeature<SsaoRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>();
 
-	AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
-		.Include<OpaqueRenderPass>()
-		.Include<TransparentRenderPass>()
-		.Include<UIRenderPass>();
+	//AddFeature<ShadowRenderFeature, WHITELIST_ONLY>()
+	//	.Include<OpaqueRenderPass>()
+	//	.Include<TransparentRenderPass>()
+	//	.Include<UIRenderPass>();
 
-	AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
+	//AddPass<ShadowRenderPass>("Shadows", ERenderPassOrder::Shadows);
 	//AddPass<ReflectionRenderPass>("ReflectionRenderPass", ERenderPassOrder::Reflections);
 	AddPass<SkyboxRenderPass>("SkyboxRenderPass",ERenderPassOrder::SkyBox);
 	AddPass<GbufferPass>("Gbuffer", ERenderPassOrder::Opaque-1);
@@ -570,7 +607,7 @@ Core::Rendering::SceneRenderer::SceneRenderer(::Rendering::Context::Driver& p_dr
 		hzbPass.SetCuller(&m_hzbCuller);
 	}
 	AddPass<PostProcessRenderPass>("Post-Process", ERenderPassOrder::PostProcessing);
-	AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
+	//AddPass<UIRenderPass>("UI", ERenderPassOrder::UI);
 }
 
 void Core::Rendering::SceneRenderer::BeginFrame(const ::Rendering::Data::FrameDescriptor& p_frameDescriptor)
@@ -594,18 +631,18 @@ void Core::Rendering::SceneRenderer::BeginFrame(const ::Rendering::Data::FrameDe
 
 	::Rendering::Core::CompositeRenderer::BeginFrame(p_frameDescriptor);
 
-	AddDescriptor<SceneDrawablesDescriptor>({
-		ParseScene(SceneParsingInput{
-			.scene = sceneDescriptor.scene
-		})
-		});
+	// Parsed drawables are cached inside the renderer; parsing only runs when the
+	// scene content actually changed. The per frame descriptor is a pointer to
+	// that cache, so a hit costs neither copies nor allocations.
+	UpdateParsedDrawables(sceneDescriptor.scene);
+	AddDescriptor<SceneDrawablesHandle>({ &m_parsedDrawables });
 
 	// Default filtered drawables descriptor using the main camera (used by most render passes).
-	// Some other render passes can decide to filter the drawables themselves, using the 
-	// SceneDrawablesDescriptor instead of the SceneFilteredDrawablesDescriptor one.
+	// Some other render passes can decide to filter the drawables themselves, using the
+	// SceneDrawablesHandle instead of the SceneFilteredDrawablesDescriptor one.
 	AddDescriptor<SceneFilteredDrawablesDescriptor>({
 		FilterDrawables(
-			GetDescriptor<SceneDrawablesDescriptor>(),
+			*GetDescriptor<SceneDrawablesHandle>().drawables,
 			SceneDrawablesFilteringInput{
 				.camera = p_frameDescriptor.camera.value(),
 				.frustumerride = sceneDescriptor.frustumerride,
@@ -654,8 +691,11 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 
 	using namespace Core::ECS::Components;
 
-	// Containers for the parsed drawables.
+	// Containers for the parsed drawables. The previous frame's count is used as
+	// a reserve hint so the vector does not have to grow (and relocate every
+	// Drawable, each of which owns heap backed descriptor storage) while filling.
 	SceneRenderer::SceneDrawablesDescriptor result;
+	result.drawables.reserve(m_lastParsedDrawableCount);
 
 	const auto& scene = p_input.scene;
 
@@ -673,11 +713,13 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 
 		for (auto& mesh : model->GetMeshes())
 		{
-			std::vector<uint32_t> meshMatIndex = mesh->GetMaterialIndex();
-			std::vector<uint32_t> meshRangeBufferIndex = mesh->GetSubRangeBufferIndex();
+			// Read by reference: these getters used to return copies, which cost
+			// two heap allocations per mesh per frame.
+			const auto& meshMatIndex = mesh->GetMaterialIndex();
+			const auto& meshRangeBufferIndex = mesh->GetSubRangeBufferIndex();
 			for(int i=0;i<meshMatIndex.size();i++)
 			{
-				auto& materialIndex = meshMatIndex[i];
+				const auto materialIndex = meshMatIndex[i];
 				int bufferIndex = meshRangeBufferIndex[i];
 				if (mesh->GetIndexCount(bufferIndex) <= 0) {
 					continue;
@@ -717,11 +759,113 @@ SceneRenderer::SceneDrawablesDescriptor Core::Rendering::SceneRenderer::ParseSce
 					transform.GetWorldMatrix(),
 					materialRenderer->GetUserMatrix()
 					});
-				result.drawables.push_back(drawable);
+				// Move instead of copy: copying a Drawable deep copies its two
+				// descriptors (each a map node + a std::any payload).
+				result.drawables.push_back(std::move(drawable));
 			}
 		}
 	}
+
+	m_lastParsedDrawableCount = result.drawables.size();
 	return result;
+}
+
+void Core::Rendering::SceneRenderer::UpdateParsedDrawables(Core::SceneSystem::Scene& p_scene)
+{
+	ZoneScoped;
+
+	using namespace Core::ECS::Components;
+
+	const auto& renderers = p_scene.GetFastAccessComponents().modelRenderers;
+
+	// Signature over everything ParseScene reads. It avoids the per Drawable
+	// allocations, so on an unchanged scene the whole parse step is skipped.
+	uint64_t signature = 0xcbf29ce484222325ULL;
+	HashCombine(signature, renderers.size());
+
+	for (const auto modelRenderer : renderers)
+	{
+		const auto& owner = modelRenderer->owner;
+		const auto model = modelRenderer->GetModel();
+		const auto materialRenderer = owner.GetComponent<CMaterialRenderer>();
+
+		HashCombine(signature, HashPointer(modelRenderer));
+		HashCombine(signature, static_cast<uint64_t>(owner.GetID()));
+		HashCombine(signature, owner.IsActive() ? 1ULL : 0ULL);
+		HashCombine(signature, HashPointer(model));
+		HashCombine(signature, HashPointer(materialRenderer));
+
+		if (!owner.IsActive() || model == nullptr || materialRenderer == nullptr)
+		{
+			continue;
+		}
+
+		HashMatrix(signature, owner.transform.GetFTransform().GetWorldMatrix());
+		HashMatrix(signature, materialRenderer->GetUserMatrix());
+		HashCombine(signature, static_cast<uint64_t>(materialRenderer->GetVisibilityFlags()));
+
+		const auto frustumBehaviour = modelRenderer->GetFrustumBehaviour();
+		HashCombine(signature, static_cast<uint64_t>(frustumBehaviour));
+		if (frustumBehaviour == CModelRenderer::EFrustumBehaviour::CUSTOM_BOUNDS)
+		{
+			HashSphere(signature, modelRenderer->GetCustomBoundingSphere());
+		}
+
+		const auto& materials = materialRenderer->GetMaterials();
+		HashCombine(signature, materials.size());
+		for (const auto material : materials)
+		{
+			HashCombine(signature, HashPointer(material));
+		}
+
+		for (const auto mesh : model->GetMeshes())
+		{
+			HashCombine(signature, HashPointer(mesh));
+			if (mesh == nullptr)
+			{
+				continue;
+			}
+
+			const auto& materialIndices = mesh->GetMaterialIndex();
+			const auto& rangeIndices = mesh->GetSubRangeBufferIndex();
+			HashCombine(signature, materialIndices.size());
+			HashCombine(signature, rangeIndices.size());
+			for (const auto materialIndex : materialIndices)
+			{
+				HashCombine(signature, materialIndex);
+			}
+			for (const auto rangeIndex : rangeIndices)
+			{
+				HashCombine(signature, rangeIndex);
+			}
+			HashCombine(signature, static_cast<uint64_t>(mesh->GetPrimitiveMode()));
+
+			const size_t rangeCount = std::min(materialIndices.size(), rangeIndices.size());
+			for (size_t i = 0; i < rangeCount; ++i)
+			{
+				HashCombine(signature, static_cast<uint64_t>(mesh->GetIndexCount(rangeIndices[i])));
+			}
+
+			// Bounds stored in the drawable, depending on the frustum behaviour.
+			if (frustumBehaviour == CModelRenderer::EFrustumBehaviour::MESH_BOUNDS)
+			{
+				HashSphere(signature, mesh->GetBoundingSphere());
+			}
+			else if (frustumBehaviour == CModelRenderer::EFrustumBehaviour::DEPRECATED_MODEL_BOUNDS)
+			{
+				HashSphere(signature, model->GetBoundingSphere());
+			}
+		}
+	}
+
+	if (m_parsedDrawablesValid && signature == m_parsedDrawablesHash)
+	{
+		return; // Scene unchanged: reuse the cached drawables.
+	}
+
+	m_parsedDrawables = ParseScene(SceneParsingInput{ .scene = p_scene });
+	m_parsedDrawablesHash = signature;
+	m_parsedDrawablesValid = true;
 }
 
 SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::FilterDrawables(
@@ -752,24 +896,15 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 	auto& hzbPass = GetPass<::Core::Rendering::HzbBuildPass>("HZB");
 	m_hzbCuller.SetDepthBias(hzbPass.GetDepthBias());
 	m_hzbCuller.SetStaticDepthBias(hzbPass.GetStaticDepthBias());
+	bool isEnableHzb = hzbPass.IsEnabled();
 
 	auto& sceneDescriptor = GetDescriptor<SceneRenderer::SceneDescriptor>();
-	if (!hzbPass.IsEnabled())
+	if (!isEnableHzb)
 	{
 		m_hzbCuller.ClearGrid();
 	}
 	else if (auto* bvhService = sceneDescriptor.scene.GetBvhService())
 	{
-		// The scene BVH is built by the editor (settings panel) or by the path
-		// tracer; the culler only consumes it when available, so the rebuild
-		// policy stays under the editor's control.
-		if (m_bvhRebuildRequested)
-		{
-			m_bvhRebuildRequested = false;
-			bvhService->SetDirtyFlag(false);
-			sceneDescriptor.scene.BuildSceneBvh();
-		}
-
 		if (bvhService->m_sceneBvh != nullptr && bvhService->m_sceneBvh->m_root != nullptr)
 		{
 			ZoneScopedN("HZB Culling");
@@ -818,10 +953,6 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		if (frustum && desc.bounds.has_value())
 		{
 			ZoneScopedN("Frustum Culling");
-
-			// Get the engine drawable descriptor to access transform information
-			const auto& engineDesc = drawable.GetDescriptor<EngineDrawableDescriptor>();
-
 			if (!frustum->BoundingSphereInFrustum(desc.bounds.value(), desc.actor.transform.GetFTransform()))
 			{
 				continue; // Skip this drawable as it's outside the frustum
@@ -832,10 +963,12 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		// previous frame's depth (hierarchical Z-buffer test on the BVH). The
 		// granularity is the mesh instance, which matches the drawable
 		// granularity produced by ParseScene (one drawable per mesh sub-range).
-		if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
-		{
-			++m_hzbSkippedDrawables;
-			continue;
+		if (isEnableHzb) {
+			if (m_hzbCuller.IsOccluded(desc.sourceMesh, desc.actor.GetID()))
+			{
+				++m_hzbSkippedDrawables;
+				continue;
+			}
 		}
 
 		// Calculate distance to camera for sorting
@@ -851,6 +984,10 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		drawableCopy.material = targetMaterial;
 		drawableCopy.stateMask = targetMaterial->GenerateStateMask();
 		
+		// Key fields are read before the drawable is moved into the map, so the
+		// argument evaluation order cannot read a moved-from drawable.
+		const int drawOrder = targetMaterial->GetDrawOrder();
+		const uintptr_t materialKey = reinterpret_cast<uintptr_t>(&targetMaterial.value());
 
 		// Categorize drawable based on their type.
 		// This is also where sorting happens, using
@@ -858,30 +995,34 @@ SceneRenderer::SceneFilteredDrawablesDescriptor Core::Rendering::SceneRenderer::
 		if (drawableCopy.material->IsUserInterface())
 		{
 			output.ui.emplace(decltype(decltype(output.ui)::value_type::first){
-				.order = drawableCopy.material->GetDrawOrder(),
+				.order = drawOrder,
+					.materialKey = materialKey,
 					.distance = distanceToCamera
-			}, drawableCopy);
+			}, std::move(drawableCopy));
 		}
 		else if (drawableCopy.primitiveMode == ::Rendering::Settings::EPrimitiveMode::LINES) {
 			output.lines.emplace(decltype(decltype(output.lines)::value_type::first){
-				.order = drawableCopy.material->GetDrawOrder(),
+				.order = drawOrder,
+					.materialKey = materialKey,
 					.distance = distanceToCamera
-			}, drawableCopy);
+			}, std::move(drawableCopy));
 		}
 		else if (drawableCopy.material->IsTransparent())
 		{
 			drawableCopy.pass = "Transparents";
 			output.transparents.emplace(decltype(decltype(output.transparents)::value_type::first){
-				.order = drawableCopy.material->GetDrawOrder(),
+				.order = drawOrder,
+					.materialKey = materialKey,
 					.distance = distanceToCamera
-			}, drawableCopy);
+			}, std::move(drawableCopy));
 		}
 		else
 		{
 			output.opaques.emplace(decltype(decltype(output.opaques)::value_type::first){
-				.order = drawableCopy.material->GetDrawOrder(),
+				.order = drawOrder,
+					.materialKey = materialKey,
 					.distance = distanceToCamera
-			}, drawableCopy);
+			}, std::move(drawableCopy));
 		}
 	}
 	return output;

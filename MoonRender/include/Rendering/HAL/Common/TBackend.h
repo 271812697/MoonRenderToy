@@ -63,6 +63,9 @@ namespace Rendering::HAL
 		void SetDepthWriting(bool p_enable);
 		void SetColorWriting(bool p_enableRed, bool p_enableGreen, bool p_enableBlue, bool p_enableAlpha);
 		void SetViewport(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height);
+		/** Sets the scissor rectangle (in framebuffer pixels, origin bottom-left).
+		 * The scissor test itself is toggled through the pipeline state. */
+		void SetScissor(uint32_t p_x, uint32_t p_y, uint32_t p_width, uint32_t p_height);
 		std::string GetVendor();
 		std::string GetHardware();
 		std::string GetVersion();
